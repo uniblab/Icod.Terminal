@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>13.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<AssemblyName>Icod.Terminal.Sample</AssemblyName>
+		<RootNamespace>Icod.Terminal.Sample</RootNamespace>
+		<IsPackable>false</IsPackable>
+		<Configurations>Debug;Staging;Release</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="Program.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Icod.Terminal.csproj" />
+	</ItemGroup>
+</Project>

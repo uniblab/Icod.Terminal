@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Copyright>Copyright (c) 2026 Timothy J. Bruce</Copyright>
+		<LangVersion>13.0</LangVersion>
+		<OutputType>Library</OutputType>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+		<AssemblyName>Icod.Terminal</AssemblyName>
+		<RootNamespace>Icod.Terminal</RootNamespace>
+		<Configurations>Debug;Staging;Release</Configurations>
+		<Version>0.1.0-alpha.1</Version>
+		<AssemblyVersion>0.1.0.0</AssemblyVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(PlatformTarget)' == '' ">
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>2</WarningLevel>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>full</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+		<SignAssembly>false</SignAssembly>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Staging' ">
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>3</WarningLevel>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>false</Optimize>
+		<DefineConstants>TRACE</DefineConstants>
+		<SignAssembly>false</SignAssembly>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+		<DebugType>portable</DebugType>
+		<Optimize>true</Optimize>
+		<SignAssembly>false</SignAssembly>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsNotAsErrors>CS1591</WarningsNotAsErrors>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<PackageVersion>0.1.0-alpha.1</PackageVersion>
+		<PackageId>Icod.Terminal</PackageId>
+		<Title>Icod.Terminal</Title>
+		<Authors>Timothy J. Bruce</Authors>
+		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
+		<PackageReleaseNotes>0.1.0 establishes the Icod.Terminal live-terminal foundation for Icod.DCurses and the ProcPs watch, slabtop, and top migration.</PackageReleaseNotes>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<Deterministic>true</Deterministic>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod</PackageTags>
+		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+		<EnablePackageValidation>true</EnablePackageValidation>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="src\**\*.cs" />
+		<None Include="icon.png" Pack="true" PackagePath="" />
+		<EmbeddedResource Remove="samples\**" />
+		<None Remove="samples\**" />
+		<EmbeddedResource Remove="tests\**" />
+		<None Remove="tests\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<Content Include="LICENSE">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>$(AssemblyName).LICENSE.txt</TargetPath>
+			<Pack>true</Pack>
+			<PackagePath>\</PackagePath>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Icod.TermInfo" Version="1.0.0" />
+	</ItemGroup>
+</Project>
