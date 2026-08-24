@@ -25,7 +25,7 @@ bash .github/scripts/verify-release-package.sh artifacts Release
 
 During T01 the scripts intentionally perform only foundation checks:
 
-- read `PackageVersion` from `Icod.DCurses.csproj`;
+- read `PackageVersion` from `Icod.Terminal.csproj`;
 - require the matching `.nupkg` and `.snupkg`;
 - run the already-built repository sample non-interactively.
 

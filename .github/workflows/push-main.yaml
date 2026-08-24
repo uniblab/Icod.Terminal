@@ -41,7 +41,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: icod-dcurses-packages
+          name: icod-terminal-packages
           path: |
             artifacts/*.nupkg
             artifacts/*.snupkg
@@ -61,7 +61,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: icod-dcurses-packages
+          name: icod-terminal-packages
           path: ./artifacts
 
       - name: NuGet login (OIDC -> temp API key)
