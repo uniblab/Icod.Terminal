@@ -12,7 +12,7 @@
 		<AssemblyName>Icod.Terminal</AssemblyName>
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
-		<Version>0.1.0-alpha.1</Version>
+		<Version>0.1.0-alpha.2</Version>
 		<AssemblyVersion>0.1.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -53,12 +53,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.1.0-alpha.1</PackageVersion>
+		<PackageVersion>0.1.0-alpha.2</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.1.0 establishes the Icod.Terminal live-terminal foundation for Icod.DCurses and the ProcPs watch, slabtop, and top migration.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.1.0-alpha.2 records the T02 extraction inventory, compatibility boundary, and canonical contract naming for the Icod.Terminal live-terminal foundation.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

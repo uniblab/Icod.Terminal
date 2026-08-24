@@ -10,7 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** Initial roadmap / implementation not yet begun
+**Status:** T01 complete; T02 extraction inventory and contract classification complete; next T03
+**Current tranche:** T03 — Endpoint observation and native mode parity
 
 ---
 
@@ -424,6 +425,8 @@ The tranche SHALL also define the namespace/type renaming strategy so the new li
 
 **Gate T02:** a written extraction matrix exists and the dependency graph can be made acyclic with `Icod.Terminal -> Icod.TermInfo` and no runtime dependency from `Icod.Terminal` back to `Icod.CommandFramework` or `Icod.DCurses`.
 
+**T02 completion record:** [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md).
+
 ---
 
 ## 7.4 T03 — Endpoint observation and native mode parity
@@ -767,7 +770,6 @@ TerminalSession
 TerminalSessionOptions
 TerminalEndpoint
 TerminalEndpointObservation
-TerminalSize
 TerminalInputMode
 TerminalInputEvent
 TerminalKey
@@ -778,6 +780,8 @@ ITerminalControlProvider
 ITerminalInput
 ITerminalOutput
 ```
+
+T02 refines the provisional size type: the `0.1.x` line SHALL reuse the existing public `Icod.TermInfo.TerminalSize` value type rather than define a duplicate `Icod.Terminal.TerminalSize`.
 
 Presentation-state ownership may use lease-shaped APIs equivalent to:
 

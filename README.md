@@ -4,7 +4,7 @@
 
 ## Status
 
-The project is under initial `0.1.0` development. T01 establishes the repository, package, solution, tests, sample, and build/CI foundations. The live terminal contracts begin with the subsequent extraction and endpoint/mode tranches.
+The project is under initial `0.1.0` development. T01 established the repository/package foundation. T02 now freezes the extraction boundary, compatibility strategy, and canonical naming needed before endpoint/mode implementation begins in T03.
 
 The first functional milestone is driven by the terminal requirements of `watch`, `slabtop`, and `top` as they migrate into `Icod.ProcPs`.
 
@@ -52,7 +52,7 @@ Both scripts support `clean`, `restore`, `build`, `test`, and `pack`. Running ei
 
 ## Development roadmap
 
-See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract.
+See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md).
 
 ## License
 
