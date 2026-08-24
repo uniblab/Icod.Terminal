@@ -1,0 +1,85 @@
+name: build and publish
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - run: dotnet clean ${{ github.event.repository.name }}.sln -c Release
+      - run: dotnet restore ${{ github.event.repository.name }}.sln
+      - run: dotnet build ${{ github.event.repository.name }}.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
+      - run: dotnet test ${{ github.event.repository.name }}.sln -c Release --no-build --logger trx
+
+      - name: Pack Release package
+        if: matrix.os == 'windows-latest'
+        run: dotnet pack ${{ github.event.repository.name }}.csproj -c Release --no-build --output artifacts
+
+      - name: Verify Release package
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: .github\scripts\verify-release-package.cmd artifacts Release
+
+      - name: Upload validated Release package
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: icod-dcurses-packages
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+          if-no-files-found: error
+
+  deploy:
+    needs: build-and-test
+    runs-on: windows-latest
+    environment: Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: icod-dcurses-packages
+          path: ./artifacts
+
+      - name: NuGet login (OIDC -> temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: NuGet push
+        shell: pwsh
+        run: |
+          Get-ChildItem "./artifacts/${{ github.event.repository.name }}.*.nupkg" | ForEach-Object {
+            dotnet nuget push $_.FullName --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          }
+
+      - name: Push to GitHub Packages
+        shell: pwsh
+        run: |
+          Get-ChildItem "./artifacts/${{ github.event.repository.name }}.*.nupkg" | ForEach-Object {
+            dotnet nuget push $_.FullName --api-key "${{ secrets.GITHUB_TOKEN }}" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
+          }
