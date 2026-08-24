@@ -1,0 +1,51 @@
+root = true
+
+[*]
+end_of_line = crlf
+insert_final_newline = false
+trim_trailing_whitespace = true
+charset = utf-8
+indent_style = space
+indent_size = 4
+quote_type = double
+max_line_length = 120
+
+[*.{cs,csproj,props,targets,xml}]
+end_of_line = crlf
+insert_final_newline = false
+trim_trailing_whitespace = true
+charset = utf-8
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+[*.cs]
+# C# style preferences
+csharp_new_line_before_open_brace = none:warning
+csharp_new_line_before_else = false:warning
+csharp_new_line_before_catch = false:warning
+csharp_new_line_before_finally = false:warning
+csharp_prefer_braces = true:warning
+csharp_style_expression_bodied_methods = when_possible:suggestion
+csharp_style_expression_bodied_properties = when_possible:suggestion
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+dotnet_analyzer_diagnostic.category-Style.severity = none
+dotnet_diagnostic.CA1016.severity = none
+dotnet_style_qualification_for_event = false:suggestion
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+
+# Naming conventions
+dotnet_naming_rule.types_should_be_pascal_case.severity = warning
+dotnet_naming_rule.types_should_be_pascal_case.symbols = all_types
+dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.all_types.applicable_kinds = class, struct, interface, enum, delegate
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+[**/tests/**]
+max_line_length = off
