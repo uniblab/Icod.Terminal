@@ -273,6 +273,12 @@ public sealed partial class TerminalSession {
 		List<Exception> exceptions = [];
 
 		try {
+			await this.PrepareLifecycleParticipantsAsync().ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			exceptions.Add( exception );
+		}
+
+		try {
 			await this.SuspendPresentationStateAsync().ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );
@@ -360,6 +366,7 @@ public sealed partial class TerminalSession {
 			}
 
 			await this.ResumePresentationStateAsync().ConfigureAwait( false );
+			await this.ResumeLifecycleParticipantsAsync().ConfigureAwait( false );
 
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 0 );
 			Volatile.Write( ref this.stateValid, 1 );
