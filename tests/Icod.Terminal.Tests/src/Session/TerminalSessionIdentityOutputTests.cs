@@ -266,7 +266,7 @@ public sealed class TerminalSessionIdentityOutputTests {
 	private sealed class ThrowingTerminalDescriptionProvider : ITerminalDescriptionProvider {
 		public bool TryLoad(
 			string name,
-			out TerminalDescription? terminal
+			[System.Diagnostics.CodeAnalysis.NotNullWhen( true )] out TerminalDescription? terminal
 		) {
 			ArgumentException.ThrowIfNullOrWhiteSpace( name );
 			terminal = null;
