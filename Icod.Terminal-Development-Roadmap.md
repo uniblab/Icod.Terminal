@@ -10,8 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T05 complete; next T06 terminal identity, TermInfo integration, and output setup
-**Current tranche:** T06 — Terminal identity, `Icod.TermInfo` integration, and output setup
+**Status:** T01-T06 complete; next T07 live dimensions and lifecycle events
+**Current tranche:** T07 — Live dimensions and lifecycle events
 
 ---
 
@@ -534,6 +534,8 @@ The session SHALL provide a controlled way to ensure the output endpoint is conf
 The library SHALL also establish an explicit application-text encoding policy. Capability strings originating from terminfo remain terminal protocol data and SHALL continue to honor `Icod.TermInfo` byte semantics.
 
 **Gate T06:** a standard live session can resolve a terminal description and emit capability-driven output without `Icod.DCurses` performing platform-specific terminal detection or Windows VT setup.
+
+**T06 completion record:** [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md).
 
 ---
 

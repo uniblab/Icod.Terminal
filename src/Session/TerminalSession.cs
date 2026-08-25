@@ -1,23 +1,29 @@
 namespace Icod.Terminal;
 
 using System.Runtime.ExceptionServices;
+using System.Text;
+using Icod.TermInfo;
 
 /// <summary>
-/// Owns one reversible live-terminal input-mode transition while borrowing the
+/// Owns one reversible live-terminal state transition while borrowing the
 /// terminal endpoints and byte transports supplied by the caller.
 /// </summary>
 /// <remarks>
 /// A session owns terminal state transitions, not endpoint or stream lifetime.
-/// Dispose the session asynchronously to flush pending output and restore the
-/// captured input mode exactly once.
+/// Dispose the session asynchronously to flush pending output, restore output
+/// setup, and restore the captured input mode exactly once.
 /// </remarks>
 public sealed class TerminalSession : IAsyncDisposable {
 	private readonly object restoreSync = new();
 	private readonly ITerminalControlProvider controlProvider;
+	private readonly Encoding applicationEncoding;
+	private readonly TerminalOutputStream terminalOutputStream;
 
 	private TerminalModeSnapshot? baselineMode;
+	private IDisposable? outputModeLease;
 	private Task<Exception?>? restoreTask;
 	private bool restoreRequired;
+	private int? outputBaudRate;
 	private int stateValid;
 
 	private TerminalSession(
@@ -26,6 +32,7 @@ public sealed class TerminalSession : IAsyncDisposable {
 		TerminalEndpoint outputEndpoint,
 		TerminalEndpointObservation inputObservation,
 		TerminalEndpointObservation outputObservation,
+		TerminalIdentity identity,
 		ITerminalInput input,
 		ITerminalOutput output,
 		TerminalSessionOptions options
@@ -35,15 +42,19 @@ public sealed class TerminalSession : IAsyncDisposable {
 		ArgumentNullException.ThrowIfNull( outputEndpoint );
 		ArgumentNullException.ThrowIfNull( inputObservation );
 		ArgumentNullException.ThrowIfNull( outputObservation );
+		ArgumentNullException.ThrowIfNull( identity );
 		ArgumentNullException.ThrowIfNull( input );
 		ArgumentNullException.ThrowIfNull( output );
 		ArgumentNullException.ThrowIfNull( options );
 
 		this.controlProvider = controlProvider;
+		this.applicationEncoding = (Encoding)options.ApplicationEncoding.Clone();
+		this.terminalOutputStream = new TerminalOutputStream( output );
 		this.InputEndpoint = inputEndpoint;
 		this.OutputEndpoint = outputEndpoint;
 		this.InputObservation = inputObservation;
 		this.OutputObservation = outputObservation;
+		this.Identity = identity;
 		this.Input = input;
 		this.Output = output;
 		this.Options = options;
@@ -67,6 +78,25 @@ public sealed class TerminalSession : IAsyncDisposable {
 	/// <summary>Gets the attachment observation captured for the output endpoint.</summary>
 	public TerminalEndpointObservation OutputObservation {
 		get;
+	}
+
+	/// <summary>Gets the terminal identity selected for this session.</summary>
+	public TerminalIdentity Identity {
+		get;
+	}
+
+	/// <summary>Gets the selected immutable terminal capability description.</summary>
+	public TerminalDescription Terminal {
+		get {
+			return this.Identity.Terminal;
+		}
+	}
+
+	/// <summary>Gets a snapshot of the application-text encoding used by this session.</summary>
+	public Encoding ApplicationEncoding {
+		get {
+			return (Encoding)this.applicationEncoding.Clone();
+		}
 	}
 
 	/// <summary>Gets the borrowed terminal input byte service.</summary>
@@ -109,7 +139,7 @@ public sealed class TerminalSession : IAsyncDisposable {
 	/// <summary>
 	/// Opens a session against process standard input and standard output.
 	/// </summary>
-	/// <param name="options">Optional input-mode and interactivity policy.</param>
+	/// <param name="options">Optional identity, input-mode, output, and encoding policy.</param>
 	/// <param name="cancellationToken">Cancellation for session initialization.</param>
 	/// <returns>The initialized terminal session.</returns>
 	public static ValueTask<TerminalSession> OpenAsync(
@@ -137,7 +167,7 @@ public sealed class TerminalSession : IAsyncDisposable {
 	/// <param name="outputEndpoint">The terminal output endpoint to observe.</param>
 	/// <param name="input">The borrowed input byte service.</param>
 	/// <param name="output">The borrowed output byte service.</param>
-	/// <param name="options">Optional input-mode and interactivity policy.</param>
+	/// <param name="options">Optional identity, input-mode, output, and encoding policy.</param>
 	/// <param name="cancellationToken">Cancellation for session initialization.</param>
 	/// <returns>The initialized terminal session.</returns>
 	/// <remarks>
@@ -196,12 +226,20 @@ public sealed class TerminalSession : IAsyncDisposable {
 			);
 		}
 
+		TerminalIdentity identity = TerminalIdentityResolver.Resolve(
+			resolvedOptions,
+			inputObservation,
+			outputObservation
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
 		TerminalSession session = new(
 			controlProvider,
 			inputEndpoint,
 			outputEndpoint,
 			inputObservation,
 			outputObservation,
+			identity,
 			input,
 			output,
 			resolvedOptions
@@ -227,6 +265,92 @@ public sealed class TerminalSession : IAsyncDisposable {
 	}
 
 	/// <summary>
+	/// Writes application text using the session's application-text encoding.
+	/// </summary>
+	/// <param name="value">The application text.</param>
+	/// <param name="cancellationToken">Cancellation for the write operation.</param>
+	/// <returns>A value task representing the write operation.</returns>
+	public ValueTask WriteTextAsync(
+		string value,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( value );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		byte[] bytes = this.applicationEncoding.GetBytes( value );
+		return this.Output.WriteAsync(
+			bytes,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Writes an already-resolved terminfo terminal string with byte-exact
+	/// capability encoding and terminal-aware padding semantics.
+	/// </summary>
+	/// <param name="value">The terminal protocol string.</param>
+	/// <param name="affectedLines">The positive number of affected lines for padding.</param>
+	/// <param name="cancellationToken">Cancellation for the write operation.</param>
+	/// <returns>A value task representing the write operation.</returns>
+	public ValueTask WriteTerminalStringAsync(
+		string value,
+		int affectedLines = 1,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( value );
+		if ( 0 >= affectedLines ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( affectedLines ),
+				"The number of affected terminal lines must be positive."
+			);
+		}
+
+		TermInfoOutputOptions outputOptions = new(
+			this.Terminal,
+			this.outputBaudRate,
+			this.Options.CapabilityPaddingMode,
+			this.Options.CapabilityDelayProvider
+		);
+
+		return TermInfoOutput.TPutsAsync(
+			value,
+			affectedLines,
+			this.terminalOutputStream,
+			Encoding.Latin1,
+			outputOptions,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Writes a non-parameterized string capability when the selected terminal provides it.
+	/// </summary>
+	/// <param name="capability">The string capability to emit.</param>
+	/// <param name="affectedLines">The positive number of affected lines for padding.</param>
+	/// <param name="cancellationToken">Cancellation for the write operation.</param>
+	/// <returns>
+	/// <see langword="true"/> when the capability was present and emitted;
+	/// otherwise <see langword="false"/>.
+	/// </returns>
+	public async ValueTask<bool> WriteCapabilityAsync(
+		StringCapability capability,
+		int affectedLines = 1,
+		CancellationToken cancellationToken = default
+	) {
+		string? value = this.Terminal.GetString( capability );
+		if ( value is null ) {
+			return false;
+		}
+
+		await this.WriteTerminalStringAsync(
+			value,
+			affectedLines,
+			cancellationToken
+		).ConfigureAwait( false );
+		return true;
+	}
+
+	/// <summary>
 	/// Marks the currently applied terminal state invalid after out-of-band host activity.
 	/// </summary>
 	/// <remarks>
@@ -239,7 +363,7 @@ public sealed class TerminalSession : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Flushes pending output and restores the captured input mode exactly once.
+	/// Flushes pending output and restores session-owned host terminal state exactly once.
 	/// </summary>
 	/// <returns>A value task representing asynchronous restoration.</returns>
 	public async ValueTask DisposeAsync() {
@@ -292,6 +416,15 @@ public sealed class TerminalSession : IAsyncDisposable {
 
 		this.baselineMode = captureResult.GetRequiredValue();
 		this.restoreRequired = true;
+		this.outputBaudRate = ResolveOutputBaudRate( this.baselineMode );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		this.outputModeLease = SystemTerminalOutputSetup.Configure(
+			this.controlProvider,
+			this.OutputEndpoint,
+			this.OutputObservation,
+			this.Options.ConfigureOutput
+		);
 		cancellationToken.ThrowIfCancellationRequested();
 
 		TerminalControlMutationResult applyResult = TerminalInputModePolicy.Apply(
@@ -332,6 +465,14 @@ public sealed class TerminalSession : IAsyncDisposable {
 			exceptions.Add( exception );
 		}
 
+		try {
+			this.outputModeLease?.Dispose();
+		} catch ( Exception exception ) {
+			exceptions.Add( exception );
+		} finally {
+			this.outputModeLease = null;
+		}
+
 		if ( this.restoreRequired
 			&& ( this.baselineMode is not null ) ) {
 			try {
@@ -356,6 +497,21 @@ public sealed class TerminalSession : IAsyncDisposable {
 
 		this.restoreRequired = false;
 		return BuildRestorationException( exceptions );
+	}
+
+	private static int? ResolveOutputBaudRate(
+		TerminalModeSnapshot baseline
+	) {
+		ArgumentNullException.ThrowIfNull( baseline );
+
+		ulong? baudRate = baseline.OutputSpeed?.BaudRate;
+		if ( !baudRate.HasValue
+			|| ( 0 == baudRate.Value )
+			|| ( int.MaxValue < baudRate.Value ) ) {
+			return null;
+		}
+
+		return checked( (int)baudRate.Value );
 	}
 
 	private static TerminalModeApplyTiming GetRestoreTiming(
