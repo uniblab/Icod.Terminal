@@ -12,6 +12,7 @@
 		<AssemblyName>Icod.Terminal</AssemblyName>
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Version>0.1.0-alpha.7</Version>
 		<AssemblyVersion>0.1.0.0</AssemblyVersion>
 	</PropertyGroup>
