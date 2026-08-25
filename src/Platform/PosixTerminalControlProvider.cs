@@ -334,14 +334,14 @@ internal sealed class PosixTerminalControlProvider : ITerminalControlProvider {
 						buffer,
 						checked( (nuint)mode.OutputSpeed!.Value.NativeCode )
 					) ) {
-					int nativeError = Marshal.GetLastPInvokeError();
+					int speedError = Marshal.GetLastPInvokeError();
 
 					return TerminalControlMutationResult.Unavailable(
 						string.Concat(
 							"The terminal speed code is not supported by this host: ",
-							new Win32Exception( nativeError ).Message
+							new Win32Exception( speedError ).Message
 						),
-						nativeError
+						speedError
 					);
 				}
 
