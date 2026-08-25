@@ -68,8 +68,8 @@ public sealed partial class TerminalSession {
 				await participant.ResumeAfterTerminalSuspendAsync(
 					CancellationToken.None
 				).ConfigureAwait( false );
-			} catch ( Exception exception ) {
-				exceptions.Add( exception );
+			} catch ( Exception e ) {
+				exceptions.Add( e );
 			}
 		}
 
