@@ -3,6 +3,7 @@ namespace Icod.Terminal.Tests.Input;
 using System.Text;
 using Icod.Terminal;
 using Icod.TermInfo;
+using Icod.Timing;
 using Xunit;
 
 /// <summary>
@@ -117,6 +118,7 @@ public sealed class TerminalInputDecoderTests {
 		TerminalInputDecoder decoder = new(
 			input,
 			terminal,
+			SystemMonotonicClock.Instance,
 			TimeSpan.FromMilliseconds( 10 ),
 			TerminalSession.MaximumBufferedInputBytes
 		);
@@ -140,6 +142,7 @@ public sealed class TerminalInputDecoderTests {
 		TerminalInputDecoder decoder = new(
 			input,
 			terminal,
+			SystemMonotonicClock.Instance,
 			TimeSpan.FromMilliseconds( 10 ),
 			TerminalSession.MaximumBufferedInputBytes
 		);
@@ -213,6 +216,7 @@ public sealed class TerminalInputDecoderTests {
 			() => new TerminalInputDecoder(
 				new ScriptedTerminalInput( [] ),
 				terminal,
+				SystemMonotonicClock.Instance,
 				TimeSpan.Zero,
 				4
 			)
@@ -230,6 +234,7 @@ public sealed class TerminalInputDecoderTests {
 		return new TerminalInputDecoder(
 			input,
 			terminal ?? new TerminalDescriptionBuilder( "text" ).Build(),
+			SystemMonotonicClock.Instance,
 			TimeSpan.FromMilliseconds( 50 ),
 			TerminalSession.MaximumBufferedInputBytes
 		);

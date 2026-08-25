@@ -13,7 +13,7 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.1.0-alpha.10</Version>
+		<Version>0.1.0-alpha.11</Version>
 		<AssemblyVersion>0.1.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -54,12 +54,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.1.0-alpha.10</PackageVersion>
+		<PackageVersion>0.1.0-alpha.11</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.1.0-alpha.10 adds ordered asynchronous lifecycle participants so higher terminal layers can prepare before suspend and re-enter after Terminal restores its owned state.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.1.0-alpha.11 rebases relative event timeouts, elapsed-time accounting, and Escape-sequence ambiguity waits onto Icod.Timing 1.0.0.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -98,5 +98,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Icod.TermInfo" Version="1.0.0" />
+		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>

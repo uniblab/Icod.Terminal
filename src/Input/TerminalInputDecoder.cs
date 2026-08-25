@@ -3,6 +3,7 @@ namespace Icod.Terminal;
 using System.Buffers;
 using System.Text;
 using Icod.TermInfo;
+using Icod.Timing;
 
 /// <summary>
 /// Incrementally decodes one terminal byte stream into terminal-independent input events.
@@ -14,6 +15,7 @@ internal sealed class TerminalInputDecoder {
 	private const int MaximumBufferCapacity = 1_048_576;
 
 	private readonly ITerminalInput input;
+	private readonly IMonotonicClock monotonicClock;
 	private readonly TimeSpan escapeSequenceTimeout;
 	private readonly int maximumBufferedBytes;
 	private readonly List<byte> bufferedBytes = [];
@@ -27,11 +29,13 @@ internal sealed class TerminalInputDecoder {
 	internal TerminalInputDecoder(
 		ITerminalInput input,
 		TerminalDescription terminal,
+		IMonotonicClock monotonicClock,
 		TimeSpan escapeSequenceTimeout,
 		int maximumBufferedBytes
 	) {
 		ArgumentNullException.ThrowIfNull( input );
 		ArgumentNullException.ThrowIfNull( terminal );
+		ArgumentNullException.ThrowIfNull( monotonicClock );
 		if ( TimeSpan.Zero > escapeSequenceTimeout ) {
 			throw new ArgumentOutOfRangeException( nameof( escapeSequenceTimeout ) );
 		}
@@ -46,6 +50,7 @@ internal sealed class TerminalInputDecoder {
 		}
 
 		this.input = input;
+		this.monotonicClock = monotonicClock;
 		this.escapeSequenceTimeout = escapeSequenceTimeout;
 		this.maximumBufferedBytes = maximumBufferedBytes;
 
@@ -359,10 +364,10 @@ internal sealed class TerminalInputDecoder {
 			return false;
 		}
 
-		Task delayTask = Task.Delay(
+		Task delayTask = this.monotonicClock.DelayAsync(
 			this.escapeSequenceTimeout,
 			cancellationToken
-		);
+		).AsTask();
 		Task completed = await Task.WhenAny(
 			readTask,
 			delayTask

@@ -2,6 +2,7 @@ namespace Icod.Terminal;
 
 using System.Text;
 using Icod.TermInfo;
+using Icod.Timing;
 
 /// <summary>
 /// Configures terminal identity, input state, output setup, lifecycle observation,
@@ -102,6 +103,20 @@ public sealed class TerminalSessionOptions {
 	} = true;
 
 	/// <summary>
+	/// Gets or initializes the monotonic clock used for relative terminal timing.
+	/// </summary>
+	/// <remarks>
+	/// The session uses this clock for event timeouts, elapsed-time accounting, and
+	/// Escape-sequence ambiguity windows. Absolute <see cref="DateTimeOffset"/>
+	/// deadlines are converted to a relative interval at call time; the resulting
+	/// wait uses this monotonic clock.
+	/// </remarks>
+	public IMonotonicClock MonotonicClock {
+		get;
+		init;
+	} = SystemMonotonicClock.Instance;
+
+	/// <summary>
 	/// Gets or initializes the encoding used for application text written through
 	/// <see cref="TerminalSession.WriteTextAsync"/>.
 	/// </summary>
@@ -154,6 +169,9 @@ public sealed class TerminalSessionOptions {
 				this.CapabilityPaddingMode,
 				"The terminal capability padding mode is not recognized."
 			);
+		}
+		if ( this.MonotonicClock is null ) {
+			throw new ArgumentNullException( nameof( this.MonotonicClock ) );
 		}
 		if ( this.ApplicationEncoding is null ) {
 			throw new ArgumentNullException( nameof( this.ApplicationEncoding ) );

@@ -1,6 +1,6 @@
 namespace Icod.Terminal;
 
-using System.Diagnostics;
+using Icod.Timing;
 
 /// <summary>
 /// Incremental keyboard decoding and unified event-loop input for
@@ -118,26 +118,27 @@ public sealed partial class TerminalSession {
 			return TerminalEvent.Cancelled();
 		}
 
-		long waitStarted = Stopwatch.GetTimestamp();
+		IMonotonicClock monotonicClock = this.Options.MonotonicClock;
+		long waitStarted = monotonicClock.GetTimestamp();
 
 		try {
-			if ( timeout.HasValue ) {
-				bool entered = await this.eventReadGate.WaitAsync(
-					timeout.Value,
-					cancellationToken
-				).ConfigureAwait( false );
-				if ( !entered ) {
-					return TerminalEvent.TimedOut();
-				}
-			} else {
-				await this.eventReadGate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+			bool entered = await this.EnterEventReadGateAsync(
+				timeout,
+				monotonicClock,
+				cancellationToken
+			).ConfigureAwait( false );
+			if ( !entered ) {
+				return TerminalEvent.TimedOut();
 			}
 		} catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested ) {
 			return TerminalEvent.Cancelled();
 		}
 
 		if ( timeout.HasValue ) {
-			TimeSpan elapsed = Stopwatch.GetElapsedTime( waitStarted );
+			TimeSpan elapsed = monotonicClock.GetElapsedTime(
+				waitStarted,
+				monotonicClock.GetTimestamp()
+			);
 			timeout = elapsed >= timeout.Value
 				? TimeSpan.Zero
 				: timeout.Value - elapsed
@@ -166,10 +167,14 @@ public sealed partial class TerminalSession {
 				return TerminalEvent.TimedOut();
 			}
 
-			Task waitTask = Task.Delay(
-				timeout ?? Timeout.InfiniteTimeSpan,
-				cancellationToken
-			);
+			using CancellationWait? cancellationWait = timeout.HasValue
+				? null
+				: new CancellationWait( cancellationToken )
+			;
+			Task waitTask = timeout.HasValue
+				? monotonicClock.DelayAsync( timeout.Value, cancellationToken ).AsTask()
+				: cancellationWait!.PendingTask
+			;
 			Task completed = lifecycleTask is null
 				? await Task.WhenAny(
 					inputTask,
@@ -211,6 +216,7 @@ public sealed partial class TerminalSession {
 		TerminalInputDecoder decoder = this.inputDecoder ??= new TerminalInputDecoder(
 			this.Input,
 			this.Terminal,
+			this.Options.MonotonicClock,
 			DefaultEscapeDelay,
 			MaximumBufferedInputBytes
 		);
@@ -259,4 +265,94 @@ public sealed partial class TerminalSession {
 			}
 		}
 	}
+	private async ValueTask<bool> EnterEventReadGateAsync(
+		TimeSpan? timeout,
+		IMonotonicClock monotonicClock,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( monotonicClock );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		if ( !timeout.HasValue ) {
+			await this.eventReadGate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+			return true;
+		}
+		if ( TimeSpan.Zero > timeout.Value ) {
+			throw new ArgumentOutOfRangeException( nameof( timeout ) );
+		}
+		if ( TimeSpan.Zero == timeout.Value ) {
+			return this.eventReadGate.Wait( 0 );
+		}
+
+		using CancellationTokenSource gateWaitCancellation =
+			CancellationTokenSource.CreateLinkedTokenSource( cancellationToken );
+		using CancellationTokenSource timeoutCancellation =
+			CancellationTokenSource.CreateLinkedTokenSource( cancellationToken );
+
+		Task timeoutTask = monotonicClock.DelayAsync(
+			timeout.Value,
+			timeoutCancellation.Token
+		).AsTask();
+		Task gateTask = this.eventReadGate.WaitAsync(
+			gateWaitCancellation.Token
+		);
+
+		Task completed = await Task.WhenAny(
+			gateTask,
+			timeoutTask
+		).ConfigureAwait( false );
+		if ( ReferenceEquals( completed, gateTask ) ) {
+			timeoutCancellation.Cancel();
+			try {
+				await timeoutTask.ConfigureAwait( false );
+			} catch ( OperationCanceledException ) when ( timeoutCancellation.IsCancellationRequested ) {
+			}
+
+			await gateTask.ConfigureAwait( false );
+			return true;
+		}
+
+		gateWaitCancellation.Cancel();
+		try {
+			await gateTask.ConfigureAwait( false );
+			this.eventReadGate.Release();
+		} catch ( OperationCanceledException ) when ( gateWaitCancellation.IsCancellationRequested ) {
+		}
+
+		await timeoutTask.ConfigureAwait( false );
+		return false;
+	}
+
+	private sealed class CancellationWait : IDisposable {
+		private readonly TaskCompletionSource completion = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
+		private CancellationTokenRegistration registration;
+
+		internal CancellationWait(
+			CancellationToken cancellationToken
+		) {
+			if ( cancellationToken.IsCancellationRequested ) {
+				this.completion.TrySetResult();
+				return;
+			}
+			if ( cancellationToken.CanBeCanceled ) {
+				this.registration = cancellationToken.Register(
+					static state => ( (TaskCompletionSource)state! ).TrySetResult(),
+					this.completion
+				);
+			}
+		}
+
+		internal Task PendingTask {
+			get {
+				return this.completion.Task;
+			}
+		}
+
+		public void Dispose() {
+			this.registration.Dispose();
+		}
+	}
+
 }
