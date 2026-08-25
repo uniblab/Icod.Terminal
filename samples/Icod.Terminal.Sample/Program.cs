@@ -1,14 +1,11 @@
-using System.Reflection;
+using Icod.Terminal;
 
-Assembly assembly = Assembly.Load("Icod.Terminal");
-Type? marker = assembly.GetType(
-	"Icod.Terminal.AssemblyMarker",
-	throwOnError: false);
+TerminalControlResult<TerminalEndpointObservation> observation =
+	SystemTerminalControlProvider.Instance.Observe(
+		TerminalEndpoint.StandardInput
+	);
 
-if (marker is null) {
-	Console.Error.WriteLine("Icod.Terminal foundation marker was not found.");
-	return 1;
-}
-
-Console.WriteLine("Icod.Terminal T01 foundation loaded.");
+Console.WriteLine(
+	$"Icod.Terminal T03 loaded; standard input observation: {observation.Status}."
+);
 return 0;
