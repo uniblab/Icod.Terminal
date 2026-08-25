@@ -54,6 +54,30 @@ public sealed class TerminalLifecycleEvent {
 }
 
 /// <summary>
+/// Participates in managed suspend/resume transitions owned by a <see cref="TerminalSession"/>.
+/// </summary>
+/// <remarks>
+/// Participants run from the session lifecycle pump, never from a native signal callback.
+/// Preparation runs in reverse registration order before Terminal releases its own presentation
+/// and host mode state. Resume runs in registration order after Terminal has re-entered that state.
+/// </remarks>
+public interface ITerminalSessionLifecycleParticipant {
+	/// <summary>Prepares higher-layer terminal state before the process is suspended.</summary>
+	/// <param name="cancellationToken">Cancellation for participant preparation.</param>
+	/// <returns>A value task representing asynchronous preparation.</returns>
+	ValueTask PrepareForTerminalSuspendAsync(
+		CancellationToken cancellationToken = default
+	);
+
+	/// <summary>Re-establishes higher-layer state after Terminal has completed resume re-entry.</summary>
+	/// <param name="cancellationToken">Cancellation for participant re-entry.</param>
+	/// <returns>A value task representing asynchronous re-entry.</returns>
+	ValueTask ResumeAfterTerminalSuspendAsync(
+		CancellationToken cancellationToken = default
+	);
+}
+
+/// <summary>
 /// Identifies one host lifecycle signal before session-level policy is applied.
 /// </summary>
 internal enum TerminalLifecycleSignalKind {
