@@ -101,8 +101,10 @@ internal sealed class TerminalPresentationManager {
 	) {
 		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
 		try {
-			if ( this.closed
-				|| !this.leases.TryGetValue( leaseId, out LeaseEntry entry ) ) {
+			if (
+				this.closed
+				|| !this.leases.TryGetValue( leaseId, out LeaseEntry entry )
+			) {
 				return;
 			}
 
