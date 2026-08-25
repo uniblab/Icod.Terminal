@@ -10,8 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T07 complete; next T08 input byte stream and 0.1 key-event decoder
-**Current tranche:** T08 — Input byte stream and 0.1 key-event decoder
+**Status:** T01-T08 complete; next T09 reversible terminal presentation leases
+**Current tranche:** T09 — Reversible terminal presentation leases
 
 ---
 
@@ -606,6 +606,8 @@ The decoder SHALL:
 Mouse, focus, bracketed paste, and modern keyboard protocols are not required for the `0.1.0` gate unless one of the three acceptance consumers demonstrably requires them.
 
 **Gate T08:** scripted tests cover byte-by-byte fragmentation, combined reads, UTF-8, overlapping prefixes, isolated Escape, escape-prefixed keys, timeout behavior, cancellation, and resize wake-up.
+
+**T08 completion record:** [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 
 ---
 
