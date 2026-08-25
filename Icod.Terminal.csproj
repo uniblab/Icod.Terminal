@@ -12,7 +12,7 @@
 		<AssemblyName>Icod.Terminal</AssemblyName>
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
-		<Version>0.1.0-alpha.3</Version>
+		<Version>0.1.0-alpha.4</Version>
 		<AssemblyVersion>0.1.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -53,12 +53,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.1.0-alpha.3</PackageVersion>
+		<PackageVersion>0.1.0-alpha.4</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.1.0-alpha.3 implements T03 endpoint observation, live size, native mode capture/application, exact POSIX native-image preservation, and machine serialization on Linux, macOS, and Windows.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.1.0-alpha.4 implements T04 semantic canonical/cbreak/raw input modes, echo/noecho policy, host signal-processing policy, and platform-neutral application timing.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

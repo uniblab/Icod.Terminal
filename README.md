@@ -4,7 +4,7 @@
 
 ## Status
 
-The project is under initial `0.1.0` development. T01 established the repository/package foundation, T02 froze the extraction boundary, and T03 now provides the canonical low-level endpoint, live-size, native-mode, and machine-serialization contracts on Linux, macOS, and Windows.
+The project is under initial `0.1.0` development. T01 established the repository/package foundation, T02 froze the extraction boundary, T03 established low-level endpoint/native-mode parity, and T04 now provides canonical/cbreak/raw plus echo/noecho semantic input policy on Linux, macOS, and Windows.
 
 The first functional milestone is driven by the terminal requirements of `watch`, `slabtop`, and `top` as they migrate into `Icod.ProcPs`.
 
@@ -52,7 +52,7 @@ Both scripts support `clean`, `restore`, `build`, `test`, and `pack`. Running ei
 
 ## Development roadmap
 
-See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), and the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md).
+See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), and the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md).
 
 ## License
 
