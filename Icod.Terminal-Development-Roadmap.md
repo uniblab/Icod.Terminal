@@ -10,7 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** Initial roadmap / implementation not yet begun
+**Status:** T01-T09 complete; next T10 Icod.DCurses integration and responsibility reset
+**Current tranche:** T10 — `Icod.DCurses` integration and responsibility reset
 
 ---
 
@@ -424,6 +425,8 @@ The tranche SHALL also define the namespace/type renaming strategy so the new li
 
 **Gate T02:** a written extraction matrix exists and the dependency graph can be made acyclic with `Icod.Terminal -> Icod.TermInfo` and no runtime dependency from `Icod.Terminal` back to `Icod.CommandFramework` or `Icod.DCurses`.
 
+**T02 completion record:** [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md).
+
 ---
 
 ## 7.4 T03 — Endpoint observation and native mode parity
@@ -508,6 +511,8 @@ A failed session open SHALL leave the host terminal as close as possible to its 
 
 **Gate T05:** fault-injection tests prove restoration after success, exceptions, cancellation, failed initialization steps, and repeated disposal.
 
+**T05 completion record:** [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md).
+
 ---
 
 ## 7.7 T06 — Terminal identity, `Icod.TermInfo` integration, and output setup
@@ -529,6 +534,8 @@ The session SHALL provide a controlled way to ensure the output endpoint is conf
 The library SHALL also establish an explicit application-text encoding policy. Capability strings originating from terminfo remain terminal protocol data and SHALL continue to honor `Icod.TermInfo` byte semantics.
 
 **Gate T06:** a standard live session can resolve a terminal description and emit capability-driven output without `Icod.DCurses` performing platform-specific terminal detection or Windows VT setup.
+
+**T06 completion record:** [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md).
 
 ---
 
@@ -553,6 +560,8 @@ The library SHALL NOT require each application to install its own `PosixSignalRe
 Callbacks which execute in restricted host/runtime contexts SHALL do minimal work and defer ordinary session processing.
 
 **Gate T07:** resize wakes a waiting interactive loop, and suspend/resume or equivalent lifecycle disruption can restore/re-enter session state without leaving the terminal corrupted.
+
+**T07 completion record:** [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md).
 
 ---
 
@@ -598,6 +607,8 @@ Mouse, focus, bracketed paste, and modern keyboard protocols are not required fo
 
 **Gate T08:** scripted tests cover byte-by-byte fragmentation, combined reads, UTF-8, overlapping prefixes, isolated Escape, escape-prefixed keys, timeout behavior, cancellation, and resize wake-up.
 
+**T08 completion record:** [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
+
 ---
 
 ## 7.10 T09 — Reversible terminal presentation leases
@@ -619,6 +630,8 @@ Nested or repeated acquisition behavior SHALL be defined so cleanup is determini
 Where a terminal lacks a capability, the result SHALL be controlled rather than replaced with an assumed ANSI sequence.
 
 **Gate T09:** a test backend can verify exact enter/leave ordering, nested/repeated behavior, rollback after partial acquisition, and capability-driven output.
+
+**T09 completion record:** [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md).
 
 ---
 
@@ -767,7 +780,6 @@ TerminalSession
 TerminalSessionOptions
 TerminalEndpoint
 TerminalEndpointObservation
-TerminalSize
 TerminalInputMode
 TerminalInputEvent
 TerminalKey
@@ -778,6 +790,8 @@ ITerminalControlProvider
 ITerminalInput
 ITerminalOutput
 ```
+
+T02 refines the provisional size type: the `0.1.x` line SHALL reuse the existing public `Icod.TermInfo.TerminalSize` value type rather than define a duplicate `Icod.Terminal.TerminalSize`.
 
 Presentation-state ownership may use lease-shaped APIs equivalent to:
 
