@@ -103,7 +103,7 @@ internal sealed class TerminalPresentationManager {
 		try {
 			if (
 				this.closed
-				|| !this.leases.TryGetValue( leaseId, out LeaseEntry entry )
+				|| !this.leases.TryGetValue( leaseId, out LeaseEntry? entry )
 			) {
 				return;
 			}
