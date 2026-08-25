@@ -4,8 +4,8 @@ using System.Text;
 using Icod.TermInfo;
 
 /// <summary>
-/// Configures terminal identity, input state, output setup, and application text
-/// policy applied when opening a <see cref="TerminalSession"/>.
+/// Configures terminal identity, input state, output setup, lifecycle observation,
+/// and application text policy applied when opening a <see cref="TerminalSession"/>.
 /// </summary>
 public sealed class TerminalSessionOptions {
 	/// <summary>
@@ -88,6 +88,20 @@ public sealed class TerminalSessionOptions {
 	} = true;
 
 	/// <summary>
+	/// Gets or initializes whether supported system-backed sessions automatically
+	/// observe terminal/process lifecycle events.
+	/// </summary>
+	/// <remarks>
+	/// The default is <see langword="true"/> for sessions using
+	/// <see cref="SystemTerminalControlProvider"/>. Custom terminal-control providers
+	/// do not install process-wide signal handlers automatically.
+	/// </remarks>
+	public bool ObserveLifecycleEvents {
+		get;
+		init;
+	} = true;
+
+	/// <summary>
 	/// Gets or initializes the encoding used for application text written through
 	/// <see cref="TerminalSession.WriteTextAsync"/>.
 	/// </summary>
@@ -117,6 +131,11 @@ public sealed class TerminalSessionOptions {
 	/// Gets or initializes an optional terminfo delay provider for capability output.
 	/// </summary>
 	public ITermInfoDelayProvider? CapabilityDelayProvider {
+		get;
+		init;
+	}
+
+	internal ITerminalLifecycleSource? LifecycleSource {
 		get;
 		init;
 	}

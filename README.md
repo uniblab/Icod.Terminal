@@ -4,7 +4,7 @@
 
 ## Status
 
-The project is under initial `0.1.0` development. T01 established the repository/package foundation, T02 froze the extraction boundary, T03 established low-level endpoint/native-mode parity, T04 added semantic input policy, T05 established the reversible `TerminalSession` lifecycle, and T06 now binds each session to an explicit `Icod.TermInfo` terminal identity with capability-safe output, application-text encoding policy, and reversible Windows VT output setup.
+The project is under initial `0.1.0` development. T01 established the repository/package foundation, T02 froze the extraction boundary, T03 established low-level endpoint/native-mode parity, T04 added semantic input policy, T05 established the reversible `TerminalSession` lifecycle, T06 bound sessions to explicit `Icod.TermInfo` terminal identities and capability-safe output, and T07 now provides live dimensions, resize wake-up/coalescing, normalized interrupt/termination events, and POSIX suspend/resume session-state re-entry.
 
 The first functional milestone is driven by the terminal requirements of `watch`, `slabtop`, and `top` as they migrate into `Icod.ProcPs`.
 
@@ -52,7 +52,7 @@ Both scripts support `clean`, `restore`, `build`, `test`, and `pack`. Running ei
 
 ## Development roadmap
 
-See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), and the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md).
+See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md), and the T07 lifecycle contract is documented in [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md).
 
 ## License
 

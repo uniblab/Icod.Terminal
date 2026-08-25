@@ -10,8 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T06 complete; next T07 live dimensions and lifecycle events
-**Current tranche:** T07 — Live dimensions and lifecycle events
+**Status:** T01-T07 complete; next T08 input byte stream and 0.1 key-event decoder
+**Current tranche:** T08 — Input byte stream and 0.1 key-event decoder
 
 ---
 
@@ -560,6 +560,8 @@ The library SHALL NOT require each application to install its own `PosixSignalRe
 Callbacks which execute in restricted host/runtime contexts SHALL do minimal work and defer ordinary session processing.
 
 **Gate T07:** resize wakes a waiting interactive loop, and suspend/resume or equivalent lifecycle disruption can restore/re-enter session state without leaving the terminal corrupted.
+
+**T07 completion record:** [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md).
 
 ---
 

@@ -13,7 +13,7 @@ using Icod.TermInfo;
 /// Dispose the session asynchronously to flush pending output, restore output
 /// setup, and restore the captured input mode exactly once.
 /// </remarks>
-public sealed class TerminalSession : IAsyncDisposable {
+public sealed partial class TerminalSession : IAsyncDisposable {
 	private readonly object restoreSync = new();
 	private readonly ITerminalControlProvider controlProvider;
 	private readonly Encoding applicationEncoding;
@@ -35,6 +35,7 @@ public sealed class TerminalSession : IAsyncDisposable {
 		TerminalIdentity identity,
 		ITerminalInput input,
 		ITerminalOutput output,
+		ITerminalLifecycleSource? lifecycleSource,
 		TerminalSessionOptions options
 	) {
 		ArgumentNullException.ThrowIfNull( controlProvider );
@@ -57,6 +58,7 @@ public sealed class TerminalSession : IAsyncDisposable {
 		this.Identity = identity;
 		this.Input = input;
 		this.Output = output;
+		this.lifecycleSource = lifecycleSource;
 		this.Options = options;
 	}
 
@@ -233,6 +235,11 @@ public sealed class TerminalSession : IAsyncDisposable {
 		);
 		cancellationToken.ThrowIfCancellationRequested();
 
+		ITerminalLifecycleSource? lifecycleSource = ResolveLifecycleSource(
+			controlProvider,
+			resolvedOptions
+		);
+
 		TerminalSession session = new(
 			controlProvider,
 			inputEndpoint,
@@ -242,13 +249,17 @@ public sealed class TerminalSession : IAsyncDisposable {
 			identity,
 			input,
 			output,
+			lifecycleSource,
 			resolvedOptions
 		);
 
 		try {
 			await session.InitializeAsync( cancellationToken ).ConfigureAwait( false );
+			session.StartLifecyclePump();
 			return session;
 		} catch ( Exception exception ) {
+			await session.StopLifecycleAsync().ConfigureAwait( false );
+
 			Exception? restorationException =
 				await session.RestoreCoreAsync().ConfigureAwait( false );
 
@@ -367,6 +378,8 @@ public sealed class TerminalSession : IAsyncDisposable {
 	/// </summary>
 	/// <returns>A value task representing asynchronous restoration.</returns>
 	public async ValueTask DisposeAsync() {
+		await this.StopLifecycleAsync().ConfigureAwait( false );
+
 		Exception? exception =
 			await this.RestoreCoreAsync().ConfigureAwait( false );
 
