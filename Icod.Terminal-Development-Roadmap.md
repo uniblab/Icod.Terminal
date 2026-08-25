@@ -10,8 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01 complete; T02 extraction inventory and contract classification complete; next T03
-**Current tranche:** T03 — Endpoint observation and native mode parity
+**Status:** T01-T05 complete; next T06 terminal identity, TermInfo integration, and output setup
+**Current tranche:** T06 — Terminal identity, `Icod.TermInfo` integration, and output setup
 
 ---
 
@@ -510,6 +510,8 @@ The session contract SHALL distinguish:
 A failed session open SHALL leave the host terminal as close as possible to its original state.
 
 **Gate T05:** fault-injection tests prove restoration after success, exceptions, cancellation, failed initialization steps, and repeated disposal.
+
+**T05 completion record:** [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md).
 
 ---
 
