@@ -10,8 +10,8 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T08 complete; next T09 reversible terminal presentation leases
-**Current tranche:** T09 — Reversible terminal presentation leases
+**Status:** T01-T09 complete; next T10 Icod.DCurses integration and responsibility reset
+**Current tranche:** T10 — `Icod.DCurses` integration and responsibility reset
 
 ---
 
@@ -630,6 +630,8 @@ Nested or repeated acquisition behavior SHALL be defined so cleanup is determini
 Where a terminal lacks a capability, the result SHALL be controlled rather than replaced with an assumed ANSI sequence.
 
 **Gate T09:** a test backend can verify exact enter/leave ordering, nested/repeated behavior, rollback after partial acquisition, and capability-driven output.
+
+**T09 completion record:** [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md).
 
 ---
 

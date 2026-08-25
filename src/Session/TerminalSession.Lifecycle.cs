@@ -273,6 +273,12 @@ public sealed partial class TerminalSession {
 		List<Exception> exceptions = [];
 
 		try {
+			await this.SuspendPresentationStateAsync().ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			exceptions.Add( exception );
+		}
+
+		try {
 			await this.Output.FlushAsync( CancellationToken.None ).ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );
@@ -317,7 +323,7 @@ public sealed partial class TerminalSession {
 		await this.ThrowAfterReentryAttemptAsync( leaveException ).ConfigureAwait( false );
 	}
 
-	private ValueTask ReapplySessionStateAsync() {
+	private async ValueTask ReapplySessionStateAsync() {
 		Volatile.Write( ref this.stateValid, 0 );
 
 		try {
@@ -353,9 +359,11 @@ public sealed partial class TerminalSession {
 				);
 			}
 
+			await this.ResumePresentationStateAsync().ConfigureAwait( false );
+
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 0 );
 			Volatile.Write( ref this.stateValid, 1 );
-			return ValueTask.CompletedTask;
+			return;
 		} catch ( Exception exception ) {
 			Volatile.Write( ref this.stateValid, 0 );
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 1 );

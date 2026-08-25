@@ -60,6 +60,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		this.Output = output;
 		this.lifecycleSource = lifecycleSource;
 		this.Options = options;
+		this.presentationManager = new TerminalPresentationManager( this );
 	}
 
 	/// <summary>Gets the terminal input endpoint borrowed by the session.</summary>
@@ -365,12 +366,13 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// Marks the currently applied terminal state invalid after out-of-band host activity.
 	/// </summary>
 	/// <remarks>
-	/// Invalidation does not restore or reapply terminal state. It records that the
-	/// session can no longer assume its configured state is still active. Lifecycle
-	/// re-entry is introduced in T07.
+	/// Invalidation does not immediately restore or reapply terminal state. It records
+	/// that the session and any active presentation leases can no longer trust their
+	/// physical-state assumptions. Lifecycle re-entry re-establishes owned state.
 	/// </remarks>
 	public void InvalidateState() {
 		Volatile.Write( ref this.stateValid, 0 );
+		this.InvalidatePresentationState();
 	}
 
 	/// <summary>
@@ -380,9 +382,20 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	public async ValueTask DisposeAsync() {
 		await this.StopLifecycleAsync().ConfigureAwait( false );
 
-		Exception? exception =
-			await this.RestoreCoreAsync().ConfigureAwait( false );
+		List<Exception> exceptions = [];
+		Exception? presentationException =
+			await this.ClosePresentationStateAsync().ConfigureAwait( false );
+		if ( presentationException is not null ) {
+			exceptions.Add( presentationException );
+		}
 
+		Exception? restorationException =
+			await this.RestoreCoreAsync().ConfigureAwait( false );
+		if ( restorationException is not null ) {
+			exceptions.Add( restorationException );
+		}
+
+		Exception? exception = BuildRestorationException( exceptions );
 		if ( exception is not null ) {
 			ExceptionDispatchInfo.Capture( exception ).Throw();
 		}
