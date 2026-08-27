@@ -10,9 +10,9 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T11 complete; T12A-T12B complete; next T12C package and fresh-consumer validation
+**Status:** T01-T11 and T12A-T12C complete; T12D final release closure current
 **Current tranche:** T12 — `0.1.0` package, CI, documentation, and API gate
-**Current subtranche:** T12C — package and fresh-consumer validation
+**Current subtranche:** T12D — final `0.1.0` release closure
 
 ---
 
@@ -710,8 +710,8 @@ T12 is the release-closure tranche for `0.1.0` and is executed in four subtranch
 
 - **T12A — Status reconciliation and consumer acceptance record — complete.** Reconcile the roadmap and README with completed T10/T11 work and preserve the ProcPs acceptance result in writing.
 - **T12B — Public API and documentation audit — complete.** Review the public surface for pre-1.0 regret, publish the intentional 0.1 API baseline, and complete the behavioral documentation required for independent consumers.
-- **T12C — Package and fresh-consumer validation — current.** Validate package contents, symbols/Source Link, and consumption from clean `net8.0` and `net10.0` projects.
-- **T12D — Release closure.** Set the final `0.1.0` package version, run the complete release matrix, and publish the non-prerelease package.
+- **T12C — Package and fresh-consumer validation — complete.** Validate package contents, symbols/Source Link, and consumption from clean `net8.0` and `net10.0` projects on Windows, Linux, and macOS.
+- **T12D — Release closure — current.** Set the final `0.1.0` package version, require a green `main` validation, and publish only from the matching `v0.1.0` tag.
 
 **Gate T12A:** repository status documentation identifies T01-T11 as complete, makes T12 the active release tranche, and records the three ProcPs acceptance consumers.
 
@@ -720,6 +720,16 @@ T12 is the release-closure tranche for `0.1.0` and is executed in four subtranch
 **Gate T12B:** the public 0.1 surface has an intentional review baseline, independent-consumer behavior is documented, and no unresolved API regret requiring a breaking pre-0.1 change remains.
 
 **T12B completion records:** [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md) and [`docs/Public-API-Baseline-0.1.md`](docs/Public-API-Baseline-0.1.md).
+
+**Gate T12C:** the packed `.nupkg` and `.snupkg` pass structural, dependency-closure, symbol/Source Link, and fresh package-reference-only consumer validation for both supported target frameworks on Windows, Linux, and macOS.
+
+**T12C completion record:** [`docs/T12C-Package-and-Fresh-Consumer-Validation.md`](docs/T12C-Package-and-Fresh-Consumer-Validation.md).
+
+**Gate T12D:** the release commit declares `<Version>` and `<PackageVersion>` as exactly `0.1.0`, passes the normal three-host `main` Release validation, and is then tagged `v0.1.0`. The tag-controlled release workflow must verify that the tagged commit belongs to `main`, rerun the complete Release gate, publish the package to NuGet.org and GitHub Packages, and create the GitHub Release with package artifacts and SHA-256 checksums.
+
+Ordinary pushes to `main` SHALL validate but SHALL NOT publish packages. Publishing `0.1.0` is an explicit tag-controlled action.
+
+**T12D release record:** [`docs/T12D-0.1.0-Release-Closure.md`](docs/T12D-0.1.0-Release-Closure.md).
 
 Before publishing `0.1.0`:
 
