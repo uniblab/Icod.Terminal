@@ -103,6 +103,14 @@ public sealed class TerminalSessionOptions {
 	} = true;
 
 	/// <summary>
+	/// Gets or initializes bounded incremental input-decoder policy.
+	/// </summary>
+	public TerminalInputDecoderOptions InputDecoderOptions {
+		get;
+		init;
+	} = new();
+
+	/// <summary>
 	/// Gets or initializes the monotonic clock used for relative terminal timing.
 	/// </summary>
 	/// <remarks>
@@ -170,6 +178,10 @@ public sealed class TerminalSessionOptions {
 				"The terminal capability padding mode is not recognized."
 			);
 		}
+		if ( this.InputDecoderOptions is null ) {
+			throw new ArgumentNullException( nameof( this.InputDecoderOptions ) );
+		}
+		this.InputDecoderOptions.Validate();
 		if ( this.MonotonicClock is null ) {
 			throw new ArgumentNullException( nameof( this.MonotonicClock ) );
 		}

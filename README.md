@@ -6,7 +6,7 @@
 
 Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-Development now proceeds on the `0.2.0` line. T13 establishes the `0.2.0-alpha.1` foundation across `net8.0`, `net9.0`, and `net10.0`; rich-input behavior begins with the T14 contract work rather than in T13.
+The `0.2.0` line is active. T13 is complete, and T14 advances the development version to `0.2.0-alpha.2` while freezing the typed mouse/focus/paste event model and bounded input-decoder policy. Rich protocol enablement and decoding remain later 0.2 tranches.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 

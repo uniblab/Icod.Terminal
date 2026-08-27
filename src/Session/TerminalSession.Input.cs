@@ -213,12 +213,13 @@ public sealed partial class TerminalSession {
 	}
 
 	private Task<TerminalInputEvent> GetPendingInputEvent() {
+		TerminalInputDecoderOptions decoderOptions = this.Options.InputDecoderOptions;
 		TerminalInputDecoder decoder = this.inputDecoder ??= new TerminalInputDecoder(
 			this.Input,
 			this.Terminal,
 			this.Options.MonotonicClock,
-			DefaultEscapeDelay,
-			MaximumBufferedInputBytes
+			decoderOptions.EscapeSequenceTimeout,
+			decoderOptions.MaximumBufferedBytes
 		);
 		this.pendingInputEvent ??= decoder.ReadAsync(
 			this.lifecycleStop.Token

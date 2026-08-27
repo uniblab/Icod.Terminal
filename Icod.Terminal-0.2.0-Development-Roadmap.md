@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.1`
-**Status:** T13 foundation and contract reset current
-**Current tranche:** T13 — 0.2 foundation and contract reset
+**Current development version:** `0.2.0-alpha.2`
+**Status:** T13 complete; T14 rich-input contract current
+**Current tranche:** T14 — rich input event model and decoder policy
 
 ---
 

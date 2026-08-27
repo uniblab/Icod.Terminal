@@ -12,6 +12,15 @@ public enum TerminalInputEventKind {
 	/// <summary>A named key or modified character key.</summary>
 	Key,
 
+	/// <summary>A normalized terminal mouse event.</summary>
+	Mouse,
+
+	/// <summary>A terminal focus-in or focus-out event.</summary>
+	Focus,
+
+	/// <summary>One framed bracketed-paste event.</summary>
+	Paste,
+
 	/// <summary>The terminal input endpoint reached end-of-input or disconnected.</summary>
 	EndOfInput
 }
@@ -94,7 +103,7 @@ public enum TerminalKeyModifiers {
 }
 
 /// <summary>
-/// Represents one decoded terminal keyboard or end-of-input event.
+/// Represents one decoded terminal input event.
 /// </summary>
 public sealed class TerminalInputEvent {
 	private TerminalInputEvent(
@@ -102,13 +111,19 @@ public sealed class TerminalInputEvent {
 		TerminalKey key,
 		Rune? character,
 		TerminalKeyModifiers modifiers,
-		int? functionKeyNumber
+		int? functionKeyNumber,
+		TerminalMouseEvent? mouse,
+		TerminalFocusEvent? focus,
+		TerminalPasteEvent? paste
 	) {
 		this.Kind = kind;
 		this.Key = key;
 		this.Character = character;
 		this.Modifiers = modifiers;
 		this.FunctionKeyNumber = functionKeyNumber;
+		this.Mouse = mouse;
+		this.Focus = focus;
+		this.Paste = paste;
 	}
 
 	/// <summary>Gets the semantic input-event kind.</summary>
@@ -144,6 +159,30 @@ public sealed class TerminalInputEvent {
 		get;
 	}
 
+	/// <summary>
+	/// Gets the normalized mouse payload when <see cref="Kind"/> is
+	/// <see cref="TerminalInputEventKind.Mouse"/>.
+	/// </summary>
+	public TerminalMouseEvent? Mouse {
+		get;
+	}
+
+	/// <summary>
+	/// Gets the focus payload when <see cref="Kind"/> is
+	/// <see cref="TerminalInputEventKind.Focus"/>.
+	/// </summary>
+	public TerminalFocusEvent? Focus {
+		get;
+	}
+
+	/// <summary>
+	/// Gets the bracketed-paste payload when <see cref="Kind"/> is
+	/// <see cref="TerminalInputEventKind.Paste"/>.
+	/// </summary>
+	public TerminalPasteEvent? Paste {
+		get;
+	}
+
 	internal static TerminalInputEvent FromText(
 		Rune character
 	) {
@@ -152,6 +191,9 @@ public sealed class TerminalInputEvent {
 			TerminalKey.Character,
 			character,
 			TerminalKeyModifiers.None,
+			null,
+			null,
+			null,
 			null
 		);
 	}
@@ -210,7 +252,61 @@ public sealed class TerminalInputEvent {
 			key,
 			character,
 			modifiers,
-			functionKeyNumber
+			functionKeyNumber,
+			null,
+			null,
+			null
+		);
+	}
+
+	internal static TerminalInputEvent FromMouse(
+		TerminalMouseEvent mouse
+	) {
+		ArgumentNullException.ThrowIfNull( mouse );
+
+		return new TerminalInputEvent(
+			TerminalInputEventKind.Mouse,
+			TerminalKey.None,
+			null,
+			TerminalKeyModifiers.None,
+			null,
+			mouse,
+			null,
+			null
+		);
+	}
+
+	internal static TerminalInputEvent FromFocus(
+		TerminalFocusEvent focus
+	) {
+		ArgumentNullException.ThrowIfNull( focus );
+
+		return new TerminalInputEvent(
+			TerminalInputEventKind.Focus,
+			TerminalKey.None,
+			null,
+			TerminalKeyModifiers.None,
+			null,
+			null,
+			focus,
+			null
+		);
+	}
+
+	internal static TerminalInputEvent FromPaste(
+		TerminalPasteEvent paste
+	) {
+		ArgumentNullException.ThrowIfNull( paste );
+
+		return new TerminalInputEvent(
+			TerminalInputEventKind.Paste,
+			TerminalKey.None,
+			null,
+			TerminalKeyModifiers.None,
+			null,
+			null,
+			null,
+			paste
 		);
 	}
 
@@ -220,6 +316,9 @@ public sealed class TerminalInputEvent {
 			TerminalKey.None,
 			null,
 			TerminalKeyModifiers.None,
+			null,
+			null,
+			null,
 			null
 		);
 	}
