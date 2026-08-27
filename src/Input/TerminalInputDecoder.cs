@@ -8,7 +8,7 @@ using Icod.Timing;
 /// <summary>
 /// Incrementally decodes one terminal byte stream into terminal-independent input events.
 /// </summary>
-internal sealed class TerminalInputDecoder {
+internal sealed partial class TerminalInputDecoder {
 	private const byte EscapeByte = 0x1B;
 	private const int ReadBufferSize = 256;
 	private const int MinimumBufferCapacity = 4;
@@ -175,6 +175,7 @@ internal sealed class TerminalInputDecoder {
 
 		this.AddFocusCapabilities( terminal );
 		this.pasteEndSequence = this.AddBracketedPasteCapabilities( terminal );
+		this.InitializeMouseProtocolParser( terminal );
 
 		this.keySequences.Sort(
 			static ( left, right ) =>
@@ -198,6 +199,13 @@ internal sealed class TerminalInputDecoder {
 				if ( !await this.ReadMoreAsync( cancellationToken ).ConfigureAwait( false ) ) {
 					return TerminalInputEvent.EndOfInput();
 				}
+			}
+
+			TerminalInputEvent? mouseEvent = await this.TryReadMouseEventAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+			if ( mouseEvent is not null ) {
+				return mouseEvent;
 			}
 
 			this.FindKeySequenceMatch(

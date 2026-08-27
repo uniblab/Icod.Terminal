@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.4`
-**Status:** T13-T15 complete; T16 focus and bracketed-paste decoding current
-**Current tranche:** T16 — focus and bracketed paste
+**Current development version:** `0.2.0-alpha.5`
+**Status:** T13-T16 complete; T17 mouse input current
+**Current tranche:** T17 — mouse input
 
 ---
 
@@ -452,6 +452,8 @@ Tests SHALL cover:
 **Gate T17:** a single session input stream can deliver keyboard, mouse, focus,
 paste, and lifecycle events in deterministic order without private consumer
 parsers.
+
+**T17 implementation record:** [`docs/T17-Mouse-Input.md`](docs/T17-Mouse-Input.md).
 
 ---
 

@@ -5,7 +5,7 @@
 **Development version:** `0.2.0-alpha.4`
 **Tranche:** T16 — focus and bracketed-paste decoding
 **Reference branch:** `0.2.0`
-**Status:** Implementation prepared; validation gate pending
+**Status:** Complete — `0.2.0-alpha.4` focus and bracketed-paste decoding validated
 
 ---
 

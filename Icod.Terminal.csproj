@@ -13,7 +13,7 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.2.0-alpha.4</Version>
+		<Version>0.2.0-alpha.5</Version>
 		<AssemblyVersion>0.2.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -54,12 +54,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.2.0-alpha.4</PackageVersion>
+		<PackageVersion>0.2.0-alpha.5</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.2.0-alpha.4 adds incremental focus and bracketed-paste decoding with capability-defined markers, framed bounded paste chunks, exact terminator handling, UTF-8 boundary preservation, and deterministic truncated-paste end-of-input behavior.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.2.0-alpha.5 adds capability-selected SGR and legacy xterm mouse decoding with normalized coordinates, buttons, motion, wheel directions, modifiers, bounded incremental framing, and ordered coexistence with focus and bracketed paste.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

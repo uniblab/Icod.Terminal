@@ -10,8 +10,8 @@
 **Current development target:** `0.2.0`
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** `0.1.0` released; T01-T15 complete; T16 current
-**Current tranche:** T16 — `0.2.0` focus and bracketed-paste decoding
+**Status:** `0.1.0` released; T01-T16 complete; T17 current
+**Current tranche:** T17 — `0.2.0` mouse input
 **Current milestone roadmap:** [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md)
 
 ---
