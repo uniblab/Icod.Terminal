@@ -60,6 +60,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		this.Output = output;
 		this.lifecycleSource = lifecycleSource;
 		this.Options = options;
+		this.inputProtocolManager = new TerminalInputProtocolManager( this );
 		this.presentationManager = new TerminalPresentationManager( this );
 	}
 
@@ -368,11 +369,12 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// </summary>
 	/// <remarks>
 	/// Invalidation does not immediately restore or reapply terminal state. It records
-	/// that the session and any active presentation leases can no longer trust their
-	/// physical-state assumptions. Lifecycle re-entry re-establishes owned state.
+	/// that the session and any active presentation or input-protocol leases can no
+	/// longer trust their physical-state assumptions. Lifecycle re-entry re-establishes owned state.
 	/// </remarks>
 	public void InvalidateState() {
 		Volatile.Write( ref this.stateValid, 0 );
+		this.InvalidateInputProtocolState();
 		this.InvalidatePresentationState();
 	}
 
@@ -384,6 +386,12 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		await this.StopLifecycleAsync().ConfigureAwait( false );
 
 		List<Exception> exceptions = [];
+		Exception? inputProtocolException =
+			await this.CloseInputProtocolStateAsync().ConfigureAwait( false );
+		if ( inputProtocolException is not null ) {
+			exceptions.Add( inputProtocolException );
+		}
+
 		Exception? presentationException =
 			await this.ClosePresentationStateAsync().ConfigureAwait( false );
 		if ( presentationException is not null ) {

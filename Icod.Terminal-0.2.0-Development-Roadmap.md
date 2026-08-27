@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.2`
-**Status:** T13 complete; T14 rich-input contract current
-**Current tranche:** T14 — rich input event model and decoder policy
+**Current development version:** `0.2.0-alpha.3`
+**Status:** T13-T14 complete; T15 reversible input-protocol leases current
+**Current tranche:** T15 — reversible input-protocol leases
 
 ---
 
@@ -308,6 +308,8 @@ configuration.
 does not require any protocol-specific reader outside the existing session
 input path.
 
+**T14 completion record:** [`docs/T14-Rich-Input-Event-Model-and-Decoder-Policy.md`](docs/T14-Rich-Input-Event-Model-and-Decoder-Policy.md).
+
 ---
 
 # 8. T15 — Reversible Input-Protocol Leases
@@ -350,6 +352,8 @@ than emitted for every terminal.
 **Gate T15:** in-memory tests prove exact enable/disable ordering, nesting,
 partial-failure rollback, suspend/resume re-entry, and final restoration for
 all rich input protocols.
+
+**T15 implementation record:** [`docs/T15-Reversible-Input-Protocol-Leases.md`](docs/T15-Reversible-Input-Protocol-Leases.md).
 
 ---
 

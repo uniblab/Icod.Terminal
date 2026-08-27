@@ -5,7 +5,7 @@
 **Development version:** `0.2.0-alpha.2`
 **Tranche:** T14 — rich input event model and decoder policy
 **Reference branch:** `0.2.0`
-**Status:** Implementation prepared; validation gate pending
+**Status:** Complete — `0.2.0-alpha.2` contract validated
 
 ---
 

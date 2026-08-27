@@ -13,7 +13,7 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.2.0-alpha.2</Version>
+		<Version>0.2.0-alpha.3</Version>
 		<AssemblyVersion>0.2.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -54,12 +54,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.2.0-alpha.2</PackageVersion>
+		<PackageVersion>0.2.0-alpha.3</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.2.0-alpha.2 freezes the rich-input event and decoder-policy contract: typed mouse, focus, and framed-paste payloads plus configurable Escape, buffering, and paste-chunk policy, without enabling rich terminal protocols yet.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.2.0-alpha.3 adds reversible bracketed-paste, focus-reporting, and capability-gated mouse protocol leases with nested ownership, deterministic mouse-mode downgrade, lifecycle re-entry, rollback, and disposal restoration.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

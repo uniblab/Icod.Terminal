@@ -10,8 +10,8 @@
 **Current development target:** `0.2.0`
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** `0.1.0` released; T01-T12 complete; `0.2.0` development active
-**Current tranche:** T14 — `0.2.0` rich input event model and decoder policy
+**Status:** `0.1.0` released; T01-T14 complete; T15 current
+**Current tranche:** T15 — `0.2.0` reversible input-protocol leases
 **Current milestone roadmap:** [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md)
 
 ---
