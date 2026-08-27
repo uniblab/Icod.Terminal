@@ -219,7 +219,8 @@ public sealed partial class TerminalSession {
 			this.Terminal,
 			this.Options.MonotonicClock,
 			decoderOptions.EscapeSequenceTimeout,
-			decoderOptions.MaximumBufferedBytes
+			decoderOptions.MaximumBufferedBytes,
+			decoderOptions.PasteChunkBytes
 		);
 		this.pendingInputEvent ??= decoder.ReadAsync(
 			this.lifecycleStop.Token

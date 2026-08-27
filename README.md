@@ -6,7 +6,7 @@
 
 Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The `0.2.0` line is active. T13-T14 are complete, and T15 advances the development version to `0.2.0-alpha.3` with reversible bracketed-paste, focus-reporting, and capability-gated mouse protocol leases. Focus/paste decoding begins in T16 and mouse decoding follows in T17.
+The `0.2.0` line is active. T13-T15 are complete, and T16 advances the development version to `0.2.0-alpha.4` with incremental focus and bracketed-paste decoding. Mouse protocol decoding remains the next tranche, T17.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 

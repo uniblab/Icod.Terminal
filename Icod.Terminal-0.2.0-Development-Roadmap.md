@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.3`
-**Status:** T13-T14 complete; T15 reversible input-protocol leases current
-**Current tranche:** T15 — reversible input-protocol leases
+**Current development version:** `0.2.0-alpha.4`
+**Status:** T13-T15 complete; T16 focus and bracketed-paste decoding current
+**Current tranche:** T16 — focus and bracketed paste
 
 ---
 
@@ -395,6 +395,8 @@ keystrokes. Paste is semantically distinct input.
 **Gate T16:** tests cover arbitrarily fragmented markers, embedded escape
 sequences, multi-chunk payloads, Unicode boundaries, cancellation, timeout,
 end-of-input, and bounded-memory behavior.
+
+**T16 implementation record:** [`docs/T16-Focus-and-Bracketed-Paste.md`](docs/T16-Focus-and-Bracketed-Paste.md).
 
 ---
 
