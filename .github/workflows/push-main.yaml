@@ -31,13 +31,17 @@ jobs:
       - run: dotnet test ${{ github.event.repository.name }}.sln -c Release --no-build --logger trx
 
       - name: Pack Release package
-        if: matrix.os == 'windows-latest'
         run: dotnet pack ${{ github.event.repository.name }}.csproj -c Release --no-build --output artifacts
 
-      - name: Verify Release package
+      - name: Verify Release package on Windows
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: .github\scripts\verify-release-package.cmd artifacts Release
+
+      - name: Verify Release package on POSIX
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: bash .github/scripts/verify-release-package.sh artifacts Release
 
       - name: Upload validated Release package
         if: matrix.os == 'windows-latest'
