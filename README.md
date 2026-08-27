@@ -4,9 +4,9 @@
 
 ## Status
 
-The project is completing the `0.1.0` release gate. T01-T09 established the live-terminal foundation, T10 rebased `Icod.DCurses` onto `Icod.Terminal` and added the higher-layer lifecycle-participant seam required for clean suspend/resume behavior, and T11 completed architectural acceptance with `watch`, `slabtop`, and `top`. T12 now covers the final public-API, documentation, package, CI, and release checks.
+The project is completing the `0.1.0` release gate. T01-T11 established and consumer-validated the live-terminal foundation, T12A reconciled repository status with that acceptance, and T12B completed the public-API and independent-consumer documentation audit. T12C now validates the packed artifacts and fresh-consumer experience before T12D closes the release.
 
-The first functional milestone has therefore been met: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack. Remaining `0.1.0` work is release hardening rather than consumer-driven terminal-mechanism development.
+The first functional milestone has therefore been met: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack. Remaining `0.1.0` work is package/release validation rather than consumer-driven terminal-mechanism development.
 
 ## Architecture
 
@@ -27,6 +27,48 @@ watch / slabtop / top
 
 `Icod.Timing` supplies the monotonic elapsed-time and cancellable-delay primitives used by Terminal's relative event timeouts and Escape-sequence ambiguity windows.
 
+## Quick start
+
+The ordinary application entry point is `TerminalSession`:
+
+```csharp
+using Icod.Terminal;
+
+await using TerminalSession session = await TerminalSession.OpenAsync(
+    new TerminalSessionOptions {
+        InputMode = TerminalInputMode.CBreak,
+        EchoInput = false
+    }
+);
+
+TerminalEvent terminalEvent = await session.ReadEventAsync(
+    TimeSpan.FromSeconds( 1 )
+);
+```
+
+The session borrows process-standard endpoints, owns only the terminal state transitions it applies, and restores its captured baseline during `DisposeAsync()`.
+
+Applications which genuinely need complete native mode observation, serialization, or custom endpoint/control backends may use the lower-level public contracts; ordinary interactive applications should prefer `TerminalSession`.
+
+## 0.1 consumer contract
+
+The T12B audit found no breaking public-API correction required before `0.1.0`. The reviewed behavior and API surface are recorded in:
+
+- [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md);
+- [`docs/Public-API-Baseline-0.1.md`](docs/Public-API-Baseline-0.1.md).
+
+Important `0.1.x` rules include:
+
+- input is always an interactive terminal; output may be redirected only when explicitly permitted;
+- canonical/cbreak/raw are semantic requests mapped separately to POSIX and Windows host models;
+- unknown POSIX terminal names fall back safely rather than silently becoming xterm;
+- input decoding is incremental and the Escape-prefix ambiguity window is bounded;
+- `Available`, `Unavailable`, `Unsupported`, and `Failed` remain distinct low-level outcomes;
+- session cleanup restores captured state and does not close borrowed caller/process endpoints;
+- PTY/ConPTY creation and child-process hosting belong to a future adjacent `Icod.Pty` package.
+
+The `0.1.x` runtime dependencies are `Icod.TermInfo 1.0.0` and `Icod.Timing 1.0.0`. `Icod.DCurses` and `Icod.ProcPs` are consumers, not runtime dependencies of this package.
+
 ## Target frameworks
 
 The library targets:
@@ -34,7 +76,7 @@ The library targets:
 - `net8.0`;
 - `net10.0`.
 
-The codebase uses C# 13.
+The codebase uses C# 13 and supports the terminal-control implementations provided for Windows, Linux, and macOS.
 
 ## Build
 
@@ -56,7 +98,7 @@ Both scripts support `clean`, `restore`, `build`, `test`, and `pack`. Running ei
 
 See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md), the T07 lifecycle contract is documented in [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md), and the T08 input contract is documented in [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 
-The T09 presentation-lease contract is documented in [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md). The T10 lifecycle-participant integration is recorded in [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](docs/T10-DCurses-Lifecycle-Participant-Integration.md), and the completed T11 ProcPs acceptance is recorded in [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md).
+The T09 presentation-lease contract is documented in [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md). The T10 lifecycle-participant integration is recorded in [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](docs/T10-DCurses-Lifecycle-Participant-Integration.md), the completed T11 ProcPs acceptance is recorded in [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md), and the T12B public API/consumer review is recorded in [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md).
 
 ## License
 

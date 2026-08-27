@@ -4,7 +4,7 @@
 
 **Tranche:** T08 — Input byte stream and 0.1 key-event decoder
 
-**Status:** Implementation complete; awaiting build/test gate
+**Status:** Complete; build/test gate closed and retained in the T12B 0.1 API review
 
 ## Purpose
 
