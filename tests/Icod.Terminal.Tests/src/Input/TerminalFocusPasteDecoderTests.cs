@@ -183,17 +183,29 @@ public sealed class TerminalFocusPasteDecoderTests {
 		);
 
 		TerminalInputEvent begin = await decoder.ReadAsync();
-		TerminalInputEvent data = await decoder.ReadAsync();
-		TerminalInputEvent endOfInput = await decoder.ReadAsync();
+		StringBuilder observed = new();
+		TerminalInputEvent endOfInput;
+
+		while ( true ) {
+			TerminalInputEvent inputEvent = await decoder.ReadAsync();
+			if ( TerminalInputEventKind.EndOfInput == inputEvent.Kind ) {
+				endOfInput = inputEvent;
+				break;
+			}
+
+			Assert.Equal( TerminalInputEventKind.Paste, inputEvent.Kind );
+			TerminalPasteEvent paste = Assert.IsType<TerminalPasteEvent>(
+				inputEvent.Paste
+			);
+			Assert.Equal( TerminalPastePhase.Data, paste.Phase );
+			observed.Append( paste.Text );
+		}
 
 		Assert.Equal(
 			TerminalPastePhase.Begin,
 			Assert.IsType<TerminalPasteEvent>( begin.Paste ).Phase
 		);
-		Assert.Equal(
-			"abc\u001b[20",
-			Assert.IsType<TerminalPasteEvent>( data.Paste ).Text
-		);
+		Assert.Equal( "abc\u001b[20", observed.ToString() );
 		Assert.Equal( TerminalInputEventKind.EndOfInput, endOfInput.Kind );
 	}
 
