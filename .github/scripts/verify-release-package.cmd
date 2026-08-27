@@ -62,10 +62,23 @@ copy /y tools\package-smoke\Program.cs "%SMOKE_ROOT%\Program.cs" >nul || goto fa
 
 set "OLD_NUGET_PACKAGES=%NUGET_PACKAGES%"
 set "NUGET_PACKAGES=%SMOKE_ROOT%\packages"
+set "NUGET_CONFIG=%SMOKE_ROOT%\NuGet.Config"
+
+> "%NUGET_CONFIG%" (
+    echo ^<?xml version="1.0" encoding="utf-8"?^>
+    echo ^<configuration^>
+    echo   ^<packageSources^>
+    echo     ^<clear /^>
+    echo     ^<add key="T12C artifacts" value="%ARTIFACT_DIR%" /^>
+    echo     ^<add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" /^>
+    echo   ^</packageSources^>
+    echo ^</configuration^>
+)
+if errorlevel 1 goto fail
 
 echo.
 echo === Fresh package consumer restore ===
-dotnet restore "%SMOKE_ROOT%\Icod.Terminal.PackageSmoke.csproj" --no-cache --source "%ARTIFACT_DIR%" --source "https://api.nuget.org/v3/index.json" -p:IcodTerminalPackageVersion=%PACKAGE_VERSION%
+dotnet restore "%SMOKE_ROOT%\Icod.Terminal.PackageSmoke.csproj" --no-cache --configfile "%NUGET_CONFIG%" -p:IcodTerminalPackageVersion=%PACKAGE_VERSION%
 if errorlevel 1 goto fail
 
 echo.
