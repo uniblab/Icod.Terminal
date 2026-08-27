@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.5`
-**Status:** T13-T16 complete; T17 mouse input current
-**Current tranche:** T17 — mouse input
+**Current development version:** `0.2.0-alpha.6`
+**Status:** T13-T17 complete; T18 traditional keyboard completeness current
+**Current tranche:** T18 — traditional keyboard completeness
 
 ---
 
@@ -482,6 +482,8 @@ keyboard event. Unknown protocol data must remain bounded and deterministic.
 
 **Gate T18:** modified traditional keys decode consistently across fragmented
 input and profile fixtures without regressing the 0.1 key contract.
+
+**T18 implementation record:** [`docs/T18-Traditional-Keyboard-Completeness.md`](docs/T18-Traditional-Keyboard-Completeness.md).
 
 ---
 

@@ -10,8 +10,8 @@
 **Current development target:** `0.2.0`
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** `0.1.0` released; T01-T16 complete; T17 current
-**Current tranche:** T17 — `0.2.0` mouse input
+**Status:** `0.1.0` released; T01-T17 complete; T18 current
+**Current tranche:** T18 — `0.2.0` traditional keyboard completeness
 **Current milestone roadmap:** [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md)
 
 ---

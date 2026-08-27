@@ -5,7 +5,7 @@
 **Development version:** `0.2.0-alpha.5`
 **Tranche:** T17 — mouse input
 **Reference branch:** `0.2.0`
-**Status:** Implementation prepared; validation gate pending
+**Status:** Complete — `0.2.0-alpha.5` mouse input validated
 
 ---
 

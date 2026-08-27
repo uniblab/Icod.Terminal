@@ -6,7 +6,7 @@
 
 Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The `0.2.0` line is active. T13-T16 are complete, and T17 advances the development version to `0.2.0-alpha.5` with capability-selected SGR and legacy xterm mouse decoding normalized into the shared rich-input event stream. Traditional keyboard completeness follows in T18.
+The `0.2.0` line is active. T13-T17 are complete, and T18 advances the development version to `0.2.0-alpha.6` with capability-driven traditional modified navigation, editing, and function-key decoding. DCurses rich-input integration follows in T19.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 

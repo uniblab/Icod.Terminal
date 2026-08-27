@@ -13,7 +13,7 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.2.0-alpha.5</Version>
+		<Version>0.2.0-alpha.6</Version>
 		<AssemblyVersion>0.2.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -54,12 +54,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.2.0-alpha.5</PackageVersion>
+		<PackageVersion>0.2.0-alpha.6</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.2.0-alpha.5 adds capability-selected SGR and legacy xterm mouse decoding with normalized coordinates, buttons, motion, wheel directions, modifiers, bounded incremental framing, and ordered coexistence with focus and bracketed paste.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.2.0-alpha.6 adds capability-driven traditional modified-key decoding for navigation, editing, and F1-F12 modifier combinations while preserving exact terminfo sequences, bounded Escape ambiguity, and F0-F63 compatibility.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

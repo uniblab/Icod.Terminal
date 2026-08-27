@@ -155,6 +155,8 @@ internal sealed partial class TerminalInputDecoder {
 			TerminalInputEvent.FromKey( TerminalKey.Delete )
 		);
 
+		this.AddTraditionalModifiedKeyCapabilities( terminal );
+
 		for ( int number = 0; number <= 63; number++ ) {
 			if ( !Enum.TryParse(
 				$"KeyF{number}",
@@ -162,6 +164,11 @@ internal sealed partial class TerminalInputDecoder {
 			) ) {
 				continue;
 			}
+
+			this.AddTraditionalModifiedFunctionCapability(
+				terminal,
+				capability
+			);
 
 			this.AddCapability(
 				terminal,
