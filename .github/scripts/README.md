@@ -44,3 +44,15 @@ The wrappers now:
 The smoke program uses injected terminal services and in-memory byte transports.
 It does not require or mutate the host terminal, so the same validation can run
 on Windows, Linux, and macOS CI runners.
+
+## Workflow policy
+
+A push to `main` runs the complete Release validation matrix but does not publish
+packages. Publication is deliberately tag-driven through
+`.github/workflows/release.yaml`.
+
+A release tag must use `v<semver>`, point to a commit contained in `main`, and
+match both `<Version>` and `<PackageVersion>` in `Icod.Terminal.csproj` exactly.
+The tag workflow reruns the Windows/Linux/macOS Release gate before publication,
+then publishes the validated package to NuGet.org and GitHub Packages and creates
+a GitHub Release containing the `.nupkg`, `.snupkg`, and SHA-256 checksums.

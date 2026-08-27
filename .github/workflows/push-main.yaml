@@ -1,4 +1,4 @@
-name: build and publish
+name: main validation
 
 on:
   push:
@@ -6,13 +6,12 @@ on:
       - main
 
 permissions:
-  id-token: write
   contents: read
-  packages: write
 
 jobs:
   build-and-test:
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -47,45 +46,9 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: icod-terminal-packages
+          name: icod-terminal-main-packages
           path: |
             artifacts/*.nupkg
             artifacts/*.snupkg
           if-no-files-found: error
-
-  deploy:
-    needs: build-and-test
-    runs-on: windows-latest
-    environment: Release
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: icod-terminal-packages
-          path: ./artifacts
-
-      - name: NuGet login (OIDC -> temp API key)
-        uses: NuGet/login@v1
-        id: login
-        with:
-          user: ${{ secrets.NUGET_USER }}
-
-      - name: NuGet push
-        shell: pwsh
-        run: |
-          Get-ChildItem "./artifacts/${{ github.event.repository.name }}.*.nupkg" | ForEach-Object {
-            dotnet nuget push $_.FullName --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-          }
-
-      - name: Push to GitHub Packages
-        shell: pwsh
-        run: |
-          Get-ChildItem "./artifacts/${{ github.event.repository.name }}.*.nupkg" | ForEach-Object {
-            dotnet nuget push $_.FullName --api-key "${{ secrets.GITHUB_TOKEN }}" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
-          }
+          retention-days: 7
