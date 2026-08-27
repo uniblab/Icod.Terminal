@@ -1,30 +1,34 @@
 using Icod.Terminal;
+using Icod.TermInfo;
 
-TerminalControlResult<TerminalEndpointObservation> observation =
-	SystemTerminalControlProvider.Instance.Observe(
-		TerminalEndpoint.StandardInput
-	);
-TerminalControlResult<TerminalModeSnapshot> modeResult =
-	SystemTerminalControlProvider.Instance.GetMode(
-		TerminalEndpoint.StandardInput
-	);
+await using TerminalSession session = await TerminalSession.OpenAsync(
+	new TerminalSessionOptions {
+		InputMode = TerminalInputMode.CBreak,
+		EchoInput = false
+	}
+);
 
-if ( modeResult.IsAvailable ) {
-	TerminalModeSnapshot configured = TerminalInputModePolicy.Configure(
-		modeResult.GetRequiredValue(),
-		TerminalInputMode.CBreak,
-		echoInput: false
-	);
-
-	Console.WriteLine(
-		$"Icod.Terminal T04 loaded; standard input is {observation.Status}; "
-		+ $"cbreak/noecho policy produced {configured.Platform} state."
+TerminalControlResult<TerminalSize> sizeResult = session.GetSize();
+string sizeText;
+if ( sizeResult.IsAvailable ) {
+	TerminalSize size = sizeResult.GetRequiredValue();
+	sizeText = string.Concat(
+		size.Columns.ToString( System.Globalization.CultureInfo.InvariantCulture ),
+		"x",
+		size.Rows.ToString( System.Globalization.CultureInfo.InvariantCulture )
 	);
 } else {
-	Console.WriteLine(
-		$"Icod.Terminal T04 loaded; standard input observation: {observation.Status}; "
-		+ $"mode state: {modeResult.Status}."
-	);
+	sizeText = sizeResult.Status.ToString();
 }
+
+await session.WriteTextAsync(
+	string.Concat(
+		"Icod.Terminal session opened via ",
+		session.Identity.Source.ToString(),
+		"; size=",
+		sizeText,
+		".\r\n"
+	)
+);
 
 return 0;

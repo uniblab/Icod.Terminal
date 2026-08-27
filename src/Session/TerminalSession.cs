@@ -112,7 +112,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		get;
 	}
 
-	/// <summary>Gets the immutable options with which this session was opened.</summary>
+	/// <summary>Gets the options object used to open this session.</summary>
 	public TerminalSessionOptions Options {
 		get;
 	}
@@ -130,8 +130,9 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// </summary>
 	/// <remarks>
 	/// External suspension, console reconfiguration, or other out-of-band terminal
-	/// changes may invalidate state. T07 will use this marker when coordinating
-	/// lifecycle-driven re-entry.
+	/// changes may invalidate state. Managed lifecycle handling invalidates and
+	/// re-enters session-owned state automatically; callers may use
+	/// <see cref="InvalidateState"/> for other out-of-band changes.
 	/// </remarks>
 	public bool IsStateValid {
 		get {

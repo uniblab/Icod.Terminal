@@ -27,13 +27,17 @@ jobs:
       - run: dotnet test ${{ github.event.repository.name }}.sln -c Staging --no-build --logger trx
 
       - name: Pack Staging package
-        if: matrix.os == 'windows-latest'
         run: dotnet pack ${{ github.event.repository.name }}.csproj -c Staging --no-build --output artifacts
 
-      - name: Verify Staging package
+      - name: Verify Staging package on Windows
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: .github\scripts\verify-release-package.cmd artifacts Staging
+
+      - name: Verify Staging package on POSIX
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: bash .github/scripts/verify-release-package.sh artifacts Staging
 
       - name: Upload validated Staging package
         if: matrix.os == 'windows-latest'

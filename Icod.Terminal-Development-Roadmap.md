@@ -10,8 +10,9 @@
 **Current development target:** `0.1.0`  
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T09 complete; next T10 Icod.DCurses integration and responsibility reset
-**Current tranche:** T10 — `Icod.DCurses` integration and responsibility reset
+**Status:** T01-T11 complete; T12A-T12B complete; next T12C package and fresh-consumer validation
+**Current tranche:** T12 — `0.1.0` package, CI, documentation, and API gate
+**Current subtranche:** T12C — package and fresh-consumer validation
 
 ---
 
@@ -655,6 +656,8 @@ Required coordinated work SHALL include:
 
 **Gate T10:** `Icod.DCurses` builds/tests without a runtime dependency on `Icod.CommandFramework.Terminal`, and its platform-specific terminal-mode implementation has been eliminated or reduced only to curses-specific policy.
 
+**T10 integration record:** [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](docs/T10-DCurses-Lifecycle-Participant-Integration.md).
+
 ---
 
 ## 7.12 T11 — ProcPs acceptance: `watch`, `slabtop`, `top`
@@ -697,9 +700,26 @@ The acceptance work SHALL identify missing reusable mechanisms rather than solvi
 
 **Gate T11:** all three applications can run on the supported Windows, Linux, and macOS environments using the shared stack, with platform-specific limitations documented rather than hidden.
 
+**T11 completion record:** [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md).
+
 ---
 
 ## 7.13 T12 — 0.1 package, CI, documentation, and API gate
+
+T12 is the release-closure tranche for `0.1.0` and is executed in four subtranches:
+
+- **T12A — Status reconciliation and consumer acceptance record — complete.** Reconcile the roadmap and README with completed T10/T11 work and preserve the ProcPs acceptance result in writing.
+- **T12B — Public API and documentation audit — complete.** Review the public surface for pre-1.0 regret, publish the intentional 0.1 API baseline, and complete the behavioral documentation required for independent consumers.
+- **T12C — Package and fresh-consumer validation — current.** Validate package contents, symbols/Source Link, and consumption from clean `net8.0` and `net10.0` projects.
+- **T12D — Release closure.** Set the final `0.1.0` package version, run the complete release matrix, and publish the non-prerelease package.
+
+**Gate T12A:** repository status documentation identifies T01-T11 as complete, makes T12 the active release tranche, and records the three ProcPs acceptance consumers.
+
+**T12A completion record:** [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md).
+
+**Gate T12B:** the public 0.1 surface has an intentional review baseline, independent-consumer behavior is documented, and no unresolved API regret requiring a breaking pre-0.1 change remains.
+
+**T12B completion records:** [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md) and [`docs/Public-API-Baseline-0.1.md`](docs/Public-API-Baseline-0.1.md).
 
 Before publishing `0.1.0`:
 
@@ -771,38 +791,15 @@ A change which makes the isolated Terminal tests pass but forces DCurses or Proc
 
 ## 9. Public API Direction
 
-Exact public names remain provisional before implementation and SHALL be reviewed before freezing.
+The public `0.1.x` surface completed intentional review in T12B. The exact reviewed inventory is recorded in [`docs/Public-API-Baseline-0.1.md`](docs/Public-API-Baseline-0.1.md), and its behavioral/ownership contract is recorded in [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md).
 
-The API is expected to contain concepts equivalent to:
+The baseline centers on `TerminalSession` / `TerminalSessionOptions`, endpoint and control contracts, semantic input modes, decoded input/lifecycle events, reversible presentation leases, and the intentionally public low-level snapshot/serialization/injection seams required by advanced consumers. OS-specific interop providers, decoder internals, lifecycle signal plumbing, and presentation composition remain internal.
 
-```csharp
-TerminalSession
-TerminalSessionOptions
-TerminalEndpoint
-TerminalEndpointObservation
-TerminalInputMode
-TerminalInputEvent
-TerminalKey
-TerminalModeSnapshot
-TerminalModeApplyTiming
-TerminalControlStatus
-ITerminalControlProvider
-ITerminalInput
-ITerminalOutput
-```
+The `0.1.x` line reuses the existing public `Icod.TermInfo.TerminalSize` value type rather than defining a duplicate `Icod.Terminal.TerminalSize`. It likewise reuses `Icod.TermInfo` capability/profile types and `Icod.Timing.IMonotonicClock` where those dependency-owned contracts are the correct abstraction.
 
-T02 refines the provisional size type: the `0.1.x` line SHALL reuse the existing public `Icod.TermInfo.TerminalSize` value type rather than define a duplicate `Icod.Terminal.TerminalSize`.
+T12B is an intentional pre-release baseline, not the `1.0.0` compatibility freeze. Later pre-1.0 milestones may extend the surface and may make justified corrections, but no known breaking correction is required before `0.1.0`.
 
-Presentation-state ownership may use lease-shaped APIs equivalent to:
-
-```csharp
-IDisposable / IAsyncDisposable
-    alternate-screen lease
-    cursor-visibility lease
-    keypad/application-mode lease
-```
-
-The exact names are less important than preserving these rules:
+The reviewed names remain subordinate to these rules:
 
 - live mutable state belongs to a session;
 - terminal capabilities come from an explicit `TerminalDescription`;

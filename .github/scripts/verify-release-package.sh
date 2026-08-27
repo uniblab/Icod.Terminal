@@ -33,9 +33,10 @@ fi
 artifact_dir="$(cd "${artifact_dir}" && pwd)"
 
 package_version="$(
-  dotnet msbuild Icod.Terminal.csproj     -nologo     -getProperty:PackageVersion
+  dotnet msbuild Icod.Terminal.csproj \
+    -nologo \
+    -getProperty:PackageVersion
 )"
-
 package_version="${package_version//$'\r'/}"
 
 if [[ -z "${package_version}" ]]; then
@@ -56,4 +57,51 @@ if [[ ! -f "${symbols_path}" ]]; then
   exit 1
 fi
 
-dotnet run   --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj   -c "${configuration}"   --no-build
+echo
+echo "=== Verify package structure, dependency closure, symbols, and Source Link (${configuration}) ==="
+dotnet run \
+  --project tools/package-verifier/Icod.Terminal.PackageVerifier.csproj \
+  -c "${configuration}" \
+  -f net10.0 \
+  -- "${artifact_dir}"
+
+smoke_root="$(mktemp -d)"
+trap 'rm -rf "${smoke_root}"' EXIT
+
+cp \
+  tools/package-smoke/Icod.Terminal.PackageSmoke.csproj \
+  "${smoke_root}/Icod.Terminal.PackageSmoke.csproj"
+cp \
+  tools/package-smoke/Program.cs \
+  "${smoke_root}/Program.cs"
+
+(
+  export NUGET_PACKAGES="${smoke_root}/packages"
+
+  echo
+  echo "=== Fresh package consumer restore ==="
+  dotnet restore \
+    "${smoke_root}/Icod.Terminal.PackageSmoke.csproj" \
+    --no-cache \
+    --source "${artifact_dir}" \
+    --source "https://api.nuget.org/v3/index.json" \
+    -p:IcodTerminalPackageVersion="${package_version}"
+
+  echo
+  echo "=== Fresh package consumer: net8.0 ==="
+  dotnet run \
+    --project "${smoke_root}/Icod.Terminal.PackageSmoke.csproj" \
+    -c "${configuration}" \
+    -f net8.0 \
+    --no-restore \
+    -p:IcodTerminalPackageVersion="${package_version}"
+
+  echo
+  echo "=== Fresh package consumer: net10.0 ==="
+  dotnet run \
+    --project "${smoke_root}/Icod.Terminal.PackageSmoke.csproj" \
+    -c "${configuration}" \
+    -f net10.0 \
+    --no-restore \
+    -p:IcodTerminalPackageVersion="${package_version}"
+)
