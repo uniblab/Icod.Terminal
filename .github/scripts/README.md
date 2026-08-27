@@ -38,8 +38,8 @@ The wrappers now:
 - restore the current `Icod.Terminal` package from the local artifact directory
   while resolving its stable `Icod.TermInfo` and `Icod.Timing` dependencies from
   NuGet;
-- compile and execute that package-reference-only consumer for both `net8.0` and
-  `net10.0`.
+- compile and execute that package-reference-only consumer for `net8.0`,
+  `net9.0`, and `net10.0`.
 
 The smoke program uses injected terminal services and in-memory byte transports.
 It does not require or mutate the host terminal, so the same validation can run

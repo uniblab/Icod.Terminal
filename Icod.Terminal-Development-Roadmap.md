@@ -7,12 +7,12 @@
 **Initial target frameworks:** `net8.0`; `net10.0`  
 **Configurations:** `Debug`; `Staging`; `Release`  
 **License:** LGPL-3.0-or-later  
-**Current development target:** `0.1.0`  
+**Current development target:** `0.2.0`
 **Stable contract target:** `1.0.0`  
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** T01-T11 and T12A-T12C complete; T12D final release closure current
-**Current tranche:** T12 — `0.1.0` package, CI, documentation, and API gate
-**Current subtranche:** T12D — final `0.1.0` release closure
+**Status:** `0.1.0` released; T01-T17 complete; T18 current
+**Current tranche:** T18 — `0.2.0` traditional keyboard completeness
+**Current milestone roadmap:** [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md)
 
 ---
 
@@ -711,7 +711,7 @@ T12 is the release-closure tranche for `0.1.0` and is executed in four subtranch
 - **T12A — Status reconciliation and consumer acceptance record — complete.** Reconcile the roadmap and README with completed T10/T11 work and preserve the ProcPs acceptance result in writing.
 - **T12B — Public API and documentation audit — complete.** Review the public surface for pre-1.0 regret, publish the intentional 0.1 API baseline, and complete the behavioral documentation required for independent consumers.
 - **T12C — Package and fresh-consumer validation — complete.** Validate package contents, symbols/Source Link, and consumption from clean `net8.0` and `net10.0` projects on Windows, Linux, and macOS.
-- **T12D — Release closure — current.** Set the final `0.1.0` package version, require a green `main` validation, and publish only from the matching `v0.1.0` tag.
+- **T12D — Release closure — complete.** Set the final `0.1.0` package version, require a green `main` validation, and publish only from the matching `v0.1.0` tag.
 
 **Gate T12A:** repository status documentation identifies T01-T11 as complete, makes T12 the active release tranche, and records the three ProcPs acceptance consumers.
 
@@ -750,7 +750,9 @@ Before publishing `0.1.0`:
 - perform an API-regret review before tagging even though the contract remains pre-1.0;
 - verify `<Version>` and `<PackageVersion>` are both exactly `0.1.0` for the release commit.
 
-**Release gate `0.1.0`:** the package is buildable and consumable independently, DCurses is integrated on top of it, and `watch`, `slabtop`, and `top` no longer require suite-private terminal-control implementations.
+**Release gate `0.1.0`: complete.** The package is buildable and consumable independently, DCurses is integrated on top of it, and `watch`, `slabtop`, and `top` no longer require suite-private terminal-control implementations. The matching `v0.1.0` tag completed the three-host release workflow and published the non-prerelease package.
+
+Current `0.2.0` work is tracked in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 
 ---
 

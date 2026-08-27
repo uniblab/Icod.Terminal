@@ -87,6 +87,11 @@ dotnet run --project "%SMOKE_ROOT%\Icod.Terminal.PackageSmoke.csproj" -c %CONFIG
 if errorlevel 1 goto fail
 
 echo.
+echo === Fresh package consumer: net9.0 ===
+dotnet run --project "%SMOKE_ROOT%\Icod.Terminal.PackageSmoke.csproj" -c %CONFIGURATION% -f net9.0 --no-restore -p:IcodTerminalPackageVersion=%PACKAGE_VERSION%
+if errorlevel 1 goto fail
+
+echo.
 echo === Fresh package consumer: net10.0 ===
 dotnet run --project "%SMOKE_ROOT%\Icod.Terminal.PackageSmoke.csproj" -c %CONFIGURATION% -f net10.0 --no-restore -p:IcodTerminalPackageVersion=%PACKAGE_VERSION%
 if errorlevel 1 goto fail

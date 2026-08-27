@@ -279,6 +279,12 @@ public sealed partial class TerminalSession {
 		}
 
 		try {
+			await this.SuspendInputProtocolStateAsync().ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			exceptions.Add( exception );
+		}
+
+		try {
 			await this.SuspendPresentationStateAsync().ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );
@@ -366,6 +372,7 @@ public sealed partial class TerminalSession {
 			}
 
 			await this.ResumePresentationStateAsync().ConfigureAwait( false );
+			await this.ResumeInputProtocolStateAsync().ConfigureAwait( false );
 			await this.ResumeLifecycleParticipantsAsync().ConfigureAwait( false );
 
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 0 );
@@ -376,15 +383,26 @@ public sealed partial class TerminalSession {
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 1 );
 
 			List<Exception> rollbackExceptions = [];
+			try {
+				await this.SuspendInputProtocolStateAsync().ConfigureAwait( false );
+			} catch ( Exception rollbackException ) {
+				rollbackExceptions.Add( rollbackException );
+			}
+			try {
+				await this.SuspendPresentationStateAsync().ConfigureAwait( false );
+			} catch ( Exception rollbackException ) {
+				rollbackExceptions.Add( rollbackException );
+			}
+
 			this.DisposeOutputModeLease( rollbackExceptions );
 			this.TryRestoreBaselineAfterFailedReentry( rollbackExceptions );
 
-			Exception? rollbackException = BuildRestorationException( rollbackExceptions );
-			if ( rollbackException is not null ) {
+			Exception? restorationException = BuildRestorationException( rollbackExceptions );
+			if ( restorationException is not null ) {
 				throw new AggregateException(
 					"Terminal lifecycle re-entry failed and rollback also reported an error.",
 					exception,
-					rollbackException
+					restorationException
 				);
 			}
 

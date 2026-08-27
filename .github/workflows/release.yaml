@@ -75,6 +75,7 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
+            9.0.x
             10.0.x
 
       - run: dotnet clean Icod.Terminal.sln -c Release
@@ -239,8 +240,8 @@ jobs:
           dotnet add package Icod.Terminal --version {0}
           ```
 
-          `Icod.Terminal` targets `net8.0` and `net10.0`. Its runtime package
-          dependencies are `Icod.TermInfo 1.0.0` and `Icod.Timing 1.0.0`.
+          `Icod.Terminal` targets `net8.0`, `net9.0`, and `net10.0`. Its runtime
+          package dependencies are `Icod.TermInfo 1.0.0` and `Icod.Timing 1.0.0`.
 
           The NuGet package, symbol package, and SHA-256 checksums are attached
           to this release.

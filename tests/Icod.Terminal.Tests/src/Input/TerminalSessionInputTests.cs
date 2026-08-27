@@ -35,6 +35,66 @@ public sealed class TerminalSessionInputTests {
 	}
 
 	[Fact]
+	public async Task SessionHonorsConfiguredPasteChunkSize() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder(
+			"session-paste"
+		)
+			.SetExtendedString(
+				"PS",
+				"\u001b[200~"
+			)
+			.SetExtendedString(
+				"PE",
+				"\u001b[201~"
+			)
+			.Build();
+		ScriptedTerminalInput input = new(
+			[
+				System.Text.Encoding.Latin1.GetBytes(
+					"\u001b[200~abcd\u001b[201~"
+				)
+			]
+		);
+		await using TerminalSession session = await OpenSessionAsync(
+			input,
+			terminal,
+			decoderOptions: new TerminalInputDecoderOptions {
+				PasteChunkBytes = 2
+			}
+		);
+
+		TerminalInputEvent begin = Assert.IsType<TerminalInputEvent>(
+			( await session.ReadEventAsync() ).Input
+		);
+		TerminalInputEvent firstData = Assert.IsType<TerminalInputEvent>(
+			( await session.ReadEventAsync() ).Input
+		);
+		TerminalInputEvent secondData = Assert.IsType<TerminalInputEvent>(
+			( await session.ReadEventAsync() ).Input
+		);
+		TerminalInputEvent end = Assert.IsType<TerminalInputEvent>(
+			( await session.ReadEventAsync() ).Input
+		);
+
+		Assert.Equal(
+			TerminalPastePhase.Begin,
+			Assert.IsType<TerminalPasteEvent>( begin.Paste ).Phase
+		);
+		Assert.Equal(
+			"ab",
+			Assert.IsType<TerminalPasteEvent>( firstData.Paste ).Text
+		);
+		Assert.Equal(
+			"cd",
+			Assert.IsType<TerminalPasteEvent>( secondData.Paste ).Text
+		);
+		Assert.Equal(
+			TerminalPastePhase.End,
+			Assert.IsType<TerminalPasteEvent>( end.Paste ).Phase
+		);
+	}
+
+	[Fact]
 	public async Task TimeoutDoesNotCancelPendingTerminalRead() {
 		DeferredTerminalInput input = new();
 		await using TerminalSession session = await OpenSessionAsync( input );
@@ -149,7 +209,8 @@ public sealed class TerminalSessionInputTests {
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		ITerminalInput input,
 		TerminalDescription? terminal = null,
-		ITerminalLifecycleSource? lifecycleSource = null
+		ITerminalLifecycleSource? lifecycleSource = null,
+		TerminalInputDecoderOptions? decoderOptions = null
 	) {
 		ArgumentNullException.ThrowIfNull( input );
 
@@ -162,7 +223,8 @@ public sealed class TerminalSessionInputTests {
 			new TerminalSessionOptions {
 				TerminalOverride = terminal ?? TerminalProfiles.Dumb,
 				ConfigureOutput = false,
-				LifecycleSource = lifecycleSource
+				LifecycleSource = lifecycleSource,
+				InputDecoderOptions = decoderOptions ?? new TerminalInputDecoderOptions()
 			}
 		);
 	}

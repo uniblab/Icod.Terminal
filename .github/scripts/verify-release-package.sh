@@ -97,6 +97,15 @@ cp \
     -p:IcodTerminalPackageVersion="${package_version}"
 
   echo
+  echo "=== Fresh package consumer: net9.0 ==="
+  dotnet run \
+    --project "${smoke_root}/Icod.Terminal.PackageSmoke.csproj" \
+    -c "${configuration}" \
+    -f net9.0 \
+    --no-restore \
+    -p:IcodTerminalPackageVersion="${package_version}"
+
+  echo
   echo "=== Fresh package consumer: net10.0 ==="
   dotnet run \
     --project "${smoke_root}/Icod.Terminal.PackageSmoke.csproj" \

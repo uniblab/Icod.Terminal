@@ -4,9 +4,11 @@
 
 ## Status
 
-Version `0.1.0` closes the initial live-terminal foundation milestone. T01-T11 and T12A-T12C are complete; T12D is the final tag-controlled release gate. The `v0.1.0` tag is the publication trigger after the release commit passes the normal `main` validation matrix.
+Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The first functional milestone has been met: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack. The package contract has also passed structural, symbol/Source Link, dependency-closure, and clean `net8.0` / `net10.0` consumer validation on Windows, Linux, and macOS.
+The `0.2.0` line is active. T13-T17 are complete, and T18 advances the development version to `0.2.0-alpha.6` with capability-driven traditional modified navigation, editing, and function-key decoding. DCurses rich-input integration follows in T19.
+
+The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
 ## Architecture
 
@@ -82,6 +84,7 @@ The `0.1.x` runtime dependencies are `Icod.TermInfo 1.0.0` and `Icod.Timing 1.0.
 The library targets:
 
 - `net8.0`;
+- `net9.0`;
 - `net10.0`.
 
 The codebase uses C# 13 and supports the terminal-control implementations provided for Windows, Linux, and macOS.
@@ -103,6 +106,8 @@ sh build.sh
 Both scripts support `clean`, `restore`, `build`, `test`, and `pack`. Running either script without an argument performs the complete sequence.
 
 ## Development roadmap
+
+The active `0.2.0` milestone is tracked in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 
 See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md), the T07 lifecycle contract is documented in [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md), and the T08 input contract is documented in [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 

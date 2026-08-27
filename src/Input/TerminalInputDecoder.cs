@@ -8,23 +8,28 @@ using Icod.Timing;
 /// <summary>
 /// Incrementally decodes one terminal byte stream into terminal-independent input events.
 /// </summary>
-internal sealed class TerminalInputDecoder {
+internal sealed partial class TerminalInputDecoder {
 	private const byte EscapeByte = 0x1B;
 	private const int ReadBufferSize = 256;
 	private const int MinimumBufferCapacity = 4;
 	private const int MaximumBufferCapacity = 1_048_576;
+	private const int MinimumPasteChunkBytes = 1;
+	private const int MaximumPasteChunkBytes = 1_048_576;
 
 	private readonly ITerminalInput input;
 	private readonly IMonotonicClock monotonicClock;
 	private readonly TimeSpan escapeSequenceTimeout;
 	private readonly int maximumBufferedBytes;
+	private readonly int pasteChunkBytes;
 	private readonly List<byte> bufferedBytes = [];
 	private readonly byte[] readBuffer = new byte[ ReadBufferSize ];
 	private readonly List<KeySequence> keySequences = [];
+	private readonly byte[]? pasteEndSequence;
 
 	private Task<int>? pendingRead;
 	private int pendingReadCapacity;
 	private bool endOfInput;
+	private bool pasteActive;
 
 	internal TerminalInputDecoder(
 		ITerminalInput input,
@@ -32,6 +37,23 @@ internal sealed class TerminalInputDecoder {
 		IMonotonicClock monotonicClock,
 		TimeSpan escapeSequenceTimeout,
 		int maximumBufferedBytes
+	) : this(
+		input,
+		terminal,
+		monotonicClock,
+		escapeSequenceTimeout,
+		maximumBufferedBytes,
+		maximumBufferedBytes
+	) {
+	}
+
+	internal TerminalInputDecoder(
+		ITerminalInput input,
+		TerminalDescription terminal,
+		IMonotonicClock monotonicClock,
+		TimeSpan escapeSequenceTimeout,
+		int maximumBufferedBytes,
+		int pasteChunkBytes
 	) {
 		ArgumentNullException.ThrowIfNull( input );
 		ArgumentNullException.ThrowIfNull( terminal );
@@ -48,11 +70,21 @@ internal sealed class TerminalInputDecoder {
 					+ $"{MaximumBufferCapacity} bytes."
 			);
 		}
+		if ( pasteChunkBytes < MinimumPasteChunkBytes
+			|| pasteChunkBytes > MaximumPasteChunkBytes ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( pasteChunkBytes ),
+				pasteChunkBytes,
+				$"The paste chunk size must be between {MinimumPasteChunkBytes} and "
+					+ $"{MaximumPasteChunkBytes} bytes."
+			);
+		}
 
 		this.input = input;
 		this.monotonicClock = monotonicClock;
 		this.escapeSequenceTimeout = escapeSequenceTimeout;
 		this.maximumBufferedBytes = maximumBufferedBytes;
+		this.pasteChunkBytes = pasteChunkBytes;
 
 		this.AddCapability(
 			terminal,
@@ -123,6 +155,8 @@ internal sealed class TerminalInputDecoder {
 			TerminalInputEvent.FromKey( TerminalKey.Delete )
 		);
 
+		this.AddTraditionalModifiedKeyCapabilities( terminal );
+
 		for ( int number = 0; number <= 63; number++ ) {
 			if ( !Enum.TryParse(
 				$"KeyF{number}",
@@ -130,6 +164,11 @@ internal sealed class TerminalInputDecoder {
 			) ) {
 				continue;
 			}
+
+			this.AddTraditionalModifiedFunctionCapability(
+				terminal,
+				capability
+			);
 
 			this.AddCapability(
 				terminal,
@@ -140,6 +179,10 @@ internal sealed class TerminalInputDecoder {
 				)
 			);
 		}
+
+		this.AddFocusCapabilities( terminal );
+		this.pasteEndSequence = this.AddBracketedPasteCapabilities( terminal );
+		this.InitializeMouseProtocolParser( terminal );
 
 		this.keySequences.Sort(
 			static ( left, right ) =>
@@ -153,10 +196,23 @@ internal sealed class TerminalInputDecoder {
 		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 
+			if ( this.pasteActive ) {
+				return await this.ReadPasteEventAsync(
+					cancellationToken
+				).ConfigureAwait( false );
+			}
+
 			if ( 0 == this.bufferedBytes.Count ) {
 				if ( !await this.ReadMoreAsync( cancellationToken ).ConfigureAwait( false ) ) {
 					return TerminalInputEvent.EndOfInput();
 				}
+			}
+
+			TerminalInputEvent? mouseEvent = await this.TryReadMouseEventAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+			if ( mouseEvent is not null ) {
+				return mouseEvent;
 			}
 
 			this.FindKeySequenceMatch(
@@ -254,6 +310,180 @@ internal sealed class TerminalInputDecoder {
 		}
 	}
 
+	private async ValueTask<TerminalInputEvent> ReadPasteEventAsync(
+		CancellationToken cancellationToken
+	) {
+		byte[] terminator = this.pasteEndSequence
+			?? throw new InvalidOperationException(
+				"The bracketed-paste decoder does not have an end marker."
+			);
+
+		while ( true ) {
+			cancellationToken.ThrowIfCancellationRequested();
+
+			if ( 0 == this.bufferedBytes.Count ) {
+				if ( !await this.ReadMoreAsync( cancellationToken ).ConfigureAwait( false ) ) {
+					this.pasteActive = false;
+					return TerminalInputEvent.EndOfInput();
+				}
+			}
+
+			int terminatorIndex = this.FindSequenceIndex( terminator );
+			if ( 0 == terminatorIndex ) {
+				this.Consume( terminator.Length );
+				this.pasteActive = false;
+				return TerminalInputEvent.FromPaste(
+					new TerminalPasteEvent( TerminalPastePhase.End )
+				);
+			}
+
+			int safeCount;
+			if ( 0 < terminatorIndex ) {
+				safeCount = terminatorIndex;
+			} else if ( this.endOfInput ) {
+				safeCount = this.bufferedBytes.Count;
+			} else {
+				safeCount = this.bufferedBytes.Count
+					- this.GetTrailingSequencePrefixLength( terminator );
+			}
+
+			if ( 0 < safeCount ) {
+				TerminalInputEvent? dataEvent = this.TryConsumePasteData( safeCount );
+				if ( dataEvent is not null ) {
+					return dataEvent;
+				}
+			}
+
+			if ( this.endOfInput ) {
+				this.pasteActive = false;
+				return TerminalInputEvent.EndOfInput();
+			}
+
+			await this.ReadMoreAsync( cancellationToken ).ConfigureAwait( false );
+		}
+	}
+
+	private TerminalInputEvent? TryConsumePasteData(
+		int safeCount
+	) {
+		if ( 0 >= safeCount || safeCount > this.bufferedBytes.Count ) {
+			throw new ArgumentOutOfRangeException( nameof( safeCount ) );
+		}
+
+		byte[] source = this.bufferedBytes.GetRange(
+			0,
+			safeCount
+		).ToArray();
+		StringBuilder text = new();
+		int consumed = 0;
+
+		while ( consumed < source.Length ) {
+			OperationStatus status = Rune.DecodeFromUtf8(
+				source.AsSpan( consumed ),
+				out Rune rune,
+				out int bytesConsumed
+			);
+
+			if ( OperationStatus.Done == status ) {
+				text.Append( rune.ToString() );
+				consumed += bytesConsumed;
+			} else if ( OperationStatus.NeedMoreData == status
+				&& !this.endOfInput
+				&& safeCount == this.bufferedBytes.Count ) {
+				break;
+			} else if ( OperationStatus.InvalidData == status
+				|| OperationStatus.NeedMoreData == status ) {
+				text.Append( '\uFFFD' );
+				++consumed;
+			} else {
+				throw new InvalidOperationException(
+					$"Unexpected UTF-8 decode status '{status}' while reading bracketed paste."
+				);
+			}
+
+			if ( consumed >= this.pasteChunkBytes ) {
+				break;
+			}
+		}
+
+		if ( 0 == consumed ) {
+			return null;
+		}
+
+		this.Consume( consumed );
+		return TerminalInputEvent.FromPaste(
+			new TerminalPasteEvent(
+				TerminalPastePhase.Data,
+				text.ToString()
+			)
+		);
+	}
+
+	private int FindSequenceIndex(
+		IReadOnlyList<byte> sequence
+	) {
+		ArgumentNullException.ThrowIfNull( sequence );
+		if ( 0 == sequence.Count ) {
+			throw new ArgumentException(
+				"A terminal input sequence cannot be empty.",
+				nameof( sequence )
+			);
+		}
+		if ( this.bufferedBytes.Count < sequence.Count ) {
+			return -1;
+		}
+
+		int lastStart = this.bufferedBytes.Count - sequence.Count;
+		for ( int start = 0; start <= lastStart; start++ ) {
+			bool match = true;
+			for ( int index = 0; index < sequence.Count; index++ ) {
+				if ( this.bufferedBytes[ start + index ] != sequence[ index ] ) {
+					match = false;
+					break;
+				}
+			}
+
+			if ( match ) {
+				return start;
+			}
+		}
+
+		return -1;
+	}
+
+	private int GetTrailingSequencePrefixLength(
+		IReadOnlyList<byte> sequence
+	) {
+		ArgumentNullException.ThrowIfNull( sequence );
+		if ( 0 == sequence.Count ) {
+			throw new ArgumentException(
+				"A terminal input sequence cannot be empty.",
+				nameof( sequence )
+			);
+		}
+
+		int maximumLength = Math.Min(
+			this.bufferedBytes.Count,
+			sequence.Count - 1
+		);
+		for ( int length = maximumLength; 0 < length; length-- ) {
+			int bufferStart = this.bufferedBytes.Count - length;
+			bool match = true;
+			for ( int index = 0; index < length; index++ ) {
+				if ( this.bufferedBytes[ bufferStart + index ] != sequence[ index ] ) {
+					match = false;
+					break;
+				}
+			}
+
+			if ( match ) {
+				return length;
+			}
+		}
+
+		return 0;
+	}
+
 	private static TerminalInputEvent CreateControlKey(
 		byte value
 	) {
@@ -301,7 +531,11 @@ internal sealed class TerminalInputDecoder {
 		ArgumentNullException.ThrowIfNull( sequence );
 
 		this.Consume( sequence.Bytes.Length );
-		return sequence.InputEvent;
+		TerminalInputEvent inputEvent = sequence.InputEvent;
+		if ( inputEvent.Paste is { Phase: TerminalPastePhase.Begin } ) {
+			this.pasteActive = true;
+		}
+		return inputEvent;
 	}
 
 	private bool BufferStartsWith(
@@ -443,6 +677,113 @@ internal sealed class TerminalInputDecoder {
 		return count;
 	}
 
+	private void AddFocusCapabilities(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		if (
+			!terminal.TryGetExtendedString(
+				"kxIN",
+				out string? focusIn
+			)
+			|| string.IsNullOrEmpty( focusIn )
+		) {
+			return;
+		}
+		if (
+			!terminal.TryGetExtendedString(
+				"kxOUT",
+				out string? focusOut
+			)
+			|| string.IsNullOrEmpty( focusOut )
+		) {
+			return;
+		}
+
+		this.AddExtendedCapability(
+			"kxIN",
+			focusIn,
+			TerminalInputEvent.FromFocus(
+				new TerminalFocusEvent( TerminalFocusState.Focused )
+			)
+		);
+		this.AddExtendedCapability(
+			"kxOUT",
+			focusOut,
+			TerminalInputEvent.FromFocus(
+				new TerminalFocusEvent( TerminalFocusState.Unfocused )
+			)
+		);
+	}
+
+	private byte[]? AddBracketedPasteCapabilities(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		if (
+			!terminal.TryGetExtendedString(
+				"PS",
+				out string? pasteStart
+			)
+			|| string.IsNullOrEmpty( pasteStart )
+		) {
+			return null;
+		}
+		if (
+			!terminal.TryGetExtendedString(
+				"PE",
+				out string? pasteEnd
+			)
+			|| string.IsNullOrEmpty( pasteEnd )
+		) {
+			return null;
+		}
+
+		byte[] startBytes = EncodeExtendedCapability(
+			pasteStart,
+			"PS"
+		);
+		byte[] endBytes = EncodeExtendedCapability(
+			pasteEnd,
+			"PE"
+		);
+
+		this.AddSequence(
+			startBytes,
+			TerminalInputEvent.FromPaste(
+				new TerminalPasteEvent( TerminalPastePhase.Begin )
+			),
+			"Terminal extended input capability 'PS'"
+		);
+		this.ValidateSequenceLength(
+			endBytes,
+			"Terminal extended input capability 'PE'"
+		);
+
+		return endBytes;
+	}
+
+	private void AddExtendedCapability(
+		string name,
+		string value,
+		TerminalInputEvent inputEvent
+	) {
+		ArgumentException.ThrowIfNullOrWhiteSpace( name );
+		ArgumentNullException.ThrowIfNull( value );
+		ArgumentNullException.ThrowIfNull( inputEvent );
+
+		this.AddSequence(
+			EncodeExtendedCapability(
+				value,
+				name
+			),
+			inputEvent,
+			$"Terminal extended input capability '{name}'"
+		);
+	}
+
 	private void AddCapability(
 		TerminalDescription terminal,
 		StringCapability capability,
@@ -456,16 +797,32 @@ internal sealed class TerminalInputDecoder {
 			return;
 		}
 
-		byte[] bytes = EncodeCapability( value, capability );
+		this.AddSequence(
+			EncodeCapability(
+				value,
+				capability
+			),
+			inputEvent,
+			$"Terminal key capability '{capability}'"
+		);
+	}
+
+	private void AddSequence(
+		byte[] bytes,
+		TerminalInputEvent inputEvent,
+		string displayName
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		ArgumentNullException.ThrowIfNull( inputEvent );
+		ArgumentException.ThrowIfNullOrWhiteSpace( displayName );
+
 		if ( 0 == bytes.Length ) {
 			return;
 		}
-		if ( bytes.Length > this.maximumBufferedBytes ) {
-			throw new InvalidOperationException(
-				$"Terminal key capability '{capability}' requires {bytes.Length} bytes, exceeding "
-					+ $"the decoder limit of {this.maximumBufferedBytes} bytes."
-			);
-		}
+		this.ValidateSequenceLength(
+			bytes,
+			displayName
+		);
 
 		foreach ( KeySequence existing in this.keySequences ) {
 			if ( existing.Bytes.AsSpan().SequenceEqual( bytes ) ) {
@@ -479,6 +836,40 @@ internal sealed class TerminalInputDecoder {
 				inputEvent
 			)
 		);
+	}
+
+	private void ValidateSequenceLength(
+		IReadOnlyCollection<byte> bytes,
+		string displayName
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		ArgumentException.ThrowIfNullOrWhiteSpace( displayName );
+
+		if ( bytes.Count > this.maximumBufferedBytes ) {
+			throw new InvalidOperationException(
+				$"{displayName} requires {bytes.Count} bytes, exceeding "
+					+ $"the decoder limit of {this.maximumBufferedBytes} bytes."
+			);
+		}
+	}
+
+	private static byte[] EncodeExtendedCapability(
+		string value,
+		string name
+	) {
+		ArgumentNullException.ThrowIfNull( value );
+		ArgumentException.ThrowIfNullOrWhiteSpace( name );
+
+		foreach ( char character in value ) {
+			if ( byte.MaxValue < character ) {
+				throw new InvalidOperationException(
+					$"Terminal extended input capability '{name}' contains data outside the "
+						+ "reversible 8-bit terminfo range."
+				);
+			}
+		}
+
+		return Encoding.Latin1.GetBytes( value );
 	}
 
 	private static byte[] EncodeCapability(
