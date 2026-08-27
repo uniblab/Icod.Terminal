@@ -10,6 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
+**Current development version:** `0.2.0-alpha.1`
+**Status:** T13 foundation and contract reset current
+**Current tranche:** T13 — 0.2 foundation and contract reset
 
 ---
 
@@ -261,6 +264,8 @@ Required work:
 **Gate T13:** clean/restore/build/test/pack and package validation succeed for
 `0.2.0-alpha.1`, with no runtime behavior change and no remaining
 `0.1.0`-specific release assumptions in the validation tooling.
+
+**T13 implementation record:** [`docs/T13-0.2-Foundation-and-Contract-Reset.md`](docs/T13-0.2-Foundation-and-Contract-Reset.md).
 
 ---
 

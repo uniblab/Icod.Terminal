@@ -4,9 +4,11 @@
 
 ## Status
 
-Version `0.1.0` closes the initial live-terminal foundation milestone. T01-T11 and T12A-T12C are complete; T12D is the final tag-controlled release gate. The `v0.1.0` tag is the publication trigger after the release commit passes the normal `main` validation matrix.
+Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The first functional milestone has been met: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack. The package contract has also passed structural, symbol/Source Link, dependency-closure, and clean `net8.0` / `net10.0` consumer validation on Windows, Linux, and macOS.
+Development now proceeds on the `0.2.0` line. T13 establishes the `0.2.0-alpha.1` foundation across `net8.0`, `net9.0`, and `net10.0`; rich-input behavior begins with the T14 contract work rather than in T13.
+
+The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
 ## Architecture
 

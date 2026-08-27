@@ -10,7 +10,6 @@ using System.Xml.Linq;
 internal static class Program {
 	private const string PackageId = "Icod.Terminal";
 	private const string RepositoryUrl = "https://github.com/uniblab/Icod.Terminal";
-	private const string ExpectedAssemblyVersion = "0.1.0.0";
 	private const string TermInfoDependencyVersion = "1.0.0";
 	private const string TimingDependencyVersion = "1.0.0";
 
@@ -40,7 +39,10 @@ internal static class Program {
 				: Path.GetFullPath( args[ 0 ], root )
 			;
 
-			string packageVersion = ReadAndValidatePackageVersion( root );
+			(string PackageVersion, string AssemblyVersion) projectMetadata =
+				ReadAndValidateProjectMetadata( root );
+			string packageVersion = projectMetadata.PackageVersion;
+			string expectedAssemblyVersion = projectMetadata.AssemblyVersion;
 			string packagePath = Path.Combine(
 				artifactDirectory,
 				$"{PackageId}.{packageVersion}.nupkg"
@@ -61,7 +63,8 @@ internal static class Program {
 
 			string commit = VerifyPrimaryPackage(
 				packagePath,
-				packageVersion
+				packageVersion,
+				expectedAssemblyVersion
 			);
 			VerifySymbolPackage(
 				symbolsPath,
@@ -123,7 +126,7 @@ internal static class Program {
 		);
 	}
 
-	private static string ReadAndValidatePackageVersion(
+	private static (string PackageVersion, string AssemblyVersion) ReadAndValidateProjectMetadata(
 		string root
 	) {
 		ArgumentException.ThrowIfNullOrWhiteSpace( root );
@@ -149,6 +152,13 @@ internal static class Program {
 			)
 			?.Value
 			.Trim();
+		string? assemblyVersion = project
+			.Descendants()
+			.FirstOrDefault(
+				element => "AssemblyVersion" == element.Name.LocalName
+			)
+			?.Value
+			.Trim();
 
 		Require(
 			!string.IsNullOrWhiteSpace( version )
@@ -161,15 +171,29 @@ internal static class Program {
 			"Version and PackageVersion must both be present and identical."
 		);
 
-		return packageVersion!;
+		Require(
+			!string.IsNullOrWhiteSpace( assemblyVersion ),
+			"AssemblyVersion must be present."
+		);
+		Require(
+			Version.TryParse(
+				assemblyVersion,
+				out _
+			),
+			$"AssemblyVersion '{assemblyVersion}' is not a valid assembly version."
+		);
+
+		return ( packageVersion!, assemblyVersion! );
 	}
 
 	private static string VerifyPrimaryPackage(
 		string packagePath,
-		string expectedVersion
+		string expectedVersion,
+		string expectedAssemblyVersion
 	) {
 		ArgumentException.ThrowIfNullOrWhiteSpace( packagePath );
 		ArgumentException.ThrowIfNullOrWhiteSpace( expectedVersion );
+		ArgumentException.ThrowIfNullOrWhiteSpace( expectedAssemblyVersion );
 
 		using ZipArchive package = ZipFile.OpenRead( packagePath );
 		HashSet<string> names = package.Entries
@@ -261,7 +285,8 @@ internal static class Program {
 		foreach ( string targetFramework in TargetFrameworks ) {
 			VerifyAssemblyIdentity(
 				package,
-				targetFramework
+				targetFramework,
+				expectedAssemblyVersion
 			);
 			VerifyDocumentation(
 				package,
@@ -578,10 +603,12 @@ internal static class Program {
 
 	private static void VerifyAssemblyIdentity(
 		ZipArchive package,
-		string targetFramework
+		string targetFramework,
+		string expectedAssemblyVersion
 	) {
 		ArgumentNullException.ThrowIfNull( package );
 		ArgumentException.ThrowIfNullOrWhiteSpace( targetFramework );
+		ArgumentException.ThrowIfNullOrWhiteSpace( expectedAssemblyVersion );
 
 		string assemblyPath = $"lib/{targetFramework}/Icod.Terminal.dll";
 		ZipArchiveEntry? entry = package.GetEntry( assemblyPath );
@@ -609,9 +636,9 @@ internal static class Program {
 				$"{assemblyPath} has unexpected assembly name '{assemblyName.Name}'."
 			);
 			Require(
-				ExpectedAssemblyVersion == assemblyName.Version?.ToString(),
+				expectedAssemblyVersion == assemblyName.Version?.ToString(),
 				$"{assemblyPath} has assembly version '{assemblyName.Version}', expected "
-					+ ExpectedAssemblyVersion
+					+ expectedAssemblyVersion
 					+ "."
 			);
 
