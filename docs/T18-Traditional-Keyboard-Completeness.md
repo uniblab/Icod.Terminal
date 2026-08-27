@@ -5,7 +5,7 @@
 **Development version:** `0.2.0-alpha.6`
 **Tranche:** T18 — traditional keyboard completeness
 **Reference branch:** `0.2.0`
-**Status:** Implementation prepared; validation gate pending
+**Status:** Complete — local, CI, package, and prerelease validation passed
 
 ---
 
@@ -249,5 +249,9 @@ T18 is complete when:
    remain on the single `TerminalSession` event path;
 10. package verification and fresh package consumers remain green on Windows,
     Linux, and macOS.
+
+The T18 validation gate passed locally and in GitHub Actions. The
+`0.2.0-alpha.6` prerelease was published successfully and became the package
+consumed by the DCurses T19 acceptance work.
 
 The next tranche is T19 — `Icod.DCurses` Integration and Rich-Input Acceptance.

@@ -6,7 +6,7 @@
 
 Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The `0.2.0` line is active. T13-T17 are complete, and T18 advances the development version to `0.2.0-alpha.6` with capability-driven traditional modified navigation, editing, and function-key decoding. DCurses rich-input integration follows in T19.
+The `0.2.0` line is active. T13-T18 are complete. T19 advances the development version to `0.2.0-alpha.7` and records Icod.DCurses acceptance of mouse, focus, bracketed paste, richer traditional modified keys, and Terminal-owned reversible input-protocol leases through the ordinary curses event/session boundary.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 

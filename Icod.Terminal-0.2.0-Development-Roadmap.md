@@ -6,13 +6,13 @@
 **Predecessor:** `0.1.0` — released as `v0.1.0`  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 **Language:** C# 13  
-**Runtime dependencies:** `Icod.TermInfo 1.0.0`; `Icod.Timing 1.0.0`  
+**Runtime dependencies:** `Icod.TermInfo 1.2.0`; `Icod.Timing 1.0.0`
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.6`
-**Status:** T13-T17 complete; T18 traditional keyboard completeness current
-**Current tranche:** T18 — traditional keyboard completeness
+**Current development version:** `0.2.0-alpha.7`
+**Status:** T13-T18 complete; T19 Icod.DCurses rich-input acceptance current
+**Current tranche:** T19 — Icod.DCurses integration and rich-input acceptance
 
 ---
 
@@ -517,6 +517,8 @@ consumer for each new event family.
 **Gate T19:** DCurses consumes all 0.2 rich-input mechanisms through
 `Icod.Terminal`, and disabling/removing Terminal support would leave no hidden
 parallel terminal protocol implementation in DCurses.
+
+**T19 acceptance record:** [`docs/T19-DCurses-Rich-Input-Acceptance.md`](docs/T19-DCurses-Rich-Input-Acceptance.md).
 
 ---
 
