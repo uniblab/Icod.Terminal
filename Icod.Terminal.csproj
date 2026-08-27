@@ -97,7 +97,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo" Version="1.0.0" />
+		<PackageReference Include="Icod.TermInfo" Version="1.2.0" />
 		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>
