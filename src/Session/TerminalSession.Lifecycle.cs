@@ -397,12 +397,12 @@ public sealed partial class TerminalSession {
 			this.DisposeOutputModeLease( rollbackExceptions );
 			this.TryRestoreBaselineAfterFailedReentry( rollbackExceptions );
 
-			Exception? rollbackException = BuildRestorationException( rollbackExceptions );
-			if ( rollbackException is not null ) {
+			Exception? restorationException = BuildRestorationException( rollbackExceptions );
+			if ( restorationException is not null ) {
 				throw new AggregateException(
 					"Terminal lifecycle re-entry failed and rollback also reported an error.",
 					exception,
-					rollbackException
+					restorationException
 				);
 			}
 
