@@ -4,7 +4,7 @@
 **Repository:** `https://github.com/uniblab/Icod.Terminal`  
 **Release line:** `0.2.0`  
 **Predecessor:** `0.1.0` — released as `v0.1.0`  
-**Target frameworks:** `net8.0`; `net10.0`  
+**Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 **Language:** C# 13  
 **Runtime dependencies:** `Icod.TermInfo 1.0.0`; `Icod.Timing 1.0.0`  
 **Primary integration consumer:** `Icod.DCurses`  
@@ -249,7 +249,7 @@ Required work:
   - `<PackageVersion>0.2.0-alpha.1</PackageVersion>`;
   - `<AssemblyVersion>0.2.0.0</AssemblyVersion>`;
 - update package release notes for the 0.2 foundation;
-- preserve the existing `net8.0;net10.0` framework set;
+- preserve the `net8.0;net9.0;net10.0` framework set;
 - retain `Icod.TermInfo 1.0.0` and `Icod.Timing 1.0.0` unless a concrete
   implementation requirement justifies a dependency update;
 - make the package verifier derive or validate the expected assembly version
@@ -662,7 +662,7 @@ roadmap to be deliberately revised.
 5. rich input protocol enablement is reversible session-owned terminal state;
 6. suspend/resume and disposal restore that state deterministically;
 7. `Icod.DCurses` consumes the new mechanisms without private protocol readers;
-8. package-only consumers succeed for `net8.0` and `net10.0`;
+8. package-only consumers succeed for `net8.0`, `net9.0`, and `net10.0`;
 9. Windows, Linux, and macOS Release validation is green;
 10. the final package is published only by the `v0.2.0` tag-controlled release
     workflow.

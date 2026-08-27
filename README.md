@@ -82,6 +82,7 @@ The `0.1.x` runtime dependencies are `Icod.TermInfo 1.0.0` and `Icod.Timing 1.0.
 The library targets:
 
 - `net8.0`;
+- `net9.0`;
 - `net10.0`.
 
 The codebase uses C# 13 and supports the terminal-control implementations provided for Windows, Linux, and macOS.

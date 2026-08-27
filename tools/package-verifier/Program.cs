@@ -16,6 +16,7 @@ internal static class Program {
 
 	private static readonly string[] TargetFrameworks = [
 		"net8.0",
+		"net9.0",
 		"net10.0"
 	];
 
@@ -68,7 +69,7 @@ internal static class Program {
 			);
 
 			Console.WriteLine(
-				"Verified package structure, dual-target assembly identity, metadata, "
+				"Verified package structure, multi-target assembly identity, metadata, "
 					+ "dependency closure, portable symbols, and Source Link for "
 					+ packageVersion
 					+ "."
@@ -439,6 +440,10 @@ internal static class Program {
 		VerifyDependencyFramework(
 			groups,
 			"8.0"
+		);
+		VerifyDependencyFramework(
+			groups,
+			"9.0"
 		);
 		VerifyDependencyFramework(
 			groups,
