@@ -5,7 +5,7 @@
 **Development version:** `0.1.0-alpha.13`
 **Tranche:** T12C — package and fresh-consumer validation
 **Reference branch:** `Icod.Terminal/0.1.0`
-**Implementation status:** Validation infrastructure complete; package gate must pass before T12D
+**Implementation status:** Complete; the package gate passed on Windows, Linux, and macOS and T12D may proceed
 
 ---
 
