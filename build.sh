@@ -30,7 +30,7 @@ test()
 pack()
 {
     printf '\n=== Pack ===\n'
-    dotnet pack Icod.Terminal.sln -c Debug --include-source --include-symbols --no-build
+    dotnet pack Icod.Terminal.sln -c Debug --include-source --include-symbols --no-build --output artifacts
 }
 
 validate()
