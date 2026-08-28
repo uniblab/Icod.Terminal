@@ -4,14 +4,17 @@
 
 ## Status
 
-The `0.2.0` line defines the stable rich-input contract. It extends the 0.1
-foundation with focus reporting, bounded bracketed paste, normalized mouse
-input, richer traditional modified keys, reversible input-protocol leases, and
-per-session decoder policy.
+`0.2.0` is the current stable public release. It extends the 0.1 foundation with
+focus reporting, bounded bracketed paste, normalized mouse input, richer
+traditional modified keys, reversible input-protocol leases, and per-session
+decoder policy.
 
-The 0.2 release candidate passed the complete package-only validation gate on
-Windows, Ubuntu, and macOS. Stable publication is performed only by the
-tag-controlled release workflow for the matching `v0.2.0` tag.
+Development has moved to `0.3.0-alpha.1`. T21 freezes the query/response-routing
+contract: normal async/await, one session-owned terminal reader,
+expectation-driven response correlation, bounded late-response ownership,
+explicit probing, and preservation of the immutable `Icod.TermInfo` capability
+boundary. T21 intentionally adds no concrete query protocol; T22 begins the
+internal framing/demultiplexing implementation.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -188,7 +191,12 @@ including Debug package validation.
 
 ## Development roadmap
 
-The `0.2.0` milestone is documented in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
+The active `0.3.0` milestone is documented in
+[`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
+The completed T21 foundation contract is recorded in
+[`docs/T21-0.3-Foundation-and-Contract-Reset.md`](docs/T21-0.3-Foundation-and-Contract-Reset.md).
+The completed `0.2.0` milestone remains in
+[`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 
 See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md), the T07 lifecycle contract is documented in [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md), and the T08 input contract is documented in [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 
