@@ -1,5 +1,7 @@
 # Icod.Terminal
 
+![Icod TUI Toolchain](icod_tui_toolchain.jpg)
+
 `Icod.Terminal` is the managed, cross-platform live-terminal layer for the Icod library family. It is intended to sit between `Icod.TermInfo` and higher-level consumers such as `Icod.DCurses`, terminal-aware command-line tools, monitors, editors, pagers, and REPLs.
 
 ## Status
