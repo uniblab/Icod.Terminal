@@ -6,7 +6,10 @@
 
 Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The `0.2.0` line is active. T13-T18 are complete. T19 advances the development version to `0.2.0-alpha.7` and records Icod.DCurses acceptance of mouse, focus, bracketed paste, richer traditional modified keys, and Terminal-owned reversible input-protocol leases through the ordinary curses event/session boundary.
+The `0.2.0` line is in its final release gate. T13-T19 are complete.
+`0.2.0-alpha.8` performs the T20A public-API/package regret review and extends
+the isolated package consumer across every 0.2 rich-input family. Stable
+`0.2.0` follows only after the complete Windows/Linux/macOS gate is green.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -31,11 +34,14 @@ watch / slabtop / top
 
 ## Installation
 
-Install the package from NuGet.org:
+The current stable package remains:
 
 ```text
 dotnet add package Icod.Terminal --version 0.1.0
 ```
+
+The T20A validation artifacts use `0.2.0-alpha.8`. After T20B and publication,
+the stable rich-input line installs as `Icod.Terminal 0.2.0`.
 
 ## Quick start
 
@@ -59,6 +65,64 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 The session borrows process-standard endpoints, owns only the terminal state transitions it applies, and restores its captured baseline during `DisposeAsync()`.
 
 Applications which genuinely need complete native mode observation, serialization, or custom endpoint/control backends may use the lower-level public contracts; ordinary interactive applications should prefer `TerminalSession`.
+
+## 0.2 rich input
+
+Rich input remains on the same `TerminalSession.ReadEventAsync` path. Reporting
+protocols are enabled only through reversible session-owned leases:
+
+```csharp
+TerminalControlResult<TerminalInputProtocolLease> protocolResult =
+    await session.AcquireInputProtocolsAsync(
+        new TerminalInputProtocolOptions {
+            BracketedPaste = true,
+            FocusReporting = true,
+            MouseTrackingMode = TerminalMouseTrackingMode.ButtonEvents
+        }
+    );
+
+if ( protocolResult.IsAvailable ) {
+    await using TerminalInputProtocolLease protocols =
+        protocolResult.GetRequiredValue();
+
+    TerminalEvent terminalEvent = await session.ReadEventAsync();
+    TerminalInputEvent? input = terminalEvent.Input;
+
+    if ( TerminalInputEventKind.Mouse == input?.Kind ) {
+        TerminalMouseEvent mouse = input.Mouse!;
+        // mouse.Column and mouse.Row are zero-based terminal-cell coordinates.
+    }
+}
+```
+
+The lease owns only the requested terminal reporting protocols. Nested leases are
+supported; the last relevant lease restores the prior protocol state, and
+session disposal remains authoritative cleanup.
+
+Bracketed paste is framed rather than accumulated as one unbounded string:
+applications receive `Begin`, one or more bounded `Data` events, then `End`.
+Paste Data chunk boundaries are transport/decoder boundaries and are not
+semantic line boundaries.
+
+Decoder policy is configured per session:
+
+```csharp
+new TerminalSessionOptions {
+    InputDecoderOptions = new TerminalInputDecoderOptions {
+        EscapeSequenceTimeout = TimeSpan.FromMilliseconds( 50 ),
+        MaximumBufferedBytes = TerminalSession.MaximumBufferedInputBytes,
+        PasteChunkBytes = 4096
+    }
+};
+```
+
+The defaults preserve the 0.1 Escape-ambiguity and buffer policy. Modified
+traditional navigation/editing/function-key sequences normalize into
+`TerminalKey` plus `TerminalKeyModifiers`; no second keyboard protocol is
+required.
+
+The reviewed 0.2 additions are recorded in
+[`docs/Public-API-Baseline-0.2.md`](docs/Public-API-Baseline-0.2.md).
 
 ## 0.1 consumer contract
 
@@ -111,7 +175,15 @@ The active `0.2.0` milestone is tracked in [`Icod.Terminal-0.2.0-Development-Roa
 
 See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md), the T07 lifecycle contract is documented in [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md), and the T08 input contract is documented in [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 
-The T09 presentation-lease contract is documented in [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md). The T10 lifecycle-participant integration is recorded in [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](docs/T10-DCurses-Lifecycle-Participant-Integration.md), the completed T11 ProcPs acceptance is recorded in [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md), the T12B public API/consumer review is recorded in [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md), the completed T12C package gate is recorded in [`docs/T12C-Package-and-Fresh-Consumer-Validation.md`](docs/T12C-Package-and-Fresh-Consumer-Validation.md), and final release closure is recorded in [`docs/T12D-0.1.0-Release-Closure.md`](docs/T12D-0.1.0-Release-Closure.md).
+The T09 presentation-lease contract is documented in [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md). The T10 lifecycle-participant integration is recorded in [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](docs/T10-DCurses-Lifecycle-Participant-Integration.md), the completed T11 ProcPs acceptance is recorded in [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md), the T12B public API/consumer review is recorded in [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md), the completed T12C package gate is recorded in [`docs/T12C-Package-and-Fresh-Consumer-Validation.md`](docs/T12C-Package-and-Fresh-Consumer-Validation.md), and final 0.1 release closure is recorded in [`docs/T12D-0.1.0-Release-Closure.md`](docs/T12D-0.1.0-Release-Closure.md).
+
+The 0.2 rich-input implementation is recorded tranche-by-tranche in T13-T19.
+The downstream acceptance result is in
+[`docs/T19-DCurses-Rich-Input-Acceptance.md`](docs/T19-DCurses-Rich-Input-Acceptance.md),
+the reviewed 0.2 public API delta is in
+[`docs/Public-API-Baseline-0.2.md`](docs/Public-API-Baseline-0.2.md), and the
+release-candidate gate is in
+[`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md).
 
 ## License
 

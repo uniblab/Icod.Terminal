@@ -5,10 +5,10 @@
 **Development version:** `0.2.0-alpha.7`
 **Tranche:** T19 — Icod.DCurses integration and rich-input acceptance
 **Reference Terminal branch:** `0.2.0`
-**Acceptance reference:** `Icod.DCurses` branch `0.1.0`
-**DCurses reference commit:** `17a7bad9b7e8dc84b9bf5c5b2a2f1f45448447a0`
+**Acceptance reference:** `Icod.DCurses` branch `0.1.0`, PR #7
+**DCurses reference commit:** `a95d10b9e0e578be29796ebfdf0e7ff0ee3c80ea`
 **Accepted Terminal behavior:** `Icod.Terminal 0.2.0-alpha.6`
-**Status:** Acceptance record prepared; validation gate pending
+**Status:** Complete — downstream DCurses acceptance and CI passed
 
 ---
 
@@ -141,5 +141,10 @@ T19 is complete when:
 6. Terminal session disposal and lifecycle handling remain the ownership point
    for reversible rich-input protocol state.
 
-After this gate passes, development proceeds to T20 — the `0.2.0` public API,
-package, and release gate.
+The accepted DCurses branch retained all of these boundaries through its
+T13B/Alpha-21 consumer-contract review. PR #7 completed successfully at
+`a95d10b9e0e578be29796ebfdf0e7ff0ee3c80ea`; GitHub Actions run `33131225189`
+passed the downstream validation matrix.
+
+T19 is complete. Development proceeds to T20 — the `0.2.0` public API, package,
+and release gate.

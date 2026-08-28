@@ -15,5 +15,7 @@ injected terminal-control provider and in-memory byte transports, so the smoke
 test never requires or mutates the CI runner's real terminal.
 
 The smoke path exercises session open/apply/restore, terminal-size observation,
-UTF-8 input decoding, application and capability output, TermInfo profile use,
-and terminal-mode serialization without relying on repository build outputs.
+ordinary UTF-8 input, focus reports, bounded bracketed-paste framing, SGR mouse
+normalization, traditional modified-key decoding, rich-input protocol lease
+acquire/release, application/capability output, TermInfo profile use, and
+terminal-mode serialization without relying on repository build outputs.

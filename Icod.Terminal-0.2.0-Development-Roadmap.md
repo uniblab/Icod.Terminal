@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.7`
-**Status:** T13-T18 complete; T19 Icod.DCurses rich-input acceptance current
-**Current tranche:** T19 — Icod.DCurses integration and rich-input acceptance
+**Current development version:** `0.2.0-alpha.8`
+**Status:** T13-T19 complete; T20A public-API and package release-candidate gate current
+**Current tranche:** T20A — 0.2 API, package, and release-candidate hardening
 
 ---
 
@@ -525,6 +525,17 @@ parallel terminal protocol implementation in DCurses.
 # 13. T20 — 0.2 API, Package, and Release Gate
 
 T20 closes the release in the same disciplined manner as 0.1.
+
+**Alpha-8 / T20A checkpoint:** perform the public-API regret review, publish the
+0.2 API baseline, complete rich-input README documentation, and extend the
+three-framework package-only consumer through focus, paste, mouse, traditional
+modified keys, and reversible input-protocol leases. The checkpoint is recorded
+in [`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md).
+
+**T20B** SHALL begin only after Alpha-8 passes the complete three-host package
+gate. T20B SHALL set `Version` and `PackageVersion` to stable `0.2.0`, retain
+`AssemblyVersion` as `0.2.0.0`, update final release-facing status text, merge the
+release commit to `main`, and publish only through the matching `v0.2.0` tag.
 
 Required work:
 

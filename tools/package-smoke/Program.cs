@@ -13,10 +13,35 @@ static void Require(
 	}
 }
 
+static async ValueTask<TerminalInputEvent> ReadInputAsync(
+	TerminalSession session,
+	string description
+) {
+	ArgumentNullException.ThrowIfNull( session );
+	ArgumentException.ThrowIfNullOrWhiteSpace( description );
+
+	TerminalEvent terminalEvent = await session.ReadEventAsync(
+		TimeSpan.FromSeconds( 1 )
+	);
+	Require(
+		TerminalEventKind.Input == terminalEvent.Kind
+			&& terminalEvent.Input is not null,
+		$"The package consumer did not receive {description} as an input event."
+	);
+	return terminalEvent.Input!;
+}
+
 TerminalDescription terminal = TerminalDatabase.BuiltIn.Load( "xterm" );
 var provider = new PackageTerminalControlProvider();
+string scriptedText =
+	"x"
+		+ "\u001b[I"
+		+ "\u001b[200~hello\u001b[201~"
+		+ "\u001b[<0;3;4M"
+		+ "\u001b[1;5A"
+;
 var input = new ScriptedTerminalInput(
-	Encoding.UTF8.GetBytes( "x" )
+	Encoding.UTF8.GetBytes( scriptedText )
 );
 var output = new RecordingTerminalOutput();
 TerminalSession? session = null;
@@ -33,7 +58,10 @@ try {
 			EchoInput = false,
 			ConfigureOutput = false,
 			ObserveLifecycleEvents = false,
-			TerminalOverride = terminal
+			TerminalOverride = terminal,
+			InputDecoderOptions = new TerminalInputDecoderOptions {
+				PasteChunkBytes = 3
+			}
 		}
 	);
 
@@ -57,21 +85,123 @@ try {
 		"The package consumer received unexpected terminal dimensions."
 	);
 
-	TerminalEvent terminalEvent = await session.ReadEventAsync(
-		TimeSpan.FromSeconds( 1 )
+	TerminalControlResult<TerminalInputProtocolLease> protocolResult =
+		await session.AcquireInputProtocolsAsync(
+			new TerminalInputProtocolOptions {
+				BracketedPaste = true,
+				FocusReporting = true,
+				MouseTrackingMode = TerminalMouseTrackingMode.ButtonEvents
+			}
+		);
+	Require(
+		protocolResult.IsAvailable,
+		protocolResult.Message
+			?? "The xterm package profile did not expose the required rich-input protocols."
+	);
+	TerminalInputProtocolLease protocolLease = protocolResult.GetRequiredValue();
+	Require(
+		protocolLease.BracketedPaste
+			&& protocolLease.FocusReporting
+			&& TerminalMouseTrackingMode.ButtonEvents == protocolLease.MouseTrackingMode,
+		"The package consumer received an unexpected rich-input protocol lease."
+	);
+
+	TerminalInputEvent text = await ReadInputAsync(
+		session,
+		"ordinary UTF-8 text"
 	);
 	Require(
-		TerminalEventKind.Input == terminalEvent.Kind,
-		"The package consumer did not receive the scripted input event."
+		TerminalInputEventKind.Text == text.Kind
+			&& text.Character.HasValue
+			&& 'x' == text.Character.Value.Value,
+		"The package consumer decoded ordinary UTF-8 input incorrectly."
 	);
-	TerminalInputEvent? inputEvent = terminalEvent.Input;
+
+	TerminalInputEvent focus = await ReadInputAsync(
+		session,
+		"a focus report"
+	);
+	TerminalFocusEvent focusPayload = focus.Focus
+		?? throw new InvalidOperationException(
+			"The package consumer focus event did not carry a focus payload."
+		);
 	Require(
-		inputEvent is not null
-			&& TerminalInputEventKind.Text == inputEvent.Kind
-			&& inputEvent.Character.HasValue
-			&& 'x' == inputEvent.Character.Value.Value,
-		"The package consumer decoded the scripted UTF-8 input incorrectly."
+		TerminalInputEventKind.Focus == focus.Kind
+			&& TerminalFocusState.Focused == focusPayload.State,
+		"The package consumer decoded focus input incorrectly."
 	);
+
+	TerminalInputEvent pasteBegin = await ReadInputAsync(
+		session,
+		"a paste-begin frame"
+	);
+	TerminalInputEvent pasteDataOne = await ReadInputAsync(
+		session,
+		"the first paste data chunk"
+	);
+	TerminalInputEvent pasteDataTwo = await ReadInputAsync(
+		session,
+		"the second paste data chunk"
+	);
+	TerminalInputEvent pasteEnd = await ReadInputAsync(
+		session,
+		"a paste-end frame"
+	);
+	TerminalPasteEvent pasteBeginPayload = pasteBegin.Paste
+		?? throw new InvalidOperationException(
+			"The package consumer paste-begin event did not carry a paste payload."
+		);
+	TerminalPasteEvent pasteDataOnePayload = pasteDataOne.Paste
+		?? throw new InvalidOperationException(
+			"The package consumer first paste-data event did not carry a paste payload."
+		);
+	TerminalPasteEvent pasteDataTwoPayload = pasteDataTwo.Paste
+		?? throw new InvalidOperationException(
+			"The package consumer second paste-data event did not carry a paste payload."
+		);
+	TerminalPasteEvent pasteEndPayload = pasteEnd.Paste
+		?? throw new InvalidOperationException(
+			"The package consumer paste-end event did not carry a paste payload."
+		);
+	Require(
+		TerminalPastePhase.Begin == pasteBeginPayload.Phase
+			&& TerminalPastePhase.Data == pasteDataOnePayload.Phase
+			&& "hel" == pasteDataOnePayload.Text
+			&& TerminalPastePhase.Data == pasteDataTwoPayload.Phase
+			&& "lo" == pasteDataTwoPayload.Text
+			&& TerminalPastePhase.End == pasteEndPayload.Phase,
+		"The package consumer did not preserve bounded bracketed-paste framing."
+	);
+
+	TerminalInputEvent mouse = await ReadInputAsync(
+		session,
+		"an SGR mouse report"
+	);
+	TerminalMouseEvent mousePayload = mouse.Mouse
+		?? throw new InvalidOperationException(
+			"The package consumer mouse event did not carry a mouse payload."
+		);
+	Require(
+		TerminalInputEventKind.Mouse == mouse.Kind
+			&& TerminalMouseAction.Press == mousePayload.Action
+			&& TerminalMouseButton.Primary == mousePayload.Button
+			&& 2 == mousePayload.Column
+			&& 3 == mousePayload.Row,
+		"The package consumer did not normalize SGR mouse input correctly."
+	);
+
+	TerminalInputEvent modifiedKey = await ReadInputAsync(
+		session,
+		"a traditional modified key"
+	);
+	Require(
+		TerminalInputEventKind.Key == modifiedKey.Kind
+			&& TerminalKey.Up == modifiedKey.Key
+			&& TerminalKeyModifiers.Control == modifiedKey.Modifiers,
+		"The package consumer did not normalize Control+Up correctly."
+	);
+
+	await protocolLease.DisposeAsync();
 
 	await session.WriteTextAsync( "package-smoke" );
 	bool capabilityWritten = await session.WriteCapabilityAsync(
