@@ -146,7 +146,7 @@ internal sealed class TerminalInputCoordinator {
 	}
 
 	private void EnsurePumpStarted() {
-		this.pumpTask ??= Task.Run( this.RunPumpAsync );
+		this.pumpTask ??= this.RunPumpAsync();
 	}
 
 	private void SignalDemandIfNeeded(
