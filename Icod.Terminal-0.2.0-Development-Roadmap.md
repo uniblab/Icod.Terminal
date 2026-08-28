@@ -6,13 +6,13 @@
 **Predecessor:** `0.1.0` — released as `v0.1.0`  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 **Language:** C# 13  
-**Runtime dependencies:** `Icod.TermInfo 1.0.0`; `Icod.Timing 1.0.0`  
+**Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.6`
-**Status:** T13-T17 complete; T18 traditional keyboard completeness current
-**Current tranche:** T18 — traditional keyboard completeness
+**Current development version:** `0.2.0`
+**Status:** T13-T20A complete; T20B stable release closure current
+**Current tranche:** T20B — stable 0.2.0 release closure
 
 ---
 
@@ -518,11 +518,29 @@ consumer for each new event family.
 `Icod.Terminal`, and disabling/removing Terminal support would leave no hidden
 parallel terminal protocol implementation in DCurses.
 
+**T19 acceptance record:** [`docs/T19-DCurses-Rich-Input-Acceptance.md`](docs/T19-DCurses-Rich-Input-Acceptance.md).
+
 ---
 
 # 13. T20 — 0.2 API, Package, and Release Gate
 
 T20 closes the release in the same disciplined manner as 0.1.
+
+**Alpha-8 / T20A checkpoint:** perform the public-API regret review, publish the
+0.2 API baseline, complete rich-input README documentation, and extend the
+three-framework package-only consumer through focus, paste, mouse, traditional
+modified keys, and reversible input-protocol leases. The checkpoint is recorded
+in [`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md).
+
+Alpha-8 passed the complete Windows/Ubuntu/macOS PR package gate in GitHub
+Actions run `33132667483`.
+
+**T20B** promotes that accepted release candidate to stable package metadata:
+`Version` and `PackageVersion` become `0.2.0`, `AssemblyVersion` remains
+`0.2.0.0`, release-facing status text is finalized, and publication remains
+restricted to the matching `v0.2.0` tag after the stable commit is merged to
+`main`. The closure record is
+[`docs/T20B-0.2.0-Release-Closure.md`](docs/T20B-0.2.0-Release-Closure.md).
 
 Required work:
 

@@ -8,7 +8,9 @@ if not "%~3"=="" goto usage
 set "ARTIFACT_DIR=%~1"
 set "CONFIGURATION=%~2"
 
-if /I "%CONFIGURATION%"=="Staging" (
+if /I "%CONFIGURATION%"=="Debug" (
+    set "CONFIGURATION=Debug"
+) else if /I "%CONFIGURATION%"=="Staging" (
     set "CONFIGURATION=Staging"
 ) else if /I "%CONFIGURATION%"=="Release" (
     set "CONFIGURATION=Release"
@@ -99,7 +101,7 @@ if errorlevel 1 goto fail
 goto cleanup
 
 :usage
-echo Usage: verify-release-package.cmd ^<artifact-directory^> ^<Staging^|Release^> 1>&2
+echo Usage: verify-release-package.cmd ^<artifact-directory^> ^<Debug^|Staging^|Release^> 1>&2
 exit /b 2
 
 :fail

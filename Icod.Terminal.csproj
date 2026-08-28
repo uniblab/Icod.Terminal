@@ -13,8 +13,31 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.2.0-alpha.6</Version>
+		<Version>0.2.0</Version>
 		<AssemblyVersion>0.2.0.0</AssemblyVersion>
+	</PropertyGroup>
+	<PropertyGroup>
+		<PackageVersion>0.2.0</PackageVersion>
+		<PackageId>Icod.Terminal</PackageId>
+		<Title>Icod.Terminal</Title>
+		<Authors>Timothy J. Bruce</Authors>
+		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
+		<PackageReleaseNotes>0.2.0 adds capability-driven focus, bracketed-paste, mouse, and richer traditional modified-key input through the single bounded TerminalSession event path, plus reversible input-protocol leases and per-session decoder policy. The release is accepted by Icod.DCurses and validated through package-only consumers on net8.0, net9.0, and net10.0 across Windows, Linux, and macOS.</PackageReleaseNotes>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
+		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<Deterministic>true</Deterministic>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod</PackageTags>
+		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
+		<EnablePackageValidation>true</EnablePackageValidation>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(PlatformTarget)' == '' ">
@@ -25,7 +48,7 @@
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>2</WarningLevel>
 		<DebugSymbols>true</DebugSymbols>
-		<DebugType>full</DebugType>
+		<DebugType>portable</DebugType>
 		<Optimize>false</Optimize>
 		<DefineConstants>DEBUG;TRACE</DefineConstants>
 		<SignAssembly>false</SignAssembly>
@@ -53,30 +76,6 @@
 		<WarningsNotAsErrors>CS1591</WarningsNotAsErrors>
 	</PropertyGroup>
 
-	<PropertyGroup>
-		<PackageVersion>0.2.0-alpha.6</PackageVersion>
-		<PackageId>Icod.Terminal</PackageId>
-		<Title>Icod.Terminal</Title>
-		<Authors>Timothy J. Bruce</Authors>
-		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.2.0-alpha.6 adds capability-driven traditional modified-key decoding for navigation, editing, and F1-F12 modifier combinations while preserving exact terminfo sequences, bounded Escape ambiguity, and F0-F63 compatibility.</PackageReleaseNotes>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageIcon>icon.png</PackageIcon>
-		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
-		<PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
-		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-		<IncludeSymbols>true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod</PackageTags>
-		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
-		<EnablePackageValidation>true</EnablePackageValidation>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<Compile Include="src\**\*.cs" />
 		<None Include="icon.png" Pack="true" PackagePath="" />
@@ -97,7 +96,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo" Version="1.0.0" />
+		<PackageReference Include="Icod.TermInfo" Version="1.3.0" />
 		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>

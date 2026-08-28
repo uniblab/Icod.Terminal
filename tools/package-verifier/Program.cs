@@ -10,7 +10,7 @@ using System.Xml.Linq;
 internal static class Program {
 	private const string PackageId = "Icod.Terminal";
 	private const string RepositoryUrl = "https://github.com/uniblab/Icod.Terminal";
-	private const string TermInfoDependencyVersion = "1.0.0";
+	private const string TermInfoDependencyVersion = "1.3.0";
 	private const string TimingDependencyVersion = "1.0.0";
 
 	private static readonly string[] TargetFrameworks = [

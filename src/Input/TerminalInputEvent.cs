@@ -26,7 +26,7 @@ public enum TerminalInputEventKind {
 }
 
 /// <summary>
-/// Identifies a terminal-independent key recognized by the 0.1 input contract.
+/// Identifies a terminal-independent key recognized by the Terminal input contract.
 /// </summary>
 public enum TerminalKey {
 	/// <summary>No key is associated with this event.</summary>

@@ -7,7 +7,14 @@ Both wrappers require an already packed artifact directory and a build
 configuration:
 
 ```text
-<artifact-directory> <Staging|Release>
+<artifact-directory> <Debug|Staging|Release>
+```
+
+For local Debug validation:
+
+```text
+.github\scripts\verify-release-package.cmd artifacts Debug
+bash .github/scripts/verify-release-package.sh artifacts Debug
 ```
 
 For pull-request/development validation:
@@ -23,6 +30,10 @@ For final release validation:
 .github\scripts\verify-release-package.cmd artifacts Release
 bash .github/scripts/verify-release-package.sh artifacts Release
 ```
+
+The configuration passed to the wrapper is also used to run the package
+verifier and the isolated package-only consumer. The artifact directory must
+therefore contain packages produced from the configuration being validated.
 
 T12C expands the original T01 foundation check into a release-grade package gate.
 The wrappers now:

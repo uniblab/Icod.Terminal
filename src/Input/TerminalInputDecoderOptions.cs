@@ -29,12 +29,12 @@ public sealed class TerminalInputDecoderOptions {
 
 	/// <summary>
 	/// Gets or initializes the target maximum number of raw paste bytes represented
-	/// by one future bracketed-paste data chunk.
+	/// by one bracketed-paste data chunk.
 	/// </summary>
 	/// <remarks>
-	/// T14 reserves this policy for the T16 paste implementation. A decoder may retain
-	/// the small number of extra bytes required to finish a fragmented UTF-8 scalar or
-	/// exact paste terminator without treating the complete paste as one buffer.
+	/// A decoder may retain the small number of extra bytes required to finish a
+	/// fragmented UTF-8 scalar or exact paste terminator without treating the
+	/// complete paste as one buffer.
 	/// </remarks>
 	public int PasteChunkBytes {
 		get;
