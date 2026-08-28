@@ -241,7 +241,7 @@ Those remain later or adjacent concerns.
 The stable 0.2 line is intended to retain:
 
 ```text
-Icod.TermInfo 1.2.0
+Icod.TermInfo 1.3.0
 Icod.Timing   1.0.0
 ```
 

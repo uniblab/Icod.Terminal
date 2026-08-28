@@ -6,7 +6,7 @@
 **Predecessor:** `0.1.0` — released as `v0.1.0`  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 **Language:** C# 13  
-**Runtime dependencies:** `Icod.TermInfo 1.2.0`; `Icod.Timing 1.0.0`
+**Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`

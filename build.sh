@@ -46,6 +46,7 @@ case "${1-}" in
         build
         test
         pack
+        validate
         ;;
 
     clean)
@@ -74,7 +75,7 @@ case "${1-}" in
 
     *)
         printf 'Invalid section: %s\n' "$1" >&2
-        printf 'Usage: %s [clean|restore|build|test|pack]\n' "$0" >&2
+        printf 'Usage: %s [clean|restore|build|test|pack|validate]\n' "$0" >&2
         exit 1
         ;;
 esac

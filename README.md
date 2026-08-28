@@ -40,7 +40,7 @@ dotnet add package Icod.Terminal --version 0.2.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on
-`Icod.TermInfo 1.2.0` and `Icod.Timing 1.0.0`.
+`Icod.TermInfo 1.3.0` and `Icod.Timing 1.0.0`.
 
 ## Quick start
 
@@ -179,7 +179,9 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Both scripts support `clean`, `restore`, `build`, `test`, and `pack`. Running either script without an argument performs the complete sequence.
+Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`.
+Running either script without an argument performs the complete sequence,
+including Debug package validation.
 
 ## Development roadmap
 

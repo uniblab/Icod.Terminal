@@ -8,10 +8,10 @@ if /I "%~1"=="restore" goto run-restore
 if /I "%~1"=="build"   goto run-build
 if /I "%~1"=="test"    goto run-test
 if /I "%~1"=="pack"    goto run-pack
-if /I "%~1"=="validate"    goto run-pack
+if /I "%~1"=="validate" goto run-validate
 
 echo Invalid section: "%~1"
-echo Usage: %~nx0 [clean^|restore^|build^|test^|pack]
+echo Usage: %~nx0 [clean^|restore^|build^|test^|pack^|validate]
 exit /b 1
 
 
@@ -21,7 +21,7 @@ call :restore || exit /b 1
 call :build   || exit /b 1
 call :test    || exit /b 1
 call :pack    || exit /b 1
-call :validate    || exit /b 1
+call :validate || exit /b 1
 exit /b 0
 
 
