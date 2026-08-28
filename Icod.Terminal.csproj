@@ -93,6 +93,7 @@
 			<Pack>true</Pack>
 			<PackagePath>\</PackagePath>
 		</Content>
+		<None Include="icod_tui_toolchain.jpg" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
