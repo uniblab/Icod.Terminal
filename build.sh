@@ -33,6 +33,12 @@ pack()
     dotnet pack Icod.Terminal.sln -c Debug --include-source --include-symbols --no-build
 }
 
+validate()
+{
+    printf '\n=== Validate ===\n'
+    ./.github/scripts/verify-release-package.sh artifacts Debug
+}
+
 case "${1-}" in
     "")
         clean
@@ -60,6 +66,10 @@ case "${1-}" in
 
     pack)
         pack
+        ;;
+
+    validate)
+        validate
         ;;
 
     *)
