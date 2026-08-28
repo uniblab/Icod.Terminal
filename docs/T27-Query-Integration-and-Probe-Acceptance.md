@@ -4,7 +4,7 @@
 **Release line:** `0.3.0`
 **Development version:** `0.3.0-alpha.7`
 **Tranche:** T27 — Query Integration and Probe Acceptance
-**Status:** Implementation complete; repository-matrix and downstream acceptance pending
+**Status:** Complete — repository matrix and downstream DCurses acceptance passed
 
 ---
 
@@ -174,10 +174,10 @@ A pre-disruption response is never reported as a successful post-resume result.
 `Icod.DCurses` remains a consumer and is not added as an `Icod.Terminal`
 dependency.
 
-A real T27 downstream acceptance run must consume the `0.3.0-alpha.7` package
-(or an equivalent local package build) and run the DCurses regression suite.
-Running an unchanged downstream checkout which still references an older
-`Icod.Terminal` package does not satisfy this gate.
+The final downstream acceptance consumed the published
+`Icod.Terminal 0.3.0-alpha.8` candidate from the DCurses Alpha-22 compatibility
+build. Alpha.8 superseded alpha.7 as the accepted 0.3 candidate after the
+release-candidate race correction.
 
 The downstream check must confirm that DCurses:
 
@@ -210,25 +210,21 @@ The normal repository build/test/package validation should compile the new query
 sample, run the new integration tests, and run the extended package-only smoke
 consumer.
 
-The model environment used to prepare this patch does not contain the .NET SDK,
-so the repository matrix and downstream DCurses run remain execution gates rather
-than claimed results.
+The corrected alpha.8 candidate passed the repository matrix on Windows, Ubuntu,
+and macOS, and the downstream DCurses Alpha-22 compatibility build passed
+against the published package.
 
 ---
 
 ## 10. Gate State
 
-**T27 implementation is complete in `0.3.0-alpha.7`.**
+**Gate T27 is complete.**
 
-The code and tests required for repository acceptance are present, the package
-consumer exercises both CSI and DCS queries, and no new public convenience
-abstraction was needed.
+The corrected alpha.8 candidate passed the normal Windows/Ubuntu/macOS
+repository matrix for `net8.0`, `net9.0`, and `net10.0`.
 
-**Gate T27 remains open until:**
+The DCurses Alpha-22 compatibility build consumed the published alpha.8 package
+with `Icod.TermInfo 1.3.0`, retained `TerminalSession` ownership, and required no
+second raw input reader or private CSI/DCS parser.
 
-1. the normal Windows/Ubuntu/macOS repository matrix passes for
-   `net8.0`, `net9.0`, and `net10.0`; and
-2. the downstream DCurses regression is run against the alpha.7 package.
-
-Only after those two execution checks are confirmed should the roadmap advance
-to **T28A — API Regret Review and Release-Candidate Package Gate**.
+The integrated query contract is therefore accepted for stable 0.3.

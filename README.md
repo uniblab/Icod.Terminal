@@ -4,17 +4,14 @@
 
 ## Status
 
-`0.2.0` is the current stable public release. It extends the 0.1 foundation with
-focus reporting, bounded bracketed paste, normalized mouse input, richer
-traditional modified keys, reversible input-protocol leases, and per-session
-decoder policy.
+`0.3.0` is the current stable release line. It retains the 0.1 live-session
+foundation and 0.2 rich-input contract while adding bounded, expectation-driven
+active terminal queries over the same session-owned input path.
 
-Development has moved to `0.3.0-alpha.8`. T28A freezes the reviewed 0.3
-public query API, publishes its API baseline, strengthens XML/package validation,
-and extends the isolated package consumer through every public CSI/DCS query
-operation. Session opening remains passive: active interrogation occurs only
-when a caller explicitly invokes a query method. Release-candidate and downstream
-acceptance remain execution gates before stable `0.3.0`.
+The stable 0.3 API includes typed Primary and Secondary Device Attributes,
+Device Status Report, Cursor Position Report, DECRQSS status-string queries, and
+XTGETTCAP live capability observations. Session opening remains passive: active
+interrogation occurs only when a caller explicitly invokes a query method.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -39,10 +36,10 @@ watch / slabtop / top
 
 ## Installation
 
-The stable 0.2 release installs as:
+The stable 0.3 release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.2.0
+dotnet add package Icod.Terminal --version 0.3.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on
@@ -250,7 +247,7 @@ including Debug package validation.
 
 ## Development roadmap
 
-The active `0.3.0` milestone is documented in
+The completed `0.3.0` milestone is documented in
 [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
 The completed T21 foundation contract is recorded in
 [`docs/T21-0.3-Foundation-and-Contract-Reset.md`](docs/T21-0.3-Foundation-and-Contract-Reset.md).
@@ -266,8 +263,10 @@ The completed T26 XTGETTCAP live-capability tranche is recorded in
 [`docs/T26-XTGETTCAP.md`](docs/T26-XTGETTCAP.md).
 The T27 integration and acceptance record is maintained in
 [`docs/T27-Query-Integration-and-Probe-Acceptance.md`](docs/T27-Query-Integration-and-Probe-Acceptance.md).
-The T28A release-candidate gate is maintained in
+The completed T28A release-candidate gate is recorded in
 [`docs/T28A-0.3-Release-Candidate-Gate.md`](docs/T28A-0.3-Release-Candidate-Gate.md),
+the stable T28B closure is recorded in
+[`docs/T28B-0.3.0-Release-Closure.md`](docs/T28B-0.3.0-Release-Closure.md),
 and the reviewed 0.3 public API delta is published in
 [`docs/Public-API-Baseline-0.3.md`](docs/Public-API-Baseline-0.3.md).
 The completed `0.2.0` milestone remains in
