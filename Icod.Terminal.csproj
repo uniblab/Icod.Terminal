@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.3.0-alpha.5</Version>
+		<Version>0.3.0-alpha.6</Version>
 		<AssemblyVersion>0.3.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.3.0-alpha.5</PackageVersion>
+		<PackageVersion>0.3.0-alpha.6</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.3.0-alpha.5 adds typed DECRQSS/DECRPSS status-string queries over the common transaction substrate, with fixed safe request identifiers, bounded DCS parsing, positive/negative protocol results, 7-bit/8-bit response support, and preserved cancellation, late-response, lifecycle, and ordinary-input routing.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.3.0-alpha.6 adds bounded XTGETTCAP live capability observations with strict hexadecimal encoding/decoding, byte-preserving positive values, typed negative results, single-name deterministic correlation, and separation from immutable Icod.TermInfo terminal descriptions.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

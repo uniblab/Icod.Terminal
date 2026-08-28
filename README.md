@@ -9,12 +9,13 @@ focus reporting, bounded bracketed paste, normalized mouse input, richer
 traditional modified keys, reversible input-protocol leases, and per-session
 decoder policy.
 
-Development has moved to `0.3.0-alpha.5`. T25 adds typed DECRQSS/DECRPSS
-status-string queries over the common transaction substrate. Request identifiers
-are a fixed safe public set rather than caller-supplied control bytes; positive
-and negative replies are typed, DCS parsing is bounded, and the existing
-cancellation, late-response, lifecycle, and ordinary-input contracts remain in
-force.
+Development has moved to `0.3.0-alpha.6`. T26 adds bounded XTGETTCAP live
+capability observations over the common DCS transaction substrate. Capability
+names are safely hex-encoded, positive values preserve exact decoded bytes,
+negative replies are typed, and live observations remain separate from immutable
+`TerminalDescription` / `Icod.TermInfo` capability data. T26 deliberately uses
+one capability name per transaction so correlation and partial-result semantics
+remain deterministic.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -203,6 +204,8 @@ The completed T24 CSI query family is recorded in
 [`docs/T24-CSI-Query-Family.md`](docs/T24-CSI-Query-Family.md).
 The completed T25 DECRQSS/DCS query tranche is recorded in
 [`docs/T25-DECRQSS.md`](docs/T25-DECRQSS.md).
+The completed T26 XTGETTCAP live-capability tranche is recorded in
+[`docs/T26-XTGETTCAP.md`](docs/T26-XTGETTCAP.md).
 The completed `0.2.0` milestone remains in
 [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 

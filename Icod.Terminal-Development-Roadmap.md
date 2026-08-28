@@ -10,8 +10,8 @@
 **Current development target:** `0.3.0`
 **Stable contract target:** `1.0.0`
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`
-**Status:** `0.1.0` and `0.2.0` released; T21-T25 complete
-**Current tranche:** T26 — XTGETTCAP live capability queries
+**Status:** `0.1.0` and `0.2.0` released; T21-T26 complete
+**Current tranche:** T27 — query integration and probe acceptance
 **Current milestone roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---

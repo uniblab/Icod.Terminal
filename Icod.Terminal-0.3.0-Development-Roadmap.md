@@ -9,9 +9,9 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.5`
-**Status:** T21-T25 complete; T26 is the next implementation tranche
-**Current tranche:** T26 — XTGETTCAP live capability queries
+**Current development version:** `0.3.0-alpha.6`
+**Status:** T21-T26 complete; T27 is the next implementation tranche
+**Current tranche:** T27 — Query Integration and Probe Acceptance
 
 ---
 
@@ -558,31 +558,48 @@ or hostile input.
 
 # 12. T26 — XTGETTCAP Live Capability Queries
 
+**Status:** Complete in `0.3.0-alpha.6`.
+
 T26 adds live terminal capability interrogation without weakening the
 `Icod.TermInfo` boundary.
 
-Required work:
+Completed work:
 
-- encode requested XTGETTCAP names using the protocol's hexadecimal
-  representation;
-- decode returned names and values strictly;
-- support positive and negative response forms;
-- support multiple capability requests only when correlation remains
-  deterministic and resource bounds remain simple;
-- bound capability-name count, encoded name length, decoded value length, and
-  complete DCS payload length;
-- distinguish a negative capability result from malformed data and timeout;
-- keep returned capability observations separate from immutable
-  `TerminalDescription`;
-- document differences between static terminfo capability data and live
-  XTGETTCAP observations;
-- test malformed hexadecimal, odd-length data, oversized values, duplicate
-  results, fragmentation, cancellation, timeout, and late-response handling.
+- adds `QueryLiveCapabilityAsync` as a typed single-name XTGETTCAP operation;
+- adds immutable `TerminalCapabilityObservation` results with the requested name,
+  typed support state, and exact decoded capability-value bytes;
+- requires non-empty printable non-space ASCII capability names no longer than
+  64 bytes;
+- hex-encodes names before emission so caller punctuation cannot become DCS
+  framing or separators;
+- emits conservative 7-bit XTGETTCAP requests and accepts both 7-bit and 8-bit
+  DCS/ST response forms;
+- accepts uppercase and lowercase hexadecimal response digits;
+- distinguishes positive byte-valued replies from typed negative/unsupported
+  replies;
+- bounds encoded names to 128 bytes and decoded returned values to 1024 bytes,
+  while retaining the T22 complete-frame ceiling;
+- rejects odd/non-hex fields, mismatched returned names, duplicate/multiple
+  name-value pairs, malformed validity parameters, and oversized values with
+  deterministic `FormatException`;
+- intentionally uses one capability name per transaction rather than exposing
+  xterm's multi-name partial-result semantics;
+- keeps returned observations independent from immutable `TerminalDescription`
+  and `Icod.TermInfo` capability data;
+- preserves ordinary input delivery and the session single-reader invariant;
+- exercises fragmentation, cancellation, timeout, late-response ownership, and
+  disposal through the XTGETTCAP DCS family.
 
-**Gate T26:** callers can explicitly obtain bounded live XTGETTCAP observations
-without mutating or replacing the session's `Icod.TermInfo` description.
+The single-name policy is deliberate for 0.3: current xterm stops processing a
+multi-name request at the first invalid name, which would force a partial-result
+contract. T28 may reconsider batching if a concrete consumer justifies that
+additional public complexity.
 
-**Planned completion record:** `docs/T26-XTGETTCAP.md`.
+**Gate T26: complete.** Callers can explicitly obtain bounded live XTGETTCAP
+observations without mutating or replacing the session's `Icod.TermInfo`
+description.
+
+**T26 completion record:** [`docs/T26-XTGETTCAP.md`](docs/T26-XTGETTCAP.md).
 
 ---
 
