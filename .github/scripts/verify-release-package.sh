@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: verify-release-package.sh <artifact-directory> <Staging|Release>" >&2
+  echo "Usage: verify-release-package.sh <artifact-directory> <Debug|Staging|Release>" >&2
 }
 
 if (( $# != 2 )); then
@@ -14,7 +14,7 @@ artifact_dir="$1"
 configuration="$2"
 
 case "${configuration}" in
-  Staging|Release)
+  Debug|Staging|Release)
     ;;
   *)
     usage
