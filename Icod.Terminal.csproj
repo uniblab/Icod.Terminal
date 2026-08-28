@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.3.0-alpha.3</Version>
+		<Version>0.3.0-alpha.4</Version>
 		<AssemblyVersion>0.3.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.3.0-alpha.3</PackageVersion>
+		<PackageVersion>0.3.0-alpha.4</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.3.0-alpha.3 adds the internal serialized query-transaction substrate: demand-driven single-reader input coordination, monotonic caller deadlines, normal cancellation, bounded late-response ownership, lifecycle interruption, and shared session-control output serialization. Concrete public CSI query APIs remain deferred to T24.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.3.0-alpha.4 adds public typed Primary/Secondary Device Attributes, Device Status Report, and Cursor Position Report queries over the T23 transaction substrate, with strict bounded CSI parsing, one-based CPR coordinates, 7-bit/8-bit response support, and preserved rich-input routing.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

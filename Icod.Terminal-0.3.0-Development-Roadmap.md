@@ -9,9 +9,9 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.3`
-**Status:** T21-T23 complete; T24 is the next implementation tranche
-**Current tranche:** T24 — CSI device, status, and cursor queries
+**Current development version:** `0.3.0-alpha.4`
+**Status:** T21-T24 complete; T25 is the next implementation tranche
+**Current tranche:** T25 — DECRQSS and DCS transaction support
 
 ---
 
@@ -478,29 +478,42 @@ ambiguity-sensitive query while the bounded ownership contract remains active.
 
 # 10. T24 — CSI Device, Status, and Cursor Queries
 
+**Status:** Complete in `0.3.0-alpha.4`.
+
 T24 adds the first concrete public active-query family on top of T22/T23.
 
-Required work SHOULD include:
+Completed work:
 
-- primary device-attributes request and typed response;
-- secondary device-attributes request and typed response;
-- device-status requests required for the supported terminal set;
-- cursor-position request and a clearly documented public coordinate convention;
-- DEC-private report forms where justified;
-- strict parsing of private markers, parameter counts, and numeric bounds;
-- deterministic malformed-response handling;
-- exact correlation with only the expected outstanding transaction;
-- explicit tests proving CPR-shaped traditional keyboard input is not stolen
-  when no CPR transaction is outstanding;
-- explicit tests proving unrelated text, keys, mouse, focus, and paste remain
-  deliverable while the query is pending.
+- adds typed Primary Device Attributes queries;
+- adds typed Secondary Device Attributes queries;
+- adds standard ECMA-48 Device Status Report queries with status values 0-4
+  preserved as protocol results;
+- adds standard Cursor Position Report queries with explicitly one-based public
+  row/column coordinates;
+- emits conservative 7-bit CSI requests while accepting 7-bit and 8-bit CSI
+  response introducers;
+- strictly preserves CSI private markers and response-family final bytes;
+- bounds numeric response parameters to 32 values and 1,000,000 per value;
+- rejects empty, non-decimal, excessive, or semantically invalid correlated
+  parameters deterministically with `FormatException`;
+- keeps all response matcher/parser machinery internal rather than exposing raw
+  CSI or arbitrary-query registration publicly;
+- proves CPR-shaped modified function-key input remains ordinary input when no
+  CPR transaction is active;
+- proves text, key, focus, mouse, and bracketed-paste events remain ordered and
+  deliverable while a CPR query is pending;
+- retains the T23 single-reader, cancellation, timeout, late-response, lifecycle,
+  and control-output contracts unchanged.
 
-The public API SHOULD expose semantic typed results rather than raw CSI strings.
+DEC-private DSR variants are not exposed merely for protocol completeness; the
+initial public surface remains the common Primary DA, Secondary DA, standard DSR,
+and standard CPR operations. Private variants can be added when a concrete
+consumer justifies a stable typed contract.
 
-**Gate T24:** common CSI queries work through normal async/await while preserving
-the 0.2 input stream and the T23 cancellation/late-response contract.
+**Gate T24: complete.** Common CSI queries work through normal async/await while
+preserving the 0.2 input stream and the T23 cancellation/late-response contract.
 
-**Planned completion record:** `docs/T24-CSI-Query-Family.md`.
+**T24 completion record:** [`docs/T24-CSI-Query-Family.md`](docs/T24-CSI-Query-Family.md).
 
 ---
 
