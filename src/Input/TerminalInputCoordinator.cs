@@ -171,6 +171,7 @@ internal sealed class TerminalInputCoordinator {
 					lock ( this.sync ) {
 						this.queryDemandPaused = true;
 					}
+					result.CompleteRoutedResponse();
 					continue;
 				}
 

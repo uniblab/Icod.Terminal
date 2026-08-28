@@ -73,14 +73,14 @@ internal sealed partial class TerminalInputDecoder {
 		return true;
 	}
 
-	private async ValueTask<bool> TryRouteExpectedResponseAsync(
+	private async ValueTask<TerminalInputDecodeResult?> TryRouteExpectedResponseAsync(
 		CancellationToken cancellationToken
 	) {
 		TerminalResponseExpectation? expectation = this.GetResponseExpectation();
 		if ( expectation is null
 			|| !expectation.IsArmed
 			|| 0 < expectation.ProtectedBufferedBytes ) {
-			return false;
+			return null;
 		}
 
 		int maximumFrameBytes = Math.Min(
@@ -93,7 +93,7 @@ internal sealed partial class TerminalInputDecoder {
 				this.GetResponseExpectation(),
 				expectation
 			) ) {
-				return false;
+				return null;
 			}
 
 			TerminalResponseFrameParseResult parseResult = TerminalResponseFramer.Parse(
@@ -105,7 +105,7 @@ internal sealed partial class TerminalInputDecoder {
 			switch ( parseResult.Status ) {
 				case TerminalResponseFrameParseStatus.NotCandidate:
 				case TerminalResponseFrameParseStatus.Invalid:
-					return false;
+					return null;
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					bool appended = parseResult.IntroducerIncomplete
@@ -118,7 +118,7 @@ internal sealed partial class TerminalInputDecoder {
 							).ConfigureAwait( false )
 						;
 					if ( !appended ) {
-						return false;
+						return null;
 					}
 					continue;
 
@@ -128,10 +128,17 @@ internal sealed partial class TerminalInputDecoder {
 						parseResult.Length
 					);
 					if ( !expectation.Matcher.IsMatch( frame ) ) {
-						return false;
+						return null;
 					}
 
-					return this.TryConsumeExpectedResponse(
+					if ( !this.TryConsumeExpectedResponse(
+						expectation,
+						frame
+					) ) {
+						return null;
+					}
+
+					return TerminalInputDecodeResult.RoutedResponse(
 						expectation,
 						frame
 					);
@@ -183,7 +190,6 @@ internal sealed partial class TerminalInputDecoder {
 			this.responseExpectation = null;
 		}
 
-		expectation.TrySetResult( frame );
 		return true;
 	}
 }
