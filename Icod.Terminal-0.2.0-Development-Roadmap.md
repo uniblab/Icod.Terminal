@@ -1,18 +1,18 @@
 # Icod.Terminal 0.2.0 Development Roadmap
 
-**Project:** `Icod.Terminal`  
-**Repository:** `https://github.com/uniblab/Icod.Terminal`  
-**Release line:** `0.2.0`  
-**Predecessor:** `0.1.0` — released as `v0.1.0`  
+**Project:** `Icod.Terminal`
+**Repository:** `https://github.com/uniblab/Icod.Terminal`
+**Release line:** `0.2.0`
+**Predecessor:** `0.1.0` — released as `v0.1.0`
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-**Language:** C# 13  
+**Language:** C# 13
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
-**Primary integration consumer:** `Icod.DCurses`  
-**Theme:** Rich terminal input events and reversible input-protocol control  
+**Primary integration consumer:** `Icod.DCurses`
+**Theme:** Rich terminal input events and reversible input-protocol control
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0`
-**Status:** T13-T20A complete; T20B stable release closure current
-**Current tranche:** T20B — stable 0.2.0 release closure
+**Final release version:** `0.2.0`
+**Status:** Released publicly as `v0.2.0`; T13-T20 complete
+**Successor roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---
 
@@ -535,11 +535,9 @@ in [`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-G
 Alpha-8 passed the complete Windows/Ubuntu/macOS PR package gate in GitHub
 Actions run `33132667483`.
 
-**T20B** promotes that accepted release candidate to stable package metadata:
-`Version` and `PackageVersion` become `0.2.0`, `AssemblyVersion` remains
-`0.2.0.0`, release-facing status text is finalized, and publication remains
-restricted to the matching `v0.2.0` tag after the stable commit is merged to
-`main`. The closure record is
+**T20B — complete.** The accepted release candidate was promoted to stable
+`0.2.0`, merged to `main`, validated again, and published by the matching
+`v0.2.0` tag-controlled release workflow. The closure record is
 [`docs/T20B-0.2.0-Release-Closure.md`](docs/T20B-0.2.0-Release-Closure.md).
 
 Required work:
@@ -563,12 +561,12 @@ Required work:
 - update final package release notes;
 - publish only via the matching `v0.2.0` tag.
 
-**Release gate `0.2.0`:** the package provides mouse, focus, paste, and richer
-traditional keyboard input through one bounded incremental session input path;
-all reversible input-protocol state is owned and restored by
+**Release gate `0.2.0`: complete.** The package provides mouse, focus, paste,
+and richer traditional keyboard input through one bounded incremental session
+input path; all reversible input-protocol state is owned and restored by
 `Icod.Terminal`; `Icod.DCurses` consumes the new features without duplicating
-terminal protocol machinery; and the final package passes the complete
-three-host package-only consumer gate.
+terminal protocol machinery; and the final package passed the complete
+three-host package-only consumer gate before public `v0.2.0` publication.
 
 ---
 

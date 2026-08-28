@@ -383,9 +383,15 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// </summary>
 	/// <returns>A value task representing asynchronous restoration.</returns>
 	public async ValueTask DisposeAsync() {
+		List<Exception> exceptions = [];
+		try {
+			await this.CloseQueryTransactionsAsync().ConfigureAwait( false );
+		} catch ( Exception e ) {
+			exceptions.Add( e );
+		}
+
 		await this.StopLifecycleAsync().ConfigureAwait( false );
 
-		List<Exception> exceptions = [];
 		Exception? inputProtocolException =
 			await this.CloseInputProtocolStateAsync().ConfigureAwait( false );
 		if ( inputProtocolException is not null ) {

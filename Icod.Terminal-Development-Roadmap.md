@@ -1,18 +1,18 @@
 # Icod.Terminal Development Roadmap
 
-**Project:** `Icod.Terminal`  
-**Package:** `Icod.Terminal`  
-**Repository:** `https://github.com/uniblab/Icod.Terminal`  
-**Language:** C# 13  
-**Initial target frameworks:** `net8.0`; `net10.0`  
-**Configurations:** `Debug`; `Staging`; `Release`  
-**License:** LGPL-3.0-or-later  
-**Current development target:** `0.2.0`
-**Stable contract target:** `1.0.0`  
-**Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`  
-**Status:** `0.1.0` released; T01-T20A complete; T20B stable release closure current
-**Current tranche:** T20B — stable `0.2.0` release closure
-**Current milestone roadmap:** [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md)
+**Project:** `Icod.Terminal`
+**Package:** `Icod.Terminal`
+**Repository:** `https://github.com/uniblab/Icod.Terminal`
+**Language:** C# 13
+**Current target frameworks:** `net8.0`; `net9.0`; `net10.0`
+**Configurations:** `Debug`; `Staging`; `Release`
+**License:** LGPL-3.0-or-later
+**Current development target:** `0.3.0`
+**Stable contract target:** `1.0.0`
+**Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`
+**Status:** `0.1.0` and `0.2.0` released; T28A release candidate ready for validation
+**Current tranche:** T28A — 0.3 API and release-candidate gate
+**Current milestone roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---
 
@@ -752,7 +752,7 @@ Before publishing `0.1.0`:
 
 **Release gate `0.1.0`: complete.** The package is buildable and consumable independently, DCurses is integrated on top of it, and `watch`, `slabtop`, and `top` no longer require suite-private terminal-control implementations. The matching `v0.1.0` tag completed the three-host release workflow and published the non-prerelease package.
 
-Current `0.2.0` work is tracked in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
+Completed `0.2.0` work is tracked in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md). Current `0.3.0` work is tracked in [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
 
 ---
 
@@ -841,20 +841,30 @@ This tranche SHALL build on the 0.1 incremental decoder rather than introducing 
 
 ### 10.2 Version 0.3 — Query/response routing
 
-Add a common request/response mechanism for active terminal conversations.
+The detailed milestone plan is maintained in
+[`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
 
-Candidates include:
+Version 0.3 adds a common request/response mechanism for active terminal
+conversations, including device attributes, device status reports,
+cursor-position reports, DECRQSS, and XTGETTCAP.
 
-- device attributes;
-- device status reports;
-- cursor-position reports;
-- DECRQSS;
-- XTGETTCAP;
-- bounded deadlines/timeouts;
-- correlation between pending requests and incoming response frames;
-- routing unsolicited application input around pending terminal responses.
+The milestone SHALL preserve these core invariants:
 
-Each protocol feature SHALL NOT invent its own global input loop.
+- public query operations use normal async/await;
+- exactly one session-owned input path consumes terminal bytes;
+- response interpretation is expectation-driven;
+- ambiguity-sensitive query families are serialized;
+- cancellation before transmission emits nothing;
+- cancellation or timeout after transmission does not revoke the emitted wire
+  request;
+- bounded internal ownership prevents late responses from contaminating later
+  ambiguous queries or ordinary input while that ownership remains active;
+- unrelated application input remains on the established session event path;
+- active probing remains explicit rather than automatic at session open;
+- live query observations do not mutate `Icod.TermInfo` terminal descriptions.
+
+Each protocol feature SHALL build on the shared router and SHALL NOT invent its
+own global input loop.
 
 ### 10.3 Version 0.4 — Operational protocols
 

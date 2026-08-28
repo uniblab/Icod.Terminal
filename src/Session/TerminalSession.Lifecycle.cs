@@ -269,6 +269,7 @@ public sealed partial class TerminalSession {
 			return;
 		}
 
+		this.SuspendQueryTransactions();
 		Volatile.Write( ref this.stateValid, 0 );
 		List<Exception> exceptions = [];
 
@@ -374,6 +375,7 @@ public sealed partial class TerminalSession {
 			await this.ResumePresentationStateAsync().ConfigureAwait( false );
 			await this.ResumeInputProtocolStateAsync().ConfigureAwait( false );
 			await this.ResumeLifecycleParticipantsAsync().ConfigureAwait( false );
+			this.ResumeQueryTransactions();
 
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 0 );
 			Volatile.Write( ref this.stateValid, 1 );

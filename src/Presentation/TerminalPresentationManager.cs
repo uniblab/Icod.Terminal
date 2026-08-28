@@ -335,6 +335,10 @@ internal sealed class TerminalPresentationManager {
 		PresentationState to,
 		CancellationToken cancellationToken
 	) {
+		using IDisposable controlOutput = await this.session.AcquireControlOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+
 		TransitionProgress progress = new( from );
 		try {
 			bool wrote = await this.ApplyTransitionCoreAsync(
@@ -456,6 +460,10 @@ internal sealed class TerminalPresentationManager {
 	private async ValueTask<Exception?> RestoreBaselineBestEffortAsync(
 		PresentationState from
 	) {
+		using IDisposable controlOutput = await this.session.AcquireControlOutputAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
+
 		List<Exception> exceptions = [];
 		bool wrote = false;
 

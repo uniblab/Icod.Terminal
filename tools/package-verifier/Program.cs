@@ -19,6 +19,22 @@ internal static class Program {
 		"net10.0"
 	];
 
+	private static readonly string[] RequiredQueryDocumentationMembers = [
+		"T:Icod.Terminal.TerminalDeviceStatus",
+		"T:Icod.Terminal.TerminalPrimaryDeviceAttributes",
+		"T:Icod.Terminal.TerminalSecondaryDeviceAttributes",
+		"T:Icod.Terminal.TerminalCursorPosition",
+		"T:Icod.Terminal.TerminalStatusStringKind",
+		"T:Icod.Terminal.TerminalStatusStringResponse",
+		"T:Icod.Terminal.TerminalCapabilityObservation",
+		"M:Icod.Terminal.TerminalSession.QueryPrimaryDeviceAttributesAsync(System.TimeSpan,System.Threading.CancellationToken)",
+		"M:Icod.Terminal.TerminalSession.QuerySecondaryDeviceAttributesAsync(System.TimeSpan,System.Threading.CancellationToken)",
+		"M:Icod.Terminal.TerminalSession.QueryDeviceStatusAsync(System.TimeSpan,System.Threading.CancellationToken)",
+		"M:Icod.Terminal.TerminalSession.QueryCursorPositionAsync(System.TimeSpan,System.Threading.CancellationToken)",
+		"M:Icod.Terminal.TerminalSession.QueryStatusStringAsync(Icod.Terminal.TerminalStatusStringKind,System.TimeSpan,System.Threading.CancellationToken)",
+		"M:Icod.Terminal.TerminalSession.QueryLiveCapabilityAsync(System.String,System.TimeSpan,System.Threading.CancellationToken)"
+	];
+
 	public static int Main(
 		string[] args
 	) {
@@ -590,14 +606,38 @@ internal static class Program {
 			$"{documentationPath} identifies unexpected assembly '{assemblyName}'."
 		);
 
-		int memberCount = documentation
+		string[] memberNames = documentation
 			.Descendants()
-			.Count(
+			.Where(
 				element => "member" == element.Name.LocalName
-			);
+			)
+			.Select(
+				element => element.Attribute( "name" )?.Value ?? string.Empty
+			)
+			.Where(
+				static name => !string.IsNullOrWhiteSpace( name )
+			)
+			.ToArray();
 		Require(
-			0 < memberCount,
+			0 < memberNames.Length,
 			$"{documentationPath} contains no documented members."
+		);
+
+		HashSet<string> documented = memberNames.ToHashSet(
+			StringComparer.Ordinal
+		);
+		string[] missingQueryDocumentation = RequiredQueryDocumentationMembers
+			.Where(
+				member => !documented.Contains( member )
+			)
+			.ToArray();
+		Require(
+			0 == missingQueryDocumentation.Length,
+			$"{documentationPath} is missing required 0.3 query documentation: "
+				+ string.Join(
+					", ",
+					missingQueryDocumentation
+				)
 		);
 	}
 

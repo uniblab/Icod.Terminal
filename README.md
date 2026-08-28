@@ -4,14 +4,17 @@
 
 ## Status
 
-The `0.2.0` line defines the stable rich-input contract. It extends the 0.1
-foundation with focus reporting, bounded bracketed paste, normalized mouse
-input, richer traditional modified keys, reversible input-protocol leases, and
-per-session decoder policy.
+`0.2.0` is the current stable public release. It extends the 0.1 foundation with
+focus reporting, bounded bracketed paste, normalized mouse input, richer
+traditional modified keys, reversible input-protocol leases, and per-session
+decoder policy.
 
-The 0.2 release candidate passed the complete package-only validation gate on
-Windows, Ubuntu, and macOS. Stable publication is performed only by the
-tag-controlled release workflow for the matching `v0.2.0` tag.
+Development has moved to `0.3.0-alpha.8`. T28A freezes the reviewed 0.3
+public query API, publishes its API baseline, strengthens XML/package validation,
+and extends the isolated package consumer through every public CSI/DCS query
+operation. Session opening remains passive: active interrogation occurs only
+when a caller explicitly invokes a query method. Release-candidate and downstream
+acceptance remain execution gates before stable `0.3.0`.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -155,15 +158,74 @@ The library targets:
 
 The codebase uses C# 13 and supports the terminal-control implementations provided for Windows, Linux, and macOS.
 
+## Active terminal queries
+
+`0.3` adds explicit typed terminal interrogation to `TerminalSession`. Opening a
+session does not send DA, DSR, CPR, DECRQSS, XTGETTCAP, or any other probe.
+
+A caller chooses which requests to issue and supplies the caller-visible timeout:
+
+```csharp
+TimeSpan timeout = TimeSpan.FromMilliseconds( 750 );
+
+TerminalPrimaryDeviceAttributes primary =
+	await session.QueryPrimaryDeviceAttributesAsync( timeout );
+
+TerminalCursorPosition cursor =
+	await session.QueryCursorPositionAsync( timeout );
+
+TerminalStatusStringResponse sgr =
+	await session.QueryStatusStringAsync(
+		TerminalStatusStringKind.SelectGraphicRendition,
+		timeout
+	);
+
+TerminalCapabilityObservation terminalName =
+	await session.QueryLiveCapabilityAsync(
+		"TN",
+		timeout
+	);
+```
+
+The public query families are:
+
+- Primary Device Attributes;
+- Secondary Device Attributes;
+- standard ECMA-48 Device Status Report;
+- standard Cursor Position Report;
+- fixed DECRQSS status-string requests;
+- single-name XTGETTCAP live capability observations.
+
+CPR rows and columns are one-based, matching the wire protocol. XTGETTCAP values
+remain exact decoded bytes because terminal capability values may contain ESC or
+other control bytes.
+
+Caller cancellation uses ordinary `OperationCanceledException` semantics and a
+caller-visible deadline uses `TimeoutException`. Once request bytes have been
+emitted, the session retains bounded internal ownership long enough to consume
+or expire a late ambiguous response; a cancelled/timed-out query therefore
+cannot contaminate the next serialized query.
+
+All responses are routed through the same session-owned input path used by
+ordinary text, keys, mouse, focus, paste, and lifecycle-aware event consumption.
+There is no public raw response reader or caller-extensible query protocol
+registration surface.
+
+The reviewed 0.3 additions are recorded in
+[`docs/Public-API-Baseline-0.3.md`](docs/Public-API-Baseline-0.3.md).
+
 ## Samples
 
-The repository contains two deliberately different interactive samples:
+The repository contains three deliberately different interactive samples:
 
 - [`Icod.Terminal.Sample`](samples/Icod.Terminal.Sample/) is the minimal session,
   identity, size, output, and restoration example;
 - [`Icod.Terminal.RichInput.Sample`](samples/Icod.Terminal.RichInput.Sample/) is
   the 0.2 live event inspector for focus, bracketed paste, mouse input, modified
-  keys, lifecycle events, and reversible input-protocol leases.
+  keys, lifecycle events, and reversible input-protocol leases;
+- [`Icod.Terminal.Query.Sample`](samples/Icod.Terminal.Query.Sample/) explicitly
+  issues the 0.3 CSI/DCS query families while reversible presentation and
+  rich-input leases are active, then returns to the unified event loop.
 
 See [`samples/README.md`](samples/README.md) for run instructions and expected
 behavior.
@@ -188,7 +250,28 @@ including Debug package validation.
 
 ## Development roadmap
 
-The `0.2.0` milestone is documented in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
+The active `0.3.0` milestone is documented in
+[`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
+The completed T21 foundation contract is recorded in
+[`docs/T21-0.3-Foundation-and-Contract-Reset.md`](docs/T21-0.3-Foundation-and-Contract-Reset.md).
+The completed T22 framing/demultiplexing tranche is recorded in
+[`docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md`](docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md).
+The completed T23 transaction/lifetime tranche is recorded in
+[`docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md`](docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md).
+The completed T24 CSI query family is recorded in
+[`docs/T24-CSI-Query-Family.md`](docs/T24-CSI-Query-Family.md).
+The completed T25 DECRQSS/DCS query tranche is recorded in
+[`docs/T25-DECRQSS.md`](docs/T25-DECRQSS.md).
+The completed T26 XTGETTCAP live-capability tranche is recorded in
+[`docs/T26-XTGETTCAP.md`](docs/T26-XTGETTCAP.md).
+The T27 integration and acceptance record is maintained in
+[`docs/T27-Query-Integration-and-Probe-Acceptance.md`](docs/T27-Query-Integration-and-Probe-Acceptance.md).
+The T28A release-candidate gate is maintained in
+[`docs/T28A-0.3-Release-Candidate-Gate.md`](docs/T28A-0.3-Release-Candidate-Gate.md),
+and the reviewed 0.3 public API delta is published in
+[`docs/Public-API-Baseline-0.3.md`](docs/Public-API-Baseline-0.3.md).
+The completed `0.2.0` milestone remains in
+[`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 
 See [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) for the architectural boundaries, `0.1.0` acceptance gates, and the path toward the stable `1.0.0` contract. The completed T02 extraction matrix is recorded in [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md), the T03 low-level contract is documented in [`docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md`](docs/T03-Endpoint-Observation-and-Native-Mode-Parity.md), the T04 semantic mode contract is documented in [`docs/T04-Semantic-Input-Mode-Policy.md`](docs/T04-Semantic-Input-Mode-Policy.md), the T05 session ownership contract is documented in [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md), the T06 identity/output contract is documented in [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md), the T07 lifecycle contract is documented in [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md), and the T08 input contract is documented in [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 

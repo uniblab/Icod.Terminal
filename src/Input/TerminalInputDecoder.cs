@@ -194,25 +194,48 @@ internal sealed partial class TerminalInputDecoder {
 		CancellationToken cancellationToken = default
 	) {
 		while ( true ) {
+			TerminalInputDecodeResult result = await this.ReadNextAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+			if ( result.InputEvent is not null ) {
+				return result.InputEvent;
+			}
+		}
+	}
+
+	internal async ValueTask<TerminalInputDecodeResult> ReadNextAsync(
+		CancellationToken cancellationToken = default
+	) {
+		while ( true ) {
 			cancellationToken.ThrowIfCancellationRequested();
 
 			if ( this.pasteActive ) {
-				return await this.ReadPasteEventAsync(
-					cancellationToken
-				).ConfigureAwait( false );
+				return TerminalInputDecodeResult.FromInput(
+					await this.ReadPasteEventAsync(
+						cancellationToken
+					).ConfigureAwait( false )
+				);
 			}
 
 			if ( 0 == this.bufferedBytes.Count ) {
 				if ( !await this.ReadMoreAsync( cancellationToken ).ConfigureAwait( false ) ) {
-					return TerminalInputEvent.EndOfInput();
+					return TerminalInputDecodeResult.FromInput(
+						TerminalInputEvent.EndOfInput()
+					);
 				}
+			}
+
+			if ( await this.TryRouteExpectedResponseAsync(
+				cancellationToken
+			).ConfigureAwait( false ) ) {
+				return TerminalInputDecodeResult.RoutedResponse();
 			}
 
 			TerminalInputEvent? mouseEvent = await this.TryReadMouseEventAsync(
 				cancellationToken
 			).ConfigureAwait( false );
 			if ( mouseEvent is not null ) {
-				return mouseEvent;
+				return TerminalInputDecodeResult.FromInput( mouseEvent );
 			}
 
 			this.FindKeySequenceMatch(
@@ -221,7 +244,9 @@ internal sealed partial class TerminalInputDecoder {
 			);
 
 			if ( exact is not null && !needsMore ) {
-				return this.ConsumeKeySequence( exact );
+				return TerminalInputDecodeResult.FromInput(
+					this.ConsumeKeySequence( exact )
+				);
 			}
 
 			if ( needsMore ) {
@@ -239,16 +264,24 @@ internal sealed partial class TerminalInputDecoder {
 				}
 
 				if ( exact is not null ) {
-					return this.ConsumeKeySequence( exact );
+					return TerminalInputDecodeResult.FromInput(
+						this.ConsumeKeySequence( exact )
+					);
 				}
 
 				if ( EscapeByte == this.bufferedBytes[ 0 ] ) {
 					this.Consume( 1 );
-					return TerminalInputEvent.FromKey( TerminalKey.Escape );
+					return TerminalInputDecodeResult.FromInput(
+						TerminalInputEvent.FromKey( TerminalKey.Escape )
+					);
 				}
 			}
 
-			return await this.DecodeFallbackAsync( cancellationToken ).ConfigureAwait( false );
+			return TerminalInputDecodeResult.FromInput(
+				await this.DecodeFallbackAsync(
+					cancellationToken
+				).ConfigureAwait( false )
+			);
 		}
 	}
 
@@ -670,8 +703,10 @@ internal sealed partial class TerminalInputDecoder {
 			);
 		}
 
-		for ( int index = 0; index < count; index++ ) {
-			this.bufferedBytes.Add( this.readBuffer[ index ] );
+		lock ( this.responseExpectationGate ) {
+			for ( int index = 0; index < count; index++ ) {
+				this.bufferedBytes.Add( this.readBuffer[ index ] );
+			}
 		}
 
 		return count;
@@ -897,7 +932,10 @@ internal sealed partial class TerminalInputDecoder {
 			throw new ArgumentOutOfRangeException( nameof( count ) );
 		}
 
-		this.bufferedBytes.RemoveRange( 0, count );
+		lock ( this.responseExpectationGate ) {
+			this.responseExpectation?.ConsumeProtectedBytes( count );
+			this.bufferedBytes.RemoveRange( 0, count );
+		}
 	}
 
 	private sealed class KeySequence {

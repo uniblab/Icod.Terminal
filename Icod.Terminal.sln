@@ -14,6 +14,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Sample", "sam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.RichInput.Sample", "samples\Icod.Terminal.RichInput.Sample\Icod.Terminal.RichInput.Sample.csproj", "{F8794364-A924-4B16-B27C-F54B6B1AE865}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Query.Sample", "samples\Icod.Terminal.Query.Sample\Icod.Terminal.Query.Sample.csproj", "{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,12 @@ Global
 		{F8794364-A924-4B16-B27C-F54B6B1AE865}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{F8794364-A924-4B16-B27C-F54B6B1AE865}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8794364-A924-4B16-B27C-F54B6B1AE865}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,5 +61,6 @@ Global
 		{4BC77390-0FD3-40AA-A6AF-F4BA9B457C56} = {1CD421BA-D28F-406F-9076-164964741474}
 		{7093D49E-2483-414C-9DE0-1B668B4DAC10} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{F8794364-A924-4B16-B27C-F54B6B1AE865} = {4C994810-850E-4753-82E5-4BD346EF574C}
+		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3} = {4C994810-850E-4753-82E5-4BD346EF574C}
 	EndGlobalSection
 EndGlobal
