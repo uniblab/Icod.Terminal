@@ -6,10 +6,9 @@
 
 Version `0.1.0` is released. T01-T12 are complete, including the tag-controlled publication gate and three-host package validation.
 
-The `0.2.0` line is in its final release gate. T13-T19 are complete.
-`0.2.0-alpha.8` performs the T20A public-API/package regret review and extends
-the isolated package consumer across every 0.2 rich-input family. Stable
-`0.2.0` follows only after the complete Windows/Linux/macOS gate is green.
+The `0.2.0` release candidate passed the complete T20A package-only gate on
+Windows, Ubuntu, and macOS. T20B promotes that accepted contract to stable
+`0.2.0` package metadata; publication remains tag-controlled through `v0.2.0`.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -34,14 +33,14 @@ watch / slabtop / top
 
 ## Installation
 
-The current stable package remains:
+The stable 0.2 release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.1.0
+dotnet add package Icod.Terminal --version 0.2.0
 ```
 
-The T20A validation artifacts use `0.2.0-alpha.8`. After T20B and publication,
-the stable rich-input line installs as `Icod.Terminal 0.2.0`.
+The package targets `net8.0`, `net9.0`, and `net10.0` and depends on
+`Icod.TermInfo 1.2.0` and `Icod.Timing 1.0.0`.
 
 ## Quick start
 
@@ -181,9 +180,11 @@ The 0.2 rich-input implementation is recorded tranche-by-tranche in T13-T19.
 The downstream acceptance result is in
 [`docs/T19-DCurses-Rich-Input-Acceptance.md`](docs/T19-DCurses-Rich-Input-Acceptance.md),
 the reviewed 0.2 public API delta is in
-[`docs/Public-API-Baseline-0.2.md`](docs/Public-API-Baseline-0.2.md), and the
+[`docs/Public-API-Baseline-0.2.md`](docs/Public-API-Baseline-0.2.md), the
 release-candidate gate is in
-[`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md).
+[`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md),
+and stable release closure is recorded in
+[`docs/T20B-0.2.0-Release-Closure.md`](docs/T20B-0.2.0-Release-Closure.md).
 
 ## License
 

@@ -10,9 +10,9 @@
 **Primary integration consumer:** `Icod.DCurses`  
 **Theme:** Rich terminal input events and reversible input-protocol control  
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.2.0-alpha.8`
-**Status:** T13-T19 complete; T20A public-API and package release-candidate gate current
-**Current tranche:** T20A — 0.2 API, package, and release-candidate hardening
+**Current development version:** `0.2.0`
+**Status:** T13-T20A complete; T20B stable release closure current
+**Current tranche:** T20B — stable 0.2.0 release closure
 
 ---
 
@@ -532,10 +532,15 @@ three-framework package-only consumer through focus, paste, mouse, traditional
 modified keys, and reversible input-protocol leases. The checkpoint is recorded
 in [`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md).
 
-**T20B** SHALL begin only after Alpha-8 passes the complete three-host package
-gate. T20B SHALL set `Version` and `PackageVersion` to stable `0.2.0`, retain
-`AssemblyVersion` as `0.2.0.0`, update final release-facing status text, merge the
-release commit to `main`, and publish only through the matching `v0.2.0` tag.
+Alpha-8 passed the complete Windows/Ubuntu/macOS PR package gate in GitHub
+Actions run `33132667483`.
+
+**T20B** promotes that accepted release candidate to stable package metadata:
+`Version` and `PackageVersion` become `0.2.0`, `AssemblyVersion` remains
+`0.2.0.0`, release-facing status text is finalized, and publication remains
+restricted to the matching `v0.2.0` tag after the stable commit is merged to
+`main`. The closure record is
+[`docs/T20B-0.2.0-Release-Closure.md`](docs/T20B-0.2.0-Release-Closure.md).
 
 Required work:
 

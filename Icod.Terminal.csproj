@@ -13,7 +13,7 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.2.0-alpha.8</Version>
+		<Version>0.2.0</Version>
 		<AssemblyVersion>0.2.0.0</AssemblyVersion>
 	</PropertyGroup>
 
@@ -54,12 +54,12 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PackageVersion>0.2.0-alpha.8</PackageVersion>
+		<PackageVersion>0.2.0</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.2.0-alpha.8 begins the T20 release-candidate gate: it freezes the 0.2 rich-input public API, documents protocol ownership, mouse coordinates, paste framing, and decoder policy, and extends the isolated package consumer across focus, paste, mouse, modified keys, and reversible input-protocol leases.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.2.0 adds capability-driven focus, bracketed-paste, mouse, and richer traditional modified-key input through the single bounded TerminalSession event path, plus reversible input-protocol leases and per-session decoder policy. The release is accepted by Icod.DCurses and validated through package-only consumers on net8.0, net9.0, and net10.0 across Windows, Linux, and macOS.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
