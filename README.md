@@ -9,12 +9,12 @@ focus reporting, bounded bracketed paste, normalized mouse input, richer
 traditional modified keys, reversible input-protocol leases, and per-session
 decoder policy.
 
-Development has moved to `0.3.0-alpha.1`. T21 freezes the query/response-routing
-contract: normal async/await, one session-owned terminal reader,
-expectation-driven response correlation, bounded late-response ownership,
-explicit probing, and preservation of the immutable `Icod.TermInfo` capability
-boundary. T21 intentionally adds no concrete query protocol; T22 begins the
-internal framing/demultiplexing implementation.
+Development has moved to `0.3.0-alpha.2`. T22 adds bounded incremental CSI/DCS
+response framing and expectation-driven demultiplexing inside the existing
+single terminal-input reader. Only an accepted expected frame is removed;
+rejected or unrelated bytes continue through the 0.2 application event path.
+No public query API exists yet; T23 adds transaction ownership, deadlines,
+serialization, and bounded late-response handling.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -195,6 +195,8 @@ The active `0.3.0` milestone is documented in
 [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
 The completed T21 foundation contract is recorded in
 [`docs/T21-0.3-Foundation-and-Contract-Reset.md`](docs/T21-0.3-Foundation-and-Contract-Reset.md).
+The completed T22 framing/demultiplexing tranche is recorded in
+[`docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md`](docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md).
 The completed `0.2.0` milestone remains in
 [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 

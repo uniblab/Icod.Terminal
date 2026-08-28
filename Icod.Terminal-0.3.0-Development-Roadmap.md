@@ -9,9 +9,9 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.1`
-**Status:** T21 complete; T22 is the next implementation tranche
-**Current tranche:** T22 — bounded response framing and single-reader demultiplexing
+**Current development version:** `0.3.0-alpha.2`
+**Status:** T21-T22 complete; T23 is the next implementation tranche
+**Current tranche:** T23 — query transactions, deadlines, and late-response ownership
 
 ---
 
@@ -395,12 +395,14 @@ probe policy during implementation.
 
 # 8. T22 — Bounded Response Framing and Single-Reader Demultiplexing
 
+**Status:** Complete in `0.3.0-alpha.2`.
+
 T22 introduces the internal machinery needed to recognize expected terminal
 responses without breaking the 0.2 input contract.
 
-Required work:
+Completed work:
 
-- retain exactly one underlying terminal input reader;
+- retained exactly one underlying terminal input reader;
 - introduce an internal response expectation/matcher abstraction;
 - add bounded incremental CSI framing;
 - add bounded incremental DCS framing sufficient for later DECRQSS and
@@ -419,13 +421,14 @@ Required work:
 T22 SHOULD use an internal synthetic-response harness rather than exposing
 unfinished public query methods merely to test the router.
 
-**Gate T22:** a scripted byte stream can interleave ordinary application input,
-rich input, CSI response candidates, DCS response candidates, and lifecycle
-events while one session-owned reader routes only the expected response away
-from the established application event stream.
+**Gate T22: complete.** Scripted input can interleave ordinary application
+input, rich input, CSI response candidates, and DCS response candidates while
+the existing decoder consumes only a frame accepted by the active expectation.
+Unclaimed input remains on the established application event path, and the
+session lifecycle path remains unchanged.
 
-**Planned completion record:**
-`docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md`.
+**T22 completion record:**
+[`docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md`](docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md).
 
 ---
 

@@ -208,6 +208,12 @@ internal sealed partial class TerminalInputDecoder {
 				}
 			}
 
+			if ( await this.TryRouteExpectedResponseAsync(
+				cancellationToken
+			).ConfigureAwait( false ) ) {
+				continue;
+			}
+
 			TerminalInputEvent? mouseEvent = await this.TryReadMouseEventAsync(
 				cancellationToken
 			).ConfigureAwait( false );
