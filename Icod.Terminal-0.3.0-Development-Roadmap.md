@@ -9,9 +9,9 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.7`
-**Status:** T21-T26 complete; T27 implementation ready for acceptance
-**Current tranche:** T27 — Query Integration and Probe Acceptance
+**Current development version:** `0.3.0-alpha.8`
+**Status:** T28A release candidate ready for validation; execution gates remain open
+**Current tranche:** T28A — Release-Candidate Gate
 
 ---
 
@@ -650,30 +650,45 @@ T28 closes the release in two subtranches.
 
 ## 14.1 T28A — Release-Candidate Gate
 
-T28A SHOULD use `0.3.0-alpha.8` unless implementation experience justifies a
-different prerelease identifier.
+**Status:** Implementation complete in `0.3.0-alpha.8`; validation execution
+pending.
 
-Required work:
+T28A freezes the intended stable 0.3 query API without changing production
+query behavior.
 
-- perform a public API regret review of every new 0.3 type and member;
-- publish `docs/Public-API-Baseline-0.3.md`;
-- document query cancellation, timeout, and late-response ownership;
-- document the one-reader invariant;
-- document explicit probing and the absence of automatic session interrogation;
-- document the supported CSI and DCS query families;
-- document resource bounds;
-- update README query examples;
-- validate XML documentation, Source Link, symbols, package contents, and
-  dependency closure;
-- extend the isolated package-only consumer through all major 0.3 query
-  families;
-- run the full Windows/Ubuntu/macOS Release matrix.
+Completed work:
 
-**Gate T28A:** no unresolved public-API regret remains and the package-only
-consumer proves the 0.3 query contract across all supported TFMs and CI hosts.
+- reviews every public type and member added by 0.3 and finds no breaking
+  correction required before stable release;
+- publishes [`docs/Public-API-Baseline-0.3.md`](docs/Public-API-Baseline-0.3.md);
+- documents caller cancellation, caller-visible timeout, bounded late-response
+  ownership, the one-reader invariant, explicit probing, supported query
+  families, and resource bounds;
+- adds README examples for CSI, DECRQSS, and XTGETTCAP operations;
+- extends the package verifier to require XML documentation entries for every
+  public 0.3 query type and method while retaining Source Link, symbols, package
+  contents, assembly identity, and exact dependency-closure checks;
+- extends the isolated package-only consumer through Primary DA, Secondary DA,
+  DSR, CPR, DECRQSS, and XTGETTCAP;
+- adds a dedicated `0.3.0` branch Release workflow for Windows, Ubuntu, and
+  macOS using `net8.0`, `net9.0`, and `net10.0`;
+- adds no public aggregate probe type, public raw response event, public matcher,
+  or caller-extensible protocol registration API.
 
-**Planned completion record:**
-`docs/T28A-0.3-Release-Candidate-Gate.md`.
+Execution still required before T28A can close:
+
+- the T27 downstream DCurses regression must be confirmed against the 0.3
+  candidate;
+- the dedicated alpha.8 Release matrix must pass on Windows, Ubuntu, and macOS;
+- package-only validation must pass for all three target frameworks on each
+  host.
+
+**Gate T28A: pending execution.** No public-API regret is known, but stable
+`0.3.0` SHALL NOT be assigned until the remaining T27/T28A execution evidence is
+green.
+
+**T28A completion record:**
+[`docs/T28A-0.3-Release-Candidate-Gate.md`](docs/T28A-0.3-Release-Candidate-Gate.md).
 
 ## 14.2 T28B — Stable Release Closure
 

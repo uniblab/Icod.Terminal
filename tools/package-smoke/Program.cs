@@ -204,6 +204,36 @@ try {
 
 	await protocolLease.DisposeAsync();
 
+	TerminalPrimaryDeviceAttributes primary =
+		await session.QueryPrimaryDeviceAttributesAsync(
+			TimeSpan.FromSeconds( 1 )
+		);
+	Require(
+		64 == primary.DeviceCode
+			&& primary.HasAttribute( 1 )
+			&& primary.HasAttribute( 2 ),
+		"The package consumer received an unexpected Primary DA result."
+	);
+
+	TerminalSecondaryDeviceAttributes secondary =
+		await session.QuerySecondaryDeviceAttributesAsync(
+			TimeSpan.FromSeconds( 1 )
+		);
+	Require(
+		41 == secondary.TerminalTypeCode
+			&& 331 == secondary.FirmwareVersion
+			&& 0 == secondary.OptionCode,
+		"The package consumer received an unexpected Secondary DA result."
+	);
+
+	TerminalDeviceStatus deviceStatus = await session.QueryDeviceStatusAsync(
+		TimeSpan.FromSeconds( 1 )
+	);
+	Require(
+		TerminalDeviceStatus.Ready == deviceStatus,
+		"The package consumer received an unexpected DSR result."
+	);
+
 	TerminalCursorPosition cursor = await session.QueryCursorPositionAsync(
 		TimeSpan.FromSeconds( 1 )
 	);
@@ -349,6 +379,18 @@ internal sealed class ScriptedTerminalInput : ITerminalInput {
 }
 
 internal sealed class RecordingTerminalOutput : ITerminalOutput {
+	private static readonly byte[] PrimaryDeviceAttributesRequest =
+		Encoding.ASCII.GetBytes( "\u001b[c" );
+	private static readonly byte[] PrimaryDeviceAttributesResponse =
+		Encoding.ASCII.GetBytes( "\u001b[?64;1;2c" );
+	private static readonly byte[] SecondaryDeviceAttributesRequest =
+		Encoding.ASCII.GetBytes( "\u001b[>c" );
+	private static readonly byte[] SecondaryDeviceAttributesResponse =
+		Encoding.ASCII.GetBytes( "\u001b[>41;331;0c" );
+	private static readonly byte[] DeviceStatusRequest =
+		Encoding.ASCII.GetBytes( "\u001b[5n" );
+	private static readonly byte[] DeviceStatusResponse =
+		Encoding.ASCII.GetBytes( "\u001b[0n" );
 	private static readonly byte[] CursorPositionRequest =
 		Encoding.ASCII.GetBytes( "\u001b[6n" );
 	private static readonly byte[] CursorPositionResponse =
@@ -404,6 +446,18 @@ internal sealed class RecordingTerminalOutput : ITerminalOutput {
 	private void PublishQueryResponse(
 		ReadOnlySpan<byte> request
 	) {
+		if ( request.SequenceEqual( PrimaryDeviceAttributesRequest ) ) {
+			this.input.Publish( PrimaryDeviceAttributesResponse );
+			return;
+		}
+		if ( request.SequenceEqual( SecondaryDeviceAttributesRequest ) ) {
+			this.input.Publish( SecondaryDeviceAttributesResponse );
+			return;
+		}
+		if ( request.SequenceEqual( DeviceStatusRequest ) ) {
+			this.input.Publish( DeviceStatusResponse );
+			return;
+		}
 		if ( request.SequenceEqual( CursorPositionRequest ) ) {
 			this.input.Publish( CursorPositionResponse );
 			return;

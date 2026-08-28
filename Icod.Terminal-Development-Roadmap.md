@@ -10,8 +10,8 @@
 **Current development target:** `0.3.0`
 **Stable contract target:** `1.0.0`
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`
-**Status:** `0.1.0` and `0.2.0` released; T27 implementation ready for acceptance
-**Current tranche:** T27 — query integration and probe acceptance
+**Status:** `0.1.0` and `0.2.0` released; T28A release candidate ready for validation
+**Current tranche:** T28A — 0.3 API and release-candidate gate
 **Current milestone roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---
