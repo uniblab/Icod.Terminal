@@ -553,17 +553,19 @@ public sealed class TerminalQueryTransactionTests {
 			throw new ArgumentOutOfRangeException( nameof( expected ) );
 		}
 
-		for ( int attempt = 0; attempt < 10_000; attempt++ ) {
-			if ( expected <= transport.WriteCount ) {
-				return;
-			}
-			await Task.Yield();
+		using CancellationTokenSource timeout = new();
+		timeout.CancelAfter( TimeSpan.FromSeconds( 5 ) );
+		try {
+			await transport.WaitForWriteCountAsync(
+				expected,
+				timeout.Token
+			);
+		} catch ( OperationCanceledException ) when ( timeout.IsCancellationRequested ) {
+			Assert.True(
+				expected <= transport.WriteCount,
+				$"Expected at least {expected} terminal writes, observed {transport.WriteCount}."
+			);
 		}
-
-		Assert.True(
-			expected <= transport.WriteCount,
-			$"Expected at least {expected} terminal writes, observed {transport.WriteCount}."
-		);
 	}
 
 	private static async Task YieldSeveralTimesAsync() {
@@ -606,6 +608,7 @@ public sealed class TerminalQueryTransactionTests {
 			}
 		);
 		private readonly List<byte[]> writes = [];
+		private readonly SemaphoreSlim writeSignal = new( 0 );
 
 		private int activeReads;
 		private int maximumConcurrentReads;
@@ -628,6 +631,29 @@ public sealed class TerminalQueryTransactionTests {
 		internal int ReadCount {
 			get {
 				return Volatile.Read( ref this.readCount );
+			}
+		}
+
+
+		internal async ValueTask WaitForWriteCountAsync(
+			int expected,
+			CancellationToken cancellationToken = default
+		) {
+			if ( 0 > expected ) {
+				throw new ArgumentOutOfRangeException( nameof( expected ) );
+			}
+			cancellationToken.ThrowIfCancellationRequested();
+
+			while ( true ) {
+				lock ( this.sync ) {
+					if ( expected <= this.writes.Count ) {
+						return;
+					}
+				}
+
+				await this.writeSignal.WaitAsync(
+					cancellationToken
+				).ConfigureAwait( false );
 			}
 		}
 
@@ -674,6 +700,7 @@ public sealed class TerminalQueryTransactionTests {
 			lock ( this.sync ) {
 				this.writes.Add( buffer.ToArray() );
 			}
+			this.writeSignal.Release();
 			return ValueTask.CompletedTask;
 		}
 
