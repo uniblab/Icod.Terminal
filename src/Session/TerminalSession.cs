@@ -386,8 +386,8 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		List<Exception> exceptions = [];
 		try {
 			await this.CloseQueryTransactionsAsync().ConfigureAwait( false );
-		} catch ( Exception exception ) {
-			exceptions.Add( exception );
+		} catch ( Exception e ) {
+			exceptions.Add( e );
 		}
 
 		await this.StopLifecycleAsync().ConfigureAwait( false );
