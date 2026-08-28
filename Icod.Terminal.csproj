@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.3.0-alpha.2</Version>
+		<Version>0.3.0-alpha.3</Version>
 		<AssemblyVersion>0.3.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.3.0-alpha.2</PackageVersion>
+		<PackageVersion>0.3.0-alpha.3</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.3.0-alpha.2 adds bounded incremental CSI/DCS response framing and expectation-driven demultiplexing inside the existing single terminal-input reader. Expected frames can be claimed ahead of ambiguous key fallback while rejected or unrelated input remains on the established 0.2 event path; no public terminal-query API is introduced yet.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.3.0-alpha.3 adds the internal serialized query-transaction substrate: demand-driven single-reader input coordination, monotonic caller deadlines, normal cancellation, bounded late-response ownership, lifecycle interruption, and shared session-control output serialization. Concrete public CSI query APIs remain deferred to T24.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

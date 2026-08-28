@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// T22 response framing and expectation-driven demultiplexing for
+/// Response framing and expectation-driven demultiplexing for
 /// <see cref="TerminalInputDecoder"/>.
 /// </summary>
 internal sealed partial class TerminalInputDecoder {
@@ -10,6 +10,17 @@ internal sealed partial class TerminalInputDecoder {
 
 	internal TerminalResponseExpectation RegisterResponseExpectation(
 		ITerminalResponseMatcher matcher
+	) {
+		ArgumentNullException.ThrowIfNull( matcher );
+		return this.RegisterResponseExpectation(
+			matcher,
+			armImmediately: true
+		);
+	}
+
+	internal TerminalResponseExpectation RegisterResponseExpectation(
+		ITerminalResponseMatcher matcher,
+		bool armImmediately
 	) {
 		ArgumentNullException.ThrowIfNull( matcher );
 
@@ -21,8 +32,27 @@ internal sealed partial class TerminalInputDecoder {
 			}
 
 			TerminalResponseExpectation expectation = new( matcher );
+			if ( armImmediately ) {
+				expectation.Arm( 0 );
+			}
 			this.responseExpectation = expectation;
 			return expectation;
+		}
+	}
+
+	internal void ArmResponseExpectation(
+		TerminalResponseExpectation expectation
+	) {
+		ArgumentNullException.ThrowIfNull( expectation );
+
+		lock ( this.responseExpectationGate ) {
+			if ( !ReferenceEquals( this.responseExpectation, expectation ) ) {
+				throw new InvalidOperationException(
+					"The terminal response expectation is no longer active."
+				);
+			}
+
+			expectation.Arm( this.bufferedBytes.Count );
 		}
 	}
 
@@ -47,7 +77,9 @@ internal sealed partial class TerminalInputDecoder {
 		CancellationToken cancellationToken
 	) {
 		TerminalResponseExpectation? expectation = this.GetResponseExpectation();
-		if ( expectation is null ) {
+		if ( expectation is null
+			|| !expectation.IsArmed
+			|| 0 < expectation.ProtectedBufferedBytes ) {
 			return false;
 		}
 

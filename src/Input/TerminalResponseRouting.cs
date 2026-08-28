@@ -78,6 +78,9 @@ internal sealed class TerminalResponseExpectation {
 		TaskCreationOptions.RunContinuationsAsynchronously
 	);
 
+	private int protectedBufferedBytes;
+	private int armed;
+
 	internal TerminalResponseExpectation(
 		ITerminalResponseMatcher matcher
 	) {
@@ -93,6 +96,57 @@ internal sealed class TerminalResponseExpectation {
 		get {
 			return this.completion.Task;
 		}
+	}
+
+	internal bool IsArmed {
+		get {
+			return 0 != Volatile.Read( ref this.armed );
+		}
+	}
+
+	internal int ProtectedBufferedBytes {
+		get {
+			return Volatile.Read( ref this.protectedBufferedBytes );
+		}
+	}
+
+	internal void Arm(
+		int protectedBufferedBytes
+	) {
+		if ( 0 > protectedBufferedBytes ) {
+			throw new ArgumentOutOfRangeException( nameof( protectedBufferedBytes ) );
+		}
+		if ( this.IsArmed ) {
+			throw new InvalidOperationException(
+				"The terminal response expectation is already armed."
+			);
+		}
+
+		Volatile.Write(
+			ref this.protectedBufferedBytes,
+			protectedBufferedBytes
+		);
+		Volatile.Write( ref this.armed, 1 );
+	}
+
+	internal void ConsumeProtectedBytes(
+		int count
+	) {
+		if ( 0 > count ) {
+			throw new ArgumentOutOfRangeException( nameof( count ) );
+		}
+		int protectedBytes = Volatile.Read( ref this.protectedBufferedBytes );
+		if ( 0 == count || 0 == protectedBytes ) {
+			return;
+		}
+
+		Volatile.Write(
+			ref this.protectedBufferedBytes,
+			Math.Max(
+				0,
+				protectedBytes - count
+			)
+		);
 	}
 
 	internal bool TrySetResult(

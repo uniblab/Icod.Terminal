@@ -9,9 +9,9 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.2`
-**Status:** T21-T22 complete; T23 is the next implementation tranche
-**Current tranche:** T23 — query transactions, deadlines, and late-response ownership
+**Current development version:** `0.3.0-alpha.3`
+**Status:** T21-T23 complete; T24 is the next implementation tranche
+**Current tranche:** T24 — CSI device, status, and cursor queries
 
 ---
 
@@ -434,39 +434,45 @@ session lifecycle path remains unchanged.
 
 # 9. T23 — Query Transactions, Deadlines, and Late-Response Ownership
 
-T23 turns the T22 framing layer into a reusable transaction manager.
+**Status:** Complete in `0.3.0-alpha.3`.
 
-Required work:
+T23 turns the T22 framing layer into a reusable session-owned transaction
+manager while keeping concrete terminal-query APIs internal until T24.
 
-- queue asynchronous query requests;
-- serialize ambiguity-sensitive requests on the terminal wire;
-- use `Icod.Timing` monotonic time for response deadlines;
-- distinguish queued cancellation from cancellation after transmission;
-- ensure pre-transmission cancellation emits no query bytes;
-- allow a caller to stop awaiting promptly after post-transmission cancellation;
-- retain bounded internal ownership of the emitted transaction after caller
-  cancellation or timeout;
-- consume and discard a matching late response while that ownership remains
-  active;
-- block a later ambiguous query from transmission until the prior slot is safely
-  resolved or expired;
-- define the relationship between caller-visible timeout and the internal
-  late-response ownership deadline;
-- terminate outstanding ownership during session disposal;
-- implement bounded suspend/re-entry cleanup consistent with section 3.12;
-- coordinate query emission with other session-owned control output;
-- preserve ordinary application-event delivery while a query is pending;
-- cover races between send, response, timeout, cancellation, disposal, suspend,
-  and a queued subsequent query.
+Completed work:
 
-The public caller SHALL NOT observe internal transaction or drain states.
+- queues bounded asynchronous query requests;
+- serializes ambiguity-sensitive requests across their complete wire/drain
+  lifetime;
+- uses `Icod.Timing` monotonic time for caller deadlines and late-response
+  ownership;
+- prevents pre-transmission cancellation or timeout from emitting query bytes;
+- separates caller completion from wire ownership after transmission;
+- consumes matching late responses during bounded post-cancellation/post-timeout
+  ownership;
+- blocks later ambiguous transmission until prior ownership resolves or expires;
+- preserves exactly one raw terminal reader through a demand-driven input
+  coordinator;
+- retains unrelated application input in a bounded ordered deferred queue;
+- distinguishes expectation registration from arming so stale buffered input
+  cannot satisfy a newly emitted query;
+- serializes query emission with presentation and rich-input protocol control
+  transitions;
+- invalidates callers across suspend/re-entry without converting stale responses
+  into later successful results;
+- terminates transaction ownership during session disposal;
+- covers cancellation, timeout, late-response, expiry, buffered-input, control
+  output, suspension, disposal, and single-reader behavior in synthetic tests.
 
-**Gate T23:** cancellation and timeout races cannot cause a late response to be
-returned as ordinary application input or attributed to a later ambiguous query
-while the bounded ownership contract remains active.
+No public DA, DSR, CPR, DECRQSS, XTGETTCAP, or arbitrary matcher API is added by
+T23.
 
-**Planned completion record:**
-`docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md`.
+**Gate T23: complete.** Cancellation and timeout races cannot cause a late
+response to be returned as ordinary application input or attributed to a later
+ambiguity-sensitive query while the bounded ownership contract remains active.
+
+**T23 completion record:**
+[`docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md`](docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md).
 
 ---
 

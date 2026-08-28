@@ -423,6 +423,10 @@ internal sealed class TerminalInputProtocolManager {
 		InputProtocolState to,
 		CancellationToken cancellationToken
 	) {
+		using IDisposable controlOutput = await this.session.AcquireControlOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+
 		TransitionProgress progress = new( from );
 		try {
 			bool wrote = await this.ApplyTransitionCoreAsync(
@@ -583,6 +587,10 @@ internal sealed class TerminalInputProtocolManager {
 	private async ValueTask<Exception?> RestoreBaselineBestEffortAsync(
 		InputProtocolState from
 	) {
+		using IDisposable controlOutput = await this.session.AcquireControlOutputAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
+
 		List<Exception> exceptions = [];
 		bool wrote = false;
 

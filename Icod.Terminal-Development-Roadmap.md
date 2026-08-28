@@ -10,8 +10,8 @@
 **Current development target:** `0.3.0`
 **Stable contract target:** `1.0.0`
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`
-**Status:** `0.1.0` and `0.2.0` released; T21-T22 complete
-**Current tranche:** T23 — query transactions, deadlines, and late-response ownership
+**Status:** `0.1.0` and `0.2.0` released; T21-T23 complete
+**Current tranche:** T24 — CSI device, status, and cursor queries
 **Current milestone roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---
