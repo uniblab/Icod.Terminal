@@ -152,6 +152,19 @@ The library targets:
 
 The codebase uses C# 13 and supports the terminal-control implementations provided for Windows, Linux, and macOS.
 
+## Samples
+
+The repository contains two deliberately different interactive samples:
+
+- [`Icod.Terminal.Sample`](samples/Icod.Terminal.Sample/) is the minimal session,
+  identity, size, output, and restoration example;
+- [`Icod.Terminal.RichInput.Sample`](samples/Icod.Terminal.RichInput.Sample/) is
+  the 0.2 live event inspector for focus, bracketed paste, mouse input, modified
+  keys, lifecycle events, and reversible input-protocol leases.
+
+See [`samples/README.md`](samples/README.md) for run instructions and expected
+behavior.
+
 ## Build
 
 On Windows:
