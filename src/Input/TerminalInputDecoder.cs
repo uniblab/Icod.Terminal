@@ -200,6 +200,8 @@ internal sealed partial class TerminalInputDecoder {
 			if ( result.InputEvent is not null ) {
 				return result.InputEvent;
 			}
+
+			result.CompleteRoutedResponse();
 		}
 	}
 
@@ -225,10 +227,11 @@ internal sealed partial class TerminalInputDecoder {
 				}
 			}
 
-			if ( await this.TryRouteExpectedResponseAsync(
+			TerminalInputDecodeResult? response = await this.TryRouteExpectedResponseAsync(
 				cancellationToken
-			).ConfigureAwait( false ) ) {
-				return TerminalInputDecodeResult.RoutedResponse();
+			).ConfigureAwait( false );
+			if ( response.HasValue ) {
+				return response.Value;
 			}
 
 			TerminalInputEvent? mouseEvent = await this.TryReadMouseEventAsync(
