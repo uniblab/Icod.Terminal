@@ -9,8 +9,8 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.6`
-**Status:** T21-T26 complete; T27 is the next implementation tranche
+**Current development version:** `0.3.0-alpha.7`
+**Status:** T21-T26 complete; T27 implementation ready for acceptance
 **Current tranche:** T27 — Query Integration and Probe Acceptance
 
 ---
@@ -605,33 +605,42 @@ description.
 
 # 13. T27 — Query Integration and Probe Acceptance
 
+**Status:** Implementation complete in `0.3.0-alpha.7`; acceptance execution
+pending.
+
 T27 proves that the 0.3 query substrate works as part of a real interactive
 session rather than only as isolated protocol parsers.
 
-Required work:
+Implemented work:
 
-- exercise CSI and DCS queries while presentation leases are active;
-- exercise queries while rich-input protocol leases are active;
-- exercise normal `ReadEventAsync` consumption concurrently with a pending
+- exercises CSI, DECRQSS, and XTGETTCAP queries while presentation and rich-input
+  leases are active;
+- exercises normal `ReadEventAsync` consumption concurrently with a pending
   query;
-- exercise cancellation, timeout, late response, resize, suspend/resume, and
-  disposal under the integrated session lifecycle;
-- add an explicit interactive query/probe sample;
-- keep session opening free of automatic interrogation;
-- add a convenience probe-composition API only if concrete query experience
-  demonstrates a clear stable abstraction;
-- run DCurses regression acceptance so the new input routing does not require
-  DCurses to reintroduce private terminal mechanics;
-- extend package-only consumer validation through at least one CSI and one DCS
-  transaction using injected endpoints;
-- validate `net8.0`, `net9.0`, and `net10.0` on Windows, Ubuntu, and macOS.
+- exercises resize, suspend/resume, cancellation, timeout, bounded late-response
+  ownership, and disposal in integrated session fixtures;
+- adds `Icod.Terminal.Query.Sample` as an explicit interactive query/probe sample;
+- proves injected session opening performs no automatic interrogation;
+- deliberately adds no aggregate probe-composition API because explicit query
+  composition has not demonstrated a stable aggregate policy worth freezing;
+- extends package-only consumer validation through CPR, DECRQSS, and XTGETTCAP
+  transactions whose responses are injected only after the request write;
+- retains the single-reader, control-output serialization, and immutable
+  `TerminalDescription` boundaries.
 
-**Gate T27:** a package consumer can issue active queries while ordinary rich
-terminal input remains functional, and no downstream consumer needs a second
-reader or private response parser.
+Acceptance still required before T27 can close:
 
-**Planned completion record:**
-`docs/T27-Query-Integration-and-Probe-Acceptance.md`.
+- run the repository matrix for `net8.0`, `net9.0`, and `net10.0` on Windows,
+  Ubuntu, and macOS;
+- run the DCurses regression suite against the `0.3.0-alpha.7` package and
+  confirm no second reader or private CSI/DCS parser is required downstream.
+
+**Gate T27: pending execution.** The implementation and automated acceptance
+coverage are present, but the gate SHALL remain open until the repository matrix
+and downstream DCurses regression both pass.
+
+**T27 acceptance record:**
+[`docs/T27-Query-Integration-and-Probe-Acceptance.md`](docs/T27-Query-Integration-and-Probe-Acceptance.md).
 
 ---
 

@@ -54,3 +54,24 @@ dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichIn
 ```
 
 The project also targets `net8.0` and `net9.0`.
+
+## Icod.Terminal.Query.Sample
+
+`Icod.Terminal.Query.Sample` is the explicit 0.3 active-query demonstration.
+
+Opening its `TerminalSession` remains passive. The sample then deliberately
+requests presentation and rich-input leases when available and explicitly issues
+Primary DA, Secondary DA, DSR, CPR, DECRQSS SGR, and XTGETTCAP `TN` operations.
+
+Each probe has a short caller-visible deadline so a terminal which does not
+implement a particular query family is reported without hanging the sample.
+After probing, the sample returns to `ReadEventAsync` for one ordinary
+input/lifecycle event.
+
+Run it in a real interactive terminal:
+
+```text
+dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
+```
+
+The project also targets `net8.0` and `net9.0`.

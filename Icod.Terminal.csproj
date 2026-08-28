@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.3.0-alpha.6</Version>
+		<Version>0.3.0-alpha.7</Version>
 		<AssemblyVersion>0.3.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.3.0-alpha.6</PackageVersion>
+		<PackageVersion>0.3.0-alpha.7</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.3.0-alpha.6 adds bounded XTGETTCAP live capability observations with strict hexadecimal encoding/decoding, byte-preserving positive values, typed negative results, single-name deterministic correlation, and separation from immutable Icod.TermInfo terminal descriptions.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.3.0-alpha.7 integrates the public CSI and DCS query families with presentation leases, rich-input leases, unified event delivery, lifecycle disruption, package-only consumer validation, and an explicit live-query sample without adding a new aggregate probe API or automatic session interrogation.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

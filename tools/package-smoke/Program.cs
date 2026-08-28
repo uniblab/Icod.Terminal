@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
 
@@ -43,7 +44,7 @@ string scriptedText =
 var input = new ScriptedTerminalInput(
 	Encoding.UTF8.GetBytes( scriptedText )
 );
-var output = new RecordingTerminalOutput();
+var output = new RecordingTerminalOutput( input );
 TerminalSession? session = null;
 
 try {
@@ -203,6 +204,38 @@ try {
 
 	await protocolLease.DisposeAsync();
 
+	TerminalCursorPosition cursor = await session.QueryCursorPositionAsync(
+		TimeSpan.FromSeconds( 1 )
+	);
+	Require(
+		12 == cursor.Row && 34 == cursor.Column,
+		"The package consumer received an unexpected CPR result."
+	);
+
+	TerminalStatusStringResponse statusString =
+		await session.QueryStatusStringAsync(
+			TerminalStatusStringKind.SelectGraphicRendition,
+			TimeSpan.FromSeconds( 1 )
+		);
+	Require(
+		statusString.IsSupported && "0m" == statusString.StatusString,
+		"The package consumer received an unexpected DECRQSS result."
+	);
+
+	TerminalCapabilityObservation terminalName =
+		await session.QueryLiveCapabilityAsync(
+			"TN",
+			TimeSpan.FromSeconds( 1 )
+		);
+	Require(
+		terminalName.IsSupported
+			&& terminalName.ValueBytes is not null
+			&& Encoding.ASCII.GetBytes( "xterm" ).SequenceEqual(
+				terminalName.ValueBytes
+			),
+		"The package consumer received an unexpected XTGETTCAP result."
+	);
+
 	await session.WriteTextAsync( "package-smoke" );
 	bool capabilityWritten = await session.WriteCapabilityAsync(
 		StringCapability.EnterCursorAddressingMode
@@ -255,6 +288,13 @@ Console.WriteLine( "Icod.Terminal package smoke test passed." );
 
 internal sealed class ScriptedTerminalInput : ITerminalInput {
 	private readonly byte[] bytes;
+	private readonly Channel<byte[]> deferred = Channel.CreateUnbounded<byte[]>(
+		new UnboundedChannelOptions {
+			SingleReader = true,
+			SingleWriter = false,
+			AllowSynchronousContinuations = false
+		}
+	);
 	private int offset;
 
 	internal ScriptedTerminalInput(
@@ -264,31 +304,75 @@ internal sealed class ScriptedTerminalInput : ITerminalInput {
 		this.bytes = bytes.ToArray();
 	}
 
-	public ValueTask<int> ReadAsync(
+	internal void Publish(
+		byte[] bytes
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		if ( !this.deferred.Writer.TryWrite( bytes.ToArray() ) ) {
+			throw new InvalidOperationException(
+				"The package-smoke terminal input channel is closed."
+			);
+		}
+	}
+
+	public async ValueTask<int> ReadAsync(
 		Memory<byte> buffer,
 		CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 
-		if ( this.offset >= this.bytes.Length ) {
-			return ValueTask.FromResult( 0 );
+		if ( this.offset < this.bytes.Length ) {
+			int count = Math.Min(
+				buffer.Length,
+				this.bytes.Length - this.offset
+			);
+			this.bytes.AsMemory(
+				this.offset,
+				count
+			).CopyTo( buffer );
+			this.offset += count;
+			return count;
 		}
 
-		int count = Math.Min(
-			buffer.Length,
-			this.bytes.Length - this.offset
-		);
-		this.bytes.AsMemory(
-			this.offset,
-			count
-		).CopyTo( buffer );
-		this.offset += count;
-		return ValueTask.FromResult( count );
+		byte[] deferredBytes = await this.deferred.Reader.ReadAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		if ( deferredBytes.Length > buffer.Length ) {
+			throw new InvalidOperationException(
+				"The package-smoke response exceeds the terminal input buffer."
+			);
+		}
+
+		deferredBytes.AsSpan().CopyTo( buffer.Span );
+		return deferredBytes.Length;
 	}
 }
 
 internal sealed class RecordingTerminalOutput : ITerminalOutput {
+	private static readonly byte[] CursorPositionRequest =
+		Encoding.ASCII.GetBytes( "\u001b[6n" );
+	private static readonly byte[] CursorPositionResponse =
+		Encoding.ASCII.GetBytes( "\u001b[12;34R" );
+	private static readonly byte[] SgrStatusStringRequest =
+		Encoding.ASCII.GetBytes( "\u001bP$qm\u001b\\" );
+	private static readonly byte[] SgrStatusStringResponse =
+		Encoding.ASCII.GetBytes( "\u001bP1$r0m\u001b\\" );
+	private static readonly byte[] TerminalNameRequest =
+		Encoding.ASCII.GetBytes( "\u001bP+q544E\u001b\\" );
+	private static readonly byte[] TerminalNameResponse =
+		Encoding.ASCII.GetBytes(
+			"\u001bP1+r544E=787465726D\u001b\\"
+		);
+
+	private readonly ScriptedTerminalInput input;
 	private readonly MemoryStream stream = new();
+
+	internal RecordingTerminalOutput(
+		ScriptedTerminalInput input
+	) {
+		ArgumentNullException.ThrowIfNull( input );
+		this.input = input;
+	}
 
 	internal int FlushCallCount {
 		get;
@@ -301,6 +385,7 @@ internal sealed class RecordingTerminalOutput : ITerminalOutput {
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 		this.stream.Write( buffer.Span );
+		this.PublishQueryResponse( buffer.Span );
 		return ValueTask.CompletedTask;
 	}
 
@@ -314,6 +399,22 @@ internal sealed class RecordingTerminalOutput : ITerminalOutput {
 
 	internal byte[] ToArray() {
 		return this.stream.ToArray();
+	}
+
+	private void PublishQueryResponse(
+		ReadOnlySpan<byte> request
+	) {
+		if ( request.SequenceEqual( CursorPositionRequest ) ) {
+			this.input.Publish( CursorPositionResponse );
+			return;
+		}
+		if ( request.SequenceEqual( SgrStatusStringRequest ) ) {
+			this.input.Publish( SgrStatusStringResponse );
+			return;
+		}
+		if ( request.SequenceEqual( TerminalNameRequest ) ) {
+			this.input.Publish( TerminalNameResponse );
+		}
 	}
 }
 

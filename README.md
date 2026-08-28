@@ -9,13 +9,12 @@ focus reporting, bounded bracketed paste, normalized mouse input, richer
 traditional modified keys, reversible input-protocol leases, and per-session
 decoder policy.
 
-Development has moved to `0.3.0-alpha.6`. T26 adds bounded XTGETTCAP live
-capability observations over the common DCS transaction substrate. Capability
-names are safely hex-encoded, positive values preserve exact decoded bytes,
-negative replies are typed, and live observations remain separate from immutable
-`TerminalDescription` / `Icod.TermInfo` capability data. T26 deliberately uses
-one capability name per transaction so correlation and partial-result semantics
-remain deterministic.
+Development has moved to `0.3.0-alpha.7`. T27 integrates the public CSI and
+DCS query families with presentation leases, rich-input leases, unified event
+delivery, lifecycle disruption, and package-only consumer validation. It adds an
+explicit interactive query sample but no aggregate probe API and no automatic
+session interrogation. Repository-matrix and downstream DCurses execution remain
+the final T27 acceptance checks.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -161,13 +160,16 @@ The codebase uses C# 13 and supports the terminal-control implementations provid
 
 ## Samples
 
-The repository contains two deliberately different interactive samples:
+The repository contains three deliberately different interactive samples:
 
 - [`Icod.Terminal.Sample`](samples/Icod.Terminal.Sample/) is the minimal session,
   identity, size, output, and restoration example;
 - [`Icod.Terminal.RichInput.Sample`](samples/Icod.Terminal.RichInput.Sample/) is
   the 0.2 live event inspector for focus, bracketed paste, mouse input, modified
-  keys, lifecycle events, and reversible input-protocol leases.
+  keys, lifecycle events, and reversible input-protocol leases;
+- [`Icod.Terminal.Query.Sample`](samples/Icod.Terminal.Query.Sample/) explicitly
+  issues the 0.3 CSI/DCS query families while reversible presentation and
+  rich-input leases are active, then returns to the unified event loop.
 
 See [`samples/README.md`](samples/README.md) for run instructions and expected
 behavior.
@@ -206,6 +208,8 @@ The completed T25 DECRQSS/DCS query tranche is recorded in
 [`docs/T25-DECRQSS.md`](docs/T25-DECRQSS.md).
 The completed T26 XTGETTCAP live-capability tranche is recorded in
 [`docs/T26-XTGETTCAP.md`](docs/T26-XTGETTCAP.md).
+The T27 integration and acceptance record is maintained in
+[`docs/T27-Query-Integration-and-Probe-Acceptance.md`](docs/T27-Query-Integration-and-Probe-Acceptance.md).
 The completed `0.2.0` milestone remains in
 [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 
