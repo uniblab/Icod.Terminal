@@ -9,9 +9,9 @@
 **Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.4`
-**Status:** T21-T24 complete; T25 is the next implementation tranche
-**Current tranche:** T25 — DECRQSS and DCS transaction support
+**Current development version:** `0.3.0-alpha.5`
+**Status:** T21-T25 complete; T26 is the next implementation tranche
+**Current tranche:** T26 — XTGETTCAP live capability queries
 
 ---
 
@@ -519,29 +519,40 @@ preserving the 0.2 input stream and the T23 cancellation/late-response contract.
 
 # 11. T25 — DECRQSS and DCS Transaction Support
 
+**Status:** Complete in `0.3.0-alpha.5`.
+
 T25 validates the router against a structurally different response family.
 
-Required work:
+Completed work:
 
-- complete the DCS framing policy needed by DECRQSS;
-- define 7-bit and 8-bit C1 handling deliberately;
-- emit bounded DECRQSS requests;
-- parse positive and negative DECRQSS responses;
-- bound request identifiers and returned status-string payloads;
-- reject or control malformed terminators and oversized payloads;
-- ensure an unexpected DCS frame does not satisfy the wrong transaction;
-- preserve ordinary input around a pending DCS transaction;
-- test arbitrary fragmentation, combined frames, cancellation, timeout, late
-  responses, and session disposal.
+- adds `QueryStatusStringAsync` as a typed public DECRQSS operation;
+- exposes a fixed `TerminalStatusStringKind` set instead of accepting arbitrary
+  caller-supplied request/control bytes;
+- emits conservative 7-bit DECRQSS requests;
+- accepts both 7-bit and 8-bit DCS introducers and string terminators;
+- parses positive `DCS 1 $ r ... ST` and negative `DCS 0 $ r ST` DECRPSS
+  responses into `TerminalStatusStringResponse`;
+- bounds request identifiers to 16 bytes and returned status strings to 1024
+  bytes while retaining the T22 complete-frame ceiling;
+- treats clearly correlated malformed DECRPSS frames as `FormatException`
+  rather than leaking them into ordinary input;
+- verifies returned positive status strings match the requested control
+  function;
+- rejects unrelated DCS response families at the matcher boundary;
+- preserves ordinary application input while DECRQSS is pending;
+- exercises fragmentation, 8-bit C1 framing, cancellation, timeout, late
+  responses, disposal, and single-reader behavior through the DCS family;
+- keeps parameterized xterm-specific DECRQSS extensions deferred until a typed
+  consumer contract justifies them.
 
-The public API SHALL validate request identifiers sufficiently to prevent callers
-from injecting arbitrary unframed terminal control data through a nominal
-DECRQSS operation.
+The public API therefore prevents callers from injecting arbitrary unframed
+terminal control data through a nominal DECRQSS operation.
 
-**Gate T25:** a typed DECRQSS transaction demonstrates that the common router is
-not CSI-specific and that DCS framing remains bounded under hostile input.
+**Gate T25: complete.** A typed DECRQSS transaction demonstrates that the common
+router is not CSI-specific and that DCS framing remains bounded under malformed
+or hostile input.
 
-**Planned completion record:** `docs/T25-DECRQSS.md`.
+**T25 completion record:** [`docs/T25-DECRQSS.md`](docs/T25-DECRQSS.md).
 
 ---
 

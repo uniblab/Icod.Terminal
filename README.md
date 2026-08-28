@@ -9,11 +9,12 @@ focus reporting, bounded bracketed paste, normalized mouse input, richer
 traditional modified keys, reversible input-protocol leases, and per-session
 decoder policy.
 
-Development has moved to `0.3.0-alpha.4`. T24 adds typed Primary and Secondary
-Device Attributes, Device Status Report, and Cursor Position Report queries over
-the T23 transaction substrate. CSI responses remain bounded and expectation-driven;
-CPR coordinates are explicitly one-based, and ordinary rich input remains live
-while a query is pending.
+Development has moved to `0.3.0-alpha.5`. T25 adds typed DECRQSS/DECRPSS
+status-string queries over the common transaction substrate. Request identifiers
+are a fixed safe public set rather than caller-supplied control bytes; positive
+and negative replies are typed, DCS parsing is bounded, and the existing
+cancellation, late-response, lifecycle, and ordinary-input contracts remain in
+force.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -200,6 +201,8 @@ The completed T23 transaction/lifetime tranche is recorded in
 [`docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md`](docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md).
 The completed T24 CSI query family is recorded in
 [`docs/T24-CSI-Query-Family.md`](docs/T24-CSI-Query-Family.md).
+The completed T25 DECRQSS/DCS query tranche is recorded in
+[`docs/T25-DECRQSS.md`](docs/T25-DECRQSS.md).
 The completed `0.2.0` milestone remains in
 [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md).
 
