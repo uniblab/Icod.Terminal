@@ -218,7 +218,8 @@ internal static class Program {
 
 		List<string> required = [
 			"README.md",
-			"icon.png"
+			"icon.png",
+			"icod_tui_toolchain.jpg"
 		];
 		foreach ( string targetFramework in TargetFrameworks ) {
 			required.Add(
@@ -245,6 +246,10 @@ internal static class Program {
 		Require(
 			0 < package.GetEntry( "icon.png" )!.Length,
 			"icon.png is empty in the primary package."
+		);
+		Require(
+			0 < package.GetEntry( "icod_tui_toolchain.jpg" )!.Length,
+			"icod_tui_toolchain.jpg is empty in the primary package."
 		);
 		Require(
 			!names.Any(
