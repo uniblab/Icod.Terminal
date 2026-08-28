@@ -31,6 +31,13 @@ internal sealed class TerminalResponseFrame {
 		TerminalResponseFrameKind kind,
 		byte[] bytes
 	) {
+		if ( !Enum.IsDefined( kind ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( kind ),
+				kind,
+				"The terminal response frame kind is not recognized."
+			);
+		}
 		ArgumentNullException.ThrowIfNull( bytes );
 		if ( 0 == bytes.Length ) {
 			throw new ArgumentException(

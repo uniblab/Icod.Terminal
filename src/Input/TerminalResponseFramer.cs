@@ -19,8 +19,35 @@ internal readonly struct TerminalResponseFrameParseResult {
 		int length = 0,
 		bool introducerIncomplete = false
 	) {
+		if ( !Enum.IsDefined( status ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( status ),
+				status,
+				"The terminal response framing status is not recognized."
+			);
+		}
 		if ( 0 > length ) {
 			throw new ArgumentOutOfRangeException( nameof( length ) );
+		}
+		if ( TerminalResponseFrameParseStatus.Complete == status && 0 == length ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( length ),
+				length,
+				"A complete terminal response frame must have a positive length."
+			);
+		}
+		if ( TerminalResponseFrameParseStatus.Complete != status && 0 != length ) {
+			throw new ArgumentException(
+				"Only a complete terminal response frame may report a positive length.",
+				nameof( length )
+			);
+		}
+		if ( introducerIncomplete
+			&& TerminalResponseFrameParseStatus.Incomplete != status ) {
+			throw new ArgumentException(
+				"An incomplete introducer requires incomplete response framing status.",
+				nameof( introducerIncomplete )
+			);
 		}
 
 		this.Status = status;
@@ -59,6 +86,13 @@ internal static class TerminalResponseFramer {
 		int maximumFrameBytes
 	) {
 		ArgumentNullException.ThrowIfNull( bytes );
+		if ( !Enum.IsDefined( kind ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( kind ),
+				kind,
+				"The terminal response frame kind is not recognized."
+			);
+		}
 		if ( 4 > maximumFrameBytes || HardMaximumFrameBytes < maximumFrameBytes ) {
 			throw new ArgumentOutOfRangeException( nameof( maximumFrameBytes ) );
 		}
