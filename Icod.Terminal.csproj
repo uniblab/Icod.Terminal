@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.3.0-alpha.8</Version>
+		<Version>0.3.0</Version>
 		<AssemblyVersion>0.3.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.3.0-alpha.8</PackageVersion>
+		<PackageVersion>0.3.0</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.3.0-alpha.8 freezes the reviewed 0.3 public query API, publishes its API baseline and release-candidate contract, extends the isolated package consumer through every public 0.3 query operation, verifies query XML documentation explicitly, and adds a three-host Release validation workflow for the 0.3.0 branch.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.3.0 adds bounded expectation-driven terminal query transactions over the single session-owned input path, with typed Primary/Secondary DA, DSR, CPR, DECRQSS, and XTGETTCAP operations, ordinary cancellation and timeout semantics, bounded late-response ownership, passive session opening, three-host package validation, and downstream Icod.DCurses acceptance.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -43,7 +43,6 @@
 	<PropertyGroup Condition=" '$(PlatformTarget)' == '' ">
 		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>
-
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>2</WarningLevel>
@@ -54,7 +53,6 @@
 		<SignAssembly>false</SignAssembly>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
-
 	<PropertyGroup Condition=" '$(Configuration)' == 'Staging' ">
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>3</WarningLevel>
@@ -65,7 +63,6 @@
 		<SignAssembly>false</SignAssembly>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
-
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>4</WarningLevel>
@@ -93,10 +90,11 @@
 			<Pack>true</Pack>
 			<PackagePath>\</PackagePath>
 		</Content>
+		<None Include="icod_tui_toolchain.jpg" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo" Version="1.3.0" />
+		<PackageReference Include="Icod.TermInfo" Version="1.4.1" />
 		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>

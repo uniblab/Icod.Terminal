@@ -6,12 +6,12 @@
 **Predecessor:** `0.2.0` — released publicly as `v0.2.0`
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 **Language:** C# 13
-**Runtime dependencies:** `Icod.TermInfo 1.3.0`; `Icod.Timing 1.0.0`
+**Runtime dependencies:** `Icod.TermInfo 1.4.1`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
-**Current development version:** `0.3.0-alpha.8`
-**Status:** T28A release candidate ready for validation; execution gates remain open
-**Current tranche:** T28A — Release-Candidate Gate
+**Current development version:** `0.3.0`
+**Status:** T27 and T28A accepted; T28B stable release commit prepared
+**Current tranche:** T28B — Stable Release Closure
 
 ---
 
@@ -628,16 +628,16 @@ Implemented work:
 - retains the single-reader, control-output serialization, and immutable
   `TerminalDescription` boundaries.
 
-Acceptance still required before T27 can close:
+Acceptance evidence completed before T28B:
 
-- run the repository matrix for `net8.0`, `net9.0`, and `net10.0` on Windows,
-  Ubuntu, and macOS;
-- run the DCurses regression suite against the `0.3.0-alpha.7` package and
-  confirm no second reader or private CSI/DCS parser is required downstream.
+- the corrected alpha.8 candidate passed the repository matrix for `net8.0`,
+  `net9.0`, and `net10.0` on Windows, Ubuntu, and macOS;
+- the published `0.3.0-alpha.8` package was consumed by the DCurses Alpha-22
+  downstream compatibility build with no second reader or private CSI/DCS
+  parser required.
 
-**Gate T27: pending execution.** The implementation and automated acceptance
-coverage are present, but the gate SHALL remain open until the repository matrix
-and downstream DCurses regression both pass.
+**Gate T27: complete.** The integrated query stack and downstream presentation
+consumer both preserve the one-reader and ownership boundaries.
 
 **T27 acceptance record:**
 [`docs/T27-Query-Integration-and-Probe-Acceptance.md`](docs/T27-Query-Integration-and-Probe-Acceptance.md).
@@ -650,8 +650,7 @@ T28 closes the release in two subtranches.
 
 ## 14.1 T28A — Release-Candidate Gate
 
-**Status:** Implementation complete in `0.3.0-alpha.8`; validation execution
-pending.
+**Status:** Complete in `0.3.0-alpha.8`.
 
 T28A freezes the intended stable 0.3 query API without changing production
 query behavior.
@@ -675,34 +674,43 @@ Completed work:
 - adds no public aggregate probe type, public raw response event, public matcher,
   or caller-extensible protocol registration API.
 
-Execution still required before T28A can close:
+Acceptance evidence:
 
-- the T27 downstream DCurses regression must be confirmed against the 0.3
-  candidate;
-- the dedicated alpha.8 Release matrix must pass on Windows, Ubuntu, and macOS;
-- package-only validation must pass for all three target frameworks on each
-  host.
+- corrected alpha.8 `main` validation passed on Windows, Ubuntu, and macOS;
+- the annotated `v0.3.0-alpha.8` release workflow passed and published the
+  prerelease package, symbols, and checksums;
+- package-only validation passed for `net8.0`, `net9.0`, and `net10.0`;
+- DCurses Alpha-22 built and tested against published `Icod.Terminal
+  0.3.0-alpha.8` and `Icod.TermInfo 1.3.0` without downstream terminal-reader
+  or response-parser changes.
 
-**Gate T28A: pending execution.** No public-API regret is known, but stable
-`0.3.0` SHALL NOT be assigned until the remaining T27/T28A execution evidence is
-green.
+**Gate T28A: complete.** No unresolved public-API regret remains and the stable
+release closure may proceed.
 
 **T28A completion record:**
 [`docs/T28A-0.3-Release-Candidate-Gate.md`](docs/T28A-0.3-Release-Candidate-Gate.md).
 
 ## 14.2 T28B — Stable Release Closure
 
-T28B promotes the accepted release candidate to stable `0.3.0` without changing
-production behavior unless a release-blocking defect is discovered.
+**Status:** Stable release commit prepared; final `main` validation and
+tag-controlled publication pending.
 
-Required work:
+T28B promotes the accepted release candidate to stable `0.3.0` without changing
+production behavior.
+
+Completed in the release commit:
 
 - set `<Version>` and `<PackageVersion>` to `0.3.0`;
 - retain `<AssemblyVersion>0.3.0.0</AssemblyVersion>`;
-- finalize package release notes;
+- finalize stable package release notes;
+- update README and milestone state for the stable 0.3 contract;
+- add the T28B release-closure record.
+
+Remaining publication steps:
+
 - merge the stable release commit to `main`;
 - require the ordinary `main` Release validation to pass;
-- create the matching annotated `v0.3.0` tag only from the validated commit;
+- create the matching annotated `v0.3.0` tag only from that validated commit;
 - publish NuGet.org, GitHub Packages, symbols, checksums, and GitHub Release only
   through the tag-controlled release workflow.
 
@@ -713,7 +721,8 @@ wire transactions, late responses cannot contaminate later ambiguous queries
 while bounded ownership remains active, CSI and DCS query families are
 supported, and the package passes the complete three-host package-only gate.
 
-**Planned completion record:** `docs/T28B-0.3.0-Release-Closure.md`.
+**T28B completion record:**
+[`docs/T28B-0.3.0-Release-Closure.md`](docs/T28B-0.3.0-Release-Closure.md).
 
 ---
 
