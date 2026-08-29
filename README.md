@@ -45,7 +45,7 @@ dotnet add package Icod.Terminal --version 0.3.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on
-`Icod.TermInfo 1.4.0` and `Icod.Timing 1.0.0`.
+`Icod.TermInfo 1.4.1` and `Icod.Timing 1.0.0`.
 
 ## Quick start
 

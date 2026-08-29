@@ -6,7 +6,7 @@
 **Predecessor:** `0.2.0` — released publicly as `v0.2.0`
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 **Language:** C# 13
-**Runtime dependencies:** `Icod.TermInfo 1.4.0`; `Icod.Timing 1.0.0`
+**Runtime dependencies:** `Icod.TermInfo 1.4.1`; `Icod.Timing 1.0.0`
 **Theme:** Active terminal query/response routing and probe foundation
 **Stable contract target:** `1.0.0`
 **Current development version:** `0.3.0`

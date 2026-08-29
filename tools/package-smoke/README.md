@@ -7,7 +7,7 @@ artifact plus its declared NuGet dependencies.
 
 Release validation copies the project into a temporary directory, uses an
 isolated NuGet package cache, restores the current `Icod.Terminal` version from
-the local `artifacts` directory, and resolves `Icod.TermInfo 1.4.0` and
+the local `artifacts` directory, and resolves `Icod.TermInfo 1.4.1` and
 `Icod.Timing 1.0.0` through NuGet.
 
 The same source runs once for `net8.0`, `net9.0`, and `net10.0`. It uses an
