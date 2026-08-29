@@ -43,7 +43,6 @@
 	<PropertyGroup Condition=" '$(PlatformTarget)' == '' ">
 		<PlatformTarget>AnyCPU</PlatformTarget>
 	</PropertyGroup>
-
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>2</WarningLevel>
@@ -54,7 +53,6 @@
 		<SignAssembly>false</SignAssembly>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
-
 	<PropertyGroup Condition=" '$(Configuration)' == 'Staging' ">
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>3</WarningLevel>
@@ -65,7 +63,6 @@
 		<SignAssembly>false</SignAssembly>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
-
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>4</WarningLevel>
@@ -97,7 +94,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo" Version="1.3.0" />
+		<PackageReference Include="Icod.TermInfo" Version="1.4.0" />
 		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>
