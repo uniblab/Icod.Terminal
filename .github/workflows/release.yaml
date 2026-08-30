@@ -23,13 +23,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Require tagged commit on main
+      - name: Require tag on exact main HEAD
         shell: pwsh
         run: |
-          git fetch origin main --no-tags
-          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          git fetch origin refs/heads/main:refs/remotes/origin/main --no-tags
           if (0 -ne $LASTEXITCODE) {
-              throw "Release tag '$env:GITHUB_REF_NAME' does not point to a commit contained in main."
+              throw 'Unable to refresh the current origin/main commit.'
+          }
+
+          $mainCommit = (git rev-parse origin/main).Trim()
+          if (0 -ne $LASTEXITCODE -or [string]::IsNullOrWhiteSpace($mainCommit)) {
+              throw 'Unable to resolve the current origin/main commit.'
+          }
+          if ($env:GITHUB_SHA -ne $mainCommit) {
+              throw "Release tag '$env:GITHUB_REF_NAME' points to '$env:GITHUB_SHA', but the exact current main commit is '$mainCommit'."
           }
 
       - id: version
