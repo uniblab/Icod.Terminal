@@ -9,15 +9,16 @@ using Xunit;
 /// </summary>
 public sealed class OscWriterTests {
 	[Theory]
-	[InlineData( OscTitleSelector.IconAndWindowTitle, "", "1B5D303B1B5C" )]
-	[InlineData( OscTitleSelector.IconAndWindowTitle, "abc", "1B5D303B6162631B5C" )]
-	[InlineData( OscTitleSelector.IconName, "icon", "1B5D313B69636F6E1B5C" )]
-	[InlineData( OscTitleSelector.WindowTitle, "title", "1B5D323B7469746C651B5C" )]
+	[InlineData( 0, "", "1B5D303B1B5C" )]
+	[InlineData( 0, "abc", "1B5D303B6162631B5C" )]
+	[InlineData( 1, "icon", "1B5D313B69636F6E1B5C" )]
+	[InlineData( 2, "title", "1B5D323B7469746C651B5C" )]
 	public void EncodesExpectedFrames(
-		OscTitleSelector selector,
+		int selectorValue,
 		string value,
 		string expectedHex
 	) {
+		OscTitleSelector selector = (OscTitleSelector)selectorValue;
 		byte[] actual = OscWriter.EncodeTitleFrame(
 			selector,
 			value
