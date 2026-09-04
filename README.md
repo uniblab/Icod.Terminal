@@ -6,7 +6,7 @@
 
 ## Status
 
-`0.6.0` is the current stable release candidate. It retains the 0.1 live-session foundation, 0.2 rich-input contract, 0.3 active-query foundation, 0.4 semantic OSC title operations, and 0.5 OSC 7 current-location publication while adding semantic OSC 8 hyperlinks with validated URI/id payloads and scoped strict-LIFO hyperlink state.
+`0.6.1` is the current stable maintenance release candidate. It retains the complete 0.6 OSC 8 hyperlink and lifecycle surface while updating the `Icod.TermInfo` runtime dependency to `1.10.0`.
 
 The stable 0.6 public surface adds:
 
@@ -51,13 +51,13 @@ watch / slabtop / top
 
 ## Installation
 
-The stable 0.6 release installs as:
+The stable 0.6 maintenance release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.6.0
+dotnet add package Icod.Terminal --version 0.6.1
 ```
 
-The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.4.1` and `Icod.Timing 1.0.0`.
+The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
 
 ## Quick start
 
@@ -284,6 +284,8 @@ sh build.sh
 Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Running either script without an argument performs the complete sequence, including Debug package validation.
 
 ## Development roadmap
+
+The `0.6.1` maintenance release is documented in [`docs/0.6.1-Dependency-Refresh.md`](docs/0.6.1-Dependency-Refresh.md).
 
 The `0.6.0` milestone is documented in [`Icod.Terminal-0.6.0-Development-Roadmap.md`](Icod.Terminal-0.6.0-Development-Roadmap.md), with completed development records in T44–T51, the reviewed public API delta in [`docs/Public-API-Baseline-0.6.md`](docs/Public-API-Baseline-0.6.md), and package/release closure in [`docs/T51-0.6.0-Package-Consumer-and-Release-Closure.md`](docs/T51-0.6.0-Package-Consumer-and-Release-Closure.md).
 

@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.0</Version>
+		<Version>0.6.1</Version>
 		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.0</PackageVersion>
+		<PackageVersion>0.6.1</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.0 adds semantic OSC 8 hyperlinks with deterministic RFC 3986 URI validation, bounded id-only parameters, canonical framing, bounded WriteHyperlinkAsync output, strict-LIFO TerminalHyperlinkLease scopes with nested outer-state restoration and retryable cleanup, lifecycle-safe close/re-entry across terminal suspend/resume, session-disposal closure, cross-platform security/order acceptance, focused documentation/sample coverage, and package-only net8/net9/net10 validation.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.6.1 updates the Icod.TermInfo dependency to 1.10.0 while retaining the stable 0.6 OSC 8 hyperlink, lifecycle, query-routing, package-validation, and cross-platform behavior.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -94,7 +94,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo" Version="1.4.1" />
+		<PackageReference Include="Icod.TermInfo" Version="1.10.0" />
 		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>
