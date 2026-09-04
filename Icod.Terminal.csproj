@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.4.0-alpha.1</Version>
+		<Version>0.4.0-alpha.2</Version>
 		<AssemblyVersion>0.4.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.4.0-alpha.1</PackageVersion>
+		<PackageVersion>0.4.0-alpha.2</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.4.0-alpha.1 freezes the OSC 0/1/2 title-operation contract: canonical 7-bit OSC/ST framing, strict UTF-8 payloads, control-character rejection, bounded payload size, validation-before-write semantics, support-uncertainty policy, and public API constraints for the upcoming OSC writer implementation.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.4.0-alpha.2 implements the internal OSC 0/1/2 writer foundation with canonical ESC ] framing and ESC \ termination, strict UTF-8 payload validation, C0/DEL/C1 rejection, a 4096-byte encoded payload ceiling, validation-before-write semantics, cancellation-before-transmission behavior, and byte-exact in-memory tests.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
