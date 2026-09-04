@@ -44,12 +44,14 @@ await session.WriteTextAsync(
 
 while ( true ) {
 	TerminalEvent terminalEvent = await session.ReadEventAsync();
-	if ( TerminalEventKind.Input != terminalEvent.Kind
-		|| terminalEvent.Input is null ) {
+	if ( TerminalEventKind.Input != terminalEvent.Kind ) {
 		continue;
 	}
 
-	TerminalInputEvent input = terminalEvent.Input;
+	TerminalInputEvent? input = terminalEvent.Input;
+	if ( input is null ) {
+		continue;
+	}
 	if ( TerminalInputEventKind.Text == input.Kind
 		&& input.Character.HasValue
 		&& ( '\r' == input.Character.Value.Value
