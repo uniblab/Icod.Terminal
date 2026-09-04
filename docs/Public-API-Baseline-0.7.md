@@ -67,11 +67,11 @@ These omissions are intentional. They keep the API semantic, bounded, explicit, 
 Maximum decoded OSC 52 payload:       65,536 bytes
 Maximum encoded OSC 52 payload:       87,384 bytes
 Maximum complete OSC 52 frame:        87,400 bytes
-Maximum undecoded terminal buffer:    98,304 bytes
+Maximum undecoded terminal buffer:    87,400 bytes
 Default bracketed-paste chunk:         4,096 bytes
 ```
 
-The transport buffer is intentionally larger than the OSC 52 frame ceiling, while bracketed-paste chunking remains independently fixed at its historical default.
+The shared undecoded-input ceiling matches the OSC 52 complete-frame ceiling. A structurally correlated OSC 52 response which reaches that ceiling without completing is owned by the active query, fails deterministically, and is drained through its control-string terminator rather than being reinterpreted as ordinary application input. Bracketed-paste chunking remains independently fixed at its historical default.
 
 ## Compatibility posture
 
