@@ -12,6 +12,11 @@ public sealed class TerminalHyperlinkEncoderTests {
 	[InlineData( "https://example.com/", "https://example.com/" )]
 	[InlineData( "http://example.com/path?q=v#part", "http://example.com/path?q=v#part" )]
 	[InlineData( "ftp://user@example.com/file", "ftp://user@example.com/file" )]
+	[InlineData( "https://user:pass@example.com:8443/path", "https://user:pass@example.com:8443/path" )]
+	[InlineData( "https://127.0.0.1:443/", "https://127.0.0.1:443/" )]
+	[InlineData( "https://[2001:db8::1]/", "https://[2001:db8::1]/" )]
+	[InlineData( "https://[2001:db8::1]:8443/", "https://[2001:db8::1]:8443/" )]
+	[InlineData( "https://[v1.a-b:~]/", "https://[v1.a-b:~]/" )]
 	[InlineData( "mailto:user@example.com", "mailto:user@example.com" )]
 	[InlineData( "file:///tmp/report.txt", "file:///tmp/report.txt" )]
 	[InlineData( "custom-scheme:value", "custom-scheme:value" )]
@@ -45,6 +50,15 @@ public sealed class TerminalHyperlinkEncoderTests {
 	[InlineData( "https://example.com/#one#two" )]
 	[InlineData( "https://exa[mple.com/" )]
 	[InlineData( "https://exa]mple.com/" )]
+	[InlineData( "https://one@two@three/" )]
+	[InlineData( "https://example.com:abc/" )]
+	[InlineData( "https://example.com:80:90/" )]
+	[InlineData( "https://[not-an-ipv6-address]/" )]
+	[InlineData( "https://[2001:db8::1/" )]
+	[InlineData( "https://2001:db8::1/" )]
+	[InlineData( "https://[fe80::1%25eth0]/" )]
+	[InlineData( "https://[v.a]/" )]
+	[InlineData( "https://[v1.]/" )]
 	public void RejectsInvalidUris(
 		string uri
 	) {
