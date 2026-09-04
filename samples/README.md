@@ -1,8 +1,8 @@
 # Icod.Terminal Samples
 
 The sample projects are repository consumers built through project references.
-The release package itself is validated separately by `tools/package-smoke` and
-`tools/package-title-smoke`.
+The release package itself is validated separately by `tools/package-smoke`,
+`tools/package-title-smoke`, and `tools/package-location-smoke`.
 
 ## Icod.Terminal.Sample
 
@@ -74,6 +74,8 @@ The sample teaches the 0.5 contract:
 - publication occurs only because the caller explicitly invoked the semantic operation;
 - the native path is converted to a canonical `file:` URI by `Icod.Terminal`;
 - URI escaping is performed by the library rather than by the caller;
+- C0, DEL, and C1 control characters in native paths are rejected rather than percent-encoded;
+- explicit authorities are restricted to unscoped host forms; IPv6 zone identifiers and literal `%` authority text are rejected in 0.5;
 - successful completion means the complete OSC 7 frame was written, not that the terminal necessarily used the location;
 - disposal does not republish or restore location metadata.
 
