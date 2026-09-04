@@ -28,38 +28,7 @@ function Assert-TitleApiDocumentation {
         'M:Icod.Terminal.TerminalSession.SetWindowTitleAsync(System.String,System.Threading.CancellationToken)'
     )
 
-    $archive = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
-    try {
-        foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
-            $entryPath = "lib/$framework/Icod.Terminal.xml"
-            $entry = $archive.GetEntry($entryPath)
-            if ($null -eq $entry) {
-                throw "Package is missing generated documentation '$entryPath'."
-            }
-
-            $stream = $entry.Open()
-            try {
-                $documentation = [System.Xml.XmlDocument]::new()
-                $documentation.Load($stream)
-            } finally {
-                $stream.Dispose()
-            }
-
-            $documentedMembers = @(
-                $documentation.SelectNodes('/doc/members/member') |
-                    ForEach-Object { $_.GetAttribute('name') }
-            )
-            $missingMembers = @(
-                $requiredMembers |
-                    Where-Object { $_ -notin $documentedMembers }
-            )
-            if (0 -ne $missingMembers.Count) {
-                throw "$entryPath is missing required 0.4 title API documentation: $($missingMembers -join ', ')."
-            }
-        }
-    } finally {
-        $archive.Dispose()
-    }
+    Assert-PackageXmlDocumentation -PackagePath $PackagePath -RequiredMembers $requiredMembers -ContractName '0.4 title API'
 }
 
 function Assert-LocationApiDocumentation {
@@ -73,6 +42,39 @@ function Assert-LocationApiDocumentation {
         'M:Icod.Terminal.TerminalSession.PublishCurrentLocationAsync(System.String,Icod.Terminal.TerminalLocationPathStyle,System.String,System.Threading.CancellationToken)'
     )
 
+    Assert-PackageXmlDocumentation -PackagePath $PackagePath -RequiredMembers $requiredMembers -ContractName '0.5 OSC 7 API'
+}
+
+function Assert-HyperlinkApiDocumentation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath
+    )
+
+    $requiredMembers = @(
+        'T:Icod.Terminal.TerminalHyperlinkLease',
+        'P:Icod.Terminal.TerminalHyperlinkLease.Uri',
+        'P:Icod.Terminal.TerminalHyperlinkLease.Identifier',
+        'M:Icod.Terminal.TerminalHyperlinkLease.DisposeAsync',
+        'M:Icod.Terminal.TerminalSession.AcquireHyperlinkAsync(System.String,System.String,System.Threading.CancellationToken)',
+        'M:Icod.Terminal.TerminalSession.WriteHyperlinkAsync(System.String,System.String,System.String,System.Threading.CancellationToken)'
+    )
+
+    Assert-PackageXmlDocumentation -PackagePath $PackagePath -RequiredMembers $requiredMembers -ContractName '0.6 OSC 8 API'
+}
+
+function Assert-PackageXmlDocumentation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$RequiredMembers,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ContractName
+    )
+
     $archive = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
     try {
         foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
@@ -95,11 +97,11 @@ function Assert-LocationApiDocumentation {
                     ForEach-Object { $_.GetAttribute('name') }
             )
             $missingMembers = @(
-                $requiredMembers |
+                $RequiredMembers |
                     Where-Object { $_ -notin $documentedMembers }
             )
             if (0 -ne $missingMembers.Count) {
-                throw "$entryPath is missing required 0.5 OSC 7 API documentation: $($missingMembers -join ', ')."
+                throw "$entryPath is missing required $ContractName documentation: $($missingMembers -join ', ')."
             }
         }
     } finally {
@@ -165,15 +167,21 @@ try {
     Write-Host '=== Verify 0.5 OSC 7 XML documentation ==='
     Assert-LocationApiDocumentation -PackagePath $package.FullName
 
+    Write-Host ''
+    Write-Host '=== Verify 0.6 OSC 8 XML documentation ==='
+    Assert-HyperlinkApiDocumentation -PackagePath $package.FullName
+
     $smokeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("Icod.Terminal-package-smoke-{0}" -f [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
     try {
         $generalSmokeRoot = Join-Path $smokeRoot 'general'
         $titleSmokeRoot = Join-Path $smokeRoot 'title'
         $locationSmokeRoot = Join-Path $smokeRoot 'location'
+        $hyperlinkSmokeRoot = Join-Path $smokeRoot 'hyperlink'
         New-Item -ItemType Directory -Path $generalSmokeRoot -Force | Out-Null
         New-Item -ItemType Directory -Path $titleSmokeRoot -Force | Out-Null
         New-Item -ItemType Directory -Path $locationSmokeRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $hyperlinkSmokeRoot -Force | Out-Null
 
         Copy-Item -LiteralPath 'tools/package-smoke/Icod.Terminal.PackageSmoke.csproj' -Destination (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj')
         Copy-Item -LiteralPath 'tools/package-smoke/Program.cs' -Destination (Join-Path $generalSmokeRoot 'Program.cs')
@@ -181,6 +189,8 @@ try {
         Copy-Item -LiteralPath 'tools/package-title-smoke/Program.cs' -Destination (Join-Path $titleSmokeRoot 'Program.cs')
         Copy-Item -LiteralPath 'tools/package-location-smoke/Icod.Terminal.PackageLocationSmoke.csproj' -Destination (Join-Path $locationSmokeRoot 'Icod.Terminal.PackageLocationSmoke.csproj')
         Copy-Item -LiteralPath 'tools/package-location-smoke/Program.cs' -Destination (Join-Path $locationSmokeRoot 'Program.cs')
+        Copy-Item -LiteralPath 'tools/package-hyperlink-smoke/Icod.Terminal.PackageHyperlinkSmoke.csproj' -Destination (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj')
+        Copy-Item -LiteralPath 'tools/package-hyperlink-smoke/Program.cs' -Destination (Join-Path $hyperlinkSmokeRoot 'Program.cs')
 
         $nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
         $artifactUri = [System.Security.SecurityElement]::Escape($ArtifactDirectory)
@@ -201,24 +211,19 @@ try {
         try {
             Write-Host ''
             Write-Host '=== Fresh package consumer restore ==='
-            Invoke-DotNet -Arguments @(
-                'restore', (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
-                '--no-cache',
-                '--configfile', $nugetConfig,
-                "-p:IcodTerminalPackageVersion=$ExpectedVersion"
-            )
-            Invoke-DotNet -Arguments @(
-                'restore', (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj'),
-                '--no-cache',
-                '--configfile', $nugetConfig,
-                "-p:IcodTerminalPackageVersion=$ExpectedVersion"
-            )
-            Invoke-DotNet -Arguments @(
-                'restore', (Join-Path $locationSmokeRoot 'Icod.Terminal.PackageLocationSmoke.csproj'),
-                '--no-cache',
-                '--configfile', $nugetConfig,
-                "-p:IcodTerminalPackageVersion=$ExpectedVersion"
-            )
+            foreach ($project in @(
+                (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
+                (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj'),
+                (Join-Path $locationSmokeRoot 'Icod.Terminal.PackageLocationSmoke.csproj'),
+                (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj')
+            )) {
+                Invoke-DotNet -Arguments @(
+                    'restore', $project,
+                    '--no-cache',
+                    '--configfile', $nugetConfig,
+                    "-p:IcodTerminalPackageVersion=$ExpectedVersion"
+                )
+            }
 
             foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
                 Write-Host ''
@@ -248,6 +253,17 @@ try {
                 Invoke-DotNet -Arguments @(
                     'run',
                     '--project', (Join-Path $locationSmokeRoot 'Icod.Terminal.PackageLocationSmoke.csproj'),
+                    '-c', $Configuration,
+                    '-f', $framework,
+                    '--no-restore',
+                    "-p:IcodTerminalPackageVersion=$ExpectedVersion"
+                )
+
+                Write-Host ''
+                Write-Host "=== Fresh package OSC 8 hyperlink consumer: $framework ==="
+                Invoke-DotNet -Arguments @(
+                    'run',
+                    '--project', (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj'),
                     '-c', $Configuration,
                     '-f', $framework,
                     '--no-restore',
