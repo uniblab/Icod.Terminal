@@ -34,18 +34,20 @@ Only the library-owned OSC introducer and ST terminator appear as raw control by
 
 ## 3. Resource-boundary acceptance
 
-The frozen limits remain distinct:
+The frozen limits remain distinct by representation while the complete-frame and shared undecoded-input ceilings intentionally coincide:
 
 ```text
 Maximum decoded OSC 52 payload:       65,536 bytes
 Maximum encoded OSC 52 payload:       87,384 bytes
 Maximum complete OSC 52 frame:        87,400 bytes
-Maximum undecoded terminal buffer:    98,304 bytes
+Maximum undecoded terminal buffer:    87,400 bytes
 ```
 
 T58 verifies the exact maximum decoded payload through the public read API under fragmented transport delivery.
 
 A deterministic property matrix additionally exercises canonical RFC 4648 encode/decode round trips over representative lengths spanning zero, padding boundaries, 4 KiB boundaries, large payloads, and the exact 65,536-byte ceiling.
+
+A structurally correlated OSC 52 candidate which reaches the 87,400-byte frame ceiling without completing is owned by the active transaction, fails with `FormatException`, and is drained through its terminator before ordinary input decoding resumes. Trailing application input after that terminator remains preserved.
 
 ---
 
@@ -74,13 +76,15 @@ An active clipboard query cannot be satisfied by:
 - malformed framing;
 - unrelated application traffic.
 
-T58 exercises unrelated OSC followed by a wrong-selection OSC 52 response and then the correct correlated response. Only the correctly correlated response completes the query.
+T58 exercises unrelated OSC followed by a wrong-selection OSC 52 response and then the correct correlated response. Only the correctly correlated response completes the query successfully.
 
 ---
 
 ## 6. Timeout and late-response ownership
 
 OSC 52 reads reuse `TerminalQueryTransactionManager` and therefore inherit the established ambiguity-sensitive transaction model.
+
+The caller-visible timeout begins when the transaction is queued. Queueing and waiting for the shared control-output gate count against the operation deadline. If the timeout expires before emission commits, the request is skipped and no query bytes are emitted.
 
 After an emitted query reaches caller-visible timeout or cancellation, the transaction retains bounded late-response ownership. A delayed reply belonging to that expired caller is consumed by the old transaction and cannot satisfy a newer clipboard query.
 
@@ -99,24 +103,24 @@ Clipboard writes and reads are verified alongside the earlier session-owned sema
 5. OSC 52 clipboard write;
 6. OSC 52 clipboard query.
 
-The complete sequence preserves session-owned output ordering. Clipboard writes do not flush implicitly; clipboard queries do flush as required by the conversational transaction substrate.
+The complete sequence preserves session-owned output ordering. Clipboard writes do not flush implicitly; clipboard queries flush as required by the conversational transaction substrate.
 
 ---
 
 ## 8. Bracketed-paste regression audit
 
-The T55 increase of `TerminalSession.MaximumBufferedInputBytes` from 4,096 bytes to 98,304 bytes exposed an unintended coupling: `TerminalInputDecoderOptions.PasteChunkBytes` also inherited the larger value because its default referenced the same session ceiling.
+The OSC 52 response work originally exposed an unintended coupling between the session's undecoded-input ceiling and `TerminalInputDecoderOptions.PasteChunkBytes` because both defaults referenced the same value.
 
-T58 removes that coupling.
+T58 removes that coupling permanently.
 
-The defaults are now deliberately separate:
+The defaults are deliberately separate:
 
 ```text
-MaximumBufferedBytes: 98,304
+MaximumBufferedBytes: 87,400
 PasteChunkBytes:       4,096
 ```
 
-OSC 52 therefore receives the larger bounded undecoded-input capacity it requires without silently changing the historical bracketed-paste chunking policy.
+OSC 52 therefore receives the bounded undecoded-input capacity required for one complete maximum frame without silently changing the historical bracketed-paste chunking policy.
 
 ---
 
@@ -150,10 +154,11 @@ T58 is complete when:
 2. exact payload and frame bounds remain deterministic;
 3. public maximum-payload reads survive fragmented delivery;
 4. unrelated OSC and wrong-selection responses cannot satisfy a query;
-5. timeout/cancellation preserve bounded late-response ownership;
-6. OSC 52 composes in-order with prior semantic output families;
-7. the 98,304-byte decoder ceiling does not alter the 4,096-byte default paste chunk;
-8. deterministic payload property tests pass;
-9. Windows, Linux, and macOS CI are green.
+5. oversized correlated OSC 52 responses fail deterministically and cannot leak into ordinary input;
+6. timeout/cancellation preserve bounded late-response ownership;
+7. OSC 52 composes in-order with prior semantic output families;
+8. the 87,400-byte decoder ceiling does not alter the 4,096-byte default paste chunk;
+9. deterministic payload property tests pass;
+10. Windows, Linux, and macOS CI are green.
 
 The next tranche is **T59 — public API, docs, sample, package, and stable closure**.
