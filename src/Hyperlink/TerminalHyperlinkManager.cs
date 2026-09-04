@@ -5,10 +5,11 @@ using System.Runtime.ExceptionServices;
 /// <summary>
 /// Owns the strict-LIFO stack of session-managed OSC 8 hyperlink state.
 /// </summary>
-internal sealed class TerminalHyperlinkManager {
+internal sealed class TerminalHyperlinkManager : ITerminalSessionLifecycleParticipant {
 	private readonly TerminalSession session;
 	private readonly SemaphoreSlim gate = new( 1, 1 );
 	private readonly List<HyperlinkEntry> stack = [];
+	private readonly IDisposable lifecycleRegistration;
 
 	private long nextLeaseId;
 	private bool cleanupCloseRequired;
@@ -21,6 +22,21 @@ internal sealed class TerminalHyperlinkManager {
 	) {
 		ArgumentNullException.ThrowIfNull( session );
 		this.session = session;
+		this.lifecycleRegistration = session.RegisterCoreLifecycleParticipant( this );
+	}
+
+	public ValueTask PrepareForTerminalSuspendAsync(
+		CancellationToken cancellationToken = default
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.SuspendAsync();
+	}
+
+	public ValueTask ResumeAfterTerminalSuspendAsync(
+		CancellationToken cancellationToken = default
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.ReenterAsync();
 	}
 
 	internal async ValueTask<TerminalHyperlinkLease> AcquireAsync(
@@ -379,6 +395,7 @@ internal sealed class TerminalHyperlinkManager {
 			}
 		} finally {
 			this.gate.Release();
+			this.lifecycleRegistration.Dispose();
 		}
 	}
 
