@@ -6,12 +6,20 @@
 
 ## Status
 
-`0.4.0` is the current stable release line. It retains the 0.1 live-session
-foundation, 0.2 rich-input contract, and 0.3 active-query foundation while
-adding a deliberately narrow, injection-safe OSC title surface and the first
-reusable outbound OSC framing contract.
+`0.4.0` is the current stable release line. The `0.5.0` development line adds a deliberately narrow OSC 7 current-location publication surface on top of the safe outbound OSC framing established in 0.4.
 
-The stable 0.4 API adds semantic OSC title operations:
+The current 0.5 API adds:
+
+```csharp
+await session.PublishCurrentLocationAsync(
+	"/usr/local/src",
+	TerminalLocationPathStyle.Posix
+);
+```
+
+Callers explicitly choose POSIX, Windows-drive, or Windows-UNC path grammar. The library converts the supplied native path into a deterministic RFC 8089-style `file:` URI, percent-encodes path data from strict UTF-8, and emits one canonical OSC 7 frame. No location is published automatically when a session opens, when process current directory changes, or when the session is disposed.
+
+The 0.4 semantic title API remains:
 
 ```csharp
 await session.SetTitleAsync( "both" );
@@ -19,14 +27,7 @@ await session.SetIconNameAsync( "icon" );
 await session.SetWindowTitleAsync( "window" );
 ```
 
-These map respectively to OSC 0, OSC 1, and OSC 2. The public API does not expose
-raw OSC selector numbers or a generic escape-sequence writer.
-
-Title payloads use strict UTF-8, reject C0/DEL/C1 controls and malformed UTF-16,
-and are bounded to 4096 encoded bytes. Title operations are emission-oriented:
-a successful call means the complete frame was written to the session output; it
-does not claim that the terminal applied the title or that `Icod.Terminal` owns
-the terminal emulator's title state.
+These map respectively to OSC 0, OSC 1, and OSC 2. The public API does not expose raw OSC selector numbers or a generic escape-sequence writer.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -75,6 +76,10 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 );
 
 await session.SetWindowTitleAsync( "my terminal app" );
+await session.PublishCurrentLocationAsync(
+	"/usr/local/src",
+	TerminalLocationPathStyle.Posix
+);
 
 TerminalEvent terminalEvent = await session.ReadEventAsync(
     TimeSpan.FromSeconds( 1 )
@@ -84,6 +89,31 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 The session borrows process-standard endpoints, owns only the terminal state transitions it applies, and restores its captured baseline during `DisposeAsync()`.
 
 Applications which genuinely need complete native mode observation, serialization, or custom endpoint/control backends may use the lower-level public contracts; ordinary interactive applications should prefer `TerminalSession`.
+
+## 0.5 OSC current-location publication
+
+`0.5` adds semantic OSC 7 publication through:
+
+```csharp
+await session.PublishCurrentLocationAsync(
+	path,
+	TerminalLocationPathStyle.Posix,
+	authority
+);
+```
+
+`TerminalLocationPathStyle` exposes `Posix`, `WindowsDrive`, and `WindowsUnc` so path interpretation is explicit and deterministic rather than inferred from the machine running the application.
+
+The library emits only `file:` URIs for OSC 7. Local paths use canonical forms such as `file:///usr/src` and `file:///C:/src`; UNC paths map to authority form such as `file://server/share/dir`. Path text is treated as native path data, not pre-escaped URI text: for example, a literal filename component `%20` becomes `%2520`.
+
+Only RFC 3986 unreserved ASCII bytes remain literal inside path segments; other bytes are percent-encoded from strict UTF-8 using uppercase hexadecimal. The encoded URI payload is bounded to 16384 bytes.
+
+Publication is explicit and privacy-sensitive. `Icod.Terminal` does not automatically publish `Environment.CurrentDirectory`, derive host names from the environment, monitor directory changes, or republish a location during disposal. An optional authority supplied by the caller is therefore an intentional disclosure choice. UNC paths derive their authority from the UNC server component.
+
+The operation uses the same session-owned output-ordering boundary as ordinary text, title operations, active queries, presentation transitions, and rich-input protocol transitions. It does not flush implicitly. Successful completion means the complete OSC 7 frame was written; it does not prove that the terminal recognized, retained, or used the location.
+
+The reviewed 0.5 API delta is recorded in
+[`docs/Public-API-Baseline-0.5.md`](docs/Public-API-Baseline-0.5.md).
 
 ## 0.4 OSC title operations
 
@@ -261,7 +291,7 @@ The reviewed 0.3 additions are recorded in
 
 ## Samples
 
-The repository contains three deliberately different interactive samples:
+The repository contains five deliberately different interactive samples:
 
 - [`Icod.Terminal.Sample`](samples/Icod.Terminal.Sample/) is the minimal session,
   identity, size, output, and restoration example;
@@ -270,7 +300,11 @@ The repository contains three deliberately different interactive samples:
   keys, lifecycle events, and reversible input-protocol leases;
 - [`Icod.Terminal.Query.Sample`](samples/Icod.Terminal.Query.Sample/) explicitly
   issues the 0.3 CSI/DCS query families while reversible presentation and
-  rich-input leases are active, then returns to the unified event loop.
+  rich-input leases are active, then returns to the unified event loop;
+- [`Icod.Terminal.Title.Sample`](samples/Icod.Terminal.Title.Sample/) demonstrates
+  the 0.4 semantic OSC 0/1/2 title operations;
+- [`Icod.Terminal.Location.Sample`](samples/Icod.Terminal.Location.Sample/)
+  demonstrates explicit 0.5 OSC 7 current-location publication from a caller-supplied path.
 
 See [`samples/README.md`](samples/README.md) for run instructions and expected
 behavior.
@@ -295,12 +329,16 @@ including Debug package validation.
 
 ## Development roadmap
 
-The `0.4.0` milestone is documented in
-[`Icod.Terminal-0.4.0-Development-Roadmap.md`](Icod.Terminal-0.4.0-Development-Roadmap.md).
-The 0.4 protocol-closure sequence is recorded in
+The `0.5.0` milestone is documented in
+[`Icod.Terminal-0.5.0-Development-Roadmap.md`](Icod.Terminal-0.5.0-Development-Roadmap.md),
+with completed development records in T37–T42 and stable package/release closure planned for T43.
+
+The protocol-closure sequence is recorded in
 [`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
-The completed 0.4 tranches are recorded in T29–T36, with final package/release
-closure in
+
+The `0.4.0` milestone is documented in
+[`Icod.Terminal-0.4.0-Development-Roadmap.md`](Icod.Terminal-0.4.0-Development-Roadmap.md),
+with final package/release closure in
 [`docs/T36-0.4.0-Package-Consumer-and-Release-Closure.md`](docs/T36-0.4.0-Package-Consumer-and-Release-Closure.md).
 
 The completed `0.3.0` milestone is documented in
