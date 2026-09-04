@@ -292,8 +292,8 @@ internal static class TerminalLocationUriEncoder {
 			);
 		}
 
-		if ( authority.StartsWith( '[', StringComparison.Ordinal )
-			&& authority.EndsWith( ']', StringComparison.Ordinal ) ) {
+		if ( authority.StartsWith( "[", StringComparison.Ordinal )
+			&& authority.EndsWith( "]", StringComparison.Ordinal ) ) {
 			string literal = authority[ 1..^1 ];
 			if ( IPAddress.TryParse( literal, out IPAddress? address )
 				&& System.Net.Sockets.AddressFamily.InterNetworkV6 == address.AddressFamily ) {
