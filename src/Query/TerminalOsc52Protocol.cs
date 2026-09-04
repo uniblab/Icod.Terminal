@@ -20,7 +20,7 @@ internal static class TerminalOsc52Protocol {
 		}
 
 		ReadOnlySpan<byte> bytes = frame.Bytes.Span;
-		if ( !TryGetPayload(
+		if ( !TryGetCorrelatedPayload(
 			bytes,
 			TerminalOsc52SelectionEncoder.Encode( selection ),
 			out ReadOnlySpan<byte> payload
@@ -30,10 +30,17 @@ internal static class TerminalOsc52Protocol {
 			);
 		}
 
-		return TerminalOsc52PayloadCodec.Decode( payload );
+		try {
+			return TerminalOsc52PayloadCodec.Decode( payload );
+		} catch ( ArgumentOutOfRangeException exception ) {
+			throw new FormatException(
+				"The correlated OSC 52 response payload exceeds the supported bound.",
+				exception
+			);
+		}
 	}
 
-	private static bool TryGetPayload(
+	private static bool TryGetCorrelatedPayload(
 		ReadOnlySpan<byte> bytes,
 		byte expectedSelection,
 		out ReadOnlySpan<byte> payload
@@ -77,15 +84,7 @@ internal static class TerminalOsc52Protocol {
 			start + 5,
 			end - start - 5
 		);
-
-		try {
-			_ = TerminalOsc52PayloadCodec.GetDecodedLength( payload );
-			return true;
-		} catch ( FormatException ) {
-			return false;
-		} catch ( ArgumentOutOfRangeException ) {
-			return false;
-		}
+		return true;
 	}
 
 	private sealed class TerminalOsc52ResponseMatcher : ITerminalResponseMatcher {
@@ -106,7 +105,7 @@ internal static class TerminalOsc52Protocol {
 		) {
 			ArgumentNullException.ThrowIfNull( frame );
 			return TerminalResponseFrameKind.Osc == frame.Kind
-				&& TryGetPayload(
+				&& TryGetCorrelatedPayload(
 					frame.Bytes.Span,
 					this.selection,
 					out _
