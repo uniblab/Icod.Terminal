@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.7.0-alpha.3</Version>
+		<Version>0.7.0-alpha.4</Version>
 		<AssemblyVersion>0.7.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.7.0-alpha.3</PackageVersion>
+		<PackageVersion>0.7.0-alpha.4</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.7.0-alpha.3 implements T54 outbound OSC 52 framing: canonical write and query frames, typed selection integration, bounded payload validation before output, complete-frame single-write semantics, no implicit flush, pre-commit cancellation, and zero-output rejection tests.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.7.0-alpha.4 implements T55 inbound OSC 52 framing and routing: OSC response-family integration, bounded BEL/ST/C1 compatibility framing, selection-aware correlation, canonical payload validation, maximum-size routing through the existing single-reader decoder, and deterministic fragmentation/resource-boundary tests.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
