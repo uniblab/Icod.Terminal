@@ -2,7 +2,7 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.6.0`  
-**Status:** T50 public API regret audit complete
+**Status:** T50 public API regret audit complete; T51A lifecycle audit incorporated
 
 ---
 
@@ -128,7 +128,35 @@ The session restores only state that it created. It does not claim to discover o
 
 ---
 
-## 7. Support and security semantics
+## 7. Lifecycle ownership
+
+Logical hyperlink lease ownership survives managed terminal suspension, but physical OSC 8 state does not remain open across the suspension boundary.
+
+When the session processes a catchable suspend while one or more hyperlink leases are active:
+
+```text
+active stack A/B
+    -> emit one canonical OSC 8 close
+    -> retain logical stack A/B
+    -> restore the remaining terminal/session baseline
+```
+
+After successful session-state re-entry:
+
+```text
+retained stack A/B
+    -> re-emit begin B
+```
+
+The innermost active lease therefore remains the effective scope after resume. Releasing it afterward restores the next outer lease normally.
+
+The hyperlink manager participates as core session lifecycle state: higher-layer registered participants prepare first, OSC 8 is neutralized before Terminal releases its remaining owned terminal state, and OSC 8 is re-entered before higher-layer participants resume.
+
+A failed suspend close participates in lifecycle error handling. A failed hyperlink re-entry prevents the session from claiming that state is valid.
+
+---
+
+## 8. Support and security semantics
 
 Successful completion means requested bytes were written to the session output. It does not prove that the terminal:
 
@@ -144,7 +172,7 @@ The library performs no network access, DNS lookup, filesystem lookup, browser l
 
 ---
 
-## 8. Regret audit
+## 9. Regret audit
 
 T50 rejects adding the following public APIs in 0.6:
 
@@ -166,7 +194,7 @@ No additional public OSC 8 type or convenience API is justified before stable re
 
 ---
 
-## 9. Separation from Icod.DCurses
+## 10. Separation from Icod.DCurses
 
 `Icod.Terminal` owns terminal protocol state and ordering. It does not define hyperlink-bearing cells, style inheritance, hit testing, activation policy, or virtual-screen diff behavior.
 
@@ -174,9 +202,9 @@ Those are higher-level presentation concerns for `Icod.DCurses` or other consume
 
 ---
 
-## 10. Freeze decision
+## 11. Freeze decision
 
-The T50 review accepts exactly these public additions for stable 0.6:
+The T50/T51A review accepts exactly these public additions for stable 0.6:
 
 ```text
 TerminalHyperlinkLease
