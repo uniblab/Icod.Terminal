@@ -87,9 +87,9 @@ public sealed partial class TerminalSession {
 		_ = ToOsc52Selection( selection );
 		cancellationToken.ThrowIfCancellationRequested();
 
-		byte[] payload;
+		int payloadLength;
 		try {
-			payload = StrictClipboardUtf8.GetBytes( value );
+			payloadLength = StrictClipboardUtf8.GetByteCount( value );
 		} catch ( EncoderFallbackException exception ) {
 			throw new ArgumentException(
 				"Terminal clipboard text must contain well-formed Unicode text.",
@@ -97,11 +97,18 @@ public sealed partial class TerminalSession {
 				exception
 			);
 		}
-
-		if ( TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes < payload.Length ) {
+		if ( TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes < payloadLength ) {
 			throw new ArgumentException(
 				$"Terminal clipboard text may not exceed {TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes} encoded UTF-8 bytes.",
 				nameof( value )
+			);
+		}
+
+		byte[] payload = new byte[ payloadLength ];
+		if ( 0 < payloadLength ) {
+			StrictClipboardUtf8.GetBytes(
+				value.AsSpan(),
+				payload.AsSpan()
 			);
 		}
 
