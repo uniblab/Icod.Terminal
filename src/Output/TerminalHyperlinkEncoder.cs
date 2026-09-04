@@ -1,6 +1,8 @@
 namespace Icod.Terminal;
 
 using System.Globalization;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 /// <summary>
@@ -16,10 +18,6 @@ internal static class TerminalHyperlinkEncoder {
 		true
 	);
 
-	/// <summary>
-	/// Validates one non-empty absolute RFC 3986 URI and normalizes percent-escape
-	/// hexadecimal digits to uppercase without decoding the URI.
-	/// </summary>
 	internal static string EncodeUri(
 		string uri
 	) {
@@ -36,11 +34,7 @@ internal static class TerminalHyperlinkEncoder {
 		}
 		if ( MaximumUriByteCount < uri.Length ) {
 			throw new ArgumentException(
-				string.Concat(
-					"OSC 8 hyperlink URIs may not exceed ",
-					MaximumUriByteCount.ToString( CultureInfo.InvariantCulture ),
-					" bytes."
-				),
+				$"OSC 8 hyperlink URIs may not exceed {MaximumUriByteCount.ToString( CultureInfo.InvariantCulture )} bytes.",
 				nameof( uri )
 			);
 		}
@@ -63,15 +57,11 @@ internal static class TerminalHyperlinkEncoder {
 				continue;
 			}
 
-			if ( index + 2 >= uri.Length
-				|| !IsHexDigit( uri[ index + 1 ] )
-				|| !IsHexDigit( uri[ index + 2 ] ) ) {
-				throw new ArgumentException(
-					"OSC 8 hyperlink URIs must contain only complete percent escapes of the form %HH.",
-					nameof( uri )
-				);
-			}
-
+			ValidatePercentEscapeAt(
+				uri,
+				index,
+				uri.Length
+			);
 			normalized.Append( '%' );
 			normalized.Append( char.ToUpperInvariant( uri[ index + 1 ] ) );
 			normalized.Append( char.ToUpperInvariant( uri[ index + 2 ] ) );
@@ -81,9 +71,6 @@ internal static class TerminalHyperlinkEncoder {
 		return normalized.ToString();
 	}
 
-	/// <summary>
-	/// Encodes the optional OSC 8 <c>id</c> semantic parameter.
-	/// </summary>
 	internal static string EncodeParameters(
 		string? identifier
 	) {
@@ -97,11 +84,7 @@ internal static class TerminalHyperlinkEncoder {
 		);
 		if ( MaximumIdentifierByteCount < identifier.Length ) {
 			throw new ArgumentException(
-				string.Concat(
-					"OSC 8 hyperlink identifiers may not exceed ",
-					MaximumIdentifierByteCount.ToString( CultureInfo.InvariantCulture ),
-					" bytes."
-				),
+				$"OSC 8 hyperlink identifiers may not exceed {MaximumIdentifierByteCount.ToString( CultureInfo.InvariantCulture )} bytes.",
 				nameof( identifier )
 			);
 		}
@@ -177,11 +160,15 @@ internal static class TerminalHyperlinkEncoder {
 		int querySearchEnd = 0 <= fragment
 			? fragment
 			: uri.Length;
-		int query = uri.IndexOf( '?', contentStart, querySearchEnd - contentStart );
-
+		int query = uri.IndexOf(
+			'?',
+			contentStart,
+			querySearchEnd - contentStart
+		);
 		int hierarchyEnd = 0 <= query
 			? query
 			: querySearchEnd;
+
 		if ( contentStart + 2 <= hierarchyEnd
 			&& '/' == uri[ contentStart ]
 			&& '/' == uri[ contentStart + 1 ] ) {
@@ -254,56 +241,226 @@ internal static class TerminalHyperlinkEncoder {
 		int end
 	) {
 		ArgumentNullException.ThrowIfNull( uri );
+		if ( 0 > start || start > end || uri.Length < end ) {
+			throw new ArgumentOutOfRangeException( nameof( start ) );
+		}
 
-		bool inIpv6Literal = false;
+		int at = -1;
 		for ( int index = start; index < end; ++index ) {
-			char character = uri[ index ];
-			ValidateAsciiUriCharacter(
-				character,
-				nameof( uri )
+			if ( '@' == uri[ index ] ) {
+				if ( 0 <= at ) {
+					throw new ArgumentException(
+						"An OSC 8 hyperlink URI authority may contain at most one user-info delimiter.",
+						nameof( uri )
+					);
+				}
+				at = index;
+			}
+		}
+
+		int hostPortStart = start;
+		if ( 0 <= at ) {
+			ValidateUserInfo(
+				uri,
+				start,
+				at
 			);
-			if ( '[' == character ) {
-				if ( inIpv6Literal ) {
+			hostPortStart = at + 1;
+		}
+
+		if ( hostPortStart < end && '[' == uri[ hostPortStart ] ) {
+			int close = uri.IndexOf(
+				']',
+				hostPortStart + 1,
+				end - hostPortStart - 1
+			);
+			if ( 0 > close ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink URI contains an unterminated IP-literal host.",
+					nameof( uri )
+				);
+			}
+			if ( 0 <= uri.IndexOf( '[', hostPortStart + 1, close - hostPortStart - 1 )
+				|| 0 <= uri.IndexOf( ']', close + 1, end - close - 1 ) ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink URI contains malformed authority brackets.",
+					nameof( uri )
+				);
+			}
+
+			ValidateIpLiteral( uri[ ( hostPortStart + 1 )..close ] );
+			if ( close + 1 < end ) {
+				if ( ':' != uri[ close + 1 ] ) {
 					throw new ArgumentException(
-						"An OSC 8 hyperlink URI contains malformed authority brackets.",
+						"An OSC 8 hyperlink URI contains invalid text after an IP-literal host.",
 						nameof( uri )
 					);
 				}
-				inIpv6Literal = true;
-				continue;
-			}
-			if ( ']' == character ) {
-				if ( !inIpv6Literal ) {
-					throw new ArgumentException(
-						"An OSC 8 hyperlink URI contains malformed authority brackets.",
-						nameof( uri )
-					);
-				}
-				inIpv6Literal = false;
-				continue;
-			}
-			if ( '%' == character ) {
-				ValidatePercentEscapeAt(
+				ValidatePort(
 					uri,
-					index,
+					close + 2,
 					end
 				);
-				index += 2;
-				continue;
 			}
-			if ( !IsAuthorityCharacter( character ) ) {
+			return;
+		}
+
+		for ( int index = hostPortStart; index < end; ++index ) {
+			if ( '[' == uri[ index ] || ']' == uri[ index ] ) {
 				throw new ArgumentException(
-					"An OSC 8 hyperlink URI contains a character not permitted in its authority component.",
+					"Bracket characters are permitted only around RFC 3986 IP-literal hosts.",
 					nameof( uri )
 				);
 			}
 		}
 
-		if ( inIpv6Literal ) {
-			throw new ArgumentException(
-				"An OSC 8 hyperlink URI contains an unterminated authority literal.",
-				nameof( uri )
+		int portDelimiter = -1;
+		for ( int index = hostPortStart; index < end; ++index ) {
+			if ( ':' == uri[ index ] ) {
+				if ( 0 <= portDelimiter ) {
+					throw new ArgumentException(
+						"IPv6 and IPvFuture hosts must use RFC 3986 bracketed IP-literal form.",
+						nameof( uri )
+					);
+				}
+				portDelimiter = index;
+			}
+		}
+
+		int hostEnd = 0 <= portDelimiter
+			? portDelimiter
+			: end;
+		ValidateRegName(
+			uri,
+			hostPortStart,
+			hostEnd
+		);
+		if ( 0 <= portDelimiter ) {
+			ValidatePort(
+				uri,
+				portDelimiter + 1,
+				end
 			);
+		}
+	}
+
+	private static void ValidateUserInfo(
+		string uri,
+		int start,
+		int end
+	) {
+		for ( int index = start; index < end; ++index ) {
+			char character = uri[ index ];
+			ValidateAsciiUriCharacter( character, nameof( uri ) );
+			if ( '%' == character ) {
+				ValidatePercentEscapeAt( uri, index, end );
+				index += 2;
+				continue;
+			}
+			if ( !IsUnreservedAscii( character )
+				&& !IsSubDelimiter( character )
+				&& ':' != character ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink URI contains invalid user-info syntax.",
+					nameof( uri )
+				);
+			}
+		}
+	}
+
+	private static void ValidateRegName(
+		string uri,
+		int start,
+		int end
+	) {
+		for ( int index = start; index < end; ++index ) {
+			char character = uri[ index ];
+			ValidateAsciiUriCharacter( character, nameof( uri ) );
+			if ( '%' == character ) {
+				ValidatePercentEscapeAt( uri, index, end );
+				index += 2;
+				continue;
+			}
+			if ( !IsUnreservedAscii( character )
+				&& !IsSubDelimiter( character ) ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink URI contains invalid registered-name host syntax.",
+					nameof( uri )
+				);
+			}
+		}
+	}
+
+	private static void ValidateIpLiteral(
+		string literal
+	) {
+		ArgumentException.ThrowIfNullOrWhiteSpace( literal );
+
+		foreach ( char character in literal ) {
+			ValidateAsciiUriCharacter( character, nameof( literal ) );
+		}
+		if ( 'v' == literal[ 0 ] || 'V' == literal[ 0 ] ) {
+			ValidateIpvFuture( literal );
+			return;
+		}
+		if ( literal.Contains( '%', StringComparison.Ordinal ) ) {
+			throw new ArgumentException(
+				"Scoped IPv6 zone identifiers are outside the RFC 3986 OSC 8 hyperlink contract.",
+				nameof( literal )
+			);
+		}
+		if ( !IPAddress.TryParse( literal, out IPAddress? address )
+			|| AddressFamily.InterNetworkV6 != address.AddressFamily ) {
+			throw new ArgumentException(
+				"An OSC 8 hyperlink IP-literal host must contain a valid IPv6 or IPvFuture address.",
+				nameof( literal )
+			);
+		}
+	}
+
+	private static void ValidateIpvFuture(
+		string literal
+	) {
+		int dot = literal.IndexOf( '.' );
+		if ( 2 > dot || literal.Length - 1 == dot ) {
+			throw new ArgumentException(
+				"An OSC 8 hyperlink IPvFuture host must use v<hex>.<address> syntax.",
+				nameof( literal )
+			);
+		}
+		for ( int index = 1; index < dot; ++index ) {
+			if ( !IsHexDigit( literal[ index ] ) ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink IPvFuture version must contain hexadecimal digits.",
+					nameof( literal )
+				);
+			}
+		}
+		for ( int index = dot + 1; index < literal.Length; ++index ) {
+			char character = literal[ index ];
+			if ( !IsUnreservedAscii( character )
+				&& !IsSubDelimiter( character )
+				&& ':' != character ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink IPvFuture address contains invalid syntax.",
+					nameof( literal )
+				);
+			}
+		}
+	}
+
+	private static void ValidatePort(
+		string uri,
+		int start,
+		int end
+	) {
+		for ( int index = start; index < end; ++index ) {
+			if ( '0' > uri[ index ] || '9' < uri[ index ] ) {
+				throw new ArgumentException(
+					"An OSC 8 hyperlink URI port must contain only decimal digits.",
+					nameof( uri )
+				);
+			}
 		}
 	}
 
@@ -312,20 +469,11 @@ internal static class TerminalHyperlinkEncoder {
 		int start,
 		int end
 	) {
-		ArgumentNullException.ThrowIfNull( uri );
-
 		for ( int index = start; index < end; ++index ) {
 			char character = uri[ index ];
-			ValidateAsciiUriCharacter(
-				character,
-				nameof( uri )
-			);
+			ValidateAsciiUriCharacter( character, nameof( uri ) );
 			if ( '%' == character ) {
-				ValidatePercentEscapeAt(
-					uri,
-					index,
-					end
-				);
+				ValidatePercentEscapeAt( uri, index, end );
 				index += 2;
 				continue;
 			}
@@ -343,20 +491,11 @@ internal static class TerminalHyperlinkEncoder {
 		int start,
 		int end
 	) {
-		ArgumentNullException.ThrowIfNull( uri );
-
 		for ( int index = start; index < end; ++index ) {
 			char character = uri[ index ];
-			ValidateAsciiUriCharacter(
-				character,
-				nameof( uri )
-			);
+			ValidateAsciiUriCharacter( character, nameof( uri ) );
 			if ( '%' == character ) {
-				ValidatePercentEscapeAt(
-					uri,
-					index,
-					end
-				);
+				ValidatePercentEscapeAt( uri, index, end );
 				index += 2;
 				continue;
 			}
@@ -376,7 +515,6 @@ internal static class TerminalHyperlinkEncoder {
 		int index,
 		int end
 	) {
-		ArgumentNullException.ThrowIfNull( uri );
 		if ( index + 2 >= end
 			|| !IsHexDigit( uri[ index + 1 ] )
 			|| !IsHexDigit( uri[ index + 2 ] ) ) {
@@ -417,15 +555,6 @@ internal static class TerminalHyperlinkEncoder {
 				exception
 			);
 		}
-	}
-
-	private static bool IsAuthorityCharacter(
-		char character
-	) {
-		return IsUnreservedAscii( character )
-			|| IsSubDelimiter( character )
-			|| ':' == character
-			|| '@' == character;
 	}
 
 	private static bool IsPChar(
