@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.5.0-alpha.4</Version>
+		<Version>0.5.0-alpha.5</Version>
 		<AssemblyVersion>0.5.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.5.0-alpha.4</PackageVersion>
+		<PackageVersion>0.5.0-alpha.5</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.5.0-alpha.4 implements T39 OSC 7 writer integration: canonical ESC ] 7 ; file-uri ESC \\ framing, complete-frame one-call output, validation-before-write, cancellation-before-transmission, zero implicit flush, and deterministic failure propagation over the T38 URI encoder.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.5.0-alpha.5 implements T40: public semantic OSC 7 current-location publication through TerminalSession.PublishCurrentLocationAsync, explicit POSIX/Windows-drive/UNC path-style selection, optional explicit host authority, session-owned output ordering, redirected-output rejection, explicit disclosure semantics, cancellation-before-transmission, and no implicit flush.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
