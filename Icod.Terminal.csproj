@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.4.0-alpha.2</Version>
+		<Version>0.4.0-alpha.3</Version>
 		<AssemblyVersion>0.4.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.4.0-alpha.2</PackageVersion>
+		<PackageVersion>0.4.0-alpha.3</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.4.0-alpha.2 implements the internal OSC 0/1/2 writer foundation with canonical ESC ] framing and ESC \ termination, strict UTF-8 payload validation, C0/DEL/C1 rejection, a 4096-byte encoded payload ceiling, validation-before-write semantics, cancellation-before-transmission behavior, and byte-exact in-memory tests.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.4.0-alpha.3 adds the first public OSC title operation: TerminalSession.SetTitleAsync emits injection-safe OSC 0 through the internal T30 writer, rejects known non-terminal output endpoints, preserves strict UTF-8 and 4096-byte payload rules, and propagates output failures distinctly from validation errors.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
