@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.5.0-alpha.3</Version>
+		<Version>0.5.0-alpha.4</Version>
 		<AssemblyVersion>0.5.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.5.0-alpha.3</PackageVersion>
+		<PackageVersion>0.5.0-alpha.4</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.5.0-alpha.3 implements T38: a host-independent reusable file-URI location encoder with deterministic POSIX, Windows-drive, and UNC semantics; strict UTF-8 RFC 3986 percent encoding; explicit authority validation; a 16384-byte resource bound; and cross-platform deterministic fixtures. OSC 7 emission remains deferred to T39.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.5.0-alpha.4 implements T39 OSC 7 writer integration: canonical ESC ] 7 ; file-uri ESC \\ framing, complete-frame one-call output, validation-before-write, cancellation-before-transmission, zero implicit flush, and deterministic failure propagation over the T38 URI encoder.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
