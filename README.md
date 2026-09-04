@@ -6,27 +6,23 @@
 
 ## Status
 
-`0.6.1` is the current stable maintenance release candidate. It retains the complete 0.6 OSC 8 hyperlink and lifecycle surface while updating the `Icod.TermInfo` runtime dependency to `1.10.0`.
+`0.7.0` is the current stable release candidate. It adds semantic OSC 52 clipboard and selection operations while preserving the existing live-session, input, query, OSC 0/1/2 title, OSC 7 location, and OSC 8 hyperlink contracts.
 
-The stable 0.6 public surface adds:
+The stable 0.7 public delta is deliberately small:
 
 ```csharp
-await session.WriteHyperlinkAsync(
-	"project documentation",
-	"https://example.com/docs",
-	"docs-1"
+await session.WriteClipboardAsync(
+	TerminalClipboardSelection.Clipboard,
+	"copied text"
 );
 
-await using TerminalHyperlinkLease hyperlink =
-	await session.AcquireHyperlinkAsync(
-		"https://example.com/docs",
-		"docs-1"
-	);
-
-await session.WriteTextAsync( "linked text" );
+byte[] payload = await session.ReadClipboardAsync(
+	TerminalClipboardSelection.Clipboard,
+	TimeSpan.FromMilliseconds( 750 )
+);
 ```
 
-The public API does not expose raw OSC selector numbers, arbitrary OSC 8 parameter dictionaries, generic escape-sequence construction, URI activation, or automatic URL detection.
+`TerminalClipboardSelection` exposes only `Clipboard`, `Primary`, `Secondary`, and `Select`. The public API does not expose raw OSC selector letters, caller-supplied base64, cut buffers, multiple-selection lists, generic OSC construction, automatic clipboard reads, clipboard monitoring, or OS-native clipboard APIs.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -47,14 +43,14 @@ watch / slabtop / top
 
 `Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, reversible presentation-state mechanisms, active terminal-query routing, and semantic terminal-output operations. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy. A future `Icod.Pty` package remains an adjacent concern rather than a prerequisite.
 
-`Icod.Timing` supplies the monotonic elapsed-time and cancellable-delay primitives used by Terminal's relative event timeouts and Escape-sequence ambiguity windows.
+`Icod.Timing` supplies the monotonic elapsed-time and cancellable-delay primitives used by Terminal's relative event timeouts, Escape-sequence ambiguity windows, and active query transactions.
 
 ## Installation
 
-The stable 0.6 maintenance release installs as:
+The stable 0.7 release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.6.1
+dotnet add package Icod.Terminal --version 0.7.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
@@ -82,6 +78,11 @@ await session.WriteHyperlinkAsync(
 	"https://example.com/docs"
 );
 
+await session.WriteClipboardAsync(
+	TerminalClipboardSelection.Clipboard,
+	"copied text"
+);
+
 TerminalEvent terminalEvent = await session.ReadEventAsync(
 	TimeSpan.FromSeconds( 1 )
 );
@@ -90,6 +91,49 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 The session borrows process-standard endpoints, owns only the terminal state transitions it applies, and restores its captured baseline during `DisposeAsync()`.
 
 Applications which genuinely need complete native mode observation, serialization, or custom endpoint/control backends may use the lower-level public contracts; ordinary interactive applications should prefer `TerminalSession`.
+
+## 0.7 OSC 52 clipboard and selections
+
+`0.7` adds explicit semantic clipboard writes and reads.
+
+Binary writes preserve exact caller bytes:
+
+```csharp
+await session.WriteClipboardAsync(
+	TerminalClipboardSelection.Clipboard,
+	new byte[] { 0, 1, 2, 255 }
+);
+```
+
+Text writes use strict UTF-8 without a BOM and are independent of `ApplicationEncoding`:
+
+```csharp
+await session.WriteClipboardAsync(
+	TerminalClipboardSelection.Primary,
+	"selected text"
+);
+```
+
+Reads are always explicit and byte-returning:
+
+```csharp
+byte[] payload = await session.ReadClipboardAsync(
+	TerminalClipboardSelection.Clipboard,
+	TimeSpan.FromMilliseconds( 750 )
+);
+```
+
+Opening a session never reads clipboard data. Clipboard reads are not performed during terminal discovery, capability detection, lifecycle handling, suspension, resume, or disposal. Every read names one selection and one caller-visible timeout.
+
+The decoded payload ceiling is 65,536 bytes. Standard unwrapped RFC 4648 base64 is used internally. The maximum encoded payload is 87,384 bytes, the maximum complete OSC 52 frame is 87,400 bytes, and the general undecoded input ceiling is 98,304 bytes. The historical 4,096-byte bracketed-paste chunk default remains independent of that larger input ceiling.
+
+Outbound OSC 52 always uses canonical seven-bit `ESC ]` introduction and `ESC \\` String Terminator. For inbound compatibility, an active clipboard query also recognizes seven-bit BEL termination and the C1 OSC/C1 ST form. Wrong selections, unrelated OSC traffic, malformed framing, and oversized data cannot satisfy the query.
+
+After an emitted read request times out or the caller cancels, the existing query transaction architecture retains bounded late-response ownership so a delayed clipboard reply cannot satisfy a later query or leak into ordinary application input.
+
+Successful clipboard write completion proves only that the complete OSC 52 frame was emitted. It does not prove that the terminal accepted, retained, or exposed the data. Likewise, a clipboard read timeout does not prove that OSC 52 is unsupported: terminal emulators may disable or ignore clipboard operations by policy. `Icod.Terminal` does not fabricate support from `TERM`, emulator identity, or environment variables.
+
+The reviewed 0.7 API delta is recorded in [`docs/Public-API-Baseline-0.7.md`](docs/Public-API-Baseline-0.7.md). The T58 acceptance record is [`docs/T58-OSC-52-Integration-Security-and-Compatibility-Acceptance.md`](docs/T58-OSC-52-Integration-Security-and-Compatibility-Acceptance.md), and stable closure is recorded in [`docs/T59-0.7.0-Public-API-Package-and-Stable-Closure.md`](docs/T59-0.7.0-Public-API-Package-and-Stable-Closure.md).
 
 ## 0.6 OSC 8 hyperlinks
 
@@ -256,14 +300,15 @@ The codebase uses C# 13 and supports the terminal-control implementations provid
 
 ## Samples
 
-The repository contains six deliberately different interactive samples:
+The repository contains seven deliberately different interactive samples:
 
 - [`Icod.Terminal.Sample`](samples/Icod.Terminal.Sample/) — minimal session, identity, size, output, and restoration;
 - [`Icod.Terminal.RichInput.Sample`](samples/Icod.Terminal.RichInput.Sample/) — focus, paste, mouse, modified keys, lifecycle, and reversible input-protocol leases;
 - [`Icod.Terminal.Query.Sample`](samples/Icod.Terminal.Query.Sample/) — explicit CSI/DCS query families;
 - [`Icod.Terminal.Title.Sample`](samples/Icod.Terminal.Title.Sample/) — semantic OSC 0/1/2 title operations;
 - [`Icod.Terminal.Location.Sample`](samples/Icod.Terminal.Location.Sample/) — explicit OSC 7 current-location publication;
-- [`Icod.Terminal.Hyperlink.Sample`](samples/Icod.Terminal.Hyperlink.Sample/) — bounded and scoped OSC 8 hyperlinks with nested restoration.
+- [`Icod.Terminal.Hyperlink.Sample`](samples/Icod.Terminal.Hyperlink.Sample/) — bounded and scoped OSC 8 hyperlinks with nested restoration;
+- [`Icod.Terminal.Clipboard.Sample`](samples/Icod.Terminal.Clipboard.Sample/) — explicit bounded OSC 52 clipboard write and read/query behavior.
 
 See [`samples/README.md`](samples/README.md) for run instructions and expected behavior.
 
@@ -281,9 +326,11 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Running either script without an argument performs the complete sequence, including Debug package validation.
+Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Running either script without an argument performs the complete sequence, including package validation.
 
 ## Development roadmap
+
+The `0.7.0` milestone is documented in [`Icod.Terminal-0.7.0-Development-Roadmap.md`](Icod.Terminal-0.7.0-Development-Roadmap.md), with tranche records T52–T59 under `docs/`, the reviewed public API delta in [`docs/Public-API-Baseline-0.7.md`](docs/Public-API-Baseline-0.7.md), and stable closure in [`docs/T59-0.7.0-Public-API-Package-and-Stable-Closure.md`](docs/T59-0.7.0-Public-API-Package-and-Stable-Closure.md).
 
 The `0.6.1` maintenance release is documented in [`docs/0.6.1-Dependency-Refresh.md`](docs/0.6.1-Dependency-Refresh.md).
 
