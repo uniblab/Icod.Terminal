@@ -26,8 +26,8 @@ public sealed partial class TerminalSession {
 	/// Gets the maximum number of undecoded bytes retained by the input decoder.
 	/// </summary>
 	/// <remarks>
-	/// The 0.7 ceiling accommodates one complete bounded OSC 52 response with
-	/// deliberate transport-buffer headroom while preserving the decoder's bounded-buffer invariant.
+	/// The 0.7 ceiling is 98,304 bytes (96 KiB), providing bounded headroom above
+	/// the independently enforced 87,400-byte maximum OSC 52 frame size.
 	/// </remarks>
 	public static int MaximumBufferedInputBytes {
 		get {
@@ -260,7 +260,9 @@ public sealed partial class TerminalSession {
 			if ( ReferenceEquals( this.pendingInputLifecycleEvent, lifecycleTask ) ) {
 				this.pendingInputLifecycleEvent = null;
 			}
+		}
 	}
+
 	private async ValueTask<bool> EnterEventReadGateAsync(
 		TimeSpan? timeout,
 		IMonotonicClock monotonicClock,
@@ -350,5 +352,4 @@ public sealed partial class TerminalSession {
 			this.registration.Dispose();
 		}
 	}
-
 }
