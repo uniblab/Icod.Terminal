@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.4.0-alpha.3</Version>
+		<Version>0.4.0-alpha.4</Version>
 		<AssemblyVersion>0.4.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.4.0-alpha.3</PackageVersion>
+		<PackageVersion>0.4.0-alpha.4</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.4.0-alpha.3 adds the first public OSC title operation: TerminalSession.SetTitleAsync emits injection-safe OSC 0 through the internal T30 writer, rejects known non-terminal output endpoints, preserves strict UTF-8 and 4096-byte payload rules, and propagates output failures distinctly from validation errors.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.4.0-alpha.4 adds TerminalSession.SetIconNameAsync for OSC 1 icon-name-only emission, sharing the T30 injection-safe OSC writer and T31 endpoint/cancellation policy while preserving OSC 0 SetTitleAsync semantics.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
