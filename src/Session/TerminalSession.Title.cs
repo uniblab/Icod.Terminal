@@ -73,7 +73,7 @@ public sealed partial class TerminalSession {
 		);
 	}
 
-	private ValueTask WriteTitleOperationAsync(
+	private async ValueTask WriteTitleOperationAsync(
 		OscTitleSelector selector,
 		string value,
 		CancellationToken cancellationToken
@@ -87,11 +87,14 @@ public sealed partial class TerminalSession {
 			);
 		}
 
-		return OscWriter.WriteTitleAsync(
+		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		await OscWriter.WriteTitleAsync(
 			this.Output,
 			selector,
 			value,
 			cancellationToken
-		);
+		).ConfigureAwait( false );
 	}
 }
