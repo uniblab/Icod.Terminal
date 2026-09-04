@@ -69,8 +69,15 @@ try {
     $smokeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("Icod.Terminal-package-smoke-{0}" -f [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
     try {
-        Copy-Item -LiteralPath 'tools/package-smoke/Icod.Terminal.PackageSmoke.csproj' -Destination (Join-Path $smokeRoot 'Icod.Terminal.PackageSmoke.csproj')
-        Copy-Item -LiteralPath 'tools/package-smoke/Program.cs' -Destination (Join-Path $smokeRoot 'Program.cs')
+        $generalSmokeRoot = Join-Path $smokeRoot 'general'
+        $titleSmokeRoot = Join-Path $smokeRoot 'title'
+        New-Item -ItemType Directory -Path $generalSmokeRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $titleSmokeRoot -Force | Out-Null
+
+        Copy-Item -LiteralPath 'tools/package-smoke/Icod.Terminal.PackageSmoke.csproj' -Destination (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj')
+        Copy-Item -LiteralPath 'tools/package-smoke/Program.cs' -Destination (Join-Path $generalSmokeRoot 'Program.cs')
+        Copy-Item -LiteralPath 'tools/package-title-smoke/Icod.Terminal.PackageTitleSmoke.csproj' -Destination (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj')
+        Copy-Item -LiteralPath 'tools/package-title-smoke/Program.cs' -Destination (Join-Path $titleSmokeRoot 'Program.cs')
 
         $nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
         $artifactUri = [System.Security.SecurityElement]::Escape($ArtifactDirectory)
@@ -92,7 +99,13 @@ try {
             Write-Host ''
             Write-Host '=== Fresh package consumer restore ==='
             Invoke-DotNet -Arguments @(
-                'restore', (Join-Path $smokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
+                'restore', (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
+                '--no-cache',
+                '--configfile', $nugetConfig,
+                "-p:IcodTerminalPackageVersion=$ExpectedVersion"
+            )
+            Invoke-DotNet -Arguments @(
+                'restore', (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj'),
                 '--no-cache',
                 '--configfile', $nugetConfig,
                 "-p:IcodTerminalPackageVersion=$ExpectedVersion"
@@ -103,7 +116,18 @@ try {
                 Write-Host "=== Fresh package consumer: $framework ==="
                 Invoke-DotNet -Arguments @(
                     'run',
-                    '--project', (Join-Path $smokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
+                    '--project', (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
+                    '-c', $Configuration,
+                    '-f', $framework,
+                    '--no-restore',
+                    "-p:IcodTerminalPackageVersion=$ExpectedVersion"
+                )
+
+                Write-Host ''
+                Write-Host "=== Fresh package OSC title consumer: $framework ==="
+                Invoke-DotNet -Arguments @(
+                    'run',
+                    '--project', (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj'),
                     '-c', $Configuration,
                     '-f', $framework,
                     '--no-restore',
