@@ -108,17 +108,38 @@ public sealed class TerminalLocationUriEncoderTests {
 	}
 
 	[Theory]
+	[InlineData( "/bad/\u0000" )]
+	[InlineData( "/bad/\u0007" )]
+	[InlineData( "/bad/\u001b" )]
+	[InlineData( "/bad/\u007f" )]
+	[InlineData( "/bad/\u0085" )]
+	[InlineData( "/bad/\u009c" )]
+	public void RejectsControlCharactersInPaths(
+		string path
+	) {
+		Assert.Throws<ArgumentException>(
+			() => TerminalLocationUriEncoder.EncodeFileUri(
+				path,
+				TerminalLocationPathKind.Posix
+			)
+		);
+	}
+
+	[Theory]
 	[InlineData( "" )]
 	[InlineData( "user@example.com" )]
 	[InlineData( "example.com:22" )]
 	[InlineData( "example.com/path" )]
 	[InlineData( "example.com?query" )]
 	[InlineData( "example.com#fragment" )]
+	[InlineData( "example%20.com" )]
 	[InlineData( "-example.com" )]
 	[InlineData( "example-.com" )]
 	[InlineData( "münchen.example" )]
 	[InlineData( "2001:db8::1" )]
 	[InlineData( "[not-ipv6]" )]
+	[InlineData( "[fe80::1%eth0]" )]
+	[InlineData( "[fe80::1%25eth0]" )]
 	public void RejectsInvalidExplicitAuthorities(
 		string authority
 	) {
