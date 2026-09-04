@@ -45,7 +45,11 @@ Task<byte[]> query = session.ReadClipboardAsync(
 	TerminalClipboardSelection.Primary,
 	TimeSpan.FromSeconds( 5 )
 ).AsTask();
-await transport.WaitForWriteCountAsync( 2 );
+using CancellationTokenSource writeTimeout = new( TimeSpan.FromSeconds( 5 ) );
+await transport.WaitForWriteCountAsync(
+	2,
+	writeTimeout.Token
+);
 Require(
 	Encoding.ASCII.GetBytes( "\u001b]52;p;?\u001b\\" )
 		.SequenceEqual( transport.GetWrite( 1 ) ),
@@ -104,13 +108,13 @@ internal sealed class ClipboardTransport : ITerminalInput, ITerminalOutput {
 		if ( 0 > count ) {
 			throw new ArgumentOutOfRangeException( nameof( count ) );
 		}
+		cancellationToken.ThrowIfCancellationRequested();
 
 		while ( true ) {
 			lock ( this.writes ) {
 				if ( count <= this.writes.Count ) {
 					return;
 				}
-			}
 			await this.writeSignal.WaitAsync( cancellationToken ).ConfigureAwait( false );
 		}
 	}
