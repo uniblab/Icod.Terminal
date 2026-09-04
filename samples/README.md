@@ -2,7 +2,8 @@
 
 The sample projects are repository consumers built through project references.
 The release package itself is validated separately by `tools/package-smoke`,
-`tools/package-title-smoke`, and `tools/package-location-smoke`.
+`tools/package-title-smoke`, and `tools/package-location-smoke`. T51 will add
+package-only OSC 8 consumer validation before stable `0.6.0` release closure.
 
 ## Icod.Terminal.Sample
 
@@ -16,6 +17,59 @@ Run it with a selected target framework, for example:
 ```text
 dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
 ```
+
+## Icod.Terminal.Hyperlink.Sample
+
+`Icod.Terminal.Hyperlink.Sample` is the focused 0.6 OSC 8 hyperlink demonstration.
+It requires the target URI and visible link text to be supplied explicitly; an
+optional third argument supplies the OSC 8 `id` value.
+
+For example:
+
+```text
+dotnet run --project samples/Icod.Terminal.Hyperlink.Sample/Icod.Terminal.Hyperlink.Sample.csproj -f net10.0 -- https://example.com/ "example link" example-1
+```
+
+The sample demonstrates both ordinary bounded output:
+
+```csharp
+await session.WriteHyperlinkAsync(
+	"example link",
+	"https://example.com/",
+	"example-1"
+);
+```
+
+and explicit scoped state:
+
+```csharp
+await using TerminalHyperlinkLease hyperlink =
+	await session.AcquireHyperlinkAsync(
+		"https://example.com/",
+		"example-1"
+	);
+
+await session.WriteTextAsync( "linked text" );
+```
+
+It also demonstrates one nested scope so the strict-LIFO restoration model is
+visible: entering the inner scope changes the active hyperlink, disposing the
+inner scope restores the outer hyperlink, and disposing the outer scope emits the
+canonical OSC 8 close frame.
+
+The sample deliberately does not imply more than the protocol contract provides:
+
+- the URI is caller-supplied absolute, already URI-encoded ASCII text;
+- successful completion proves bytes were emitted, not that the terminal rendered
+  or activated the hyperlink;
+- `Icod.Terminal` does not open, fetch, resolve, or validate reachability of the URI;
+- applications which accept untrusted URI targets remain responsible for their own
+  scheme/trust policy;
+- no generic raw OSC API or arbitrary OSC 8 parameter dictionary is exposed;
+- session disposal remains the final cleanup authority for an outstanding
+  library-owned hyperlink scope.
+
+The project also targets `net8.0` and `net9.0`.
 
 ## Icod.Terminal.Title.Sample
 
