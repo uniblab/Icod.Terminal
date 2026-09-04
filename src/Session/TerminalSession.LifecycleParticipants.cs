@@ -33,6 +33,25 @@ public sealed partial class TerminalSession {
 		return registration;
 	}
 
+	internal IDisposable RegisterCoreLifecycleParticipant(
+		ITerminalSessionLifecycleParticipant participant
+	) {
+		ArgumentNullException.ThrowIfNull( participant );
+
+		LifecycleParticipantRegistration registration = new(
+			this,
+			participant
+		);
+		lock ( this.lifecycleParticipantSync ) {
+			this.lifecycleParticipants.Insert(
+				0,
+				registration
+			);
+		}
+
+		return registration;
+	}
+
 	private async ValueTask PrepareLifecycleParticipantsAsync() {
 		IReadOnlyList<ITerminalSessionLifecycleParticipant> participants =
 			this.SnapshotLifecycleParticipants();

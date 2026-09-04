@@ -42,11 +42,27 @@ public sealed partial class TerminalSession {
 	}
 
 	private async ValueTask<Exception?> ClosePresentationStateAsync() {
+		List<Exception> exceptions = [];
+
+		Exception? hyperlinkException =
+			await this.CloseHyperlinkStateAsync().ConfigureAwait( false );
+		if ( hyperlinkException is not null ) {
+			exceptions.Add( hyperlinkException );
+		}
+
 		try {
 			await this.presentationManager.CloseAsync().ConfigureAwait( false );
-			return null;
 		} catch ( Exception exception ) {
-			return exception;
+			exceptions.Add( exception );
 		}
+
+		return exceptions.Count switch {
+			0 => null,
+			1 => exceptions[ 0 ],
+			_ => new AggregateException(
+				"Multiple errors occurred while closing terminal output state.",
+				exceptions
+			)
+		};
 	}
 }
