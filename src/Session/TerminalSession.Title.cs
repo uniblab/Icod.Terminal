@@ -50,6 +50,29 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	/// <summary>
+	/// Sets the terminal window title using OSC 2.
+	/// </summary>
+	/// <param name="value">The window-title text to emit.</param>
+	/// <param name="cancellationToken">Cancellation observed before transmission begins.</param>
+	/// <returns>A value task representing the window-title emission.</returns>
+	/// <remarks>
+	/// The operation is emission-oriented: successful completion means the complete
+	/// OSC 2 frame was written to the session output. It does not prove that the
+	/// terminal applied a window title, and it does not alter the icon-name selector.
+	/// The text is validated by the shared internal OSC writer before any output occurs.
+	/// </remarks>
+	public ValueTask SetWindowTitleAsync(
+		string value,
+		CancellationToken cancellationToken = default
+	) {
+		return this.WriteTitleOperationAsync(
+			OscTitleSelector.WindowTitle,
+			value,
+			cancellationToken
+		);
+	}
+
 	private ValueTask WriteTitleOperationAsync(
 		OscTitleSelector selector,
 		string value,
