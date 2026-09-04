@@ -52,20 +52,18 @@ The framer rejects mixed termination forms such as:
 
 T52 froze the **complete OSC 52 frame ceiling** at 87,400 bytes. That protocol limit remains unchanged, and the shared response framer uses 87,400 bytes as its hard framing ceiling.
 
-T55 raises the session's **undecoded input-buffer ceiling** from the earlier 4,096-byte value to **98,304 bytes (96 KiB)**. The buffer is intentionally larger than the maximum legal OSC 52 frame, providing 10,904 bytes of headroom while preserving a simple bounded-capacity invariant.
-
-These are deliberately separate limits:
+The session's **undecoded input-buffer ceiling** is also **87,400 bytes**. The transport buffer and the maximum complete OSC 52 frame therefore share one explicit bound:
 
 ```text
 Maximum decoded OSC 52 payload:       65,536 bytes
 Maximum encoded OSC 52 payload:       87,384 bytes
 Maximum complete OSC 52 frame:        87,400 bytes
-Maximum undecoded terminal buffer:    98,304 bytes
+Maximum undecoded terminal buffer:    87,400 bytes
 ```
 
-The larger transport buffer does **not** permit an OSC 52 frame larger than 87,400 bytes. The OSC framer rejects candidates at its protocol ceiling even though unused decoder capacity remains.
+A maximum legal OSC 52 response fits within that bounded decoder capacity. If a structurally correlated OSC 52 candidate reaches 87,400 bytes without completing, it is treated as an oversized response owned by the active transaction. The query fails deterministically with `FormatException`; the decoder drains the invalid OSC control string through a recognized control-string terminator so the oversized response cannot fall through into ordinary keyboard/application input.
 
-This is a bounded-capacity change, not unbounded buffering. The underlying decoder continues to constrain every read to remaining buffer capacity and rejects further growth at 98,304 bytes.
+The discard/resynchronization path is itself bounded. If the terminal fails to provide a terminator within one additional frame-sized discard interval, the input decoder terminates rather than resuming ordinary input from an untrusted point inside an unterminated OSC string.
 
 ---
 
@@ -73,7 +71,7 @@ This is a bounded-capacity change, not unbounded buffering. The underlying decod
 
 `TerminalOsc52Protocol` introduces an internal selection-aware matcher.
 
-A candidate satisfies an active OSC 52 expectation only when all of the following are true:
+A complete candidate satisfies an active OSC 52 expectation only when all of the following are true:
 
 1. the frame is an OSC frame;
 2. the OSC selector is exactly `52`;
@@ -83,7 +81,9 @@ A candidate satisfies an active OSC 52 expectation only when all of the followin
 6. the payload decodes to no more than 65,536 bytes;
 7. the complete frame uses one accepted T55 terminator form.
 
-Wrong selections, unrelated OSC selectors, malformed base64, non-canonical base64, multi-selection fields, and oversized payloads do not satisfy the expectation.
+Wrong selections, unrelated OSC selectors, malformed base64, non-canonical base64, multi-selection fields, and oversized payloads do not produce successful query results.
+
+For resource-failure ownership, the OSC 52 matcher can also recognize the fixed correlated prefix before a complete frame exists. That extra internal correlation is used only when the candidate reaches the framing ceiling, allowing an oversized response for the active selection to fail the transaction rather than leak into ordinary input.
 
 ---
 
@@ -93,9 +93,9 @@ Wrong selections, unrelated OSC selectors, malformed base64, non-canonical base6
 
 For CSI and DCS expectations the existing 4,096-byte response-framing default remains in force.
 
-For OSC expectations the routing path uses the 87,400-byte OSC 52 maximum complete-frame bound, while the decoder itself may retain up to 98,304 bytes. This avoids widening existing CSI/DCS transaction behavior merely because OSC 52 requires larger bounded payloads and avoids coupling the transport-buffer size to one protocol-family frame size.
+For OSC expectations the routing path uses the 87,400-byte OSC 52 maximum complete-frame bound, and the decoder itself is capped at the same 87,400-byte value. This keeps the OSC resource invariant singular without widening CSI/DCS transaction behavior.
 
-An OSC response is consumed only after the active matcher accepts it. A rejected candidate remains on the ordinary application-input path under the same ownership rules established by T22/T23.
+An unrelated or wrong-selection OSC response is consumed only if the active matcher accepts it under the established routing rules. A structurally correlated OSC 52 response which reaches the hard frame ceiling is instead owned as an explicit failure and drained to a terminator before ordinary input decoding resumes.
 
 ---
 
@@ -124,7 +124,9 @@ T55 adds deterministic terminal-I/O simulation covering:
 - C1 routing through the shared decoder path;
 - exact maximum 65,536-byte decoded payload routing;
 - rejection when an OSC candidate reaches the 87,400-byte complete-frame ceiling without a terminator;
-- rejection when decoder configuration exceeds the independent 98,304-byte input-buffer ceiling.
+- deterministic `FormatException` ownership for an oversized correlated OSC 52 response;
+- draining that oversized response through its terminator while preserving trailing ordinary input;
+- rejection when decoder configuration exceeds the 87,400-byte input-buffer ceiling.
 
 ---
 
@@ -134,12 +136,13 @@ T55 is complete when:
 
 1. OSC is a first-class internal response-framing family;
 2. inbound BEL/ST/C1 forms follow the T52 policy;
-3. OSC 52 responses are selection-correlated before consumption;
-4. malformed or unrelated OSC cannot satisfy the expectation;
-5. maximum legal clipboard payloads fit within the bounded 98,304-byte shared decoder buffer;
-6. OSC framing remains independently capped at 87,400 bytes;
-7. fragmented OSC responses route through the existing single-reader path;
-8. no second terminal reader or background monitor exists;
-9. Windows, Linux, and macOS CI are green.
+3. OSC 52 responses are selection-correlated before successful consumption;
+4. malformed or unrelated OSC cannot become a successful query result;
+5. maximum legal clipboard payloads fit within the bounded 87,400-byte shared decoder buffer;
+6. OSC framing and undecoded buffering are both capped at 87,400 bytes;
+7. oversized correlated OSC 52 responses fail deterministically and cannot leak into ordinary input;
+8. fragmented OSC responses route through the existing single-reader path;
+9. no second terminal reader or background monitor exists;
+10. Windows, Linux, and macOS CI are green.
 
 The next tranche is **T56 — semantic clipboard write API**.
