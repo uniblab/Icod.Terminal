@@ -134,8 +134,13 @@ public sealed class TerminalXtGetTcapQueryTests {
 
 	[Fact]
 	public async Task FragmentedResponseIsRoutedAcrossReads() {
+		ManualMonotonicClock clock = new();
 		XtGetTcapTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			clock,
+			TimeSpan.FromSeconds( 1 )
+		);
 
 		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
 			"TN",
@@ -443,7 +448,8 @@ public sealed class TerminalXtGetTcapQueryTests {
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		XtGetTcapTransport transport,
-		IMonotonicClock? monotonicClock = null
+		IMonotonicClock? monotonicClock = null,
+		TimeSpan? escapeSequenceTimeout = null
 	) {
 		ArgumentNullException.ThrowIfNull( transport );
 
@@ -458,7 +464,7 @@ public sealed class TerminalXtGetTcapQueryTests {
 				ConfigureOutput = false,
 				MonotonicClock = monotonicClock ?? SystemMonotonicClock.Instance,
 				InputDecoderOptions = new TerminalInputDecoderOptions {
-					EscapeSequenceTimeout = TimeSpan.Zero
+					EscapeSequenceTimeout = escapeSequenceTimeout ?? TimeSpan.Zero
 				}
 			}
 		);
@@ -508,7 +514,6 @@ public sealed class TerminalXtGetTcapQueryTests {
 				lock ( this.sync ) {
 					return this.writes.Count;
 				}
-			}
 		}
 
 		internal int MaximumConcurrentReads {
