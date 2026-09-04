@@ -282,6 +282,42 @@ public sealed class TerminalOsc52RoutingTests {
 		Assert.Equal( TerminalResponseFrameParseStatus.Invalid, result.Status );
 	}
 
+	[Fact]
+	public async Task OversizedCorrelatedOsc52ResponseFailsAndPreservesTrailingInput() {
+		byte[] prefix = Encoding.ASCII.GetBytes( "\u001b]52;c;" );
+		byte[] oversized = Enumerable.Repeat(
+			(byte)'A',
+			TerminalOsc52PayloadCodec.MaximumFrameBytes
+		).ToArray();
+		prefix.CopyTo( oversized, 0 );
+
+		List<byte[]> chunks = Split( oversized, 256 ).ToList();
+		chunks.Add(
+			[
+				0x1B,
+				(byte)'\\',
+				(byte)'z'
+			]
+		);
+
+		TerminalInputDecoder decoder = CreateDecoder(
+			new ScriptedTerminalInput( chunks )
+		);
+		TerminalResponseExpectation expectation = decoder.RegisterResponseExpectation(
+			TerminalOsc52Protocol.CreateResponseMatcher(
+				TerminalOsc52Selection.Clipboard
+			)
+		);
+
+		Task<TerminalInputEvent> readTask = decoder.ReadAsync().AsTask();
+		await Assert.ThrowsAsync<FormatException>(
+			() => expectation.Response
+		);
+
+		TerminalInputEvent trailing = await readTask;
+		Assert.Equal( new Rune( 'z' ), trailing.Character );
+	}
+
 	private static TerminalInputDecoder CreateDecoder(
 		ITerminalInput input
 	) {
