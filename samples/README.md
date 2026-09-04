@@ -47,6 +47,38 @@ dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Samp
 
 The project also targets `net8.0` and `net9.0`.
 
+## Icod.Terminal.Location.Sample
+
+`Icod.Terminal.Location.Sample` is the focused 0.5 OSC 7 current-location demonstration.
+
+The sample requires the caller to provide the native path grammar and absolute path explicitly. This is intentional: current-location publication can disclose directory and host information, so the sample does not read or publish `Environment.CurrentDirectory` automatically.
+
+Examples:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /usr/local/src
+
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- windows C:\Development\Icod
+
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- unc \\server\share\project
+```
+
+An optional third argument supplies an explicit authority for POSIX or Windows-drive paths:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /srv/project example.com
+```
+
+The sample teaches the 0.5 contract:
+
+- publication occurs only because the caller explicitly invoked the semantic operation;
+- the native path is converted to a canonical `file:` URI by `Icod.Terminal`;
+- URI escaping is performed by the library rather than by the caller;
+- successful completion means the complete OSC 7 frame was written, not that the terminal necessarily used the location;
+- disposal does not republish or restore location metadata.
+
+The project also targets `net8.0` and `net9.0`.
+
 ## Icod.Terminal.RichInput.Sample
 
 `Icod.Terminal.RichInput.Sample` is the interactive 0.2 event inspector.
