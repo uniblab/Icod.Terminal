@@ -82,24 +82,6 @@ public sealed partial class TerminalSession {
 		);
 	}
 
-	private void InvalidateHyperlinkState() {
-		this.hyperlinkManager?.Invalidate();
-	}
-
-	private ValueTask SuspendHyperlinkStateAsync() {
-		return this.hyperlinkManager is null
-			? ValueTask.CompletedTask
-			: this.hyperlinkManager.SuspendAsync()
-		;
-	}
-
-	private ValueTask ResumeHyperlinkStateAsync() {
-		return this.hyperlinkManager is null
-			? ValueTask.CompletedTask
-			: this.hyperlinkManager.ReenterAsync()
-		;
-	}
-
 	private async ValueTask<Exception?> CloseHyperlinkStateAsync() {
 		if ( this.hyperlinkManager is null ) {
 			return null;
