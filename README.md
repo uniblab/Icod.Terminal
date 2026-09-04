@@ -135,6 +135,8 @@ Dispose A   -> close
 
 Out-of-order disposal fails without output or tracked-state mutation. Failed release remains retryable. Session disposal performs final best-effort cleanup of outstanding library-owned hyperlink state.
 
+Active logical hyperlink scopes also participate in the managed terminal lifecycle. Before a catchable suspension, `Icod.Terminal` emits one canonical OSC 8 close while retaining the logical lease stack. After successful terminal/session re-entry it re-emits the innermost active hyperlink. Thus shell/job-control activity does not inherit library-owned hyperlink state, while nested lease ownership resumes exactly where it left off. A failed hyperlink re-entry prevents the session from claiming valid restored state.
+
 Successful completion means the requested bytes were written. It does not prove that the terminal recognizes OSC 8, displays a hyperlink affordance, permits activation, or can reach the target. Terminal identity and `TERM` are not fabricated into proof of support.
 
 The reviewed 0.6 API delta is recorded in [`docs/Public-API-Baseline-0.6.md`](docs/Public-API-Baseline-0.6.md).
