@@ -48,15 +48,24 @@ The framer rejects mixed termination forms such as:
 
 ---
 
-## 4. Resource bound
+## 4. Resource bounds
 
-T52 froze a complete OSC 52 frame ceiling of 87,400 bytes. T55 therefore raises the shared response-framer hard ceiling to that same value.
+T52 froze the **complete OSC 52 frame ceiling** at 87,400 bytes. That protocol limit remains unchanged, and the shared response framer uses 87,400 bytes as its hard framing ceiling.
 
-The session's public undecoded-input ceiling is also raised from the earlier 4,096-byte value to 87,400 bytes so one maximum legal OSC 52 response can be retained and correlated without violating the decoder's bounded-buffer invariant.
+T55 raises the session's **undecoded input-buffer ceiling** from the earlier 4,096-byte value to **98,304 bytes (96 KiB)**. The buffer is intentionally larger than the maximum legal OSC 52 frame, providing 10,904 bytes of headroom while preserving a simple bounded-capacity invariant.
 
-This is a bounded-capacity change, not unbounded buffering. The underlying decoder continues to constrain every read to remaining buffer capacity and rejects further growth at the ceiling.
+These are deliberately separate limits:
 
-The 65,536-byte decoded clipboard payload ceiling remains unchanged.
+```text
+Maximum decoded OSC 52 payload:       65,536 bytes
+Maximum encoded OSC 52 payload:       87,384 bytes
+Maximum complete OSC 52 frame:        87,400 bytes
+Maximum undecoded terminal buffer:    98,304 bytes
+```
+
+The larger transport buffer does **not** permit an OSC 52 frame larger than 87,400 bytes. The OSC framer rejects candidates at its protocol ceiling even though unused decoder capacity remains.
+
+This is a bounded-capacity change, not unbounded buffering. The underlying decoder continues to constrain every read to remaining buffer capacity and rejects further growth at 98,304 bytes.
 
 ---
 
@@ -84,7 +93,7 @@ Wrong selections, unrelated OSC selectors, malformed base64, non-canonical base6
 
 For CSI and DCS expectations the existing 4,096-byte response-framing default remains in force.
 
-For OSC expectations the routing path uses the OSC 52 maximum complete-frame bound. This avoids widening existing CSI/DCS transaction behavior merely because OSC 52 requires larger bounded payloads.
+For OSC expectations the routing path uses the 87,400-byte OSC 52 maximum complete-frame bound, while the decoder itself may retain up to 98,304 bytes. This avoids widening existing CSI/DCS transaction behavior merely because OSC 52 requires larger bounded payloads and avoids coupling the transport-buffer size to one protocol-family frame size.
 
 An OSC response is consumed only after the active matcher accepts it. A rejected candidate remains on the ordinary application-input path under the same ownership rules established by T22/T23.
 
@@ -114,7 +123,8 @@ T55 adds deterministic terminal-I/O simulation covering:
 - arbitrary one-byte fragmentation across the shared decoder path;
 - C1 routing through the shared decoder path;
 - exact maximum 65,536-byte decoded payload routing;
-- rejection when an OSC candidate reaches the complete-frame ceiling without a terminator.
+- rejection when an OSC candidate reaches the 87,400-byte complete-frame ceiling without a terminator;
+- rejection when decoder configuration exceeds the independent 98,304-byte input-buffer ceiling.
 
 ---
 
@@ -126,9 +136,10 @@ T55 is complete when:
 2. inbound BEL/ST/C1 forms follow the T52 policy;
 3. OSC 52 responses are selection-correlated before consumption;
 4. malformed or unrelated OSC cannot satisfy the expectation;
-5. maximum legal clipboard payloads fit within the bounded shared decoder;
-6. fragmented OSC responses route through the existing single-reader path;
-7. no second terminal reader or background monitor exists;
-8. Windows, Linux, and macOS CI are green.
+5. maximum legal clipboard payloads fit within the bounded 98,304-byte shared decoder buffer;
+6. OSC framing remains independently capped at 87,400 bytes;
+7. fragmented OSC responses route through the existing single-reader path;
+8. no second terminal reader or background monitor exists;
+9. Windows, Linux, and macOS CI are green.
 
 The next tranche is **T56 — semantic clipboard write API**.
