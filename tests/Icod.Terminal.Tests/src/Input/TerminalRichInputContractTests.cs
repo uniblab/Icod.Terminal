@@ -123,7 +123,7 @@ public sealed class TerminalRichInputContractTests {
 	}
 
 	[Fact]
-	public void DecoderPolicyDefaultsPreserve01Behavior() {
+	public void DecoderPolicyDefaultsPreserveBoundedBehavior() {
 		TerminalInputDecoderOptions options = new();
 
 		Assert.Equal(
@@ -155,7 +155,7 @@ public sealed class TerminalRichInputContractTests {
 		);
 		Assert.Throws<ArgumentOutOfRangeException>(
 			() => new TerminalInputDecoderOptions {
-				MaximumBufferedBytes = 4097
+				MaximumBufferedBytes = TerminalSession.MaximumBufferedInputBytes + 1
 			}.Validate()
 		);
 		Assert.Throws<ArgumentOutOfRangeException>(
