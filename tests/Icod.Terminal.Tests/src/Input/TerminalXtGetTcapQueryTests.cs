@@ -514,6 +514,7 @@ public sealed class TerminalXtGetTcapQueryTests {
 				lock ( this.sync ) {
 					return this.writes.Count;
 				}
+			}
 		}
 
 		internal int MaximumConcurrentReads {
