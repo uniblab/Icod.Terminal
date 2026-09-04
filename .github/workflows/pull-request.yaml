@@ -52,12 +52,16 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
-      - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
+      - name: Discover repository metadata on runner
+        id: repository
+        shell: pwsh
+        run: ./packaging/Get-RepositoryMetadata.ps1 -Configuration '${{ env.CONFIGURATION }}' -GitHubOutputPath $env:GITHUB_OUTPUT
+      - run: dotnet restore '${{ steps.repository.outputs.solution_path }}'
+      - run: dotnet build '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - run: dotnet test '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
       - name: Pack Staging artifacts
         if: matrix.verify_packages
-        run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts -p:ContinuousIntegrationBuild=true
+        run: dotnet pack '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts -p:ContinuousIntegrationBuild=true
       - name: Verify exact Staging package artifacts
         if: matrix.verify_packages
         shell: pwsh
