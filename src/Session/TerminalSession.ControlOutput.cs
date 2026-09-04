@@ -1,5 +1,8 @@
 namespace Icod.Terminal;
 
+using System.Text;
+using Icod.TermInfo;
+
 /// <summary>
 /// Serializes all session-owned terminal output while preserving caller ownership
 /// of the borrowed <see cref="ITerminalOutput"/> service itself.
