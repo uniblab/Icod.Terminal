@@ -59,11 +59,20 @@ internal static class OscWriter {
 			);
 		}
 
-		byte[] payload = StrictUtf8.GetBytes( value );
-		return EncodeSingleSeparatorFrame(
-			selectorByte,
-			payload
-		);
+		byte[] frame = new byte[ payloadByteCount + 6 ];
+		frame[ 0 ] = Escape;
+		frame[ 1 ] = OscFinal;
+		frame[ 2 ] = selectorByte;
+		frame[ 3 ] = Separator;
+		if ( 0 < payloadByteCount ) {
+			StrictUtf8.GetBytes(
+				value.AsSpan(),
+				frame.AsSpan( 4, payloadByteCount )
+			);
+		}
+		frame[ ^2 ] = Escape;
+		frame[ ^1 ] = StFinal;
+		return frame;
 	}
 
 	/// <summary>
@@ -122,6 +131,12 @@ internal static class OscWriter {
 	/// <summary>
 	/// Validates and emits one complete title frame through one output write.
 	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission is committed. Once the full
+	/// frame has been validated and transmission begins, the underlying write is
+	/// intentionally not cancellation-driven so ordinary cancellation cannot
+	/// deliberately abandon the frame halfway through.
+	/// </remarks>
 	internal static ValueTask WriteTitleAsync(
 		ITerminalOutput output,
 		OscTitleSelector selector,
@@ -148,6 +163,13 @@ internal static class OscWriter {
 	/// <summary>
 	/// Validates and emits one complete OSC 7 current-location frame through one output write.
 	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission is committed. Once the full
+	/// URI and frame are validated and transmission begins, the underlying write
+	/// is intentionally not cancellation-driven so ordinary cancellation cannot
+	/// deliberately abandon the frame halfway through. This operation does not
+	/// flush the output service.
+	/// </remarks>
 	internal static ValueTask WriteLocationAsync(
 		ITerminalOutput output,
 		string path,
@@ -175,6 +197,11 @@ internal static class OscWriter {
 	/// <summary>
 	/// Validates and emits one complete OSC 8 hyperlink begin frame through one output write.
 	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission is committed. Once the complete
+	/// begin frame has been validated and transmission begins, the underlying write
+	/// is intentionally not cancellation-driven. This operation does not flush.
+	/// </remarks>
 	internal static ValueTask WriteHyperlinkBeginAsync(
 		ITerminalOutput output,
 		string uri,
@@ -200,6 +227,11 @@ internal static class OscWriter {
 	/// <summary>
 	/// Emits the canonical OSC 8 hyperlink close frame through one output write.
 	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission is committed. Once transmission
+	/// begins, the complete close frame is written without caller-driven cancellation.
+	/// This operation does not flush.
+	/// </remarks>
 	internal static ValueTask WriteHyperlinkEndAsync(
 		ITerminalOutput output,
 		CancellationToken cancellationToken = default
