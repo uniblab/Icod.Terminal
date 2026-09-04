@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.0-alpha.7</Version>
+		<Version>0.6.0-alpha.8</Version>
 		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.0-alpha.7</PackageVersion>
+		<PackageVersion>0.6.0-alpha.8</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.0-alpha.7 implements T48: public strict-LIFO TerminalHyperlinkLease scopes, nested OSC 8 outer-state restoration, retryable failed release, session-disposal cleanup of outstanding hyperlink state, and unification of WriteHyperlinkAsync with the same persistent ownership manager.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.6.0-alpha.8 implements T49 integration/security acceptance: exhaustive raw control rejection, percent-encoded control-looking data preservation, identifier delimiter hardening, resource-limit framing acceptance, malformed-authority boundary checks, and compatibility/privacy documentation over the unified OSC 8 session ownership model.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
