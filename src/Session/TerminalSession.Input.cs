@@ -7,7 +7,7 @@ using Icod.Timing;
 /// <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
-	private const int InputBufferLimit = 98_304;
+	private const int InputBufferLimit = 87_400;
 
 	private static readonly TimeSpan DefaultEscapeDelay =
 		TimeSpan.FromMilliseconds( 100 );
@@ -26,8 +26,8 @@ public sealed partial class TerminalSession {
 	/// Gets the maximum number of undecoded bytes retained by the input decoder.
 	/// </summary>
 	/// <remarks>
-	/// The 0.7 ceiling is 98,304 bytes (96 KiB), providing bounded headroom above
-	/// the independently enforced 87,400-byte maximum OSC 52 frame size.
+	/// The 0.7 ceiling is 87,400 bytes, matching the independently enforced
+	/// maximum complete OSC 52 frame size.
 	/// </remarks>
 	public static int MaximumBufferedInputBytes {
 		get {
