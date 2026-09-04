@@ -12,7 +12,7 @@ internal enum OscTitleSelector {
 }
 
 /// <summary>
-/// Builds and emits bounded, injection-safe OSC title frames.
+/// Builds and emits bounded, injection-safe OSC frames for supported semantic operations.
 /// </summary>
 internal static class OscWriter {
 	internal const int MaximumTitlePayloadByteCount = 4096;
@@ -78,6 +78,36 @@ internal static class OscWriter {
 	}
 
 	/// <summary>
+	/// Encodes one complete OSC 7 current-location frame from structured native-path input.
+	/// </summary>
+	internal static byte[] EncodeLocationFrame(
+		string path,
+		TerminalLocationPathKind pathKind,
+		string? authority = null
+	) {
+		ArgumentNullException.ThrowIfNull( path );
+
+		string fileUri = TerminalLocationUriEncoder.EncodeFileUri(
+			path,
+			pathKind,
+			authority
+		);
+		byte[] payload = Encoding.ASCII.GetBytes( fileUri );
+		byte[] frame = new byte[ payload.Length + 6 ];
+		frame[ 0 ] = Escape;
+		frame[ 1 ] = OscFinal;
+		frame[ 2 ] = (byte)'7';
+		frame[ 3 ] = Separator;
+		payload.CopyTo(
+			frame,
+			4
+		);
+		frame[ ^2 ] = Escape;
+		frame[ ^1 ] = StFinal;
+		return frame;
+	}
+
+	/// <summary>
 	/// Validates and emits one complete title frame through one output write.
 	/// </summary>
 	/// <remarks>
@@ -100,6 +130,40 @@ internal static class OscWriter {
 		byte[] frame = EncodeTitleFrame(
 			selector,
 			value
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
+		return output.WriteAsync(
+			frame,
+			CancellationToken.None
+		);
+	}
+
+	/// <summary>
+	/// Validates and emits one complete OSC 7 current-location frame through one output write.
+	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission is committed. Once the full
+	/// URI and frame are validated and transmission begins, the underlying write
+	/// is intentionally not cancellation-driven so ordinary cancellation cannot
+	/// deliberately abandon the frame halfway through. This operation does not
+	/// flush the output service.
+	/// </remarks>
+	internal static ValueTask WriteLocationAsync(
+		ITerminalOutput output,
+		string path,
+		TerminalLocationPathKind pathKind,
+		string? authority = null,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( output );
+		ArgumentNullException.ThrowIfNull( path );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		byte[] frame = EncodeLocationFrame(
+			path,
+			pathKind,
+			authority
 		);
 		cancellationToken.ThrowIfCancellationRequested();
 
