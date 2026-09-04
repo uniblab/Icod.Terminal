@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.5.0</Version>
-		<AssemblyVersion>0.5.0.0</AssemblyVersion>
+		<Version>0.6.0-alpha.1</Version>
+		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.5.0</PackageVersion>
+		<PackageVersion>0.6.0-alpha.1</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.5.0 adds semantic OSC 7 current-location publication through TerminalSession.PublishCurrentLocationAsync and TerminalLocationPathStyle; deterministic RFC 8089 file-URI construction for POSIX, Windows-drive, and UNC paths; strict UTF-8 percent encoding and explicit authority/privacy rules; a 16384-byte URI bound; session-owned output ordering; focused sample/documentation coverage; and package-only multi-target OSC 7 consumer validation.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.6.0-alpha.1 opens the OSC 8 hyperlink milestone with a dedicated T44-T51 roadmap covering URI and parameter safety, semantic hyperlink operations, scoped begin/end ownership, nesting and cleanup, cross-platform acceptance, documentation, and package-only validation.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
