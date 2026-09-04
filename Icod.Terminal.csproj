@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.7.0-alpha.6</Version>
+		<Version>0.7.0-alpha.7</Version>
 		<AssemblyVersion>0.7.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.7.0-alpha.6</PackageVersion>
+		<PackageVersion>0.7.0-alpha.7</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.7.0-alpha.6 implements T57 explicit OSC 52 clipboard reads: public byte-returning selection queries, caller-supplied bounded timeout, shared query-transaction serialization and flush, bounded late-response ownership, deterministic correlated-malformed response failure, and explicit privacy semantics.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.7.0-alpha.7 implements T58 OSC 52 integration, security, and compatibility acceptance: injection containment, public maximum-payload and fragmentation coverage, unrelated-OSC rejection, late-response ownership validation, cross-family semantic output ordering, deterministic payload property tests, and restoration of the independent 4,096-byte bracketed-paste chunk default.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
