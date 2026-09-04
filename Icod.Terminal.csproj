@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.5.0-alpha.5</Version>
+		<Version>0.5.0-alpha.6</Version>
 		<AssemblyVersion>0.5.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.5.0-alpha.5</PackageVersion>
+		<PackageVersion>0.5.0-alpha.6</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.5.0-alpha.5 implements T40: public semantic OSC 7 current-location publication through TerminalSession.PublishCurrentLocationAsync, explicit POSIX/Windows-drive/UNC path-style selection, optional explicit host authority, session-owned output ordering, redirected-output rejection, explicit disclosure semantics, cancellation-before-transmission, and no implicit flush.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.5.0-alpha.6 completes T41 cross-platform path and privacy acceptance: public OSC 7 fixtures remain byte-deterministic across explicit POSIX/Windows-drive/UNC path styles, session open/text/title/disposal paths do not publish location implicitly, explicit publication is counted exactly, and location output is proven to share the session-owned ordering/lifecycle boundary.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
