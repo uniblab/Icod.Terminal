@@ -70,8 +70,9 @@ Therefore OSC 52 reads inherit the existing active-query guarantees:
 - the response expectation is registered before emission;
 - pre-existing buffered input is protected from satisfying the new query;
 - the request is written through the session control-output gate;
-- the request is flushed before the response deadline is owned;
-- caller cancellation before emission may prevent output entirely;
+- the request is flushed as part of query emission;
+- the caller-visible timeout begins when the transaction is queued, so queueing and waiting for the control-output gate count against the requested deadline;
+- caller cancellation or timeout before emission may prevent output entirely;
 - after emission, caller cancellation does not destroy wire ownership immediately;
 - timeout/cancellation retains bounded late-response ownership;
 - session suspend/disposal invalidates or terminates outstanding transactions through the existing transaction manager.
@@ -93,21 +94,23 @@ A response is correlated when it has:
 
 Wrong selections and unrelated OSC families do not satisfy the active query.
 
-T57 refines malformed-response ownership: once an OSC 52 frame is structurally correlated to the active selection, malformed or oversized base64 is owned by that transaction and reported deterministically as `FormatException` rather than being ignored until timeout.
+T57 refines malformed-response ownership: once a complete OSC 52 frame is structurally correlated to the active selection, malformed or oversized base64 is owned by that transaction and reported deterministically as `FormatException` rather than being ignored until timeout.
 
-This mirrors the established CSI query pattern in which a correlated response may still fail semantic parsing.
+T55 additionally owns the resource-failure case in which a structurally correlated OSC 52 candidate reaches the 87,400-byte complete-frame ceiling without completing. That query also fails deterministically with `FormatException`, and the invalid OSC string is drained through its terminator so response bytes cannot be reinterpreted as ordinary application input.
+
+This mirrors the established CSI query pattern in which a correlated response may still fail semantic parsing while adding the resource-boundary ownership required by OSC 52's larger response family.
 
 ---
 
 ## 6. Resource limits
 
-T57 does not change the frozen resource ceilings:
+T57 preserves the frozen resource ceilings:
 
 ```text
 Maximum decoded OSC 52 payload:       65,536 bytes
 Maximum encoded OSC 52 payload:       87,384 bytes
 Maximum complete OSC 52 frame:        87,400 bytes
-Maximum undecoded terminal buffer:    98,304 bytes
+Maximum undecoded terminal buffer:    87,400 bytes
 ```
 
 Decoded payload allocation occurs only after the encoded payload has passed the T53 canonical length and resource checks.
@@ -124,7 +127,9 @@ The supported timeout range is the shared query range:
 0 <= timeout <= 1 minute
 ```
 
-A timeout produces `TimeoutException`. It does not prove that OSC 52 is unsupported because a terminal may silently ignore clipboard queries or disable them by policy.
+The timeout is an operation deadline measured from transaction queueing, not merely a post-flush response timer. If it expires before emission commits, no request bytes are emitted. If it expires after emission, the caller receives `TimeoutException` while bounded late-response ownership remains active.
+
+A timeout does not prove that OSC 52 is unsupported because a terminal may silently ignore clipboard queries or disable them by policy.
 
 Caller cancellation produces `OperationCanceledException` for the caller-visible operation. If emission already committed, bounded late-response ownership remains active independently of the caller's completed task.
 
@@ -169,6 +174,7 @@ T57 adds deterministic transport-level tests covering:
 - seven-bit BEL responses;
 - C1 OSC/ST responses;
 - correlated malformed base64 producing `FormatException`;
+- oversized correlated OSC 52 response ownership without ordinary-input leakage;
 - wrong-selection responses not satisfying the query;
 - caller timeout;
 - cancellation before emission producing zero output and zero flush;
@@ -188,11 +194,12 @@ T57 is complete when:
 3. the caller supplies a bounded timeout;
 4. the request uses the existing query transaction manager;
 5. request emission is serialized and flushed;
-6. caller timeout/cancellation preserves bounded post-emission wire ownership;
-7. wrong-selection and unrelated OSC responses cannot satisfy the query;
-8. correlated malformed payloads fail deterministically rather than masquerading as timeout;
-9. returned data remains raw bounded bytes;
-10. no automatic or background clipboard reads exist;
-11. Windows, Linux, and macOS CI are green.
+6. the caller-visible deadline begins at queueing and pre-emission expiry produces no request bytes;
+7. caller timeout/cancellation preserves bounded post-emission wire ownership;
+8. wrong-selection and unrelated OSC responses cannot satisfy the query;
+9. correlated malformed or oversized responses fail deterministically rather than masquerading as timeout or ordinary input;
+10. returned data remains raw bounded bytes;
+11. no automatic or background clipboard reads exist;
+12. Windows, Linux, and macOS CI are green.
 
 The next tranche is **T58 — integration, security, and compatibility acceptance**.
