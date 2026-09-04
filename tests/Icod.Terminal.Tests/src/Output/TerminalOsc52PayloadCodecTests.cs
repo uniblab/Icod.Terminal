@@ -160,7 +160,7 @@ public sealed class TerminalOsc52PayloadCodecTests {
 	public void DecoderRejectsMalformedOrNonCanonicalBase64(
 		string encoded
 	) {
-		Assert.ThrowsAny<Exception>(
+		Assert.Throws<FormatException>(
 			() => TerminalOsc52PayloadCodec.Decode(
 				Encoding.ASCII.GetBytes( encoded )
 			)
