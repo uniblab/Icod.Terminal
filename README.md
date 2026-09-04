@@ -6,9 +6,9 @@
 
 ## Status
 
-`0.5.0` is the current stable release. Development of `0.6.0` is focused on semantic OSC 8 hyperlinks, validated URI/id payloads, and scoped strict-LIFO hyperlink state.
+`0.6.0` is the current stable release candidate. It retains the 0.1 live-session foundation, 0.2 rich-input contract, 0.3 active-query foundation, 0.4 semantic OSC title operations, and 0.5 OSC 7 current-location publication while adding semantic OSC 8 hyperlinks with validated URI/id payloads and scoped strict-LIFO hyperlink state.
 
-The reviewed 0.6 public surface is:
+The stable 0.6 public surface adds:
 
 ```csharp
 await session.WriteHyperlinkAsync(
@@ -51,10 +51,10 @@ watch / slabtop / top
 
 ## Installation
 
-The current stable release installs as:
+The stable 0.6 release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.5.0
+dotnet add package Icod.Terminal --version 0.6.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.4.1` and `Icod.Timing 1.0.0`.
@@ -283,7 +283,7 @@ Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`
 
 ## Development roadmap
 
-The current `0.6.0` milestone is documented in [`Icod.Terminal-0.6.0-Development-Roadmap.md`](Icod.Terminal-0.6.0-Development-Roadmap.md), with completed development records in T44–T50 and the reviewed public API delta in [`docs/Public-API-Baseline-0.6.md`](docs/Public-API-Baseline-0.6.md).
+The `0.6.0` milestone is documented in [`Icod.Terminal-0.6.0-Development-Roadmap.md`](Icod.Terminal-0.6.0-Development-Roadmap.md), with completed development records in T44–T51, the reviewed public API delta in [`docs/Public-API-Baseline-0.6.md`](docs/Public-API-Baseline-0.6.md), and package/release closure in [`docs/T51-0.6.0-Package-Consumer-and-Release-Closure.md`](docs/T51-0.6.0-Package-Consumer-and-Release-Closure.md).
 
 The completed `0.5.0` milestone is documented in [`Icod.Terminal-0.5.0-Development-Roadmap.md`](Icod.Terminal-0.5.0-Development-Roadmap.md), with final release closure in [`docs/T43-0.5.0-Package-Consumer-and-Release-Closure.md`](docs/T43-0.5.0-Package-Consumer-and-Release-Closure.md).
 
