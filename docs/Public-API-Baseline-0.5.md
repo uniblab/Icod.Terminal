@@ -2,7 +2,7 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.5.0`  
-**Status:** T42 reviewed public API delta
+**Status:** T42 reviewed public API delta; final T43 safety audit incorporated
 
 ---
 
@@ -90,11 +90,19 @@ The public API commits to these behaviors:
 - relative and drive-relative paths are rejected;
 - Windows device/extended namespace paths are rejected;
 - malformed Unicode is rejected;
+- C0, DEL, and C1 control characters in native paths are rejected before URI construction rather than percent-encoded;
 - path text is encoded once from native data using strict UTF-8 percent encoding;
 - literal `%20` native path text therefore becomes `%2520`;
 - dot segments, repeated separators, trailing separators, case, and Unicode normalization form are preserved except for drive-letter normalization;
 - no filesystem existence check, symlink resolution, or canonical-path lookup is performed;
 - the fully encoded `file:` URI payload is limited to 16384 bytes.
+
+Explicit authorities remain deliberately narrow in 0.5:
+
+- ASCII DNS names, IPv4 literals, and bracketed IPv6 literals are supported;
+- userinfo, ports, path/query/fragment data, and internationalized host names are rejected;
+- literal `%` is rejected in authority text;
+- scoped IPv6 zone identifiers such as `[fe80::1%eth0]` and URI-escaped zone forms such as `[fe80::1%25eth0]` are not part of the 0.5 contract and are rejected.
 
 ---
 
@@ -134,5 +142,7 @@ The T42 review accepts these two public additions for stable 0.5:
 TerminalLocationPathStyle
 TerminalSession.PublishCurrentLocationAsync(...)
 ```
+
+The final T43 safety audit does not widen that public surface. It only tightens validation to match the already-frozen OSC safety and authority contracts.
 
 No additional public current-location convenience method is justified before stable release closure.
