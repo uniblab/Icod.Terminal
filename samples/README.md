@@ -58,6 +58,13 @@ visible: entering the inner scope changes the active hyperlink, disposing the
 inner scope restores the outer hyperlink, and disposing the outer scope emits the
 canonical OSC 8 close frame.
 
+When automatic terminal lifecycle handling is enabled, active scoped hyperlinks
+survive suspension **logically** but not physically. `Icod.Terminal` emits a
+canonical OSC 8 close before the process is suspended, retains the lease stack,
+and re-emits the innermost active hyperlink after successful session-state
+re-entry. This prevents shell/job-control activity from inheriting library-owned
+hyperlink state while preserving nested ownership across resume.
+
 The sample deliberately does not imply more than the protocol contract provides:
 
 - the URI is caller-supplied absolute, already URI-encoded ASCII text;
