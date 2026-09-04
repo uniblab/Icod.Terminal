@@ -100,10 +100,8 @@ public sealed class TerminalOsc52RoutingTests {
 
 	[Theory]
 	[InlineData( "\u001b]51;c;SGVsbG8=\u001b\\" )]
-	[InlineData( "\u001b]52;c;SGVsbG8_\u001b\\" )]
-	[InlineData( "\u001b]52;c;Zh==\u001b\\" )]
 	[InlineData( "\u001b]52;cp;SGVsbG8=\u001b\\" )]
-	public void MatcherRejectsUnrelatedOrMalformedOsc(
+	public void MatcherRejectsUnrelatedOrWronglyScopedOsc(
 		string text
 	) {
 		ITerminalResponseMatcher matcher = TerminalOsc52Protocol.CreateResponseMatcher(
@@ -115,6 +113,29 @@ public sealed class TerminalOsc52RoutingTests {
 		);
 
 		Assert.False( matcher.IsMatch( frame ) );
+	}
+
+	[Theory]
+	[InlineData( "\u001b]52;c;SGVsbG8_\u001b\\" )]
+	[InlineData( "\u001b]52;c;Zh==\u001b\\" )]
+	public void MatcherOwnsCorrelatedMalformedPayloadForDeterministicFailure(
+		string text
+	) {
+		ITerminalResponseMatcher matcher = TerminalOsc52Protocol.CreateResponseMatcher(
+			TerminalOsc52Selection.Clipboard
+		);
+		TerminalResponseFrame frame = new(
+			TerminalResponseFrameKind.Osc,
+			Encoding.Latin1.GetBytes( text )
+		);
+
+		Assert.True( matcher.IsMatch( frame ) );
+		Assert.Throws<FormatException>(
+			() => TerminalOsc52Protocol.ParsePayload(
+				frame,
+				TerminalOsc52Selection.Clipboard
+			)
+		);
 	}
 
 	[Fact]
