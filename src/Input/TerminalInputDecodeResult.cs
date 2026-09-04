@@ -6,16 +6,18 @@ namespace Icod.Terminal;
 internal readonly struct TerminalInputDecodeResult {
 	private readonly TerminalResponseExpectation? responseExpectation;
 	private readonly TerminalResponseFrame? responseFrame;
+	private readonly Exception? responseException;
 
 	private TerminalInputDecodeResult(
 		TerminalInputEvent? inputEvent,
 		TerminalResponseExpectation? responseExpectation,
-		TerminalResponseFrame? responseFrame
+		TerminalResponseFrame? responseFrame,
+		Exception? responseException
 	) {
-		bool responseRouted = responseExpectation is not null
-			|| responseFrame is not null;
-		if ( ( responseExpectation is null ) != ( responseFrame is null )
-			|| responseRouted == ( inputEvent is not null ) ) {
+		bool responseRouted = responseExpectation is not null;
+		if ( responseRouted == ( inputEvent is not null )
+			|| !responseRouted && ( responseFrame is not null || responseException is not null )
+			|| responseRouted && ( responseFrame is null ) == ( responseException is null ) ) {
 			throw new ArgumentException(
 				"A terminal decode result must represent either application input or one routed response."
 			);
@@ -24,6 +26,7 @@ internal readonly struct TerminalInputDecodeResult {
 		this.InputEvent = inputEvent;
 		this.responseExpectation = responseExpectation;
 		this.responseFrame = responseFrame;
+		this.responseException = responseException;
 	}
 
 	internal TerminalInputEvent? InputEvent {
@@ -37,13 +40,24 @@ internal readonly struct TerminalInputDecodeResult {
 	}
 
 	internal void CompleteRoutedResponse() {
-		if ( this.responseExpectation is null || this.responseFrame is null ) {
+		if ( this.responseExpectation is null ) {
 			throw new InvalidOperationException(
 				"The terminal decode result does not contain a routed response."
 			);
 		}
 
-		this.responseExpectation.TrySetResult( this.responseFrame );
+		if ( this.responseFrame is not null ) {
+			this.responseExpectation.TrySetResult( this.responseFrame );
+			return;
+		}
+		if ( this.responseException is not null ) {
+			this.responseExpectation.TrySetException( this.responseException );
+			return;
+		}
+
+		throw new InvalidOperationException(
+			"The routed terminal response contains neither a frame nor a failure."
+		);
 	}
 
 	internal static TerminalInputDecodeResult FromInput(
@@ -53,7 +67,8 @@ internal readonly struct TerminalInputDecodeResult {
 		return new TerminalInputDecodeResult(
 			inputEvent,
 			responseExpectation: null,
-			responseFrame: null
+			responseFrame: null,
+			responseException: null
 		);
 	}
 
@@ -66,7 +81,22 @@ internal readonly struct TerminalInputDecodeResult {
 		return new TerminalInputDecodeResult(
 			inputEvent: null,
 			expectation,
-			frame
+			frame,
+			responseException: null
+		);
+	}
+
+	internal static TerminalInputDecodeResult RoutedFailure(
+		TerminalResponseExpectation expectation,
+		Exception exception
+	) {
+		ArgumentNullException.ThrowIfNull( expectation );
+		ArgumentNullException.ThrowIfNull( exception );
+		return new TerminalInputDecodeResult(
+			inputEvent: null,
+			expectation,
+			responseFrame: null,
+			exception
 		);
 	}
 }
