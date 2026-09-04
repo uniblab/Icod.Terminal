@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.0-alpha.9</Version>
+		<Version>0.6.0</Version>
 		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.0-alpha.9</PackageVersion>
+		<PackageVersion>0.6.0</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.0-alpha.9 implements T50 public API/documentation/sample audit: freezes TerminalHyperlinkLease, AcquireHyperlinkAsync, and WriteHyperlinkAsync as the 0.6 public delta; rejects generic OSC/parameter/activation APIs; documents scoped ownership and support/security semantics; and adds a focused multi-target hyperlink sample.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.6.0 adds semantic OSC 8 hyperlinks with deterministic RFC 3986 URI validation, bounded id-only parameters, canonical begin/end framing, bounded WriteHyperlinkAsync output, strict-LIFO TerminalHyperlinkLease scopes with nested outer-state restoration and retryable cleanup, session-disposal closure, cross-platform security/order acceptance, focused documentation/sample coverage, and package-only net8/net9/net10 validation.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
