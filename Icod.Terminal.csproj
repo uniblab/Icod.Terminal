@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.1</Version>
-		<AssemblyVersion>0.6.0.0</AssemblyVersion>
+		<Version>0.7.0-alpha.1</Version>
+		<AssemblyVersion>0.7.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.1</PackageVersion>
+		<PackageVersion>0.7.0-alpha.1</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.1 updates the Icod.TermInfo dependency to 1.10.0 while retaining the stable 0.6 OSC 8 hyperlink, lifecycle, query-routing, package-validation, and cross-platform behavior.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.7.0-alpha.1 begins the OSC 52 clipboard/selection milestone with a frozen development roadmap and initial security, ownership, resource-limit, and bidirectional routing contract.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
