@@ -7,6 +7,7 @@ namespace Icod.Terminal;
 public sealed class TerminalInputDecoderOptions {
 	private const int MinimumBufferCapacity = 4;
 	private const int MinimumPasteChunkBytes = 1;
+	private const int DefaultPasteChunkBytes = 4096;
 	private const int MaximumPasteChunkBytes = 1_048_576;
 
 	/// <summary>
@@ -34,12 +35,13 @@ public sealed class TerminalInputDecoderOptions {
 	/// <remarks>
 	/// A decoder may retain the small number of extra bytes required to finish a
 	/// fragmented UTF-8 scalar or exact paste terminator without treating the
-	/// complete paste as one buffer.
+	/// complete paste as one buffer. The default remains 4,096 bytes independently
+	/// of the larger undecoded-input ceiling required for bounded OSC 52 responses.
 	/// </remarks>
 	public int PasteChunkBytes {
 		get;
 		init;
-	} = TerminalSession.MaximumBufferedInputBytes;
+	} = DefaultPasteChunkBytes;
 
 	internal void Validate() {
 		if ( TimeSpan.Zero > this.EscapeSequenceTimeout ) {
