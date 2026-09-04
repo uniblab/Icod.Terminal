@@ -23,6 +23,16 @@ internal interface ITerminalResponseMatcher {
 }
 
 /// <summary>
+/// Identifies a response matcher which can claim a structurally correlated
+/// response prefix before complete semantic parsing is possible.
+/// </summary>
+internal interface ICorrelatedTerminalResponseMatcher {
+	bool IsCorrelatedPrefix(
+		IReadOnlyList<byte> bytes
+	);
+}
+
+/// <summary>
 /// Represents one complete response frame retained as exact terminal bytes.
 /// </summary>
 internal sealed class TerminalResponseFrame {
@@ -159,6 +169,13 @@ internal sealed class TerminalResponseExpectation {
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
 		return this.completion.TrySetResult( frame );
+	}
+
+	internal bool TrySetException(
+		Exception exception
+	) {
+		ArgumentNullException.ThrowIfNull( exception );
+		return this.completion.TrySetException( exception );
 	}
 
 	internal bool TrySetCanceled() {
