@@ -20,6 +20,41 @@ public sealed partial class TerminalSession {
 		string value,
 		CancellationToken cancellationToken = default
 	) {
+		return this.WriteTitleOperationAsync(
+			OscTitleSelector.IconAndWindowTitle,
+			value,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Sets the terminal icon name using OSC 1.
+	/// </summary>
+	/// <param name="value">The icon-name text to emit.</param>
+	/// <param name="cancellationToken">Cancellation observed before transmission begins.</param>
+	/// <returns>A value task representing the icon-name emission.</returns>
+	/// <remarks>
+	/// The operation is emission-oriented: successful completion means the complete
+	/// OSC 1 frame was written to the session output. It does not prove that the
+	/// terminal applied an icon name, and it does not alter the window-title selector.
+	/// The text is validated by the shared internal OSC writer before any output occurs.
+	/// </remarks>
+	public ValueTask SetIconNameAsync(
+		string value,
+		CancellationToken cancellationToken = default
+	) {
+		return this.WriteTitleOperationAsync(
+			OscTitleSelector.IconName,
+			value,
+			cancellationToken
+		);
+	}
+
+	private ValueTask WriteTitleOperationAsync(
+		OscTitleSelector selector,
+		string value,
+		CancellationToken cancellationToken
+	) {
 		ArgumentNullException.ThrowIfNull( value );
 		cancellationToken.ThrowIfCancellationRequested();
 
@@ -31,7 +66,7 @@ public sealed partial class TerminalSession {
 
 		return OscWriter.WriteTitleAsync(
 			this.Output,
-			OscTitleSelector.IconAndWindowTitle,
+			selector,
 			value,
 			cancellationToken
 		);
