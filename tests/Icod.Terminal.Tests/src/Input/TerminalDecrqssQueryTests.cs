@@ -119,8 +119,13 @@ public sealed class TerminalDecrqssQueryTests {
 
 	[Fact]
 	public async Task FragmentedDecrpssResponseIsRoutedAcrossReads() {
+		ManualMonotonicClock clock = new();
 		DcsTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			clock,
+			TimeSpan.FromSeconds( 1 )
+		);
 
 		Task<TerminalStatusStringResponse> query = session.QueryStatusStringAsync(
 			TerminalStatusStringKind.ScrollingRegion,
@@ -348,7 +353,8 @@ public sealed class TerminalDecrqssQueryTests {
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		DcsTransport transport,
-		IMonotonicClock? monotonicClock = null
+		IMonotonicClock? monotonicClock = null,
+		TimeSpan? escapeSequenceTimeout = null
 	) {
 		ArgumentNullException.ThrowIfNull( transport );
 
@@ -363,7 +369,7 @@ public sealed class TerminalDecrqssQueryTests {
 				ConfigureOutput = false,
 				MonotonicClock = monotonicClock ?? SystemMonotonicClock.Instance,
 				InputDecoderOptions = new TerminalInputDecoderOptions {
-					EscapeSequenceTimeout = TimeSpan.Zero
+					EscapeSequenceTimeout = escapeSequenceTimeout ?? TimeSpan.Zero
 				}
 			}
 		);
