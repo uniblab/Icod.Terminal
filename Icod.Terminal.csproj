@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.7.0-alpha.5</Version>
+		<Version>0.7.0-alpha.6</Version>
 		<AssemblyVersion>0.7.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.7.0-alpha.5</PackageVersion>
+		<PackageVersion>0.7.0-alpha.6</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.7.0-alpha.5 implements T56 semantic OSC 52 clipboard writes: public typed selection targets, bounded binary payload writes, strict UTF-8 text convenience, explicit empty-selection clearing, interactive-output enforcement, and session-owned output ordering without implicit flush.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.7.0-alpha.6 implements T57 explicit OSC 52 clipboard reads: public byte-returning selection queries, caller-supplied bounded timeout, shared query-transaction serialization and flush, bounded late-response ownership, deterministic correlated-malformed response failure, and explicit privacy semantics.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
