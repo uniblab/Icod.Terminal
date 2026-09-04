@@ -16,6 +16,52 @@ Set-StrictMode -Version Latest
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 Import-Module (Join-Path $PSScriptRoot 'RepositoryTools.psm1') -Force
 
+function Assert-TitleApiDocumentation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath
+    )
+
+    $requiredMembers = @(
+        'M:Icod.Terminal.TerminalSession.SetTitleAsync(System.String,System.Threading.CancellationToken)',
+        'M:Icod.Terminal.TerminalSession.SetIconNameAsync(System.String,System.Threading.CancellationToken)',
+        'M:Icod.Terminal.TerminalSession.SetWindowTitleAsync(System.String,System.Threading.CancellationToken)'
+    )
+
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($PackagePath)
+    try {
+        foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
+            $entryPath = "lib/$framework/Icod.Terminal.xml"
+            $entry = $archive.GetEntry($entryPath)
+            if ($null -eq $entry) {
+                throw "Package is missing generated documentation '$entryPath'."
+            }
+
+            $stream = $entry.Open()
+            try {
+                $documentation = [System.Xml.XmlDocument]::new()
+                $documentation.Load($stream)
+            } finally {
+                $stream.Dispose()
+            }
+
+            $documentedMembers = @(
+                $documentation.SelectNodes('/doc/members/member') |
+                    ForEach-Object { $_.GetAttribute('name') }
+            )
+            $missingMembers = @(
+                $requiredMembers |
+                    Where-Object { $_ -notin $documentedMembers }
+            )
+            if (0 -ne $missingMembers.Count) {
+                throw "$entryPath is missing required 0.4 title API documentation: $($missingMembers -join ', ')."
+            }
+        }
+    } finally {
+        $archive.Dispose()
+    }
+}
+
 if (-not [System.IO.Path]::IsPathRooted($ArtifactDirectory)) {
     $ArtifactDirectory = Join-Path $repositoryRoot $ArtifactDirectory
 }
@@ -65,6 +111,10 @@ try {
         '-f', 'net10.0',
         '--', $ArtifactDirectory
     )
+
+    Write-Host ''
+    Write-Host '=== Verify 0.4 title XML documentation ==='
+    Assert-TitleApiDocumentation -PackagePath $package.FullName
 
     $smokeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("Icod.Terminal-package-smoke-{0}" -f [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
