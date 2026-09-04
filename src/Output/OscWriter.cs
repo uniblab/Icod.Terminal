@@ -59,22 +59,11 @@ internal static class OscWriter {
 			);
 		}
 
-		byte[] frame = new byte[ 6 + payloadByteCount ];
-		frame[ 0 ] = Escape;
-		frame[ 1 ] = OscFinal;
-		frame[ 2 ] = selectorByte;
-		frame[ 3 ] = Separator;
-
-		if ( 0 < payloadByteCount ) {
-			StrictUtf8.GetBytes(
-				value.AsSpan(),
-				frame.AsSpan( 4, payloadByteCount )
-			);
-		}
-
-		frame[ ^2 ] = Escape;
-		frame[ ^1 ] = StFinal;
-		return frame;
+		byte[] payload = StrictUtf8.GetBytes( value );
+		return EncodeSingleSeparatorFrame(
+			selectorByte,
+			payload
+		);
 	}
 
 	/// <summary>
@@ -93,29 +82,46 @@ internal static class OscWriter {
 			authority
 		);
 		byte[] payload = Encoding.ASCII.GetBytes( fileUri );
-		byte[] frame = new byte[ payload.Length + 6 ];
-		frame[ 0 ] = Escape;
-		frame[ 1 ] = OscFinal;
-		frame[ 2 ] = (byte)'7';
-		frame[ 3 ] = Separator;
-		payload.CopyTo(
-			frame,
-			4
+		return EncodeSingleSeparatorFrame(
+			(byte)'7',
+			payload
 		);
-		frame[ ^2 ] = Escape;
-		frame[ ^1 ] = StFinal;
-		return frame;
+	}
+
+	/// <summary>
+	/// Encodes one complete OSC 8 hyperlink begin frame.
+	/// </summary>
+	internal static byte[] EncodeHyperlinkBeginFrame(
+		string uri,
+		string? identifier = null
+	) {
+		ArgumentNullException.ThrowIfNull( uri );
+
+		string encodedUri = TerminalHyperlinkEncoder.EncodeUri( uri );
+		string encodedParameters = TerminalHyperlinkEncoder.EncodeParameters( identifier );
+		byte[] parameters = Encoding.ASCII.GetBytes( encodedParameters );
+		byte[] target = Encoding.ASCII.GetBytes( encodedUri );
+		return EncodeDoubleSeparatorFrame(
+			(byte)'8',
+			parameters,
+			target
+		);
+	}
+
+	/// <summary>
+	/// Encodes the canonical OSC 8 hyperlink close frame.
+	/// </summary>
+	internal static byte[] EncodeHyperlinkEndFrame() {
+		return EncodeDoubleSeparatorFrame(
+			(byte)'8',
+			ReadOnlySpan<byte>.Empty,
+			ReadOnlySpan<byte>.Empty
+		);
 	}
 
 	/// <summary>
 	/// Validates and emits one complete title frame through one output write.
 	/// </summary>
-	/// <remarks>
-	/// Cancellation is observed before transmission is committed. Once the full
-	/// frame has been validated and transmission begins, the underlying write is
-	/// intentionally not cancellation-driven so ordinary cancellation cannot
-	/// deliberately abandon the frame halfway through.
-	/// </remarks>
 	internal static ValueTask WriteTitleAsync(
 		ITerminalOutput output,
 		OscTitleSelector selector,
@@ -142,13 +148,6 @@ internal static class OscWriter {
 	/// <summary>
 	/// Validates and emits one complete OSC 7 current-location frame through one output write.
 	/// </summary>
-	/// <remarks>
-	/// Cancellation is observed before transmission is committed. Once the full
-	/// URI and frame are validated and transmission begins, the underlying write
-	/// is intentionally not cancellation-driven so ordinary cancellation cannot
-	/// deliberately abandon the frame halfway through. This operation does not
-	/// flush the output service.
-	/// </remarks>
 	internal static ValueTask WriteLocationAsync(
 		ITerminalOutput output,
 		string path,
@@ -171,6 +170,84 @@ internal static class OscWriter {
 			frame,
 			CancellationToken.None
 		);
+	}
+
+	/// <summary>
+	/// Validates and emits one complete OSC 8 hyperlink begin frame through one output write.
+	/// </summary>
+	internal static ValueTask WriteHyperlinkBeginAsync(
+		ITerminalOutput output,
+		string uri,
+		string? identifier = null,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( output );
+		ArgumentNullException.ThrowIfNull( uri );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		byte[] frame = EncodeHyperlinkBeginFrame(
+			uri,
+			identifier
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
+		return output.WriteAsync(
+			frame,
+			CancellationToken.None
+		);
+	}
+
+	/// <summary>
+	/// Emits the canonical OSC 8 hyperlink close frame through one output write.
+	/// </summary>
+	internal static ValueTask WriteHyperlinkEndAsync(
+		ITerminalOutput output,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( output );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		byte[] frame = EncodeHyperlinkEndFrame();
+		cancellationToken.ThrowIfCancellationRequested();
+
+		return output.WriteAsync(
+			frame,
+			CancellationToken.None
+		);
+	}
+
+	private static byte[] EncodeSingleSeparatorFrame(
+		byte selectorByte,
+		ReadOnlySpan<byte> payload
+	) {
+		byte[] frame = new byte[ payload.Length + 6 ];
+		frame[ 0 ] = Escape;
+		frame[ 1 ] = OscFinal;
+		frame[ 2 ] = selectorByte;
+		frame[ 3 ] = Separator;
+		payload.CopyTo( frame.AsSpan( 4 ) );
+		frame[ ^2 ] = Escape;
+		frame[ ^1 ] = StFinal;
+		return frame;
+	}
+
+	private static byte[] EncodeDoubleSeparatorFrame(
+		byte selectorByte,
+		ReadOnlySpan<byte> firstPayload,
+		ReadOnlySpan<byte> secondPayload
+	) {
+		byte[] frame = new byte[ firstPayload.Length + secondPayload.Length + 7 ];
+		frame[ 0 ] = Escape;
+		frame[ 1 ] = OscFinal;
+		frame[ 2 ] = selectorByte;
+		frame[ 3 ] = Separator;
+		firstPayload.CopyTo( frame.AsSpan( 4 ) );
+		int secondSeparatorIndex = 4 + firstPayload.Length;
+		frame[ secondSeparatorIndex ] = Separator;
+		secondPayload.CopyTo( frame.AsSpan( secondSeparatorIndex + 1 ) );
+		frame[ ^2 ] = Escape;
+		frame[ ^1 ] = StFinal;
+		return frame;
 	}
 
 	private static byte GetSelectorByte(
