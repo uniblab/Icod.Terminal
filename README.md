@@ -6,9 +6,9 @@
 
 ## Status
 
-`0.3.0` is the current stable release line. It retains the 0.1 live-session
-foundation and 0.2 rich-input contract while adding bounded, expectation-driven
-active terminal queries over the same session-owned input path.
+`0.3.0` is the current stable release line. The `0.4.0` line is under active
+development and adds semantic OSC title operations on top of the 0.3 live-session
+and query/response foundation.
 
 The stable 0.3 API includes typed Primary and Secondary Device Attributes,
 Device Status Report, Cursor Position Report, DECRQSS status-string queries, and
@@ -69,6 +69,52 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 The session borrows process-standard endpoints, owns only the terminal state transitions it applies, and restores its captured baseline during `DisposeAsync()`.
 
 Applications which genuinely need complete native mode observation, serialization, or custom endpoint/control backends may use the lower-level public contracts; ordinary interactive applications should prefer `TerminalSession`.
+
+## 0.4 OSC title operations
+
+The 0.4 line adds three semantic title methods:
+
+```csharp
+await session.SetTitleAsync( "Icod" );
+await session.SetIconNameAsync( "Icod" );
+await session.SetWindowTitleAsync( "Icod Terminal" );
+```
+
+Their protocol mapping is explicit:
+
+- `SetTitleAsync(...)` emits OSC 0 and requests both icon name and window title;
+- `SetIconNameAsync(...)` emits OSC 1 and requests icon-name-only behavior;
+- `SetWindowTitleAsync(...)` emits OSC 2 and requests window-title-only behavior.
+
+The public API intentionally does not expose raw OSC selector numbers or a generic
+`SendOsc(...)` escape hatch. Title text is validated before any output is written,
+encoded as strict UTF-8, bounded to 4096 encoded bytes, and rejected if it contains
+C0, DEL, or C1 controls or malformed Unicode. The canonical emitted form uses
+7-bit `ESC ]` and terminates with ST (`ESC \\`).
+
+These APIs are emission-oriented: successful completion means the complete frame
+was written to the session output. It does not prove that the terminal emulator
+applied the title, and `Icod.Terminal` does not claim ownership of prior title state
+or exact title restoration.
+
+Title operations require an output endpoint which the session observed as a
+terminal. If output is known to be redirected/non-terminal, the operation is
+rejected rather than writing OSC metadata into that stream.
+
+`WriteTextAsync(...)` and the three title methods participate in session-owned
+output ordering. They wait behind active query, presentation, and input-protocol
+control-output transactions, so a title frame cannot interleave inside one of
+those session-owned operations. Title methods do not flush implicitly; disposal
+performs the final flush/restoration.
+
+The low-level borrowed `session.Output` object remains caller-synchronized. Direct
+writes through it are outside the session ordering contract. The older
+`WriteTerminalStringAsync(...)` / `WriteCapabilityAsync(...)` APIs remain the
+advanced terminfo-oriented surface used by internal transition managers and are
+not generalized into a public raw OSC mechanism.
+
+The reviewed 0.4 public API delta is recorded in
+[`docs/Public-API-Baseline-0.4.md`](docs/Public-API-Baseline-0.4.md).
 
 ## 0.2 rich input
 
@@ -248,6 +294,12 @@ Running either script without an argument performs the complete sequence,
 including Debug package validation.
 
 ## Development roadmap
+
+The active `0.4.0` milestone is documented in
+[`Icod.Terminal-0.4.0-Development-Roadmap.md`](Icod.Terminal-0.4.0-Development-Roadmap.md).
+The completed T29 through T34 records are maintained in `docs/`, and the reviewed
+0.4 public API delta is published in
+[`docs/Public-API-Baseline-0.4.md`](docs/Public-API-Baseline-0.4.md).
 
 The completed `0.3.0` milestone is documented in
 [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
