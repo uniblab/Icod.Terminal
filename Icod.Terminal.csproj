@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.4.0-alpha.7</Version>
+		<Version>0.4.0</Version>
 		<AssemblyVersion>0.4.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.4.0-alpha.7</PackageVersion>
+		<PackageVersion>0.4.0</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.4.0-alpha.7 completes T35 public API and documentation review for OSC title operations. The semantic SetTitleAsync, SetIconNameAsync, and SetWindowTitleAsync surface is frozen for 0.4, raw OSC selector APIs remain intentionally absent, emission/support/restoration semantics are documented, and the session-owned output-ordering boundary is explicit.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.4.0 adds semantic OSC 0/1/2 title operations through TerminalSession.SetTitleAsync, SetIconNameAsync, and SetWindowTitleAsync; strict UTF-8 and injection-safe framing; bounded 4096-byte title payload policy; coordinated session-owned output ordering; explicit emission/support semantics; and package-only multi-target consumer validation for net8.0, net9.0, and net10.0.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
