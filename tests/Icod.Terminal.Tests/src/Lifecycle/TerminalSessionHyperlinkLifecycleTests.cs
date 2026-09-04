@@ -173,9 +173,7 @@ public sealed class TerminalSessionHyperlinkLifecycleTests {
 		);
 		Assert.False( session.IsStateValid );
 
-		await Assert.ThrowsAnyAsync<Exception>(
-			() => session.DisposeAsync().AsTask()
-		);
+		await session.DisposeAsync();
 	}
 
 	private static async Task WaitUntilAsync(
