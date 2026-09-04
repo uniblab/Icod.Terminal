@@ -25,6 +25,9 @@ public sealed partial class TerminalSession {
 	/// Hyperlink leases are strictly nested. Releasing the innermost lease restores
 	/// the immediately preceding session-owned hyperlink. Releasing the outermost
 	/// lease emits the canonical OSC 8 close frame. Cleanup is not caller-cancellable.
+	/// Active logical scopes survive managed terminal suspend/resume: physical OSC 8
+	/// state is closed before suspension and the innermost active scope is re-emitted
+	/// after successful session-state re-entry.
 	/// </remarks>
 	public ValueTask<TerminalHyperlinkLease> AcquireHyperlinkAsync(
 		string uri,
@@ -77,6 +80,24 @@ public sealed partial class TerminalSession {
 			identifier,
 			cancellationToken
 		);
+	}
+
+	private void InvalidateHyperlinkState() {
+		this.hyperlinkManager?.Invalidate();
+	}
+
+	private ValueTask SuspendHyperlinkStateAsync() {
+		return this.hyperlinkManager is null
+			? ValueTask.CompletedTask
+			: this.hyperlinkManager.SuspendAsync()
+		;
+	}
+
+	private ValueTask ResumeHyperlinkStateAsync() {
+		return this.hyperlinkManager is null
+			? ValueTask.CompletedTask
+			: this.hyperlinkManager.ReenterAsync()
+		;
 	}
 
 	private async ValueTask<Exception?> CloseHyperlinkStateAsync() {
