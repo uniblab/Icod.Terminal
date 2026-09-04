@@ -6,7 +6,7 @@
 
 ## Status
 
-`0.7.0` is the current stable release candidate. It adds semantic OSC 52 clipboard and selection operations while preserving the existing live-session, input, query, OSC 0/1/2 title, OSC 7 location, and OSC 8 hyperlink contracts.
+`0.7.0` is the current stable release. It adds semantic OSC 52 clipboard and selection operations while preserving the existing live-session, input, query, OSC 0/1/2 title, OSC 7 location, and OSC 8 hyperlink contracts.
 
 The stable 0.7 public delta is deliberately small:
 
@@ -125,9 +125,11 @@ byte[] payload = await session.ReadClipboardAsync(
 
 Opening a session never reads clipboard data. Clipboard reads are not performed during terminal discovery, capability detection, lifecycle handling, suspension, resume, or disposal. Every read names one selection and one caller-visible timeout.
 
-The decoded payload ceiling is 65,536 bytes. Standard unwrapped RFC 4648 base64 is used internally. The maximum encoded payload is 87,384 bytes, the maximum complete OSC 52 frame is 87,400 bytes, and the general undecoded input ceiling is 98,304 bytes. The historical 4,096-byte bracketed-paste chunk default remains independent of that larger input ceiling.
+The decoded payload ceiling is 65,536 bytes. Standard unwrapped RFC 4648 base64 is used internally. The maximum encoded payload is 87,384 bytes, the maximum complete OSC 52 frame is 87,400 bytes, and the shared undecoded input ceiling is also 87,400 bytes. The historical 4,096-byte bracketed-paste chunk default remains independent of that frame-sized input ceiling.
 
-Outbound OSC 52 always uses canonical seven-bit `ESC ]` introduction and `ESC \\` String Terminator. For inbound compatibility, an active clipboard query also recognizes seven-bit BEL termination and the C1 OSC/C1 ST form. Wrong selections, unrelated OSC traffic, malformed framing, and oversized data cannot satisfy the query.
+A structurally correlated OSC 52 response which reaches the 87,400-byte ceiling without completing is owned by the active query and fails deterministically with `FormatException`. The decoder drains that invalid OSC control string through a recognized terminator before resuming ordinary input decoding, so oversized response bytes cannot be reinterpreted as keystrokes or application text; bytes following the terminator remain available normally.
+
+Outbound OSC 52 always uses canonical seven-bit `ESC ]` introduction and `ESC \\` String Terminator. For inbound compatibility, an active clipboard query also recognizes seven-bit BEL termination and the C1 OSC/C1 ST form. Wrong selections, unrelated OSC traffic, malformed framing, and oversized data cannot satisfy the query successfully.
 
 After an emitted read request times out or the caller cancels, the existing query transaction architecture retains bounded late-response ownership so a delayed clipboard reply cannot satisfy a later query or leak into ordinary application input.
 
