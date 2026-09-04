@@ -111,13 +111,13 @@ internal sealed partial class TerminalInputDecoder {
 					return null;
 
 				case TerminalResponseFrameParseStatus.Invalid:
-					TerminalInputDecodeResult? invalidResponse =
-						await this.TryRouteCorrelatedInvalidResponseAsync(
+					TerminalInputDecodeResult? oversizedResponse =
+						await this.TryRouteOversizedCorrelatedResponseAsync(
 							expectation,
 							maximumFrameBytes,
 							cancellationToken
 						).ConfigureAwait( false );
-					return invalidResponse;
+					return oversizedResponse;
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					bool appended = parseResult.IntroducerIncomplete
@@ -163,22 +163,20 @@ internal sealed partial class TerminalInputDecoder {
 		}
 	}
 
-	private async ValueTask<TerminalInputDecodeResult?> TryRouteCorrelatedInvalidResponseAsync(
+	private async ValueTask<TerminalInputDecodeResult?> TryRouteOversizedCorrelatedResponseAsync(
 		TerminalResponseExpectation expectation,
 		int maximumFrameBytes,
 		CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull( expectation );
-		if ( expectation.Matcher is not ICorrelatedTerminalResponseMatcher correlatedMatcher
+		if ( this.bufferedBytes.Count < maximumFrameBytes
+			|| expectation.Matcher is not ICorrelatedTerminalResponseMatcher correlatedMatcher
 			|| !correlatedMatcher.IsCorrelatedPrefix( this.bufferedBytes ) ) {
 			return null;
 		}
 
-		bool oversized = maximumFrameBytes <= this.bufferedBytes.Count;
 		FormatException exception = new(
-			oversized
-				? $"The correlated terminal response exceeded the {maximumFrameBytes}-byte framing limit."
-				: "The correlated terminal response used malformed framing."
+			$"The correlated terminal response exceeded the {maximumFrameBytes}-byte framing limit."
 		);
 
 		lock ( this.responseExpectationGate ) {
@@ -191,7 +189,7 @@ internal sealed partial class TerminalInputDecoder {
 		}
 
 		expectation.TrySetException( exception );
-		await this.DrainInvalidOscResponseAsync(
+		await this.DrainOversizedOscResponseAsync(
 			cancellationToken
 		).ConfigureAwait( false );
 
@@ -201,7 +199,7 @@ internal sealed partial class TerminalInputDecoder {
 		);
 	}
 
-	private async ValueTask DrainInvalidOscResponseAsync(
+	private async ValueTask DrainOversizedOscResponseAsync(
 		CancellationToken cancellationToken
 	) {
 		int discardedBytes = 0;
@@ -231,7 +229,7 @@ internal sealed partial class TerminalInputDecoder {
 				this.Consume( consumeCount );
 				if ( TerminalOsc52PayloadCodec.MaximumFrameBytes < discardedBytes ) {
 					throw new InvalidOperationException(
-						"The terminal input decoder could not resynchronize after an invalid OSC response within the bounded discard interval."
+						"The terminal input decoder could not resynchronize after an oversized OSC response within the bounded discard interval."
 					);
 				}
 			}
