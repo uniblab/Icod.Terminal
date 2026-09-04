@@ -6,11 +6,18 @@ on:
       - 'v*'
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
+
+env:
+  DOTNET_VERSION: 10.0.x
+  CONFIGURATION: Release
+  RELEASE_DIRECTORY: artifacts/release
+  SELECTED_PACKAGE_DIRECTORY: artifacts/release-packages
+  PACKAGE_ARTIFACT: nuget-packages
 
 jobs:
   metadata:
@@ -18,97 +25,81 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      solution_path: ${{ steps.repository.outputs.solution_path }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Require tagged commit on main
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - id: repository
+        shell: pwsh
+        run: ./packaging/Get-RepositoryMetadata.ps1 -Configuration '${{ env.CONFIGURATION }}' -GitHubOutputPath $env:GITHUB_OUTPUT
+      - name: Require solution
+        shell: pwsh
+        run: |
+          if ('true' -ne '${{ steps.repository.outputs.has_solution }}') {
+              throw 'A tagged release requires exactly one root .sln or .slnx file.'
+          }
+      - name: Require tagged commit on default branch
         shell: pwsh
         run: |
           git fetch origin main --no-tags
           git merge-base --is-ancestor $env:GITHUB_SHA origin/main
           if (0 -ne $LASTEXITCODE) {
-              throw "Release tag '$env:GITHUB_REF_NAME' does not point to a commit contained in main."
+              throw "Release tag '$env:GITHUB_REF_NAME' does not point to a commit contained in 'main'."
           }
-
       - id: version
-        name: Validate tag and package version
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
           if ($tag -notmatch '^v(?<version>[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?)$') {
               throw "Release tag '$tag' is not a supported v<semver> tag."
           }
+          $version = $Matches.version
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
-          $tagVersion = $Matches.version
-          [xml]$project = Get-Content -LiteralPath 'Icod.Terminal.csproj' -Raw
-          $versionNode = $project.SelectSingleNode('/Project/PropertyGroup/Version')
-          $packageVersionNode = $project.SelectSingleNode('/Project/PropertyGroup/PackageVersion')
-          if ($null -eq $versionNode -or $null -eq $packageVersionNode) {
-              throw 'Icod.Terminal.csproj must declare both Version and PackageVersion.'
-          }
-
-          $projectVersion = $versionNode.InnerText
-          $packageVersion = $packageVersionNode.InnerText
-          if ($projectVersion -ne $packageVersion) {
-              throw "Version '$projectVersion' does not match PackageVersion '$packageVersion'."
-          }
-          if ($tagVersion -ne $packageVersion) {
-              throw "Tag version '$tagVersion' does not match PackageVersion '$packageVersion'."
-          }
-
-          "version=$tagVersion" >> $env:GITHUB_OUTPUT
-          "prerelease=$($tagVersion.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-
-  validate:
+  package:
     needs: metadata
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    outputs:
+      has_packages: ${{ steps.select.outputs.has_packages }}
+      package_count: ${{ steps.select.outputs.package_count }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-
-      - run: dotnet clean Icod.Terminal.sln -c Release
-      - run: dotnet restore Icod.Terminal.sln
-      - run: dotnet build Icod.Terminal.sln -c Release --no-restore -p:ContinuousIntegrationBuild=true
-      - run: dotnet test Icod.Terminal.sln -c Release --no-build --logger trx
-
-      - name: Pack Release package
-        run: dotnet pack Icod.Terminal.csproj -c Release --no-build --output artifacts
-
-      - name: Verify Release package on Windows
-        if: matrix.os == 'windows-latest'
-        shell: cmd
-        run: .github\scripts\verify-release-package.cmd artifacts Release
-
-      - name: Verify Release package on POSIX
-        if: matrix.os != 'windows-latest'
-        shell: bash
-        run: bash .github/scripts/verify-release-package.sh artifacts Release
-
-      - name: Upload canonical release package
-        if: matrix.os == 'windows-latest'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
+      - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
+      - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
+      - id: select
+        shell: pwsh
+        run: ./packaging/SelectReleasePackages.ps1 -SourceDirectory '${{ env.RELEASE_DIRECTORY }}' -DestinationDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}' -GitHubOutputPath $env:GITHUB_OUTPUT
+      - name: Require Icod.Terminal release package
+        shell: pwsh
+        run: |
+          if ('true' -ne '${{ steps.select.outputs.has_packages }}' -or '1' -ne '${{ steps.select.outputs.package_count }}') {
+              throw 'The Icod.Terminal release must select exactly one package matching the release tag.'
+          }
+      - name: Verify exact release package artifacts
+        shell: pwsh
+        run: ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:
-          name: release-package
+          name: ${{ env.PACKAGE_ARTIFACT }}
           path: |
-            artifacts/Icod.Terminal.${{ needs.metadata.outputs.version }}.nupkg
-            artifacts/Icod.Terminal.${{ needs.metadata.outputs.version }}.snupkg
+            ${{ env.SELECTED_PACKAGE_DIRECTORY }}/*.nupkg
+            ${{ env.SELECTED_PACKAGE_DIRECTORY }}/*.snupkg
           if-no-files-found: error
           retention-days: 7
 
   publish-nuget:
-    needs: [metadata, validate]
+    needs: [metadata, package]
     runs-on: ubuntu-latest
     environment: Release
     permissions:
@@ -117,39 +108,27 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
-
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       - uses: actions/download-artifact@v4
         with:
-          name: release-package
+          name: ${{ env.PACKAGE_ARTIFACT }}
           path: artifacts/package
-
-      - name: Exchange GitHub OIDC token for NuGet credential
-        id: nuget-login
+      - id: nuget-login
         uses: NuGet/login@v1
         with:
           user: ${{ secrets.NUGET_USER }}
-
-      - name: Publish to NuGet.org
-        shell: pwsh
+      - shell: pwsh
         env:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: |
-          $package = 'artifacts/package/Icod.Terminal.${{ needs.metadata.outputs.version }}.nupkg'
-          if (-not (Test-Path -LiteralPath $package -PathType Leaf)) {
-              throw "Expected package '$package' was not downloaded."
-          }
-
-          dotnet nuget push $package `
-              --api-key $env:NUGET_API_KEY `
-              --source 'https://api.nuget.org/v3/index.json' `
-              --skip-duplicate
-          if (0 -ne $LASTEXITCODE) {
-              throw "NuGet.org publication failed with status $LASTEXITCODE."
-          }
+          $packages = @(Get-ChildItem -LiteralPath 'artifacts/package' -Filter '*.nupkg' -File)
+          if (1 -ne $packages.Count) { throw "Expected one NuGet package; found $($packages.Count)." }
+          $package = $packages[0]
+          dotnet nuget push $package.FullName --api-key $env:NUGET_API_KEY --source 'https://api.nuget.org/v3/index.json' --skip-duplicate
+          if (0 -ne $LASTEXITCODE) { throw "NuGet.org publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   publish-github-packages:
-    needs: [metadata, validate, publish-nuget]
+    needs: [metadata, package]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -157,120 +136,62 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
-
+          dotnet-version: ${{ env.DOTNET_VERSION }}
       - uses: actions/download-artifact@v4
         with:
-          name: release-package
+          name: ${{ env.PACKAGE_ARTIFACT }}
           path: artifacts/package
-
-      - name: Publish to GitHub Packages
-        shell: pwsh
+      - shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR_NAME: ${{ github.actor }}
           GITHUB_OWNER: ${{ github.repository_owner }}
         run: |
           $source = "https://nuget.pkg.github.com/$env:GITHUB_OWNER/index.json"
-          dotnet nuget add source $source `
-              --name github-release `
-              --username $env:GITHUB_ACTOR_NAME `
-              --password $env:GITHUB_TOKEN `
-              --store-password-in-clear-text
-          if (0 -ne $LASTEXITCODE) {
-              throw "GitHub Packages source configuration failed with status $LASTEXITCODE."
-          }
-
-          $package = 'artifacts/package/Icod.Terminal.${{ needs.metadata.outputs.version }}.nupkg'
-          dotnet nuget push $package `
-              --source github-release `
-              --api-key $env:GITHUB_TOKEN `
-              --skip-duplicate
-          if (0 -ne $LASTEXITCODE) {
-              throw "GitHub Packages publication failed with status $LASTEXITCODE."
-          }
+          $packages = @(Get-ChildItem -LiteralPath 'artifacts/package' -Filter '*.nupkg' -File)
+          if (1 -ne $packages.Count) { throw "Expected one GitHub package; found $($packages.Count)." }
+          $package = $packages[0]
+          dotnet nuget push $package.FullName --source $source --api-key $env:GITHUB_TOKEN --skip-duplicate
+          if (0 -ne $LASTEXITCODE) { throw "GitHub Packages publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   github-release:
-    needs: [metadata, validate, publish-nuget, publish-github-packages]
+    needs: [metadata, package, publish-nuget, publish-github-packages]
+    if: >-
+      always() &&
+      needs.metadata.result == 'success' &&
+      needs.package.result == 'success' &&
+      needs.publish-nuget.result == 'success' &&
+      needs.publish-github-packages.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: release-package
+          name: ${{ env.PACKAGE_ARTIFACT }}
           path: artifacts/release-assets
-
       - name: Create checksums
         shell: pwsh
         run: |
           $assetDirectory = 'artifacts/release-assets'
-          $files = @(
-              Get-ChildItem -LiteralPath $assetDirectory -File |
-                  Where-Object { $_.Extension -in @('.nupkg', '.snupkg') } |
-                  Sort-Object Name
-          )
-          if (2 -ne $files.Count) {
-              throw "Expected two release packages before checksumming; found $($files.Count)."
-          }
-
+          $files = @(Get-ChildItem -LiteralPath $assetDirectory -File | Where-Object { $_.Extension -in @('.nupkg', '.snupkg') } | Sort-Object Name)
+          if (2 -ne $files.Count) { throw "Expected a package and symbol package; found $($files.Count) release assets." }
           $lines = foreach ($file in $files) {
               $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
               "$hash  $($file.Name)"
           }
-          [System.IO.File]::WriteAllLines(
-              (Join-Path $assetDirectory 'SHA256SUMS.txt'),
-              $lines,
-              [System.Text.UTF8Encoding]::new($false)
-          )
-
+          [System.IO.File]::WriteAllLines((Join-Path $assetDirectory 'SHA256SUMS.txt'), $lines, [System.Text.UTF8Encoding]::new($false))
       - name: Create GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
-          $tag = $env:GITHUB_REF_NAME
-          $version = '${{ needs.metadata.outputs.version }}'
-          $assetDirectory = [System.IO.Path]::GetFullPath('artifacts/release-assets')
-          $notes = @'
-          ## Installation
-
-          ```text
-          dotnet add package Icod.Terminal --version {0}
-          ```
-
-          `Icod.Terminal` targets `net8.0`, `net9.0`, and `net10.0`. Its runtime
-          package dependencies are `Icod.TermInfo 1.4.1` and `Icod.Timing 1.0.0`.
-
-          The NuGet package, symbol package, and SHA-256 checksums are attached
-          to this release.
-          '@ -f $version
-
-          $assets = @(
-              Get-ChildItem -LiteralPath $assetDirectory -File |
-                  Where-Object { $_.Extension -in @('.nupkg', '.snupkg', '.txt') } |
-                  Sort-Object Name |
-                  ForEach-Object { $_.FullName }
-          )
-          if (3 -ne $assets.Count) {
-              throw "Expected three GitHub Release assets; found $($assets.Count)."
-          }
-
-          $arguments = @(
-              'release', 'create', $tag,
-              '--verify-tag',
-              '--title', "Icod.Terminal $version",
-              '--generate-notes',
-              '--notes', $notes
-          )
+          $assets = @(Get-ChildItem -LiteralPath 'artifacts/release-assets' -File | Sort-Object Name | ForEach-Object { $_.FullName })
+          $arguments = @('release', 'create', $env:GITHUB_REF_NAME, '--verify-tag', '--title', "Icod.Terminal ${{ needs.metadata.outputs.version }}", '--generate-notes')
           if ('true' -eq '${{ needs.metadata.outputs.prerelease }}') {
               $arguments += '--prerelease'
               $arguments += '--latest=false'
           }
           $arguments += $assets
-
           & gh @arguments
-          if (0 -ne $LASTEXITCODE) {
-              throw "GitHub Release creation failed with status $LASTEXITCODE."
-          }
+          if (0 -ne $LASTEXITCODE) { throw "GitHub Release creation failed with status $LASTEXITCODE." }
