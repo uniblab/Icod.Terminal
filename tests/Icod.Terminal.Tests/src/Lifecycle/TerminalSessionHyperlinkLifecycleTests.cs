@@ -54,6 +54,33 @@ public sealed class TerminalSessionHyperlinkLifecycleTests {
 	}
 
 	[Fact]
+	public async Task ExternalResumeReemitsInnermostActiveHyperlink() {
+		RecordingTerminalOutput output = new();
+		TestTerminalLifecycleSource lifecycle = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			lifecycle
+		);
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+
+		await using TerminalHyperlinkLease lease = await session.AcquireHyperlinkAsync(
+			"https://example.com/external",
+			"external"
+		);
+		byte[] begin = output.Writes[ 0 ];
+
+		lifecycle.Publish( TerminalLifecycleSignalKind.Resume );
+		TerminalLifecycleEvent resumed = await session.ReadLifecycleEventAsync(
+			timeout.Token
+		);
+
+		Assert.Equal( TerminalLifecycleEventKind.Resumed, resumed.Kind );
+		Assert.Equal( 2, output.Writes.Count );
+		Assert.Equal( begin, output.Writes[ 1 ] );
+		Assert.True( session.IsStateValid );
+	}
+
+	[Fact]
 	public async Task NestedHyperlinkResumeRestoresInnermostState() {
 		RecordingTerminalOutput output = new();
 		TestTerminalLifecycleSource lifecycle = new() {
