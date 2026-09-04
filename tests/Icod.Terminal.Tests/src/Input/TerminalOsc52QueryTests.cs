@@ -112,6 +112,37 @@ public sealed class TerminalOsc52QueryTests {
 	}
 
 	[Fact]
+	public async Task OversizedCorrelatedResponseFailsAndPreservesTrailingInput() {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard,
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+
+		byte[] prefix = Encoding.ASCII.GetBytes( "\u001b]52;c;" );
+		byte[] response = Enumerable.Repeat(
+			(byte)'A',
+			TerminalOsc52PayloadCodec.MaximumFrameBytes + 3
+		).ToArray();
+		prefix.CopyTo( response, 0 );
+		response[ TerminalOsc52PayloadCodec.MaximumFrameBytes ] = 0x1B;
+		response[ TerminalOsc52PayloadCodec.MaximumFrameBytes + 1 ] = (byte)'\\';
+		response[ TerminalOsc52PayloadCodec.MaximumFrameBytes + 2 ] = (byte)'z';
+		transport.Publish( response );
+
+		await Assert.ThrowsAsync<FormatException>( () => query );
+
+		TerminalEvent trailing = await session.ReadEventAsync(
+			TimeSpan.FromSeconds( 1 )
+		);
+		Assert.Equal( TerminalEventKind.Input, trailing.Kind );
+		Assert.Equal( new Rune( 'z' ), trailing.Input?.Character );
+	}
+
+	[Fact]
 	public async Task WrongSelectionDoesNotSatisfyQuery() {
 		Osc52Transport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
