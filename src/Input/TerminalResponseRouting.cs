@@ -5,7 +5,8 @@ namespace Icod.Terminal;
 /// </summary>
 internal enum TerminalResponseFrameKind {
 	Csi,
-	Dcs
+	Dcs,
+	Osc
 }
 
 /// <summary>
@@ -62,10 +63,14 @@ internal sealed class TerminalResponseFrame {
 
 	internal bool UsesEightBitIntroducer {
 		get {
-			return TerminalResponseFrameKind.Csi == this.Kind
-				? 0x9B == this.bytes[ 0 ]
-				: 0x90 == this.bytes[ 0 ]
-			;
+			return this.Kind switch {
+				TerminalResponseFrameKind.Csi => 0x9B == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Dcs => 0x90 == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Osc => 0x9D == this.bytes[ 0 ],
+				_ => throw new InvalidOperationException(
+					"The terminal response frame kind is not recognized."
+				)
+			};
 		}
 	}
 }
