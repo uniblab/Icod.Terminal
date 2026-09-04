@@ -5,7 +5,7 @@ using Icod.TermInfo;
 using Xunit;
 
 /// <summary>
-/// Verifies T34 session-owned output ordering, flush, and close semantics.
+/// Verifies session-owned output ordering, flush, and close semantics.
 /// </summary>
 public sealed class TerminalSessionOutputOrderingTests {
 	[Fact]
@@ -36,6 +36,38 @@ public sealed class TerminalSessionOutputOrderingTests {
 	}
 
 	[Fact]
+	public async Task LocationWaitsForApplicationWriteToFinish() {
+		BlockingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+
+		Task applicationWrite = session.WriteTextAsync( "A" ).AsTask();
+		await output.FirstWriteStarted;
+
+		Task locationWrite = session.PublishCurrentLocationAsync(
+			"/usr/src",
+			TerminalLocationPathStyle.Posix
+		).AsTask();
+		await Task.Delay( 50 );
+
+		Assert.False( locationWrite.IsCompleted );
+		Assert.Equal( 1, output.MaximumConcurrentWrites );
+
+		output.ReleaseFirstWrite();
+		await applicationWrite;
+		await locationWrite;
+
+		Assert.Equal( 1, output.MaximumConcurrentWrites );
+		Assert.Equal( 2, output.Writes.Count );
+		Assert.Equal( new byte[] { 0x41 }, output.Writes[ 0 ] );
+		Assert.Equal(
+			Convert.FromHexString(
+				"1B5D373B66696C653A2F2F2F7573722F7372631B5C"
+			),
+			output.Writes[ 1 ]
+		);
+	}
+
+	[Fact]
 	public async Task ApplicationWriteWaitsBehindControlOutputLease() {
 		RecordingTerminalOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync( output );
@@ -59,6 +91,34 @@ public sealed class TerminalSessionOutputOrderingTests {
 	}
 
 	[Fact]
+	public async Task LocationWaitsBehindControlOutputLease() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		IDisposable controlOutput = await session.AcquireControlOutputAsync(
+			CancellationToken.None
+		);
+
+		Task locationWrite = session.PublishCurrentLocationAsync(
+			"/usr/src",
+			TerminalLocationPathStyle.Posix
+		).AsTask();
+		await Task.Delay( 50 );
+
+		Assert.False( locationWrite.IsCompleted );
+		Assert.Empty( output.Bytes );
+
+		controlOutput.Dispose();
+		await locationWrite;
+
+		Assert.Equal(
+			Convert.FromHexString(
+				"1B5D373B66696C653A2F2F2F7573722F7372631B5C"
+			),
+			output.Bytes.ToArray()
+		);
+	}
+
+	[Fact]
 	public async Task TitleWriteDoesNotFlushImplicitly() {
 		RecordingTerminalOutput output = new();
 		TerminalSession session = await OpenSessionAsync( output );
@@ -71,7 +131,22 @@ public sealed class TerminalSessionOutputOrderingTests {
 	}
 
 	[Fact]
-	public async Task DisposedSessionRejectsNewApplicationAndTitleOutput() {
+	public async Task LocationWriteDoesNotFlushImplicitly() {
+		RecordingTerminalOutput output = new();
+		TerminalSession session = await OpenSessionAsync( output );
+
+		await session.PublishCurrentLocationAsync(
+			"/usr/src",
+			TerminalLocationPathStyle.Posix
+		);
+
+		Assert.Equal( 0, output.FlushCount );
+		await session.DisposeAsync();
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task DisposedSessionRejectsNewApplicationTitleAndLocationOutput() {
 		RecordingTerminalOutput output = new();
 		TerminalSession session = await OpenSessionAsync( output );
 		await session.DisposeAsync();
@@ -87,6 +162,12 @@ public sealed class TerminalSessionOutputOrderingTests {
 		);
 		await Assert.ThrowsAsync<ObjectDisposedException>(
 			() => session.SetWindowTitleAsync( "window" ).AsTask()
+		);
+		await Assert.ThrowsAsync<ObjectDisposedException>(
+			() => session.PublishCurrentLocationAsync(
+				"/usr/src",
+				TerminalLocationPathStyle.Posix
+			).AsTask()
 		);
 
 		Assert.Empty( output.Bytes );

@@ -1,8 +1,8 @@
 # Icod.Terminal Samples
 
 The sample projects are repository consumers built through project references.
-The release package itself is validated separately by `tools/package-smoke` and
-`tools/package-title-smoke`.
+The release package itself is validated separately by `tools/package-smoke`,
+`tools/package-title-smoke`, and `tools/package-location-smoke`.
 
 ## Icod.Terminal.Sample
 
@@ -44,6 +44,40 @@ Run it in a real interactive terminal where title changes are visible:
 ```text
 dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
 ```
+
+The project also targets `net8.0` and `net9.0`.
+
+## Icod.Terminal.Location.Sample
+
+`Icod.Terminal.Location.Sample` is the focused 0.5 OSC 7 current-location demonstration.
+
+The sample requires the caller to provide the native path grammar and absolute path explicitly. This is intentional: current-location publication can disclose directory and host information, so the sample does not read or publish `Environment.CurrentDirectory` automatically.
+
+Examples:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /usr/local/src
+
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- windows C:\Development\Icod
+
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- unc \\server\share\project
+```
+
+An optional third argument supplies an explicit authority for POSIX or Windows-drive paths:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /srv/project example.com
+```
+
+The sample teaches the 0.5 contract:
+
+- publication occurs only because the caller explicitly invoked the semantic operation;
+- the native path is converted to a canonical `file:` URI by `Icod.Terminal`;
+- URI escaping is performed by the library rather than by the caller;
+- C0, DEL, and C1 control characters in native paths are rejected rather than percent-encoded;
+- explicit authorities are restricted to unscoped host forms; IPv6 zone identifiers and literal `%` authority text are rejected in 0.5;
+- successful completion means the complete OSC 7 frame was written, not that the terminal necessarily used the location;
+- disposal does not republish or restore location metadata.
 
 The project also targets `net8.0` and `net9.0`.
 
