@@ -31,10 +31,19 @@ await session.WriteHyperlinkAsync(
 	"package-1"
 );
 
-await using ( TerminalHyperlinkLease outer = await session.AcquireHyperlinkAsync(
+TerminalHyperlinkLease outer = await session.AcquireHyperlinkAsync(
 	"https://example.com/outer",
 	"outer"
-) ) {
+);
+Require(
+	"https://example.com/outer" == outer.Uri,
+	"The package-only OSC 8 lease exposed an unexpected canonical URI."
+);
+Require(
+	"outer" == outer.Identifier,
+	"The package-only OSC 8 lease exposed an unexpected identifier."
+);
+await using ( outer ) {
 	await session.WriteTextAsync( "A" );
 	await using ( TerminalHyperlinkLease inner = await session.AcquireHyperlinkAsync(
 		"https://example.com/inner",
@@ -44,15 +53,6 @@ await using ( TerminalHyperlinkLease outer = await session.AcquireHyperlinkAsync
 	}
 	await session.WriteTextAsync( "C" );
 }
-
-Require(
-	"https://example.com/outer" == outer.Uri,
-	"The package-only OSC 8 lease exposed an unexpected canonical URI."
-);
-Require(
-	"outer" == outer.Identifier,
-	"The package-only OSC 8 lease exposed an unexpected identifier."
-);
 
 byte[] expected = Convert.FromHexString(
 	"1B5D383B69643D7061636B6167652D313B68747470733A2F2F6578616D706C652E636F6D2F61253246623F713D3123706172741B5C"
