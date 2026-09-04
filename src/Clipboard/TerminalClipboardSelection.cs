@@ -13,6 +13,9 @@ public enum TerminalClipboardSelection {
 	/// <summary>The secondary selection.</summary>
 	Secondary,
 
-	/// <summary>The terminal's select selection.</summary>
+	/// <summary>
+	/// The terminal's SELECT target, which terminal policy may resolve to the primary
+	/// selection or ordinary clipboard.
+	/// </summary>
 	Select
 }
