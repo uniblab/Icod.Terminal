@@ -115,6 +115,7 @@ internal sealed class ClipboardTransport : ITerminalInput, ITerminalOutput {
 				if ( count <= this.writes.Count ) {
 					return;
 				}
+			}
 			await this.writeSignal.WaitAsync( cancellationToken ).ConfigureAwait( false );
 		}
 	}
