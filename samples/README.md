@@ -2,8 +2,9 @@
 
 The sample projects are repository consumers built through project references.
 The release package itself is validated separately by `tools/package-smoke`,
-`tools/package-title-smoke`, and `tools/package-location-smoke`. T51 will add
-package-only OSC 8 consumer validation before stable `0.6.0` release closure.
+`tools/package-title-smoke`, `tools/package-location-smoke`, and
+`tools/package-hyperlink-smoke`. The OSC 8 package smoke consumes only the
+freshly produced NuGet package and runs on `net8.0`, `net9.0`, and `net10.0`.
 
 ## Icod.Terminal.Sample
 
