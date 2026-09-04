@@ -1,7 +1,8 @@
 # Icod.Terminal Samples
 
 The sample projects are repository consumers built through project references.
-The release package itself is validated separately by `tools/package-smoke`.
+The release package itself is validated separately by `tools/package-smoke` and
+`tools/package-title-smoke`.
 
 ## Icod.Terminal.Sample
 
@@ -15,6 +16,36 @@ Run it with a selected target framework, for example:
 ```text
 dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
 ```
+
+## Icod.Terminal.Title.Sample
+
+`Icod.Terminal.Title.Sample` is the focused 0.4 OSC title demonstration.
+
+It emits the three semantic public title operations in sequence:
+
+```csharp
+await session.SetTitleAsync( "Icod.Terminal — OSC 0" );
+await session.SetIconNameAsync( "Icod.Terminal icon" );
+await session.SetWindowTitleAsync( "Icod.Terminal — OSC 2" );
+```
+
+The sample deliberately teaches the 0.4 ownership boundary rather than implying
+stronger behavior than the protocol provides:
+
+- successful completion means the complete OSC frame was written to the session
+  output; it does not prove that the terminal emulator applied the title;
+- the previous terminal title is not queried;
+- session disposal therefore does **not** restore the previous title;
+- callers should use the semantic operations rather than synthesizing raw OSC
+  0/1/2 frames themselves.
+
+Run it in a real interactive terminal where title changes are visible:
+
+```text
+dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
+```
+
+The project also targets `net8.0` and `net9.0`.
 
 ## Icod.Terminal.RichInput.Sample
 
