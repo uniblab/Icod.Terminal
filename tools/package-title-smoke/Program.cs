@@ -1,4 +1,5 @@
 using Icod.Terminal;
+using Icod.TermInfo;
 
 static void Require(
 	bool condition,
@@ -21,7 +22,7 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	new TerminalSessionOptions {
 		ConfigureOutput = false,
 		ObserveLifecycleEvents = false,
-		TerminalOverride = Icod.TermInfo.TerminalProfiles.Dumb
+		TerminalOverride = TerminalProfiles.Dumb
 	}
 );
 
