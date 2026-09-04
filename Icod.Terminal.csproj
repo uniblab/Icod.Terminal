@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.0-alpha.2</Version>
+		<Version>0.6.0-alpha.3</Version>
 		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.0-alpha.2</PackageVersion>
+		<PackageVersion>0.6.0-alpha.3</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.0-alpha.2 completes T44 OSC 8 contract freeze: canonical begin/end framing, absolute pre-encoded URI validation, id-only parameter policy, conservative URI/identifier limits, strict LIFO scoped ownership, outer-state restoration, deterministic cleanup, and security/failure semantics.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.6.0-alpha.3 implements T45: deterministic terminal-I/O-free OSC 8 hyperlink URI validation with percent-escape normalization, id-only parameter encoding, conservative 2083-byte URI and 128-byte identifier bounds, and host/culture-independent security fixtures.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
