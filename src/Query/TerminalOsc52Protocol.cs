@@ -40,6 +40,32 @@ internal static class TerminalOsc52Protocol {
 		}
 	}
 
+	private static bool IsCorrelatedPrefix(
+		IReadOnlyList<byte> bytes,
+		byte expectedSelection
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+
+		int start;
+		if ( 7 <= bytes.Count
+			&& 0x1B == bytes[ 0 ]
+			&& (byte)']' == bytes[ 1 ] ) {
+			start = 2;
+		} else if ( 6 <= bytes.Count
+			&& 0x9D == bytes[ 0 ] ) {
+			start = 1;
+		} else {
+			return false;
+		}
+
+		return (byte)'5' == bytes[ start ]
+			&& (byte)'2' == bytes[ start + 1 ]
+			&& (byte)';' == bytes[ start + 2 ]
+			&& expectedSelection == bytes[ start + 3 ]
+			&& (byte)';' == bytes[ start + 4 ]
+		;
+	}
+
 	private static bool TryGetCorrelatedPayload(
 		ReadOnlySpan<byte> bytes,
 		byte expectedSelection,
@@ -87,7 +113,7 @@ internal static class TerminalOsc52Protocol {
 		return true;
 	}
 
-	private sealed class TerminalOsc52ResponseMatcher : ITerminalResponseMatcher {
+	private sealed class TerminalOsc52ResponseMatcher : ITerminalResponseMatcher, ICorrelatedTerminalResponseMatcher {
 		private readonly byte selection;
 
 		internal TerminalOsc52ResponseMatcher(
@@ -111,6 +137,16 @@ internal static class TerminalOsc52Protocol {
 					out _
 				)
 			;
+		}
+
+		public bool IsCorrelatedPrefix(
+			IReadOnlyList<byte> bytes
+		) {
+			ArgumentNullException.ThrowIfNull( bytes );
+			return TerminalOsc52Protocol.IsCorrelatedPrefix(
+				bytes,
+				this.selection
+			);
 		}
 	}
 }
