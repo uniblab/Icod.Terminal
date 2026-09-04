@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.5.0-alpha.7</Version>
+		<Version>0.5.0</Version>
 		<AssemblyVersion>0.5.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.5.0-alpha.7</PackageVersion>
+		<PackageVersion>0.5.0</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.5.0-alpha.7 completes T42 public API and documentation review for OSC 7 current-location publication, publishes the 0.5 API baseline, adds the focused Location.Sample, documents explicit privacy/disclosure and deterministic file-URI rules, and deliberately declines an automatic process-current-directory convenience API before stable release.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.5.0 adds semantic OSC 7 current-location publication through TerminalSession.PublishCurrentLocationAsync and TerminalLocationPathStyle; deterministic RFC 8089 file-URI construction for POSIX, Windows-drive, and UNC paths; strict UTF-8 percent encoding and explicit authority/privacy rules; a 16384-byte URI bound; session-owned output ordering; focused sample/documentation coverage; and package-only multi-target OSC 7 consumer validation.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
