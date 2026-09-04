@@ -8,7 +8,7 @@ public sealed partial class TerminalSession {
 	/// Explicitly requests bounded binary content from one terminal-managed clipboard or selection target.
 	/// </summary>
 	/// <param name="selection">The terminal-managed selection to query.</param>
-	/// <param name="timeout">The caller-visible response timeout.</param>
+	/// <param name="timeout">The caller-visible operation timeout, measured from transaction queueing.</param>
 	/// <param name="cancellationToken">Cancellation for the caller's wait.</param>
 	/// <returns>The exact decoded selection bytes returned by the terminal.</returns>
 	/// <remarks>
@@ -19,9 +19,18 @@ public sealed partial class TerminalSession {
 	/// </para>
 	/// <para>
 	/// The request is serialized through the session query transaction manager and
-	/// flushed before the response deadline is owned. After an emitted request times
-	/// out or the caller cancels, the transaction retains bounded late-response ownership
-	/// so a delayed reply cannot satisfy a later query or leak into ordinary input.
+	/// flushed as part of query emission. The caller-visible timeout begins when the
+	/// transaction is queued, so queueing and waiting for the control-output gate count
+	/// against the requested deadline. If the deadline expires before emission commits,
+	/// no request bytes are emitted.
+	/// </para>
+	/// <para>
+	/// After an emitted request times out or the caller cancels, the transaction retains
+	/// bounded late-response ownership so a delayed reply cannot satisfy a later query or
+	/// leak into ordinary input. A structurally correlated OSC 52 response which reaches
+	/// the complete-frame ceiling without terminating fails deterministically with
+	/// <see cref="FormatException"/> and is drained through its OSC terminator before
+	/// ordinary input decoding resumes.
 	/// </para>
 	/// <para>
 	/// A successful result means a syntactically correlated OSC 52 response was
@@ -32,7 +41,7 @@ public sealed partial class TerminalSession {
 	/// <exception cref="ArgumentOutOfRangeException">The selection or timeout is outside the supported contract.</exception>
 	/// <exception cref="InvalidOperationException">The session endpoints cannot support an active terminal query.</exception>
 	/// <exception cref="OperationCanceledException">The caller cancels the query.</exception>
-	/// <exception cref="TimeoutException">The caller-visible response deadline expires.</exception>
+	/// <exception cref="TimeoutException">The caller-visible operation deadline expires.</exception>
 	/// <exception cref="FormatException">The terminal returns a correlated but malformed or oversized OSC 52 response.</exception>
 	public async ValueTask<byte[]> ReadClipboardAsync(
 		TerminalClipboardSelection selection,
