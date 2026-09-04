@@ -134,10 +134,7 @@ public sealed class TerminalRichInputContractTests {
 			TerminalSession.MaximumBufferedInputBytes,
 			options.MaximumBufferedBytes
 		);
-		Assert.Equal(
-			TerminalSession.MaximumBufferedInputBytes,
-			options.PasteChunkBytes
-		);
+		Assert.Equal( 4096, options.PasteChunkBytes );
 		options.Validate();
 	}
 
