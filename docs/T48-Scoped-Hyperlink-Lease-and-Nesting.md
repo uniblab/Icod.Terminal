@@ -5,7 +5,7 @@
 **Tranche:** T48 — scoped hyperlink lease and nesting  
 **Development version:** `0.6.0-alpha.7`  
 **Predecessor:** T47A — foundation audit and refinement  
-**Status:** Implemented; broader compatibility/security acceptance remains T49
+**Status:** Implemented; T51A final audit adds lifecycle suspend/resume integration
 
 ---
 
@@ -75,6 +75,7 @@ That manager owns:
 - strict-LIFO release;
 - outer-state restoration;
 - retryable failed release;
+- lifecycle neutralization/re-entry;
 - final session cleanup.
 
 The T47 bounded convenience API `WriteHyperlinkAsync(...)` is also routed through
@@ -147,7 +148,7 @@ This directly closes the ownership gap identified during T47A.
 
 ## 7. Bounded `WriteHyperlinkAsync(...)` unification
 
-`WriteHyperlinkAsync(...)` now uses the same persistent manager rather than a
+`WriteHyperlinkAsync(...)` uses the same persistent manager rather than a
 standalone begin/text/end implementation.
 
 The complete bounded operation holds both the hyperlink-manager gate and the
@@ -161,6 +162,10 @@ restore/close
 
 No other session-owned semantic output can interleave inside that span.
 
+When bounded output is invoked inside an existing scoped hyperlink, the final
+transition restores the immediately preceding outer hyperlink rather than closing
+all OSC 8 state. This composition is covered by a dedicated regression test.
+
 If the bounded final restore/close fails, its synthetic lease remains in the
 manager stack. Session disposal can therefore retry a canonical final close
 instead of forgetting that terminal hyperlink state may still be active.
@@ -170,13 +175,55 @@ through the existing `AggregateException` behavior.
 
 ---
 
-## 8. Session disposal
+## 8. Managed suspend/resume lifecycle
+
+T51A extends the T48 ownership model across `TerminalSession` lifecycle handling.
+Logical leases remain owned across a caught suspension, but physical terminal
+hyperlink state is neutralized before the process is suspended.
+
+For an active stack `A/B`, suspend performs:
+
+```text
+OSC 8 close
+retain logical stack A/B
+continue restoring remaining Terminal-owned state
+```
+
+After successful terminal/session re-entry, resume performs:
+
+```text
+OSC 8 begin B
+```
+
+The innermost active lease therefore becomes effective again. Releasing `B`
+after resume restores `A`, and releasing `A` closes normally.
+
+The hyperlink manager participates as a **core** lifecycle participant. Core
+registration is ordered so higher-layer participants prepare before OSC 8 is
+neutralized, while OSC 8 is re-entered before higher-layer participants resume.
+This preserves the existing layering contract used by `Icod.DCurses`.
+
+An external resume notification without a preceding caught suspend also re-emits
+the innermost active hyperlink, because physical terminal state is treated as
+untrusted after such a notification.
+
+Failure policy:
+
+- a failed suspend close participates in existing lifecycle failure handling;
+- a failed hyperlink re-entry prevents the session from marking state valid;
+- the logical stack remains available for later final cleanup;
+- session disposal remains authoritative.
+
+---
+
+## 9. Session disposal
 
 Session cleanup closes OSC 8 state before ordinary presentation-state restoration.
 
-If one or more hyperlink scopes remain active, T48 makes one best-effort
-canonical OSC 8 close attempt. One successful close is sufficient to leave the
-terminal outside all library-owned hyperlink scopes, regardless of stack depth.
+If one or more hyperlink scopes remain active, the manager makes one best-effort
+canonical OSC 8 close attempt when physical cleanup is still required. One
+successful close is sufficient to leave the terminal outside all library-owned
+hyperlink scopes, regardless of stack depth.
 
 After session cleanup begins:
 
@@ -192,7 +239,7 @@ restored and before the final output flush/host-mode restoration completes.
 
 ---
 
-## 9. Cancellation
+## 10. Cancellation
 
 Acquisition observes caller cancellation before the begin frame is committed.
 
@@ -206,22 +253,22 @@ caller-driven truncation.
 
 ---
 
-## 10. Output and flush policy
+## 11. Output and flush policy
 
-Acquire, restore, close, and bounded hyperlink operations participate in the
-existing session-owned output gate.
+Acquire, restore, close, lifecycle neutralization/re-entry, and bounded hyperlink
+operations participate in the existing session-owned output gate.
 
-T48 does not introduce implicit flushing. Session disposal retains the existing
-final deterministic flush policy.
+T48/T51A does not introduce implicit flushing. The broader session lifecycle and
+disposal paths retain their existing explicit flush points.
 
 Direct writes through the borrowed `session.Output` service remain outside the
 hyperlink ownership guarantee, as with other session-owned semantic output.
 
 ---
 
-## 11. Test evidence
+## 12. Test evidence
 
-`TerminalSessionHyperlinkLeaseTests` adds focused coverage for:
+`TerminalSessionHyperlinkLeaseTests` covers:
 
 - single-scope begin/text/close behavior;
 - nested different targets;
@@ -234,12 +281,23 @@ hyperlink ownership guarantee, as with other session-owned semantic output.
 - failed bounded close retained for session-disposal retry;
 - cancelled acquisition with zero output.
 
+Additional T51A coverage proves:
+
+- single active scope closes before suspend and re-enters after resume;
+- nested resume restores the innermost scope;
+- inner release after resume restores the outer scope;
+- suspend with no active hyperlink emits no OSC 8 state;
+- repeated suspend/resume cycles emit one close/begin pair per cycle;
+- external resume re-emits active OSC 8 state;
+- failed re-entry leaves `TerminalSession.IsStateValid` false;
+- bounded hyperlink output inside an outer scope restores the outer scope.
+
 The existing T47/T47A tests continue to cover bounded exact bytes, URI/id
 validation, redirection, failure aggregation, and session-output serialization.
 
 ---
 
-## 12. Scope boundary
+## 13. Scope boundary
 
 T48 does not add:
 
@@ -256,9 +314,9 @@ Those remain outside the 0.6 scoped ownership tranche.
 
 ---
 
-## 13. T48 gate
+## 14. T48/T51A gate
 
-T48 is complete when the repository matrix proves:
+The scoped ownership design is accepted when the repository matrix proves:
 
 1. scoped acquisition emits validated canonical OSC 8 state;
 2. nesting is strict LIFO;
@@ -266,6 +324,9 @@ T48 is complete when the repository matrix proves:
 4. failed release remains retryable;
 5. bounded `WriteHyperlinkAsync(...)` and scoped leases share one ownership model;
 6. outstanding state is closed during session disposal;
-7. no implicit flush or raw OSC public extension surface is introduced.
+7. active logical scopes survive lifecycle suspension without leaking physical OSC 8 state;
+8. resume restores the innermost active scope before higher-layer participant re-entry;
+9. no implicit flush or raw OSC public extension surface is introduced.
 
-The next tranche is **T49 — integration, compatibility, and security acceptance**.
+T49 provides the broader integration/security acceptance, T50 freezes the public
+surface, and T51/T51A close the package and release candidate.
