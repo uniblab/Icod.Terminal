@@ -329,10 +329,6 @@ internal sealed class TerminalHyperlinkManager : ITerminalSessionLifecyclePartic
 				return;
 			}
 
-			if ( !this.suspended && !this.IsInvalidated ) {
-				return;
-			}
-
 			try {
 				using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
 					CancellationToken.None
