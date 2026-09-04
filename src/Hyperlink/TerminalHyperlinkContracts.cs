@@ -45,14 +45,25 @@ public sealed class TerminalHyperlinkLease : IAsyncDisposable {
 	/// session-owned hyperlink, or closes OSC 8 state when this is the outermost lease.
 	/// </summary>
 	/// <returns>A value task representing asynchronous release.</returns>
-	public ValueTask DisposeAsync() {
+	public async ValueTask DisposeAsync() {
+		Task? task;
 		lock ( this.sync ) {
 			if ( this.owner is null ) {
-				return ValueTask.CompletedTask;
+				return;
 			}
 
 			this.disposeTask ??= this.DisposeCoreAsync();
-			return new ValueTask( this.disposeTask );
+			task = this.disposeTask;
+		}
+
+		try {
+			await task.ConfigureAwait( false );
+		} finally {
+			lock ( this.sync ) {
+				if ( ReferenceEquals( this.disposeTask, task ) ) {
+					this.disposeTask = null;
+				}
+			}
 		}
 	}
 
@@ -72,17 +83,9 @@ public sealed class TerminalHyperlinkLease : IAsyncDisposable {
 			return;
 		}
 
-		bool released = false;
-		try {
-			await currentOwner.ReleaseAsync( this.leaseId ).ConfigureAwait( false );
-			released = true;
-		} finally {
-			lock ( this.sync ) {
-				if ( released ) {
-					this.owner = null;
-				}
-				this.disposeTask = null;
-			}
+		await currentOwner.ReleaseAsync( this.leaseId ).ConfigureAwait( false );
+		lock ( this.sync ) {
+			this.owner = null;
 		}
 	}
 }
