@@ -39,6 +39,7 @@ internal static class TerminalLocationUriEncoder {
 			path,
 			nameof( path )
 		);
+		ValidatePathCharacters( path );
 
 		string encoded = pathKind switch {
 			TerminalLocationPathKind.Posix => EncodePosixPath(
@@ -285,9 +286,10 @@ internal static class TerminalLocationUriEncoder {
 			|| authority.Contains( '/', StringComparison.Ordinal )
 			|| authority.Contains( '\\', StringComparison.Ordinal )
 			|| authority.Contains( '?', StringComparison.Ordinal )
-			|| authority.Contains( '#', StringComparison.Ordinal ) ) {
+			|| authority.Contains( '#', StringComparison.Ordinal )
+			|| authority.Contains( '%', StringComparison.Ordinal ) ) {
 			throw new ArgumentException(
-				"A terminal location authority must contain only host information.",
+				"A terminal location authority must contain only unscoped host information.",
 				nameof( authority )
 			);
 		}
@@ -301,7 +303,7 @@ internal static class TerminalLocationUriEncoder {
 			}
 
 			throw new ArgumentException(
-				"A bracketed terminal location authority must be a valid IPv6 literal.",
+				"A bracketed terminal location authority must be a valid unscoped IPv6 literal.",
 				nameof( authority )
 			);
 		}
@@ -378,6 +380,23 @@ internal static class TerminalLocationUriEncoder {
 				parameterName,
 				exception
 			);
+		}
+	}
+
+	private static void ValidatePathCharacters(
+		string path
+	) {
+		ArgumentNullException.ThrowIfNull( path );
+
+		foreach ( char character in path ) {
+			if ( '\u001f' >= character
+				|| '\u007f' == character
+				|| ( '\u0080' <= character && '\u009f' >= character ) ) {
+				throw new ArgumentException(
+					"Terminal location paths may not contain C0, DEL, or C1 control characters.",
+					nameof( path )
+				);
+			}
 		}
 	}
 
