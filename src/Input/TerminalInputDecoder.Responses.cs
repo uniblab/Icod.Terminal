@@ -83,8 +83,12 @@ internal sealed partial class TerminalInputDecoder {
 			return null;
 		}
 
+		int framingLimit = TerminalResponseFrameKind.Osc == expectation.Matcher.FrameKind
+			? TerminalOsc52PayloadCodec.MaximumFrameBytes
+			: TerminalResponseFramer.DefaultMaximumFrameBytes
+		;
 		int maximumFrameBytes = Math.Min(
-			TerminalResponseFramer.DefaultMaximumFrameBytes,
+			framingLimit,
 			this.maximumBufferedBytes
 		);
 
