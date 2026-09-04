@@ -11,7 +11,10 @@ internal sealed class TerminalHyperlinkManager {
 	private readonly List<HyperlinkEntry> stack = [];
 
 	private long nextLeaseId;
+	private bool cleanupCloseRequired;
+	private bool suspended;
 	private bool closed;
+	private int invalidated;
 
 	internal TerminalHyperlinkManager(
 		TerminalSession session
@@ -44,6 +47,24 @@ internal sealed class TerminalHyperlinkManager {
 				);
 			}
 
+			long leaseId = ++this.nextLeaseId;
+			TerminalHyperlinkLease lease = new(
+				this,
+				leaseId,
+				state.Uri,
+				state.Identifier
+			);
+			HyperlinkEntry entry = new(
+				leaseId,
+				state,
+				lease
+			);
+
+			if ( this.suspended ) {
+				this.stack.Add( entry );
+				return lease;
+			}
+
 			using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
 				cancellationToken
 			).ConfigureAwait( false );
@@ -53,20 +74,9 @@ internal sealed class TerminalHyperlinkManager {
 				CancellationToken.None
 			).ConfigureAwait( false );
 
-			long leaseId = ++this.nextLeaseId;
-			TerminalHyperlinkLease lease = new(
-				this,
-				leaseId,
-				state.Uri,
-				state.Identifier
-			);
-			this.stack.Add(
-				new HyperlinkEntry(
-					leaseId,
-					state,
-					lease
-				)
-			);
+			this.cleanupCloseRequired = true;
+			this.ClearInvalidated();
+			this.stack.Add( entry );
 			return lease;
 		} finally {
 			this.gate.Release();
@@ -89,19 +99,33 @@ internal sealed class TerminalHyperlinkManager {
 				);
 			}
 
+			if ( this.suspended ) {
+				this.stack.RemoveAt( this.stack.Count - 1 );
+				current.Lease.MarkReleasedByOwner();
+				return;
+			}
+
 			byte[] frame = 1 == this.stack.Count
 				? OscWriter.EncodeHyperlinkEndFrame()
 				: this.stack[ ^2 ].State.BeginFrame;
 
-			using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
-				CancellationToken.None
-			).ConfigureAwait( false );
-			await this.session.Output.WriteAsync(
-				frame,
-				CancellationToken.None
-			).ConfigureAwait( false );
+			try {
+				using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
+					CancellationToken.None
+				).ConfigureAwait( false );
+				await this.session.Output.WriteAsync(
+					frame,
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch {
+				this.cleanupCloseRequired = true;
+				this.MarkInvalidated();
+				throw;
+			}
 
 			this.stack.RemoveAt( this.stack.Count - 1 );
+			this.cleanupCloseRequired = 0 < this.stack.Count;
+			this.ClearInvalidated();
 			current.Lease.MarkReleasedByOwner();
 		} finally {
 			this.gate.Release();
@@ -123,13 +147,18 @@ internal sealed class TerminalHyperlinkManager {
 			uri,
 			identifier
 		);
-		byte[] textBytes = this.session.ApplicationEncoding.GetBytes( value );
+		byte[] textBytes = this.session.EncodeApplicationText( value );
 		byte[] closeFrame = OscWriter.EncodeHyperlinkEndFrame();
 		cancellationToken.ThrowIfCancellationRequested();
 
 		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
 		try {
 			this.ThrowIfClosed();
+			if ( this.suspended ) {
+				throw new InvalidOperationException(
+					"Bounded OSC 8 hyperlink output cannot be emitted while terminal session state is suspended."
+				);
+			}
 			if ( long.MaxValue == this.nextLeaseId ) {
 				throw new InvalidOperationException(
 					"The terminal hyperlink lease identifier space has been exhausted."
@@ -145,6 +174,9 @@ internal sealed class TerminalHyperlinkManager {
 				state.BeginFrame,
 				CancellationToken.None
 			).ConfigureAwait( false );
+
+			this.cleanupCloseRequired = true;
+			this.ClearInvalidated();
 
 			long leaseId = ++this.nextLeaseId;
 			TerminalHyperlinkLease lease = new(
@@ -180,8 +212,12 @@ internal sealed class TerminalHyperlinkManager {
 					CancellationToken.None
 				).ConfigureAwait( false );
 				this.stack.RemoveAt( this.stack.Count - 1 );
+				this.cleanupCloseRequired = 0 < this.stack.Count;
+				this.ClearInvalidated();
 				lease.MarkReleasedByOwner();
 			} catch ( Exception exception ) {
+				this.cleanupCloseRequired = true;
+				this.MarkInvalidated();
 				releaseFailure = exception;
 			}
 
@@ -203,6 +239,106 @@ internal sealed class TerminalHyperlinkManager {
 		}
 	}
 
+	internal void Invalidate() {
+		this.MarkInvalidated();
+	}
+
+	internal async ValueTask SuspendAsync() {
+		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
+		try {
+			if ( this.closed ) {
+				return;
+			}
+			if ( this.suspended
+				&& !this.IsInvalidated
+				&& !this.cleanupCloseRequired ) {
+				return;
+			}
+
+			if ( 0 == this.stack.Count && !this.cleanupCloseRequired ) {
+				this.suspended = true;
+				this.ClearInvalidated();
+				return;
+			}
+
+			try {
+				using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
+					CancellationToken.None
+				).ConfigureAwait( false );
+				await this.session.Output.WriteAsync(
+					OscWriter.EncodeHyperlinkEndFrame(),
+					CancellationToken.None
+				).ConfigureAwait( false );
+				this.cleanupCloseRequired = false;
+				this.suspended = true;
+				this.ClearInvalidated();
+			} catch {
+				this.cleanupCloseRequired = true;
+				this.suspended = true;
+				this.MarkInvalidated();
+				throw;
+			}
+		} finally {
+			this.gate.Release();
+		}
+	}
+
+	internal async ValueTask ReenterAsync() {
+		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
+		try {
+			if ( this.closed ) {
+				return;
+			}
+
+			if ( 0 == this.stack.Count ) {
+				if ( this.cleanupCloseRequired ) {
+					try {
+						using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
+							CancellationToken.None
+						).ConfigureAwait( false );
+						await this.session.Output.WriteAsync(
+							OscWriter.EncodeHyperlinkEndFrame(),
+							CancellationToken.None
+						).ConfigureAwait( false );
+						this.cleanupCloseRequired = false;
+					} catch {
+						this.suspended = true;
+						this.MarkInvalidated();
+						throw;
+					}
+				}
+
+				this.suspended = false;
+				this.ClearInvalidated();
+				return;
+			}
+
+			if ( !this.suspended && !this.IsInvalidated ) {
+				return;
+			}
+
+			try {
+				using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
+					CancellationToken.None
+				).ConfigureAwait( false );
+				await this.session.Output.WriteAsync(
+					this.stack[ ^1 ].State.BeginFrame,
+					CancellationToken.None
+				).ConfigureAwait( false );
+				this.cleanupCloseRequired = true;
+				this.suspended = false;
+				this.ClearInvalidated();
+			} catch {
+				this.cleanupCloseRequired = true;
+				this.suspended = true;
+				this.MarkInvalidated();
+				throw;
+			}
+		} finally {
+			this.gate.Release();
+		}
+	}
+
 	internal async ValueTask CloseAsync() {
 		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
 		try {
@@ -211,7 +347,9 @@ internal sealed class TerminalHyperlinkManager {
 			}
 
 			Exception? exception = null;
-			if ( 0 < this.stack.Count ) {
+			bool shouldClose = this.cleanupCloseRequired
+				|| ( !this.suspended && 0 < this.stack.Count );
+			if ( shouldClose ) {
 				try {
 					using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
 						CancellationToken.None
@@ -220,12 +358,17 @@ internal sealed class TerminalHyperlinkManager {
 						OscWriter.EncodeHyperlinkEndFrame(),
 						CancellationToken.None
 					).ConfigureAwait( false );
+					this.cleanupCloseRequired = false;
+					this.ClearInvalidated();
 				} catch ( Exception failure ) {
+					this.cleanupCloseRequired = true;
+					this.MarkInvalidated();
 					exception = failure;
 				}
 			}
 
 			this.closed = true;
+			this.suspended = true;
 			foreach ( HyperlinkEntry entry in this.stack ) {
 				entry.Lease.MarkReleasedByOwner();
 			}
@@ -236,6 +379,12 @@ internal sealed class TerminalHyperlinkManager {
 			}
 		} finally {
 			this.gate.Release();
+		}
+	}
+
+	private bool IsInvalidated {
+		get {
+			return 0 != Volatile.Read( ref this.invalidated );
 		}
 	}
 
@@ -251,6 +400,14 @@ internal sealed class TerminalHyperlinkManager {
 		if ( this.closed ) {
 			throw new ObjectDisposedException( nameof( TerminalSession ) );
 		}
+	}
+
+	private void MarkInvalidated() {
+		Volatile.Write( ref this.invalidated, 1 );
+	}
+
+	private void ClearInvalidated() {
+		Volatile.Write( ref this.invalidated, 0 );
 	}
 
 	private static HyperlinkState CreateState(
