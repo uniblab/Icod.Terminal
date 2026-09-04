@@ -7,7 +7,7 @@ using Icod.Timing;
 /// <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
-	private const int InputBufferLimit = TerminalOsc52PayloadCodec.MaximumFrameBytes;
+	private const int InputBufferLimit = 98_304;
 
 	private static readonly TimeSpan DefaultEscapeDelay =
 		TimeSpan.FromMilliseconds( 100 );
@@ -26,8 +26,8 @@ public sealed partial class TerminalSession {
 	/// Gets the maximum number of undecoded bytes retained by the input decoder.
 	/// </summary>
 	/// <remarks>
-	/// The 0.7 ceiling accommodates one complete bounded OSC 52 response while
-	/// preserving the decoder's existing bounded-buffer invariant.
+	/// The 0.7 ceiling accommodates one complete bounded OSC 52 response with
+	/// deliberate transport-buffer headroom while preserving the decoder's bounded-buffer invariant.
 	/// </remarks>
 	public static int MaximumBufferedInputBytes {
 		get {
@@ -260,7 +260,6 @@ public sealed partial class TerminalSession {
 			if ( ReferenceEquals( this.pendingInputLifecycleEvent, lifecycleTask ) ) {
 				this.pendingInputLifecycleEvent = null;
 			}
-		}
 	}
 	private async ValueTask<bool> EnterEventReadGateAsync(
 		TimeSpan? timeout,
