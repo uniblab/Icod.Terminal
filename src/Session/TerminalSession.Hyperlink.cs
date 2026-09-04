@@ -4,7 +4,13 @@ namespace Icod.Terminal;
 /// Provides semantic OSC 8 hyperlink output for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
-	private readonly TerminalHyperlinkManager hyperlinkManager;
+	private TerminalHyperlinkManager? hyperlinkManager;
+
+	private TerminalHyperlinkManager HyperlinkManager {
+		get {
+			return this.hyperlinkManager ??= new TerminalHyperlinkManager( this );
+		}
+	}
 
 	/// <summary>
 	/// Acquires one session-owned OSC 8 hyperlink scope.
@@ -28,7 +34,7 @@ public sealed partial class TerminalSession {
 		ArgumentNullException.ThrowIfNull( uri );
 		cancellationToken.ThrowIfCancellationRequested();
 
-		return this.hyperlinkManager.AcquireAsync(
+		return this.HyperlinkManager.AcquireAsync(
 			uri,
 			identifier,
 			cancellationToken
@@ -65,7 +71,7 @@ public sealed partial class TerminalSession {
 		ArgumentNullException.ThrowIfNull( uri );
 		cancellationToken.ThrowIfCancellationRequested();
 
-		return this.hyperlinkManager.WriteBoundedAsync(
+		return this.HyperlinkManager.WriteBoundedAsync(
 			value,
 			uri,
 			identifier,
@@ -74,6 +80,10 @@ public sealed partial class TerminalSession {
 	}
 
 	private async ValueTask<Exception?> CloseHyperlinkStateAsync() {
+		if ( this.hyperlinkManager is null ) {
+			return null;
+		}
+
 		try {
 			await this.hyperlinkManager.CloseAsync().ConfigureAwait( false );
 			return null;
