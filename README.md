@@ -6,9 +6,9 @@
 
 ## Status
 
-`0.4.0` is the current stable release line. The `0.5.0` development line adds a deliberately narrow OSC 7 current-location publication surface on top of the safe outbound OSC framing established in 0.4.
+`0.5.0` is the current stable release line. It retains the 0.1 live-session foundation, 0.2 rich-input contract, 0.3 active-query foundation, and 0.4 semantic OSC title operations while adding a deliberately narrow OSC 7 current-location publication surface and deterministic `file:` URI policy.
 
-The current 0.5 API adds:
+The stable 0.5 API adds:
 
 ```csharp
 await session.PublishCurrentLocationAsync(
@@ -18,6 +18,8 @@ await session.PublishCurrentLocationAsync(
 ```
 
 Callers explicitly choose POSIX, Windows-drive, or Windows-UNC path grammar. The library converts the supplied native path into a deterministic RFC 8089-style `file:` URI, percent-encodes path data from strict UTF-8, and emits one canonical OSC 7 frame. No location is published automatically when a session opens, when process current directory changes, or when the session is disposed.
+
+Native paths containing C0, DEL, or C1 control characters are rejected before URI construction. Explicit host authorities are intentionally narrow in 0.5: ASCII DNS names, IPv4 literals, and bracketed unscoped IPv6 literals are supported, while literal `%` authority text and IPv6 zone identifiers are rejected.
 
 The 0.4 semantic title API remains:
 
@@ -52,10 +54,10 @@ watch / slabtop / top
 
 ## Installation
 
-The stable 0.4 release installs as:
+The stable 0.5 release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.4.0
+dotnet add package Icod.Terminal --version 0.5.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on
@@ -106,9 +108,11 @@ await session.PublishCurrentLocationAsync(
 
 The library emits only `file:` URIs for OSC 7. Local paths use canonical forms such as `file:///usr/src` and `file:///C:/src`; UNC paths map to authority form such as `file://server/share/dir`. Path text is treated as native path data, not pre-escaped URI text: for example, a literal filename component `%20` becomes `%2520`.
 
-Only RFC 3986 unreserved ASCII bytes remain literal inside path segments; other bytes are percent-encoded from strict UTF-8 using uppercase hexadecimal. The encoded URI payload is bounded to 16384 bytes.
+Only RFC 3986 unreserved ASCII bytes remain literal inside path segments; other bytes are percent-encoded from strict UTF-8 using uppercase hexadecimal. The encoded URI payload is bounded to 16384 bytes. C0, DEL, and C1 control characters in the native path are rejected before URI construction rather than percent-encoded.
 
 Publication is explicit and privacy-sensitive. `Icod.Terminal` does not automatically publish `Environment.CurrentDirectory`, derive host names from the environment, monitor directory changes, or republish a location during disposal. An optional authority supplied by the caller is therefore an intentional disclosure choice. UNC paths derive their authority from the UNC server component.
+
+Explicit authorities support ASCII DNS names, IPv4 literals, and bracketed unscoped IPv6 literals. Userinfo, ports, path/query/fragment data, internationalized host names, literal `%` authority text, and scoped IPv6 zone identifiers are rejected in 0.5.
 
 The operation uses the same session-owned output-ordering boundary as ordinary text, title operations, active queries, presentation transitions, and rich-input protocol transitions. It does not flush implicitly. Successful completion means the complete OSC 7 frame was written; it does not prove that the terminal recognized, retained, or used the location.
 
@@ -331,7 +335,8 @@ including Debug package validation.
 
 The `0.5.0` milestone is documented in
 [`Icod.Terminal-0.5.0-Development-Roadmap.md`](Icod.Terminal-0.5.0-Development-Roadmap.md),
-with completed development records in T37–T42 and stable package/release closure planned for T43.
+with completed development records in T37–T43 and final release closure in
+[`docs/T43-0.5.0-Package-Consumer-and-Release-Closure.md`](docs/T43-0.5.0-Package-Consumer-and-Release-Closure.md).
 
 The protocol-closure sequence is recorded in
 [`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
