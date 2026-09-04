@@ -9,17 +9,19 @@ using Xunit;
 /// </summary>
 public sealed class TerminalOsc52PayloadCodecTests {
 	[Theory]
-	[InlineData( TerminalOsc52Selection.Clipboard, (byte)'c' )]
-	[InlineData( TerminalOsc52Selection.Primary, (byte)'p' )]
-	[InlineData( TerminalOsc52Selection.Secondary, (byte)'q' )]
-	[InlineData( TerminalOsc52Selection.Select, (byte)'s' )]
+	[InlineData( 0, (byte)'c' )]
+	[InlineData( 1, (byte)'p' )]
+	[InlineData( 2, (byte)'q' )]
+	[InlineData( 3, (byte)'s' )]
 	public void SelectionMappingIsExact(
-		TerminalOsc52Selection selection,
+		int selectionValue,
 		byte expected
 	) {
 		Assert.Equal(
 			expected,
-			TerminalOsc52SelectionEncoder.Encode( selection )
+			TerminalOsc52SelectionEncoder.Encode(
+				(TerminalOsc52Selection)selectionValue
+			)
 		);
 	}
 
