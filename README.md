@@ -6,14 +6,27 @@
 
 ## Status
 
-`0.3.0` is the current stable release line. It retains the 0.1 live-session
-foundation and 0.2 rich-input contract while adding bounded, expectation-driven
-active terminal queries over the same session-owned input path.
+`0.4.0` is the current stable release line. It retains the 0.1 live-session
+foundation, 0.2 rich-input contract, and 0.3 active-query foundation while
+adding a deliberately narrow, injection-safe OSC title surface and the first
+reusable outbound OSC framing contract.
 
-The stable 0.3 API includes typed Primary and Secondary Device Attributes,
-Device Status Report, Cursor Position Report, DECRQSS status-string queries, and
-XTGETTCAP live capability observations. Session opening remains passive: active
-interrogation occurs only when a caller explicitly invokes a query method.
+The stable 0.4 API adds semantic OSC title operations:
+
+```csharp
+await session.SetTitleAsync( "both" );
+await session.SetIconNameAsync( "icon" );
+await session.SetWindowTitleAsync( "window" );
+```
+
+These map respectively to OSC 0, OSC 1, and OSC 2. The public API does not expose
+raw OSC selector numbers or a generic escape-sequence writer.
+
+Title payloads use strict UTF-8, reject C0/DEL/C1 controls and malformed UTF-16,
+and are bounded to 4096 encoded bytes. Title operations are emission-oriented:
+a successful call means the complete frame was written to the session output; it
+does not claim that the terminal applied the title or that `Icod.Terminal` owns
+the terminal emulator's title state.
 
 The first functional milestone remains intact: `watch`, `slabtop`, and `top` operate through `Icod.DCurses` over the shared `Icod.Terminal` / `Icod.TermInfo` stack.
 
@@ -32,16 +45,16 @@ Icod.DCurses
 watch / slabtop / top
 ```
 
-`Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, and reversible presentation-state mechanisms. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy. A future `Icod.Pty` package remains an adjacent concern rather than a prerequisite.
+`Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, reversible presentation-state mechanisms, active terminal-query routing, and semantic terminal-output operations. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy. A future `Icod.Pty` package remains an adjacent concern rather than a prerequisite.
 
 `Icod.Timing` supplies the monotonic elapsed-time and cancellable-delay primitives used by Terminal's relative event timeouts and Escape-sequence ambiguity windows.
 
 ## Installation
 
-The stable 0.3 release installs as:
+The stable 0.4 release installs as:
 
 ```text
-dotnet add package Icod.Terminal --version 0.3.0
+dotnet add package Icod.Terminal --version 0.4.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on
@@ -61,6 +74,8 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
     }
 );
 
+await session.SetWindowTitleAsync( "my terminal app" );
+
 TerminalEvent terminalEvent = await session.ReadEventAsync(
     TimeSpan.FromSeconds( 1 )
 );
@@ -69,6 +84,37 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 The session borrows process-standard endpoints, owns only the terminal state transitions it applies, and restores its captured baseline during `DisposeAsync()`.
 
 Applications which genuinely need complete native mode observation, serialization, or custom endpoint/control backends may use the lower-level public contracts; ordinary interactive applications should prefer `TerminalSession`.
+
+## 0.4 OSC title operations
+
+`0.4` adds three semantic title methods:
+
+```csharp
+await session.SetTitleAsync( "both" );       // OSC 0
+await session.SetIconNameAsync( "icon" );    // OSC 1
+await session.SetWindowTitleAsync( "window" ); // OSC 2
+```
+
+The wire contract uses the 7-bit `ESC ]` OSC introducer and `ESC \\` String
+Terminator. The title text is validated before any output byte is written.
+
+The title methods participate in the session-owned output-ordering boundary with
+`WriteTextAsync(...)`, active query emission, presentation transitions, and
+rich-input protocol transitions. They do not flush implicitly; session disposal
+performs the final deterministic flush.
+
+A session which already knows that its output endpoint is redirected rejects the
+semantic title operation. A terminal endpoint whose OSC support is merely
+unknown may still receive the request; static `TERM` or terminfo identity is not
+fabricated into a proof of support.
+
+Direct calls to the borrowed `session.Output` service remain caller-synchronized.
+The pre-existing low-level terminal-string/capability APIs remain available for
+advanced terminal-protocol consumers, but applications should prefer the
+semantic title methods rather than synthesizing OSC title frames manually.
+
+The reviewed 0.4 API delta is recorded in
+[`docs/Public-API-Baseline-0.4.md`](docs/Public-API-Baseline-0.4.md).
 
 ## 0.2 rich input
 
@@ -159,7 +205,7 @@ The codebase uses C# 13 and supports the terminal-control implementations provid
 
 ## Active terminal queries
 
-`0.3` adds explicit typed terminal interrogation to `TerminalSession`. Opening a
+`0.3` added explicit typed terminal interrogation to `TerminalSession`. Opening a
 session does not send DA, DSR, CPR, DECRQSS, XTGETTCAP, or any other probe.
 
 A caller chooses which requests to issue and supplies the caller-visible timeout:
@@ -248,6 +294,14 @@ Running either script without an argument performs the complete sequence,
 including Debug package validation.
 
 ## Development roadmap
+
+The `0.4.0` milestone is documented in
+[`Icod.Terminal-0.4.0-Development-Roadmap.md`](Icod.Terminal-0.4.0-Development-Roadmap.md).
+The 0.4 protocol-closure sequence is recorded in
+[`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
+The completed 0.4 tranches are recorded in T29–T36, with final package/release
+closure in
+[`docs/T36-0.4.0-Package-Consumer-and-Release-Closure.md`](docs/T36-0.4.0-Package-Consumer-and-Release-Closure.md).
 
 The completed `0.3.0` milestone is documented in
 [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).

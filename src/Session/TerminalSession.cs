@@ -284,7 +284,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// <param name="value">The application text.</param>
 	/// <param name="cancellationToken">Cancellation for the write operation.</param>
 	/// <returns>A value task representing the write operation.</returns>
-	public ValueTask WriteTextAsync(
+	public async ValueTask WriteTextAsync(
 		string value,
 		CancellationToken cancellationToken = default
 	) {
@@ -292,10 +292,13 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		cancellationToken.ThrowIfCancellationRequested();
 
 		byte[] bytes = this.applicationEncoding.GetBytes( value );
-		return this.Output.WriteAsync(
+		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		await this.Output.WriteAsync(
 			bytes,
 			cancellationToken
-		);
+		).ConfigureAwait( false );
 	}
 
 	/// <summary>
@@ -319,19 +322,9 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 			);
 		}
 
-		TermInfoOutputOptions outputOptions = new(
-			this.Terminal,
-			this.outputBaudRate,
-			this.Options.CapabilityPaddingMode,
-			this.Options.CapabilityDelayProvider
-		);
-
-		return TermInfoOutput.TPutsAsync(
+		return this.WriteTerminalStringCoreAsync(
 			value,
 			affectedLines,
-			this.terminalOutputStream,
-			Encoding.Latin1,
-			outputOptions,
 			cancellationToken
 		);
 	}
@@ -383,6 +376,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// </summary>
 	/// <returns>A value task representing asynchronous restoration.</returns>
 	public async ValueTask DisposeAsync() {
+		this.StopAcceptingSessionOutput();
 		List<Exception> exceptions = [];
 		try {
 			await this.CloseQueryTransactionsAsync().ConfigureAwait( false );
