@@ -1,5 +1,7 @@
 namespace Icod.Terminal;
 
+using System.Runtime.ExceptionServices;
+
 /// <summary>
 /// Owns the strict-LIFO stack of session-managed OSC 8 hyperlink state.
 /// </summary>
@@ -25,21 +27,11 @@ internal sealed class TerminalHyperlinkManager {
 	) {
 		ArgumentNullException.ThrowIfNull( uri );
 		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateOutputEndpoint();
 
-		if ( !this.session.OutputObservation.IsTerminal ) {
-			throw new InvalidOperationException(
-				"OSC 8 hyperlink operations require an interactive terminal output endpoint."
-			);
-		}
-
-		string encodedUri = TerminalHyperlinkEncoder.EncodeUri( uri );
-		string encodedParameters = TerminalHyperlinkEncoder.EncodeParameters( identifier );
-		string? canonicalIdentifier = 0 == encodedParameters.Length
-			? null
-			: encodedParameters[ 3.. ];
-		byte[] beginFrame = OscWriter.EncodeHyperlinkBeginFrame(
-			encodedUri,
-			canonicalIdentifier
+		HyperlinkState state = CreateState(
+			uri,
+			identifier
 		);
 		cancellationToken.ThrowIfCancellationRequested();
 
@@ -57,7 +49,7 @@ internal sealed class TerminalHyperlinkManager {
 			).ConfigureAwait( false );
 			cancellationToken.ThrowIfCancellationRequested();
 			await this.session.Output.WriteAsync(
-				beginFrame,
+				state.BeginFrame,
 				CancellationToken.None
 			).ConfigureAwait( false );
 
@@ -65,14 +57,13 @@ internal sealed class TerminalHyperlinkManager {
 			TerminalHyperlinkLease lease = new(
 				this,
 				leaseId,
-				encodedUri,
-				canonicalIdentifier
+				state.Uri,
+				state.Identifier
 			);
 			this.stack.Add(
 				new HyperlinkEntry(
 					leaseId,
-					encodedUri,
-					canonicalIdentifier,
+					state,
 					lease
 				)
 			);
@@ -87,10 +78,7 @@ internal sealed class TerminalHyperlinkManager {
 	) {
 		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
 		try {
-			if ( this.closed ) {
-				return;
-			}
-			if ( 0 == this.stack.Count ) {
+			if ( this.closed || 0 == this.stack.Count ) {
 				return;
 			}
 
@@ -103,10 +91,7 @@ internal sealed class TerminalHyperlinkManager {
 
 			byte[] frame = 1 == this.stack.Count
 				? OscWriter.EncodeHyperlinkEndFrame()
-				: OscWriter.EncodeHyperlinkBeginFrame(
-					this.stack[ ^2 ].Uri,
-					this.stack[ ^2 ].Identifier
-				);
+				: this.stack[ ^2 ].State.BeginFrame;
 
 			using IDisposable outputLease = await this.session.AcquireControlOutputAsync(
 				CancellationToken.None
@@ -132,50 +117,89 @@ internal sealed class TerminalHyperlinkManager {
 		ArgumentNullException.ThrowIfNull( value );
 		ArgumentNullException.ThrowIfNull( uri );
 		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateOutputEndpoint();
 
-		byte[] textBytes = this.session.ApplicationEncoding.GetBytes( value );
-		TerminalHyperlinkLease lease = await this.AcquireAsync(
+		HyperlinkState state = CreateState(
 			uri,
-			identifier,
-			cancellationToken
-		).ConfigureAwait( false );
+			identifier
+		);
+		byte[] textBytes = this.session.ApplicationEncoding.GetBytes( value );
+		byte[] closeFrame = OscWriter.EncodeHyperlinkEndFrame();
+		cancellationToken.ThrowIfCancellationRequested();
 
-		Exception? applicationFailure = null;
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
 		try {
+			this.ThrowIfClosed();
+			if ( long.MaxValue == this.nextLeaseId ) {
+				throw new InvalidOperationException(
+					"The terminal hyperlink lease identifier space has been exhausted."
+				);
+			}
+
 			using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
-				CancellationToken.None
+				cancellationToken
 			).ConfigureAwait( false );
+			cancellationToken.ThrowIfCancellationRequested();
+
 			await this.session.Output.WriteAsync(
-				textBytes,
+				state.BeginFrame,
 				CancellationToken.None
 			).ConfigureAwait( false );
-		} catch ( Exception exception ) {
-			applicationFailure = exception;
-		}
 
-		Exception? releaseFailure = null;
-		try {
-			await lease.DisposeAsync().ConfigureAwait( false );
-		} catch ( Exception exception ) {
-			releaseFailure = exception;
-		}
-
-		if ( applicationFailure is not null && releaseFailure is not null ) {
-			throw new AggregateException(
-				"Hyperlink text output and OSC 8 cleanup both failed.",
-				applicationFailure,
-				releaseFailure
+			long leaseId = ++this.nextLeaseId;
+			TerminalHyperlinkLease lease = new(
+				this,
+				leaseId,
+				state.Uri,
+				state.Identifier
 			);
-		}
-		if ( applicationFailure is not null ) {
-			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(
-				applicationFailure
-			).Throw();
-		}
-		if ( releaseFailure is not null ) {
-			System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(
-				releaseFailure
-			).Throw();
+			HyperlinkEntry entry = new(
+				leaseId,
+				state,
+				lease
+			);
+			this.stack.Add( entry );
+
+			Exception? applicationFailure = null;
+			try {
+				await this.session.Output.WriteAsync(
+					textBytes,
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception exception ) {
+				applicationFailure = exception;
+			}
+
+			Exception? releaseFailure = null;
+			try {
+				byte[] releaseFrame = 1 == this.stack.Count
+					? closeFrame
+					: this.stack[ ^2 ].State.BeginFrame;
+				await this.session.Output.WriteAsync(
+					releaseFrame,
+					CancellationToken.None
+				).ConfigureAwait( false );
+				this.stack.RemoveAt( this.stack.Count - 1 );
+				lease.MarkReleasedByOwner();
+			} catch ( Exception exception ) {
+				releaseFailure = exception;
+			}
+
+			if ( applicationFailure is not null && releaseFailure is not null ) {
+				throw new AggregateException(
+					"Hyperlink text output and OSC 8 cleanup both failed.",
+					applicationFailure,
+					releaseFailure
+				);
+			}
+			if ( applicationFailure is not null ) {
+				ExceptionDispatchInfo.Capture( applicationFailure ).Throw();
+			}
+			if ( releaseFailure is not null ) {
+				ExceptionDispatchInfo.Capture( releaseFailure ).Throw();
+			}
+		} finally {
+			this.gate.Release();
 		}
 	}
 
@@ -215,16 +239,50 @@ internal sealed class TerminalHyperlinkManager {
 		}
 	}
 
+	private void ValidateOutputEndpoint() {
+		if ( !this.session.OutputObservation.IsTerminal ) {
+			throw new InvalidOperationException(
+				"OSC 8 hyperlink operations require an interactive terminal output endpoint."
+			);
+		}
+	}
+
 	private void ThrowIfClosed() {
 		if ( this.closed ) {
 			throw new ObjectDisposedException( nameof( TerminalSession ) );
 		}
 	}
 
-	private sealed record HyperlinkEntry(
-		long LeaseId,
+	private static HyperlinkState CreateState(
+		string uri,
+		string? identifier
+	) {
+		ArgumentNullException.ThrowIfNull( uri );
+
+		string encodedUri = TerminalHyperlinkEncoder.EncodeUri( uri );
+		string encodedParameters = TerminalHyperlinkEncoder.EncodeParameters( identifier );
+		string? canonicalIdentifier = 0 == encodedParameters.Length
+			? null
+			: encodedParameters[ 3.. ];
+		return new HyperlinkState(
+			encodedUri,
+			canonicalIdentifier,
+			OscWriter.EncodeHyperlinkBeginFrame(
+				encodedUri,
+				canonicalIdentifier
+			)
+		);
+	}
+
+	private sealed record HyperlinkState(
 		string Uri,
 		string? Identifier,
+		byte[] BeginFrame
+	);
+
+	private sealed record HyperlinkEntry(
+		long LeaseId,
+		HyperlinkState State,
 		TerminalHyperlinkLease Lease
 	);
 }
