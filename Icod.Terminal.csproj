@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.4.0-alpha.6</Version>
+		<Version>0.4.0-alpha.7</Version>
 		<AssemblyVersion>0.4.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.4.0-alpha.6</PackageVersion>
+		<PackageVersion>0.4.0-alpha.7</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.4.0-alpha.6 completes T34 session integration for OSC title output: title frames and ordinary WriteTextAsync output share the session control-output gate, title operations serialize against query/presentation/input-protocol control traffic, new session-owned output is rejected once disposal begins, and title emission retains explicit no-implicit-flush semantics.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.4.0-alpha.7 completes T35 public API and documentation review for OSC title operations. The semantic SetTitleAsync, SetIconNameAsync, and SetWindowTitleAsync surface is frozen for 0.4, raw OSC selector APIs remain intentionally absent, emission/support/restoration semantics are documented, and the session-owned output-ordering boundary is explicit.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
