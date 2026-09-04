@@ -63,6 +63,22 @@ function Assert-HyperlinkApiDocumentation {
     Assert-PackageXmlDocumentation -PackagePath $PackagePath -RequiredMembers $requiredMembers -ContractName '0.6 OSC 8 API'
 }
 
+function Assert-ClipboardApiDocumentation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath
+    )
+
+    $requiredMembers = @(
+        'T:Icod.Terminal.TerminalClipboardSelection',
+        'M:Icod.Terminal.TerminalSession.WriteClipboardAsync(Icod.Terminal.TerminalClipboardSelection,System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)',
+        'M:Icod.Terminal.TerminalSession.WriteClipboardAsync(Icod.Terminal.TerminalClipboardSelection,System.String,System.Threading.CancellationToken)',
+        'M:Icod.Terminal.TerminalSession.ReadClipboardAsync(Icod.Terminal.TerminalClipboardSelection,System.TimeSpan,System.Threading.CancellationToken)'
+    )
+
+    Assert-PackageXmlDocumentation -PackagePath $PackagePath -RequiredMembers $requiredMembers -ContractName '0.7 OSC 52 API'
+}
+
 function Assert-PackageXmlDocumentation {
     param(
         [Parameter(Mandatory = $true)]
@@ -171,6 +187,10 @@ try {
     Write-Host '=== Verify 0.6 OSC 8 XML documentation ==='
     Assert-HyperlinkApiDocumentation -PackagePath $package.FullName
 
+    Write-Host ''
+    Write-Host '=== Verify 0.7 OSC 52 XML documentation ==='
+    Assert-ClipboardApiDocumentation -PackagePath $package.FullName
+
     $smokeRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("Icod.Terminal-package-smoke-{0}" -f [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
     try {
@@ -178,10 +198,12 @@ try {
         $titleSmokeRoot = Join-Path $smokeRoot 'title'
         $locationSmokeRoot = Join-Path $smokeRoot 'location'
         $hyperlinkSmokeRoot = Join-Path $smokeRoot 'hyperlink'
+        $clipboardSmokeRoot = Join-Path $smokeRoot 'clipboard'
         New-Item -ItemType Directory -Path $generalSmokeRoot -Force | Out-Null
         New-Item -ItemType Directory -Path $titleSmokeRoot -Force | Out-Null
         New-Item -ItemType Directory -Path $locationSmokeRoot -Force | Out-Null
         New-Item -ItemType Directory -Path $hyperlinkSmokeRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path $clipboardSmokeRoot -Force | Out-Null
 
         Copy-Item -LiteralPath 'tools/package-smoke/Icod.Terminal.PackageSmoke.csproj' -Destination (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj')
         Copy-Item -LiteralPath 'tools/package-smoke/Program.cs' -Destination (Join-Path $generalSmokeRoot 'Program.cs')
@@ -191,6 +213,8 @@ try {
         Copy-Item -LiteralPath 'tools/package-location-smoke/Program.cs' -Destination (Join-Path $locationSmokeRoot 'Program.cs')
         Copy-Item -LiteralPath 'tools/package-hyperlink-smoke/Icod.Terminal.PackageHyperlinkSmoke.csproj' -Destination (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj')
         Copy-Item -LiteralPath 'tools/package-hyperlink-smoke/Program.cs' -Destination (Join-Path $hyperlinkSmokeRoot 'Program.cs')
+        Copy-Item -LiteralPath 'tools/package-clipboard-smoke/Icod.Terminal.PackageClipboardSmoke.csproj' -Destination (Join-Path $clipboardSmokeRoot 'Icod.Terminal.PackageClipboardSmoke.csproj')
+        Copy-Item -LiteralPath 'tools/package-clipboard-smoke/Program.cs' -Destination (Join-Path $clipboardSmokeRoot 'Program.cs')
 
         $nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
         $artifactUri = [System.Security.SecurityElement]::Escape($ArtifactDirectory)
@@ -215,7 +239,8 @@ try {
                 (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj'),
                 (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj'),
                 (Join-Path $locationSmokeRoot 'Icod.Terminal.PackageLocationSmoke.csproj'),
-                (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj')
+                (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj'),
+                (Join-Path $clipboardSmokeRoot 'Icod.Terminal.PackageClipboardSmoke.csproj')
             )) {
                 Invoke-DotNet -Arguments @(
                     'restore', $project,
@@ -264,6 +289,17 @@ try {
                 Invoke-DotNet -Arguments @(
                     'run',
                     '--project', (Join-Path $hyperlinkSmokeRoot 'Icod.Terminal.PackageHyperlinkSmoke.csproj'),
+                    '-c', $Configuration,
+                    '-f', $framework,
+                    '--no-restore',
+                    "-p:IcodTerminalPackageVersion=$ExpectedVersion"
+                )
+
+                Write-Host ''
+                Write-Host "=== Fresh package OSC 52 clipboard consumer: $framework ==="
+                Invoke-DotNet -Arguments @(
+                    'run',
+                    '--project', (Join-Path $clipboardSmokeRoot 'Icod.Terminal.PackageClipboardSmoke.csproj'),
                     '-c', $Configuration,
                     '-f', $framework,
                     '--no-restore',
