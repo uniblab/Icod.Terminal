@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Query.Sample"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Title.Sample", "samples\Icod.Terminal.Title.Sample\Icod.Terminal.Title.Sample.csproj", "{C7A9705A-7AEB-4183-9AA7-D5DD4E8A3B23}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Location.Sample", "samples\Icod.Terminal.Location.Sample\Icod.Terminal.Location.Sample.csproj", "{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,12 @@ Global
 		{C7A9705A-7AEB-4183-9AA7-D5DD4E8A3B23}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{C7A9705A-7AEB-4183-9AA7-D5DD4E8A3B23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7A9705A-7AEB-4183-9AA7-D5DD4E8A3B23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,5 +79,6 @@ Global
 		{F8794364-A924-4B16-B27C-F54B6B1AE865} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{B7E69C85-326A-4EA8-8E11-774FEAE6D9D3} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{C7A9705A-7AEB-4183-9AA7-D5DD4E8A3B23} = {4C994810-850E-4753-82E5-4BD346EF574C}
+		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB} = {4C994810-850E-4753-82E5-4BD346EF574C}
 	EndGlobalSection
 EndGlobal
