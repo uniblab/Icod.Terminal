@@ -13,16 +13,16 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.0-alpha.4</Version>
+		<Version>0.6.0-alpha.5</Version>
 		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.0-alpha.4</PackageVersion>
+		<PackageVersion>0.6.0-alpha.5</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.0-alpha.4 implements T46: canonical OSC 8 begin/end frame encoding over the T45 URI/id validators, complete-frame single-write transport, cancellation-before-commit behavior, no implicit flush, output-failure propagation, and byte-exact injected-output fixtures.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.6.0-alpha.5 implements T47: public TerminalSession.WriteHyperlinkAsync for bounded semantic OSC 8 begin/text/end output, session-owned serialization, application-encoding integration, redirected-output rejection, cancellation-before-begin, deterministic cleanup on text failure, and failure aggregation when both text and cleanup fail.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
