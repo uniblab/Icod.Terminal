@@ -7,7 +7,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** observable terminal palette and dynamic-color control  
-**Status:** Roadmap established; T130 contract/reference freeze next
+**Status:** T130 contract/reference freeze complete; T131 color codec/parser foundation next
 
 ---
 
@@ -35,23 +35,18 @@ Observation is a first-class release requirement. `Icod.DCurses` is expected eve
 
 ### 2.1 Indexed palette
 
-OSC 4 addresses indexed terminal palette entries. 0.13 SHALL support the protocol's useful typed operations without exposing arbitrary OSC construction.
+OSC 4 addresses indexed terminal palette entries. T130 freezes the palette-index domain as `byte` / `0..255`, with typed mutation and observation and OSC 104 reset semantics kept distinct from exact restoration.
 
-The contract freeze SHALL decide:
+T132 will decide the final public bulk-operation shape while preserving:
 
-- the public palette-index type/domain;
-- single-entry and protocol-supported multi-entry mutation;
-- single-entry and protocol-supported multi-entry observation;
-- single/multiple/all reset behavior under OSC 104;
-- response correlation and ordering for multi-entry queries;
-- behavior when only a subset of requested entries replies;
-- finite query deadlines and caller cancellation.
+- complete validation before commit;
+- finite 256-entry bounds;
+- deterministic duplicate-index policy;
+- per-index observation truth where terminals return repeated query replies independently.
 
 ### 2.2 Dynamic colors
 
-0.13 SHALL expose typed semantic identities for the selected dynamic colors rather than making callers provide OSC numbers.
-
-The planned semantic set is:
+T130 freezes seven semantic dynamic-color identities:
 
 ```text
 DefaultForeground
@@ -63,7 +58,19 @@ HighlightBackground
 HighlightForeground
 ```
 
-The exact public type/name is a T130 decision.
+Their mappings are:
+
+```text
+DefaultForeground   10 / 110
+DefaultBackground   11 / 111
+TextCursor          12 / 112
+MouseForeground     13 / 113
+MouseBackground     14 / 114
+HighlightBackground 17 / 117
+HighlightForeground 19 / 119
+```
+
+The exact final public enum name may receive minor polish before T134, but the semantic set is frozen.
 
 ### 2.3 Deliberately excluded Tektronix colors
 
@@ -73,7 +80,7 @@ The xterm dynamic-color range also contains Tektronix-specific entries:
 - OSC 16 / 116;
 - OSC 18 / 118.
 
-These SHALL remain outside 0.13 unless T130 finds a compelling cross-terminal reason to promote them. `Icod.Terminal` does not otherwise provide a Tektronix terminal model, and including these merely to make the numeric range contiguous would weaken the semantic API.
+These are outside 0.13. `Icod.Terminal` does not otherwise provide a Tektronix terminal model, and including them merely to make the numeric range contiguous would weaken the semantic API.
 
 ---
 
@@ -89,51 +96,46 @@ Color observation SHALL use the existing session-owned active-query transaction 
 - automatic support probing;
 - a cache presented as though it were authoritative terminal state.
 
-An observation result SHALL represent what the terminal explicitly reported during that query transaction. Timeout SHALL remain distinct from an explicit unsupported/negative result when the protocol provides such a distinction.
+A successful observation represents a matching, explicitly reported terminal color for that transaction. Timeout remains `TimeoutException`, caller cancellation remains cancellation, and malformed matching replies fail as format errors rather than becoming permanent unsupported state.
 
 The public observation model SHALL preserve enough precision that a later `Icod.DCurses` consumer does not have to reverse-engineer raw terminal strings or lose terminal-reported color information.
 
 ---
 
-## 4. Terminal color value model
+## 4. Terminal color value model — frozen by T130
 
-T130 SHALL freeze a semantic numeric color representation before OSC encoders are implemented.
-
-The leading candidate is an immutable RGB value with 16-bit channels:
+The canonical semantic representation is an immutable RGB value with 16-bit channels:
 
 ```csharp
-public readonly struct TerminalColor {
+public readonly struct TerminalColor : IEquatable<TerminalColor> {
 	public ushort Red { get; }
 	public ushort Green { get; }
 	public ushort Blue { get; }
 }
 ```
 
-This is a design direction, not yet a frozen public API.
+Frozen semantics:
 
-The contract review SHALL determine:
+- 16-bit canonical RGB storage;
+- value equality over normalized channels;
+- no alpha channel;
+- no color-space tag;
+- no retained original wire spelling;
+- no `System.Drawing` dependency;
+- ergonomic 8-bit construction should expand bytes by multiplying by 257;
+- canonical outbound grammar is exactly `rgb:rrrr/gggg/bbbb` with lowercase four-digit components;
+- inbound parser accepts strict equal-width 1–4 digit `rgb:` forms and `#RGB`, `#RRGGBB`, `#RRRGGGBBB`, `#RRRRGGGGBBBB`;
+- `rgb:` shorthand scales components to the full 16-bit range;
+- hash shorthand supplies the most-significant bits and zero-fills the remaining low bits;
+- named colors, `rgbi:`, CSS syntax, alpha forms, mixed-width `rgb:` components, whitespace, and trailing junk are rejected.
 
-- whether 16-bit channels are the canonical storage precision;
-- equality and value semantics;
-- convenient 8-bit construction/conversion without making 8-bit the observation ceiling;
-- canonical outbound color encoding;
-- normalization of lower-precision terminal replies into the public value;
-- whether original reply precision needs to be represented separately;
-- strict parsing rules for supported `rgb:` and `#...` response grammars;
-- rejection of malformed, overflowing, truncated, or unsupported color specifications;
-- whether named X11 colors belong anywhere in the public API (default expectation: no).
-
-No public API SHALL require callers to construct an XParseColor string.
+Full record: `docs/T130-Terminal-Color-Contract-and-Reference-Freeze.md`.
 
 ---
 
-## 5. Portability tiers
-
-The release may contain the full requested family while documenting unequal portability.
+## 5. Portability tiers — frozen by T130
 
 ### 5.1 Common/core tier
-
-The expected common tier is:
 
 ```text
 OSC 4 / 104
@@ -144,8 +146,6 @@ OSC 12 / 112
 
 ### 5.2 Extended xterm dynamic-color tier
 
-The expected extended tier is:
-
 ```text
 OSC 13 / 113
 OSC 14 / 114
@@ -153,9 +153,9 @@ OSC 17 / 117
 OSC 19 / 119
 ```
 
-T130 SHALL validate the exact interoperability posture against primary terminal documentation before these labels are frozen.
+The tier distinction is documentation/interoperability guidance only. The public API SHALL not infer support from operating system, `TERM`, emulator identity, environment variables, or success of another color family.
 
-The public API SHALL not lie about support. Successful output proves protocol emission, not terminal recognition or visual application. A successful explicit query proves only that a conforming reply was received and parsed for that transaction.
+Successful output proves emission, not terminal recognition. Successful observation proves a matching conforming reply for that transaction only.
 
 ---
 
@@ -182,59 +182,55 @@ The public API SHALL not lie about support. Successful output proves protocol em
 
 ## 7. Restoration and scoped ownership
 
-Because palette and dynamic colors are observable on terminals that implement the corresponding queries, 0.13 SHOULD investigate truthful query-before-mutate scoped restoration.
+Because palette and dynamic colors are observable on terminals that implement the corresponding queries, 0.13 will investigate truthful query-before-mutate scoped restoration.
 
-This is not yet promised as a public API.
+T130 freezes the minimum truthfulness requirements: a lease may claim exact restoration only after successful baseline observation, must restore by explicitly writing that observed color rather than issuing a reset, and must retain/handle cleanup ownership truthfully across failure and lifecycle edges.
 
-T136 SHALL decide separately for indexed palette and dynamic colors whether a lease can guarantee a truthful restoration baseline. The design SHALL account for:
-
-- observation failure before mutation;
-- nested ownership;
-- out-of-order disposal where identity-aware ownership is appropriate;
-- external terminal changes while a lease is active;
-- failed mutation after successful baseline observation;
-- failed restoration and retryable cleanup ownership;
-- suspend/resume;
-- `TerminalSession.InvalidateState()`;
-- session disposal;
-- the difference between restoring an observed color and issuing a terminal-policy reset.
+T136 SHALL decide separately for indexed palette and dynamic colors whether those requirements can be satisfied by a useful public lease model.
 
 The library SHALL NOT claim exact restoration when it did not successfully observe the state being restored.
 
 ---
 
-## 8. Proposed tranche sequence
+## 8. Tranche sequence
 
 ### T130 — color contract and reference freeze
 
-Freeze before implementation:
+**Status:** Complete.  
+**Development version:** `0.13.0-alpha.1`.
 
-- authoritative protocol references;
-- OSC 4/104 grammar and query/reset semantics;
-- selected OSC 10–19 dynamic-color semantics and reset mappings;
-- explicit exclusion of OSC 15/16/18 and 115/116/118;
-- `TerminalColor` representation and precision;
-- palette-index model;
-- dynamic-color semantic identity model;
-- canonical outbound color grammar;
-- accepted inbound color grammars and normalization;
-- query response correlation;
-- portability tiers;
-- timeout/cancellation/error semantics;
-- support posture;
-- restoration feasibility and information required by future leases;
-- future `Icod.DCurses` observation-consumer requirements.
+Frozen:
 
-Expected development version: `0.13.0-alpha.1`.
+- authoritative xterm protocol posture plus cross-terminal interoperability guidance;
+- OSC 4/104 grammar and semantics;
+- selected OSC 10–19 dynamic-color identities and 110–119 resets;
+- exclusion of OSC 15/16/18 and 115/116/118;
+- 16-bit `TerminalColor` semantics;
+- `byte` palette indices;
+- seven semantic dynamic-color identities;
+- canonical outbound `rgb:rrrr/gggg/bbbb`;
+- strict inbound `rgb:` and selected hash grammars;
+- distinct `rgb:` scaling and hash most-significant-bit normalization;
+- existing active-query transaction/routing reuse;
+- timeout/cancellation/format-error semantics;
+- common versus extended portability tiers;
+- no automatic support probing or authoritative color cache;
+- truthful reset/restoration separation;
+- future `Icod.DCurses` typed observation requirements.
+
+Record: `docs/T130-Terminal-Color-Contract-and-Reference-Freeze.md`.
 
 ### T131 — color codec and parser foundation
 
+**Status:** Next.
+
 Implement and test:
 
-- semantic color value type;
+- semantic `TerminalColor` value type;
 - canonical outbound encoding;
 - strict inbound parser;
-- precision normalization;
+- `rgb:` full-range normalization;
+- hash-form most-significant-bit normalization;
 - malformed/overflow/truncation rejection;
 - exhaustive/boundary tests independent of session logic.
 
@@ -246,7 +242,7 @@ Implement:
 
 - typed palette set;
 - typed palette query;
-- protocol-supported multi-entry operations where they remain deterministic and bounded;
+- protocol-supported multi-entry operations where deterministic and bounded;
 - active-query routing/correlation;
 - byte-exact and response-parser integration tests.
 
@@ -257,7 +253,7 @@ Expected development version: `0.13.0-alpha.3`.
 Implement:
 
 - reset one entry;
-- reset multiple entries where supported by the frozen grammar;
+- reset multiple entries;
 - reset entire palette;
 - ordering/cancellation/failure tests;
 - explicit distinction between reset-to-terminal-policy and restoration of an observed prior value.
@@ -283,8 +279,6 @@ Implement mutation, observation, and reset for:
 - OSC 17 / 117 — highlight background;
 - OSC 19 / 119 — highlight foreground.
 
-Document these as an extended interoperability tier if T130 confirms that posture.
-
 Expected development version: `0.13.0-alpha.6`.
 
 ### T136 — truthful scoped color ownership
@@ -297,22 +291,9 @@ Expected development version: `0.13.0-alpha.7`.
 
 ### T137 — lifecycle, composition, and downstream acceptance
 
-Prove composition with:
+Prove composition with ordinary text, presentation state, rich-input protocol leases, cursor style, synchronized output, progress, pointer shape, OSC 7, OSC 8, OSC 52, OSC 133, and active terminal queries.
 
-- ordinary text;
-- presentation state;
-- rich-input protocol leases;
-- cursor style;
-- synchronized output;
-- progress;
-- pointer shape;
-- OSC 7 location;
-- OSC 8 hyperlinks;
-- OSC 52 clipboard;
-- OSC 133 semantic prompt markers;
-- active terminal queries.
-
-Add real downstream `Icod.DCurses` acceptance for the observation API. The acceptance SHALL demonstrate that `Icod.DCurses` can consume typed observed color values without parsing raw OSC or bypassing `TerminalSession`.
+Add real downstream `Icod.DCurses` acceptance for the observation API. The acceptance SHALL demonstrate typed observed-color consumption without raw OSC parsing or bypassing `TerminalSession`.
 
 Expected development version: `0.13.0-alpha.8`.
 
@@ -345,6 +326,7 @@ Expected stable version: `0.13.0`.
 - all selected dynamic-color identities;
 - color channel boundaries and representative intermediate values;
 - every accepted reply precision/grammar frozen by T130;
+- explicit tests proving `rgb:` and hash shorthand normalize differently;
 - malformed, incomplete, overlong, and unexpected responses;
 - query timeout;
 - cancellation before query/output commitment;
@@ -389,4 +371,4 @@ PackageVersion:  0.13.0-alpha.1
 AssemblyVersion: 0.13.0.0
 ```
 
-**Next:** T130 — authoritative color protocol/reference freeze and public semantic contract design.
+**Next:** T131 — implement the frozen `TerminalColor` value and color codec/parser foundation.
