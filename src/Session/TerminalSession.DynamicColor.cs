@@ -17,6 +17,8 @@ public sealed partial class TerminalSession {
 	/// Successful completion proves complete emission only and does not update an authoritative
 	/// terminal-color cache. OSC 10–12 are the common/core tier; OSC 13/14/17/19 are the
 	/// extended xterm tier and may have lower interoperability across terminal implementations.
+	/// This is an unscoped mutation: the session does not capture, own, or automatically
+	/// restore the prior value during invalidation, suspend/resume, or disposal.
 	/// </remarks>
 	public ValueTask SetDynamicColorAsync(
 		TerminalDynamicColor kind,
