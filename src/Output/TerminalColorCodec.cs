@@ -6,8 +6,8 @@ using System.Text;
 /// Encodes and parses the frozen T130 terminal-color specification grammar.
 /// </summary>
 internal static class TerminalColorCodec {
-	internal const int CanonicalSpecificationLength = 19;
-	internal const int MaximumSpecificationLength = 19;
+	internal const int CanonicalSpecificationLength = 18;
+	internal const int MaximumSpecificationLength = 18;
 
 	internal static byte[] Encode(
 		TerminalColor color
