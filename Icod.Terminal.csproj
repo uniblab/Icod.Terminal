@@ -19,7 +19,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.11.0 adds semantic OSC 22 terminal mouse-pointer shape control with 30 CSS-compatible shapes, explicit set/reset and bounded Kitty-compatible queries, identity-aware scoped ownership, lifecycle/failure recovery, synchronized-output composition, and downstream Icod.DCurses refresh acceptance.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.12.0 adds semantic OSC 133 prompt/command-region markers with typed prompt, command-input, command-output, explicit byte exit-status completion, and abort operations; deterministic session serialization; truthful stateless lifecycle/failure behavior; broad composition coverage; and downstream Icod.DCurses refresh acceptance.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -30,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;tui</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;osc133;semantic-prompt;shell-integration;prompt;command-region;tui</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
