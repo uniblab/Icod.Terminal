@@ -435,15 +435,21 @@ public sealed class TerminalSessionSemanticPromptTests {
 				endpoint,
 				TerminalEndpoint.StandardOutput
 			) || this.outputIsTerminal;
+			TerminalPlatformKind? platform = isTerminal
+				? TerminalPlatformKind.PosixTermios
+				: null;
+			TerminalControlCapabilities capabilities = isTerminal
+				? TerminalControlCapabilities.Attachment
+					| TerminalControlCapabilities.ModeRead
+					| TerminalControlCapabilities.ModeWrite
+				: TerminalControlCapabilities.None;
 
 			return TerminalControlResult<TerminalEndpointObservation>.Available(
 				new TerminalEndpointObservation(
 					isTerminal,
 					null,
-					TerminalPlatformKind.PosixTermios,
-					TerminalControlCapabilities.Attachment
-						| TerminalControlCapabilities.ModeRead
-						| TerminalControlCapabilities.ModeWrite
+					platform,
+					capabilities
 				)
 			);
 		}
