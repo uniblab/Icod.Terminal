@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.12.0`  
-**Development version:** `0.12.0-alpha.6`  
+**Development version:** `0.12.0-alpha.7`  
 **Predecessor:** `0.11.0` — OSC 22 terminal mouse-pointer shape control  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** semantic OSC 133 shell-integration / semantic-prompt markers  
-**Status:** T125 lifecycle/failure/order hardening implemented; validation pending
+**Status:** T126 composition and downstream acceptance implemented; validation pending
 
 ---
 
@@ -223,7 +223,7 @@ Record: `docs/T124-Public-OSC-133-Semantic-Prompt-API.md`.
 
 ## 10. T125 — lifecycle, failure, and ordering hardening
 
-**Status:** Implemented; validation pending.  
+**Status:** Complete.  
 **Development version:** `0.12.0-alpha.6`.
 
 Hardening proves the final public surface across lifecycle and failure edges:
@@ -249,7 +249,10 @@ Record: `docs/T125-OSC-133-Lifecycle-Failure-and-Ordering-Hardening.md`.
 
 ## 11. T126 — composition and downstream acceptance
 
-Prove composition with:
+**Status:** Implemented; validation pending.  
+**Development version:** `0.12.0-alpha.7`.
+
+T126 proves OSC 133 composition with:
 
 - ordinary text writes;
 - OSC 0 title;
@@ -264,9 +267,11 @@ Prove composition with:
 - synchronized output;
 - active terminal queries.
 
-Add downstream `Icod.DCurses` acceptance showing a higher-level TUI can annotate command/prompt regions without constructing OSC bytes or disrupting refresh output.
+The composition suite asserts deterministic byte ordering through the existing session output domain and confirms OSC 133 does not acquire, release, restore, or reinterpret another subsystem's state.
 
-Expected development version: `0.12.0-alpha.7`.
+T126 also adds a downstream `Icod.DCurses` acceptance executable which places real `CursesSession.RefreshAsync()` output between public OSC 133 semantic markers without constructing raw OSC bytes. The acceptance is run on `net8.0`, `net9.0`, and `net10.0` and is wired into both pull-request validation and full distribution verification.
+
+Record: `docs/T126-OSC-133-Composition-and-DCurses-Acceptance.md`.
 
 ---
 
@@ -311,10 +316,10 @@ Expected stable version: `0.12.0`.
 
 ```text
 VersionPrefix:   0.12.0
-VersionSuffix:   alpha.6
-Version:         0.12.0-alpha.6
-PackageVersion:  0.12.0-alpha.6
+VersionSuffix:   alpha.7
+Version:         0.12.0-alpha.7
+PackageVersion:  0.12.0-alpha.7
 AssemblyVersion: 0.12.0.0
 ```
 
-**T125 lifecycle/failure/order hardening is implemented. Exact-head validation is required before T126 begins.**
+**T126 composition and downstream acceptance is implemented. Exact-head validation is required before T127 begins.**
