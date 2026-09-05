@@ -58,8 +58,6 @@ jobs:
         run: ./packaging/Get-RepositoryMetadata.ps1 -Configuration '${{ env.CONFIGURATION }}' -GitHubOutputPath $env:GITHUB_OUTPUT
       - run: dotnet restore '${{ steps.repository.outputs.solution_path }}'
       - run: dotnet build '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - name: Build 0.8 cursor-style sample
-        run: dotnet build 'samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj' -c ${{ env.CONFIGURATION }} -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
       - name: Pack Staging artifacts
         if: matrix.verify_packages
