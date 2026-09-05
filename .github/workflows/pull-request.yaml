@@ -65,6 +65,9 @@ jobs:
       - name: Verify DCurses terminal-progress acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesProgress.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses pointer-shape acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesPointerShape.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - name: Pack Staging artifacts
         if: matrix.verify_packages
         run: dotnet pack '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts -p:ContinuousIntegrationBuild=true
