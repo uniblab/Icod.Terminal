@@ -92,7 +92,7 @@ Unknown numeric values must not be silently coerced to a known style.
 
 ## 4. Public API principles
 
-The final public surface remains subject to T66/T67 review, but the release should converge on semantic operations such as:
+The final public surface remains subject to T86/T87 review, but the release should converge on semantic operations such as:
 
 - a closed `TerminalCursorStyle` value type or enum;
 - an explicit asynchronous cursor-style setter;
@@ -177,7 +177,9 @@ If reliable previous-state restoration cannot be guaranteed, 0.8 SHALL prefer a 
 
 ## 9. Development tranche sequence
 
-### T60 — cursor-style contract and reference freeze
+The 0.8 release uses tranche numbers `T80` through `T87`, so the tranche family follows the release line directly. The planned 0.9 release can therefore use `T90` onward.
+
+### T80 — cursor-style contract and reference freeze
 
 Deliverables:
 
@@ -191,9 +193,9 @@ Deliverables:
 - restoration truthfulness rules;
 - explicit non-goals.
 
-**Gate T60:** no production public cursor-style implementation until numeric mapping, query interpretation, extension policy, and restoration semantics are frozen.
+**Gate T80:** no production public cursor-style implementation until numeric mapping, query interpretation, extension policy, and restoration semantics are frozen.
 
-### T61 — reusable CSI intermediate-byte output primitive
+### T81 — reusable CSI intermediate-byte output primitive
 
 Deliverables:
 
@@ -204,9 +206,9 @@ Deliverables:
 - byte-exact tests for every frozen parameter value;
 - no generic public CSI escape hatch.
 
-**Gate T61:** DECSCUSR can be emitted structurally without ad hoc public or session-level escape concatenation.
+**Gate T81:** DECSCUSR can be emitted structurally without ad hoc public or session-level escape concatenation.
 
-### T62 — typed cursor-style codec and DECRQSS interpretation
+### T82 — typed cursor-style codec and DECRQSS interpretation
 
 Deliverables:
 
@@ -217,9 +219,9 @@ Deliverables:
 - DEC/xterm extension policy encoded explicitly;
 - terminal-I/O-free codec tests.
 
-**Gate T62:** cursor style round-trips between semantic state and recognized protocol representation without terminal I/O.
+**Gate T82:** cursor style round-trips between semantic state and recognized protocol representation without terminal I/O.
 
-### T63 — semantic cursor-style set API
+### T83 — semantic cursor-style set API
 
 Deliverables:
 
@@ -230,9 +232,9 @@ Deliverables:
 - no implicit flush unless required by evidence;
 - interaction tests with text, OSC 0/1/2, OSC 7, OSC 8, OSC 52, and existing presentation transitions.
 
-**Gate T63:** callers can set cursor style without knowing CSI syntax or numeric parameters.
+**Gate T83:** callers can set cursor style without knowing CSI syntax or numeric parameters.
 
-### T64 — typed cursor-style query/observation API
+### T84 — typed cursor-style query/observation API
 
 Deliverables:
 
@@ -243,9 +245,9 @@ Deliverables:
 - no second reader loop;
 - deterministic correlation and late-response tests.
 
-**Gate T64:** callers can explicitly observe cursor style when the terminal reports it, without parsing DECRQSS strings themselves.
+**Gate T84:** callers can explicitly observe cursor style when the terminal reports it, without parsing DECRQSS strings themselves.
 
-### T65 — restoration and scoped-state decision
+### T85 — restoration and scoped-state decision
 
 Deliverables:
 
@@ -255,9 +257,9 @@ Deliverables:
 - nested acquisition policy if a lease is introduced;
 - disposal, failure, suspend/resume, and retry tests appropriate to the chosen model.
 
-**Gate T65:** no public restoration API claims more knowledge than the terminal actually supplied.
+**Gate T85:** no public restoration API claims more knowledge than the terminal actually supplied.
 
-### T66 — integration, compatibility, and regression acceptance
+### T86 — integration, compatibility, and regression acceptance
 
 Deliverables:
 
@@ -269,9 +271,9 @@ Deliverables:
 - lifecycle regression coverage;
 - Windows/Linux/macOS CI acceptance.
 
-**Gate T66:** cursor-style support composes with all existing session behavior without weakening prior ownership or query guarantees.
+**Gate T86:** cursor-style support composes with all existing session behavior without weakening prior ownership or query guarantees.
 
-### T67 — public API, docs, sample, package, and stable closure
+### T87 — public API, docs, sample, package, and stable closure
 
 Deliverables:
 
@@ -284,7 +286,7 @@ Deliverables:
 - stable `0.8.0` metadata;
 - final PR/main/tag release gates.
 
-**Gate T67:** the reviewed public cursor-style surface and actual NuGet package are proven from fresh consumers on all supported TFMs.
+**Gate T87:** the reviewed public cursor-style surface and actual NuGet package are proven from fresh consumers on all supported TFMs.
 
 ---
 
@@ -312,7 +314,7 @@ Synchronized output remains the planned `0.9.0` closure milestone.
 
 `0.8.0` is ready for stable publication only when:
 
-1. the T60 cursor-style contract is frozen and implementation matches it;
+1. the T80 cursor-style contract is frozen and implementation matches it;
 2. CSI intermediate-byte output is structurally implemented and tested;
 3. every public cursor-style value has deterministic wire semantics;
 4. typed query interpretation reuses the existing single-reader DECRQSS architecture;
@@ -339,4 +341,4 @@ PackageVersion:0.8.0-alpha.1
 AssemblyVersion:0.8.0.0
 ```
 
-The first implementation tranche is **T60 — cursor-style contract and reference freeze**.
+The first implementation tranche is **T80 — cursor-style contract and reference freeze**.
