@@ -2,7 +2,7 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.8.0`  
-**Development version:** `0.8.0-alpha.5`  
+**Development version:** `0.8.0-alpha.7`  
 **Predecessor:** `0.7.0` — OSC 52 clipboard/selection operations  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
@@ -78,7 +78,7 @@ Bar styles are retained as xterm-compatible extensions without fabricating endpo
 
 ## 4. Public API direction
 
-The 0.8 public delta is converging on:
+The reviewed 0.8 public delta now consists of concepts equivalent to:
 
 ```csharp
 public enum TerminalCursorStyle {
@@ -90,6 +90,15 @@ public enum TerminalCursorStyle {
     SteadyBar
 }
 
+public sealed class TerminalCursorStyleObservation {
+    public bool IsSupported { get; }
+    public TerminalCursorStyle? Style { get; }
+}
+
+public sealed class TerminalCursorStyleLease : IAsyncDisposable {
+    public TerminalCursorStyle Style { get; }
+}
+
 public ValueTask SetCursorStyleAsync(
     TerminalCursorStyle style,
     CancellationToken cancellationToken = default
@@ -99,9 +108,15 @@ public ValueTask<TerminalCursorStyleObservation> QueryCursorStyleAsync(
     TimeSpan timeout,
     CancellationToken cancellationToken = default
 );
+
+public ValueTask<TerminalCursorStyleLease> AcquireCursorStyleAsync(
+    TerminalCursorStyle style,
+    TimeSpan timeout,
+    CancellationToken cancellationToken = default
+);
 ```
 
-A scoped lease is not yet frozen. T85 must prove truthful restoration before any lease becomes public.
+The lease was accepted in T85 only because outer acquisition observes the actual prior semantic cursor style before mutation.
 
 0.8 SHALL NOT expose a generic public CSI writer, raw cursor-style parameter, raw DECRQSS parser, or a fake `Default`/`Reset` style.
 
@@ -113,7 +128,8 @@ The release distinguishes:
 
 - **set** — emit one semantic style;
 - **observe/query** — explicitly request the current style where DECRQSS is supported;
-- **restore** — return to an actually observed previous semantic style.
+- **lease** — own a style temporarily while retaining an authoritative prior state;
+- **restore** — return to an actually observed or session-owned previous semantic style.
 
 Exact restoration is not:
 
@@ -122,13 +138,15 @@ Exact restoration is not:
 - emitting xterm `7`;
 - guessing from `TERM` or emulator identity.
 
-If T85 accepts a lease, acquisition must obtain an authoritative prior semantic style before mutation.
+The outermost lease queries the real terminal style before mutation. Nested leases use the known session-owned top style and therefore do not issue redundant queries. Releases are strict LIFO. Unscoped mutation is rejected while a cursor-style lease stack is active.
+
+Suspend restores the originally observed baseline; resume reapplies the active logical top style. Releasing while physically suspended is logical-only and emits no cursor-style bytes.
 
 ---
 
 ## 6. Output and query invariants
 
-Cursor-style writes and queries must preserve the existing session contracts:
+Cursor-style writes and queries preserve the existing session contracts:
 
 - validate arguments before protocol output;
 - reject known redirected/incompatible endpoints where required;
@@ -138,7 +156,9 @@ Cursor-style writes and queries must preserve the existing session contracts:
 - do not caller-truncate committed frames;
 - do not implicitly flush ordinary setter output;
 - query requests reuse the established DECRQSS flush/deadline path;
-- malformed correlated positive state remains distinct from timeout and unsupported state.
+- malformed correlated positive state remains distinct from timeout and unsupported state;
+- cleanup/restoration is not caller-cancellable;
+- support is never inferred merely from successful output emission.
 
 Successful setter completion proves emission only.
 
@@ -184,7 +204,7 @@ Implemented:
 
 Implemented:
 
-- public `TerminalCursorStyle` candidate enum;
+- public `TerminalCursorStyle` enum;
 - deterministic semantic-to-DECSCUSR parameter mapping;
 - strict DECRQSS status-string parser;
 - omitted/`0`/`1` normalization;
@@ -196,7 +216,7 @@ Implemented:
 
 **Validation:** PR workflow #250 green across Windows, Linux, and macOS.
 
-### T83 — semantic cursor-style set API — implemented; validation pending
+### T83 — semantic cursor-style set API — complete
 
 Implemented:
 
@@ -211,7 +231,9 @@ Implemented:
 
 **Implementation record:** [`docs/T83-Semantic-Cursor-Style-Set-API.md`](docs/T83-Semantic-Cursor-Style-Set-API.md)
 
-### T84 — typed cursor-style query/observation API — implemented; validation pending
+**Validation:** PR workflow #260 green together with T84.
+
+### T84 — typed cursor-style query/observation API — complete
 
 Implemented:
 
@@ -226,30 +248,46 @@ Implemented:
 
 **Implementation record:** [`docs/T84-Typed-Cursor-Style-Query-and-Observation.md`](docs/T84-Typed-Cursor-Style-Query-and-Observation.md)
 
-### T85 — restoration and scoped-state decision — next
+**Validation:** PR workflow #260 green together with T83.
 
-Deliverables:
+### T85 — restoration and scoped-state decision — complete
 
-- determine whether a cursor-style lease can restore truthfully;
-- if yes, define acquisition/restore ownership and nesting semantics;
-- if no, explicitly freeze 0.8 as setter/query-only;
-- prove failure-before-mutation when prior style cannot be observed;
-- define disposal and lifecycle implications.
+Accepted and implemented:
 
-**Gate T85:** no public restoration API claims more knowledge than the terminal actually supplied.
+- public `TerminalCursorStyleLease`;
+- public `AcquireCursorStyleAsync(...)`;
+- authoritative outer baseline observation before mutation;
+- no mutation when the baseline query is unsupported, malformed, timed out, or cancelled;
+- nested strict-LIFO session-owned style restoration without redundant queries;
+- unscoped setter rejection while a lease is active;
+- retryable restoration ownership after cleanup failure;
+- baseline restoration before suspend and active-top reapplication after resume;
+- logical-only release while suspended;
+- exact baseline restoration during outer release/session disposal;
+- no guessed `0`, `1`, or xterm `7` restoration.
 
-### T86 — integration, compatibility, and regression acceptance
+**Implementation record:** [`docs/T85-Cursor-Style-Restoration-and-Scoped-State.md`](docs/T85-Cursor-Style-Restoration-and-Scoped-State.md)
 
-Deliverables:
+**Validation:** PR workflow #270 green across Windows, Linux, and macOS after correction of a test-source syntax error found by the preceding validation run.
 
-- DEC/xterm compatibility matrix;
-- broader output ordering against text, OSC 0/1/2, OSC 7, OSC 8, and OSC 52;
-- query timeout/cancellation/late-response regression coverage;
-- cursor visibility independence tests;
-- lifecycle regression coverage;
-- Windows/Linux/macOS acceptance.
+### T86 — integration, compatibility, and regression acceptance — implemented; validation pending
 
-### T87 — public API, docs, sample, package, and stable closure
+Implemented acceptance coverage:
+
+- DEC/xterm compatibility matrix retained and documented;
+- cursor-style/visibility independence through real presentation leases;
+- deterministic ordering with application text, OSC 0/1/2, OSC 7, OSC 8, and OSC 52;
+- managed suspend restores the observed cursor-style baseline;
+- resume reapplies the active logical style;
+- final release restores the exact observed baseline;
+- release while suspended emits no cursor-style bytes and does not resurrect released state after resume;
+- existing T82/T84/query integration coverage remains authoritative for malformed/unknown responses, timeout, cancellation, late-response ownership, and single-reader behavior.
+
+**Implementation record:** [`docs/T86-Cursor-Style-Integration-Compatibility-and-Regression-Acceptance.md`](docs/T86-Cursor-Style-Integration-Compatibility-and-Regression-Acceptance.md)
+
+**Gate:** exact `0.8.0-alpha.7` PR head must be green across Windows, Linux, and macOS, including all target frameworks and package verification.
+
+### T87 — public API, docs, sample, package, and stable closure — next
 
 Deliverables:
 
@@ -278,7 +316,7 @@ Deliverables:
 - OS-native pointer/mouse cursor APIs;
 - terminal-emulator-specific configuration files;
 - background cursor-style probing;
-- automatic cursor-style query during session open, suspend/resume, or disposal.
+- automatic cursor-style query during session open, suspend/resume, or disposal outside an explicitly acquired cursor-style lease's already-observed state.
 
 Synchronized output remains planned for `0.9.0`.
 
@@ -293,7 +331,7 @@ Synchronized output remains planned for `0.9.0`.
 3. every public cursor-style value has deterministic wire semantics;
 4. typed query interpretation reuses the existing DECRQSS architecture;
 5. malformed and unknown positive cursor-style responses fail deterministically;
-6. any restoration API is truthful about previous-state knowledge;
+6. restoration is based on authoritative previous-state knowledge;
 7. cursor visibility behavior remains independent;
 8. Windows, Linux, and macOS validation is green;
 9. package-only consumers pass on `net8.0`, `net9.0`, and `net10.0`;
@@ -307,10 +345,10 @@ Synchronized output remains planned for `0.9.0`.
 
 ```text
 VersionPrefix:   0.8.0
-VersionSuffix:   alpha.5
-Version:         0.8.0-alpha.5
-PackageVersion:  0.8.0-alpha.5
+VersionSuffix:   alpha.7
+Version:         0.8.0-alpha.7
+PackageVersion:  0.8.0-alpha.7
 AssemblyVersion: 0.8.0.0
 ```
 
-**T80–T82 are complete and green. T83 and T84 are implemented on the current head. The next design tranche is T85.**
+**T80–T85 are complete and green. T86 is implemented on the current head and awaits its exact-head PR validation. T87 is the final development tranche after that gate is green.**
