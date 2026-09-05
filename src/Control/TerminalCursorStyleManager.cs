@@ -169,15 +169,6 @@ internal sealed class TerminalCursorStyleManager : ITerminalSessionLifecyclePart
 			}
 
 			if ( this.suspended ) {
-				if ( 1 == this.stack.Count && this.restoreBaselineRequired ) {
-					await this.EmitStyleAsync(
-						current.PreviousStyle,
-						cleanup: true,
-						CancellationToken.None
-					).ConfigureAwait( false );
-					this.restoreBaselineRequired = false;
-				}
-
 				this.stack.RemoveAt( this.stack.Count - 1 );
 				current.Lease.MarkReleasedByOwner();
 				if ( 0 == this.stack.Count && !this.restoreBaselineRequired ) {
@@ -327,13 +318,16 @@ internal sealed class TerminalCursorStyleManager : ITerminalSessionLifecyclePart
 		CancellationToken cancellationToken
 	) {
 		int parameter = TerminalCursorStyleCodec.GetParameter( style );
-		IDisposable outputLease = cleanup
-			? await this.session.AcquireControlOutputAsync(
+		IDisposable outputLease;
+		if ( cleanup ) {
+			outputLease = await this.session.AcquireControlOutputAsync(
 				CancellationToken.None
-			).ConfigureAwait( false )
-			: await this.session.AcquireSessionOutputAsync(
+			).ConfigureAwait( false );
+		} else {
+			outputLease = await this.session.AcquireSessionOutputAsync(
 				cancellationToken
 			).ConfigureAwait( false );
+		}
 
 		using ( outputLease ) {
 			await CsiWriter.WriteCursorStyleAsync(
