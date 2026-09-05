@@ -51,6 +51,11 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 					"Terminal progress ownership cannot be acquired while terminal session state is suspended."
 				);
 			}
+			if ( this.cleanupRequired ) {
+				throw new InvalidOperationException(
+					"Terminal progress cleanup remains pending from a prior failed transition."
+				);
+			}
 			if ( long.MaxValue == this.nextOwnerId ) {
 				throw new InvalidOperationException(
 					"The terminal progress owner identifier space has been exhausted."
