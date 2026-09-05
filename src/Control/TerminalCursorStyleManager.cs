@@ -79,7 +79,7 @@ internal sealed class TerminalCursorStyleManager : ITerminalSessionLifecyclePart
 		TimeSpan timeout,
 		CancellationToken cancellationToken
 	) {
-		_ = TerminalCursorStyleCodec.GetParameter( style );
+		int parameter = TerminalCursorStyleCodec.GetParameter( style );
 		ValidateTimeout( timeout );
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ValidateOutputEndpoint();
@@ -103,8 +103,9 @@ internal sealed class TerminalCursorStyleManager : ITerminalSessionLifecyclePart
 				);
 			}
 
+			bool outermost = 0 == this.stack.Count;
 			TerminalCursorStyle previousStyle;
-			if ( 0 == this.stack.Count ) {
+			if ( outermost ) {
 				TerminalCursorStyleObservation observation =
 					await this.session.QueryCursorStyleAsync(
 						timeout,
@@ -122,11 +123,54 @@ internal sealed class TerminalCursorStyleManager : ITerminalSessionLifecyclePart
 			}
 
 			cancellationToken.ThrowIfCancellationRequested();
-			await this.EmitStyleAsync(
-				style,
-				cleanup: false,
-				cancellationToken
-			).ConfigureAwait( false );
+			bool emissionAttempted = false;
+			try {
+				using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
+					cancellationToken
+				).ConfigureAwait( false );
+				cancellationToken.ThrowIfCancellationRequested();
+
+				if ( outermost ) {
+					this.observedBaselineStyle = previousStyle;
+					this.restoreBaselineRequired = true;
+				}
+
+				emissionAttempted = true;
+				await CsiWriter.WriteCursorStyleAsync(
+					this.session.Output,
+					parameter,
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception acquisitionFailure ) when ( emissionAttempted ) {
+				Exception? restorationFailure = null;
+				try {
+					await this.EmitStyleAsync(
+						previousStyle,
+						cleanup: true,
+						CancellationToken.None
+					).ConfigureAwait( false );
+					if ( outermost ) {
+						this.restoreBaselineRequired = false;
+						this.observedBaselineStyle = null;
+					}
+				} catch ( Exception failure ) {
+					restorationFailure = failure;
+					if ( outermost ) {
+						this.restoreBaselineRequired = true;
+						this.observedBaselineStyle = previousStyle;
+					}
+				}
+
+				if ( restorationFailure is not null ) {
+					throw new AggregateException(
+						"Cursor-style lease acquisition failed and restoring the known prior cursor style also failed.",
+						acquisitionFailure,
+						restorationFailure
+					);
+				}
+
+				throw;
+			}
 
 			long leaseId = ++this.nextLeaseId;
 			TerminalCursorStyleLease lease = new(
@@ -142,7 +186,7 @@ internal sealed class TerminalCursorStyleManager : ITerminalSessionLifecyclePart
 					lease
 				)
 			);
-			if ( 1 == this.stack.Count ) {
+			if ( outermost ) {
 				this.observedBaselineStyle = previousStyle;
 			}
 			this.restoreBaselineRequired = true;
