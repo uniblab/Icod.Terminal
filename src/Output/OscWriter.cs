@@ -14,7 +14,7 @@ internal enum OscTitleSelector {
 /// <summary>
 /// Builds and emits bounded, injection-safe OSC frames for supported semantic operations.
 /// </summary>
-internal static class OscWriter {
+internal static partial class OscWriter {
 	internal const int MaximumTitlePayloadByteCount = 4096;
 
 	private const byte Escape = 0x1b;

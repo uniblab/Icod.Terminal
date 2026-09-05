@@ -147,59 +147,89 @@ internal static class Program {
 	) {
 		ArgumentException.ThrowIfNullOrWhiteSpace( root );
 
-		XDocument project = XDocument.Load(
+		XDocument properties = XDocument.Load(
 			Path.Combine(
 				root,
-				"Icod.Terminal.csproj"
+				"Directory.Build.props"
 			),
 			LoadOptions.None
 		);
-		string? version = project
-			.Descendants()
-			.FirstOrDefault(
-				element => "Version" == element.Name.LocalName
-			)
-			?.Value
-			.Trim();
-		string? packageVersion = project
-			.Descendants()
-			.FirstOrDefault(
-				element => "PackageVersion" == element.Name.LocalName
-			)
-			?.Value
-			.Trim();
-		string? assemblyVersion = project
-			.Descendants()
-			.FirstOrDefault(
-				element => "AssemblyVersion" == element.Name.LocalName
-			)
-			?.Value
-			.Trim();
-
-		Require(
-			!string.IsNullOrWhiteSpace( version )
-				&& !string.IsNullOrWhiteSpace( packageVersion )
-				&& string.Equals(
-					version,
-					packageVersion,
-					StringComparison.Ordinal
-				),
-			"Version and PackageVersion must both be present and identical."
+		string? versionPrefix = GetPropertyValue(
+			properties,
+			"VersionPrefix"
+		);
+		string versionSuffix = GetPropertyValue(
+			properties,
+			"VersionSuffix"
+		) ?? string.Empty;
+		string? packageVersionExpression = GetPropertyValue(
+			properties,
+			"PackageVersion"
+		);
+		string? assemblyVersionExpression = GetPropertyValue(
+			properties,
+			"AssemblyVersion"
 		);
 
 		Require(
-			!string.IsNullOrWhiteSpace( assemblyVersion ),
-			"AssemblyVersion must be present."
+			!string.IsNullOrWhiteSpace( versionPrefix ),
+			"Directory.Build.props must define VersionPrefix."
 		);
+		Require(
+			Version.TryParse(
+				versionPrefix,
+				out Version? parsedPrefix
+			)
+				&& 3 == parsedPrefix!.Build
+				? false
+				: true,
+			""
+		);
+
+		Version parsed = Version.Parse( versionPrefix! );
+		Require(
+			0 <= parsed.Build && 0 > parsed.Revision,
+			"VersionPrefix must contain exactly major, minor, and patch components."
+		);
+		Require(
+			"$(Version)" == packageVersionExpression,
+			"PackageVersion must be derived from Version in Directory.Build.props."
+		);
+		Require(
+			"$(VersionPrefix).0" == assemblyVersionExpression,
+			"AssemblyVersion must be derived from VersionPrefix in Directory.Build.props."
+		);
+
+		string packageVersion = string.IsNullOrWhiteSpace( versionSuffix )
+			? versionPrefix!
+			: $"{versionPrefix}-{versionSuffix}"
+		;
+		string assemblyVersion = $"{versionPrefix}.0";
 		Require(
 			Version.TryParse(
 				assemblyVersion,
 				out _
 			),
-			$"AssemblyVersion '{assemblyVersion}' is not a valid assembly version."
+			$"Derived assembly version '{assemblyVersion}' is not valid."
 		);
 
-		return ( packageVersion!, assemblyVersion! );
+		return ( packageVersion, assemblyVersion );
+	}
+
+	private static string? GetPropertyValue(
+		XDocument document,
+		string name
+	) {
+		ArgumentNullException.ThrowIfNull( document );
+		ArgumentException.ThrowIfNullOrWhiteSpace( name );
+
+		return document
+			.Descendants()
+			.FirstOrDefault(
+				element => name == element.Name.LocalName
+			)
+			?.Value
+			.Trim();
 	}
 
 	private static string VerifyPrimaryPackage(

@@ -13,16 +13,13 @@
 		<RootNamespace>Icod.Terminal</RootNamespace>
 		<Configurations>Debug;Staging;Release</Configurations>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<Version>0.6.1</Version>
-		<AssemblyVersion>0.6.0.0</AssemblyVersion>
 	</PropertyGroup>
 	<PropertyGroup>
-		<PackageVersion>0.6.1</PackageVersion>
 		<PackageId>Icod.Terminal</PackageId>
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.6.1 updates the Icod.TermInfo dependency to 1.10.0 while retaining the stable 0.6 OSC 8 hyperlink, lifecycle, query-routing, package-validation, and cross-platform behavior.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.7.0 adds semantic OSC 52 clipboard and selection operations: typed clipboard/primary/secondary/select targets, bounded binary and strict UTF-8 writes, explicit byte-returning reads with caller-supplied timeout, single-reader correlated response routing, bounded late-response ownership, canonical base64/framing validation, and cross-platform security/integration acceptance.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -33,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>

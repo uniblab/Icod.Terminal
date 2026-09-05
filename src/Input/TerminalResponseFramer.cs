@@ -69,15 +69,17 @@ internal readonly struct TerminalResponseFrameParseResult {
 }
 
 /// <summary>
-/// Performs strict, bounded framing for CSI and DCS terminal responses.
+/// Performs strict, bounded framing for CSI, DCS, and OSC terminal responses.
 /// </summary>
 internal static class TerminalResponseFramer {
 	internal const int DefaultMaximumFrameBytes = 4096;
-	internal const int HardMaximumFrameBytes = 65_536;
+	internal const int HardMaximumFrameBytes = TerminalOsc52PayloadCodec.MaximumFrameBytes;
 
+	private const byte BellByte = 0x07;
 	private const byte EscapeByte = 0x1B;
 	private const byte CsiByte = 0x9B;
 	private const byte DcsByte = 0x90;
+	private const byte OscByte = 0x9D;
 	private const byte StringTerminatorByte = 0x9C;
 
 	internal static TerminalResponseFrameParseResult Parse(
@@ -102,10 +104,14 @@ internal static class TerminalResponseFramer {
 			);
 		}
 
-		return TerminalResponseFrameKind.Csi == kind
-			? ParseCsi( bytes, maximumFrameBytes )
-			: ParseDcs( bytes, maximumFrameBytes )
-		;
+		return kind switch {
+			TerminalResponseFrameKind.Csi => ParseCsi( bytes, maximumFrameBytes ),
+			TerminalResponseFrameKind.Dcs => ParseDcs( bytes, maximumFrameBytes ),
+			TerminalResponseFrameKind.Osc => ParseOsc( bytes, maximumFrameBytes ),
+			_ => throw new InvalidOperationException(
+				"The terminal response frame kind is not recognized."
+			)
+		};
 	}
 
 	private static TerminalResponseFrameParseResult ParseCsi(
@@ -198,6 +204,69 @@ internal static class TerminalResponseFramer {
 				return Complete( index + 1 );
 			}
 			if ( EscapeByte == value ) {
+				if ( index + 1 >= maximumFrameBytes ) {
+					return Invalid();
+				}
+				if ( index + 1 >= bytes.Count ) {
+					return Incomplete();
+				}
+				if ( '\\' == bytes[ index + 1 ] ) {
+					return Complete( index + 2 );
+				}
+
+				return Invalid();
+			}
+			if ( 0x18 == value || 0x1A == value ) {
+				return Invalid();
+			}
+
+			++index;
+		}
+
+		return bytes.Count >= maximumFrameBytes
+			? Invalid()
+			: Incomplete()
+		;
+	}
+
+	private static TerminalResponseFrameParseResult ParseOsc(
+		IReadOnlyList<byte> bytes,
+		int maximumFrameBytes
+	) {
+		TerminalResponseFrameParseResult introducer = ParseIntroducer(
+			bytes,
+			(byte)']',
+			OscByte
+		);
+		if ( TerminalResponseFrameParseStatus.Complete != introducer.Status ) {
+			return introducer;
+		}
+
+		bool usesEightBitIntroducer = OscByte == bytes[ 0 ];
+		int index = introducer.Length;
+
+		while ( index < bytes.Count ) {
+			if ( index >= maximumFrameBytes ) {
+				return Invalid();
+			}
+
+			byte value = bytes[ index ];
+			if ( StringTerminatorByte == value ) {
+				return usesEightBitIntroducer
+					? Complete( index + 1 )
+					: Invalid()
+				;
+			}
+			if ( BellByte == value ) {
+				return usesEightBitIntroducer
+					? Invalid()
+					: Complete( index + 1 )
+				;
+			}
+			if ( EscapeByte == value ) {
+				if ( usesEightBitIntroducer ) {
+					return Invalid();
+				}
 				if ( index + 1 >= maximumFrameBytes ) {
 					return Invalid();
 				}

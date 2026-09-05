@@ -5,7 +5,8 @@ namespace Icod.Terminal;
 /// </summary>
 internal enum TerminalResponseFrameKind {
 	Csi,
-	Dcs
+	Dcs,
+	Osc
 }
 
 /// <summary>
@@ -18,6 +19,16 @@ internal interface ITerminalResponseMatcher {
 
 	bool IsMatch(
 		TerminalResponseFrame frame
+	);
+}
+
+/// <summary>
+/// Identifies a response matcher which can claim a structurally correlated
+/// response prefix before complete semantic parsing is possible.
+/// </summary>
+internal interface ICorrelatedTerminalResponseMatcher {
+	bool IsCorrelatedPrefix(
+		IReadOnlyList<byte> bytes
 	);
 }
 
@@ -62,10 +73,14 @@ internal sealed class TerminalResponseFrame {
 
 	internal bool UsesEightBitIntroducer {
 		get {
-			return TerminalResponseFrameKind.Csi == this.Kind
-				? 0x9B == this.bytes[ 0 ]
-				: 0x90 == this.bytes[ 0 ]
-			;
+			return this.Kind switch {
+				TerminalResponseFrameKind.Csi => 0x9B == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Dcs => 0x90 == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Osc => 0x9D == this.bytes[ 0 ],
+				_ => throw new InvalidOperationException(
+					"The terminal response frame kind is not recognized."
+				)
+			};
 		}
 	}
 }
@@ -154,6 +169,13 @@ internal sealed class TerminalResponseExpectation {
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
 		return this.completion.TrySetResult( frame );
+	}
+
+	internal bool TrySetException(
+		Exception exception
+	) {
+		ArgumentNullException.ThrowIfNull( exception );
+		return this.completion.TrySetException( exception );
 	}
 
 	internal bool TrySetCanceled() {
