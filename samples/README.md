@@ -5,6 +5,30 @@ The release package itself is validated separately by the package-verification
 harnesses under `tools/`. Focused package consumers use only the freshly produced
 NuGet artifact and run under `net8.0`, `net9.0`, and `net10.0`.
 
+## Icod.Terminal.SynchronizedOutput.Sample
+
+`Icod.Terminal.SynchronizedOutput.Sample` is the focused 0.9 DEC private mode 2026 demonstration.
+
+```text
+dotnet run --project samples/Icod.Terminal.SynchronizedOutput.Sample/Icod.Terminal.SynchronizedOutput.Sample.csproj -f net10.0
+```
+
+The sample opens an interactive `TerminalSession`, acquires one semantic synchronized-output lease, performs ordinary session writes and a window-title update, and then releases the lease:
+
+```csharp
+await using ( TerminalSynchronizedOutputLease synchronized =
+	await session.AcquireSynchronizedOutputAsync() ) {
+	await session.WriteTextAsync( "line 1\r\n" );
+	await session.SetWindowTitleAsync( "Icod.Terminal synchronized output" );
+}
+```
+
+The first logical owner emits canonical `ESC[?2026h`. The final logical owner emits canonical `ESC[?2026l` followed by one flush. Nested leases share the same physical mode request and may be disposed out of order.
+
+Successful completion proves only that the appropriate protocol frames were emitted. It does not prove that the attached terminal implements or continues honoring synchronized output, and acquisition does not perform an automatic capability probe.
+
+Synchronized output is a terminal-side presentation-timing bracket. It does not create an application-side byte buffer inside `Icod.Terminal`, and operations performed within the lease retain their existing framing and flush behavior.
+
 ## Icod.Terminal.CursorStyle.Sample
 
 `Icod.Terminal.CursorStyle.Sample` is the focused 0.8 DECSCUSR cursor-style demonstration.
