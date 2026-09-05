@@ -31,6 +31,7 @@ public sealed partial class TerminalSession {
 
 	private void InvalidatePresentationState() {
 		this.presentationManager.Invalidate();
+		this.InvalidateProgressState();
 	}
 
 	private ValueTask SuspendPresentationStateAsync() {
