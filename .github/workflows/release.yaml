@@ -84,6 +84,9 @@ jobs:
       - name: Verify DCurses pointer-shape acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesPointerShape.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses semantic-prompt acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesSemanticPrompt.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
         shell: pwsh
@@ -109,6 +112,9 @@ jobs:
       - name: Verify 0.11 pointer-shape release contract
         shell: pwsh
         run: ./packaging/VerifyPointerShapePackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.12 semantic-prompt release contract
+        shell: pwsh
+        run: ./packaging/VerifySemanticPromptPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:
