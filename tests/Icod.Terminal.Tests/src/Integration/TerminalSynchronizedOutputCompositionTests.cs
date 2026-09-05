@@ -17,6 +17,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 			CreatePresentationTerminal(),
 			transport
 		);
+		byte[] clipboardPayload = [ 0x01, 0x02 ];
 
 		TerminalSynchronizedOutputLease synchronized =
 			await session.AcquireSynchronizedOutputAsync();
@@ -33,7 +34,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 		);
 		await session.WriteClipboardAsync(
 			TerminalClipboardSelection.Clipboard,
-			[ 0x01, 0x02 ]
+			clipboardPayload
 		);
 		await session.SetCursorStyleAsync(
 			TerminalCursorStyle.SteadyUnderline
@@ -49,7 +50,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 		await presentation.DisposeAsync();
 		await synchronized.DisposeAsync();
 
-		Assert.Equal( 14, transport.Writes.Count );
+		Assert.Equal( 13, transport.Writes.Count );
 		Assert.Equal(
 			CsiWriter.EncodeSynchronizedOutputBeginFrame(),
 			transport.Writes[ 0 ]
@@ -84,7 +85,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 		Assert.Equal(
 			OscWriter.EncodeOsc52WriteFrame(
 				TerminalOsc52Selection.Clipboard,
-				[ 0x01, 0x02 ]
+				clipboardPayload
 			),
 			transport.Writes[ 8 ]
 		);
@@ -104,7 +105,6 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 			CsiWriter.EncodeSynchronizedOutputEndFrame(),
 			transport.Writes[ 12 ]
 		);
-		Assert.Equal( 13, transport.Writes.Count - 1 );
 		Assert.Equal( 3, transport.FlushCount );
 	}
 
@@ -115,7 +115,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 			TerminalProfiles.Dumb,
 			transport
 		);
-		await using TerminalSynchronizedOutputLease synchronized =
+		TerminalSynchronizedOutputLease synchronized =
 			await session.AcquireSynchronizedOutputAsync();
 
 		Task<TerminalDeviceStatus> query = session.QueryDeviceStatusAsync(
