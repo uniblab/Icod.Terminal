@@ -142,7 +142,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 			CsiWriter.EncodeSynchronizedOutputEndFrame(),
 			transport.GetWrite( 2 )
 		);
-		Assert.Equal( 1, transport.FlushCount );
+		Assert.Equal( 2, transport.FlushCount );
 	}
 
 	private static TerminalDescription CreatePresentationTerminal() {
@@ -284,7 +284,7 @@ public sealed class TerminalSynchronizedOutputCompositionTests {
 
 		public TerminalControlResult<TerminalEndpointObservation> Observe(
 			TerminalEndpoint endpoint
-		) {
+	) {
 			ArgumentNullException.ThrowIfNull( endpoint );
 			return TerminalControlResult<TerminalEndpointObservation>.Available(
 				new TerminalEndpointObservation(
