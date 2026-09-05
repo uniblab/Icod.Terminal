@@ -17,6 +17,8 @@ public sealed partial class TerminalSession {
 	/// <remarks>
 	/// Successful completion proves complete OSC 4 emission only. It does not prove
 	/// terminal support or visual application and does not update an authoritative cache.
+	/// This is an unscoped mutation: the session does not capture, own, or automatically
+	/// restore the prior palette value during invalidation, suspend/resume, or disposal.
 	/// This operation does not flush.
 	/// </remarks>
 	public ValueTask SetPaletteColorAsync(
@@ -47,7 +49,8 @@ public sealed partial class TerminalSession {
 	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
 	/// <remarks>
 	/// The complete collection is validated and one complete OSC 4 frame is constructed
-	/// before output commitment. This operation does not flush.
+	/// before output commitment. This is unscoped mutation and does not create restoration
+	/// ownership for any entry. This operation does not flush.
 	/// </remarks>
 	public ValueTask SetPaletteColorsAsync(
 		IReadOnlyList<TerminalPaletteColor> entries,
