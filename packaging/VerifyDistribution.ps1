@@ -10,7 +10,6 @@ $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 Import-Module (Join-Path $PSScriptRoot 'RepositoryTools.psm1') -Force
 
 $solutionPath = Get-RepositorySolution -RepositoryRoot $repositoryRoot
-$cursorStyleSample = Join-Path $repositoryRoot 'samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj'
 $validationRoot = Join-Path $repositoryRoot 'artifacts/distribution-validation'
 $packageDirectory = Join-Path $validationRoot 'packages'
 
@@ -26,11 +25,6 @@ try {
         'build', $solutionPath,
         '-c', $Configuration,
         '--no-restore',
-        '-p:ContinuousIntegrationBuild=true'
-    )
-    Invoke-DotNet -Arguments @(
-        'build', $cursorStyleSample,
-        '-c', $Configuration,
         '-p:ContinuousIntegrationBuild=true'
     )
     Invoke-DotNet -Arguments @(
