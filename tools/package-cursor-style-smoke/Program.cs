@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
+using Icod.TermInfo;
 
 static void Require(
 	bool condition,
