@@ -76,7 +76,7 @@ public sealed class TerminalSynchronizedOutputPreMergeHardeningTests {
 			CsiWriter.EncodeSynchronizedOutputEndFrame(),
 			output.GetWrite( 3 )
 		);
-		Assert.Equal( 3, output.FlushCount );
+		Assert.Equal( 4, output.FlushCount );
 	}
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
@@ -171,9 +171,20 @@ public sealed class TerminalSynchronizedOutputPreMergeHardeningTests {
 			TerminalEndpoint endpoint
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
+			if ( !this.isTerminal ) {
+				return TerminalControlResult<TerminalEndpointObservation>.Available(
+					new TerminalEndpointObservation(
+						false,
+						null,
+						null,
+						TerminalControlCapabilities.None
+					)
+				);
+			}
+
 			return TerminalControlResult<TerminalEndpointObservation>.Available(
 				new TerminalEndpointObservation(
-					this.isTerminal,
+					true,
 					null,
 					TerminalPlatformKind.WindowsConsole,
 					TerminalControlCapabilities.Attachment
