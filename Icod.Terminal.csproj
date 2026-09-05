@@ -19,7 +19,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.8.0 development adds typed cursor-style control, DECSCUSR CSI emission, typed cursor-style query/state interpretation through the existing DECRQSS substrate, and truthful restoration semantics.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.8.0 adds typed DECSCUSR cursor-style control, explicit DECRQSS cursor-style observation, xterm-compatible bar styles, and truthful strict-LIFO scoped restoration based on an actually observed prior state.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -30,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
