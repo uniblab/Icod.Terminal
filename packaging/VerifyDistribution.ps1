@@ -12,7 +12,6 @@ Import-Module (Join-Path $PSScriptRoot 'RepositoryTools.psm1') -Force
 $solutionPath = Get-RepositorySolution -RepositoryRoot $repositoryRoot
 $validationRoot = Join-Path $repositoryRoot 'artifacts/distribution-validation'
 $packageDirectory = Join-Path $validationRoot 'packages'
-$samplePath = Join-Path $repositoryRoot 'samples/Icod.Terminal.SynchronizedOutput.Sample/Icod.Terminal.SynchronizedOutput.Sample.csproj'
 
 if (Test-Path -LiteralPath $validationRoot) {
     Remove-Item -LiteralPath $validationRoot -Recurse -Force
@@ -34,11 +33,6 @@ try {
         '--no-build',
         '--no-restore',
         '--logger', 'trx'
-    )
-    Invoke-DotNet -Arguments @(
-        'build', $samplePath,
-        '-c', $Configuration,
-        '-p:ContinuousIntegrationBuild=true'
     )
 
     & (Join-Path $PSScriptRoot 'VerifyDCursesSynchronizedOutput.ps1') `
