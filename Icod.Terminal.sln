@@ -24,6 +24,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Hyperlink.Sam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Clipboard.Sample", "samples\Icod.Terminal.Clipboard.Sample\Icod.Terminal.Clipboard.Sample.csproj", "{D3BB7F31-4274-4BF0-9D4E-55E486D01234}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.CursorStyle.Sample", "samples\Icod.Terminal.CursorStyle.Sample\Icod.Terminal.CursorStyle.Sample.csproj", "{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,12 @@ Global
 		{D3BB7F31-4274-4BF0-9D4E-55E486D01234}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{D3BB7F31-4274-4BF0-9D4E-55E486D01234}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3BB7F31-4274-4BF0-9D4E-55E486D01234}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,5 +106,6 @@ Global
 		{E5B48031-0B41-4911-B3E1-3ADAEF7D62AB} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{0B00CC3E-5263-4E41-B071-63DFE35C333D} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{D3BB7F31-4274-4BF0-9D4E-55E486D01234} = {4C994810-850E-4753-82E5-4BD346EF574C}
+		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91} = {4C994810-850E-4753-82E5-4BD346EF574C}
 	EndGlobalSection
 EndGlobal
