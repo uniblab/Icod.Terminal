@@ -34,7 +34,7 @@ internal static partial class OscWriter {
 			exitStatus,
 			digits
 		);
-		byte[] frame = new byte[ 8 + digitCount ];
+		byte[] frame = new byte[ 10 + digitCount ];
 		frame[ 0 ] = 0x1b;
 		frame[ 1 ] = (byte)']';
 		frame[ 2 ] = (byte)'1';
