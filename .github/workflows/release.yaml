@@ -87,6 +87,9 @@ jobs:
       - name: Verify DCurses semantic-prompt acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesSemanticPrompt.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses color-observation acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesColorObservation.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
         shell: pwsh
