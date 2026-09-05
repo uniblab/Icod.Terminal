@@ -42,6 +42,10 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	private void InvalidateProgressState() {
+		this.progressManager?.Invalidate();
+	}
+
 	private async ValueTask<Exception?> CloseProgressStateAsync() {
 		if ( this.progressManager is null ) {
 			return null;
