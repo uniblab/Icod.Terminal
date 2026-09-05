@@ -5,6 +5,49 @@ The release package itself is validated separately by the package-verification
 harnesses under `tools/`. Focused package consumers use only the freshly produced
 NuGet artifact and run under `net8.0`, `net9.0`, and `net10.0`.
 
+## Icod.Terminal.PointerShape.Sample
+
+`Icod.Terminal.PointerShape.Sample` is the focused 0.11 OSC 22 terminal mouse-pointer demonstration.
+
+```text
+dotnet run --project samples/Icod.Terminal.PointerShape.Sample/Icod.Terminal.PointerShape.Sample.csproj -f net10.0
+```
+
+The sample demonstrates explicit semantic mutation and reset:
+
+```csharp
+await session.SetPointerShapeAsync(
+	TerminalPointerShape.Crosshair
+);
+await session.ResetPointerShapeAsync();
+```
+
+It then demonstrates nested scoped ownership:
+
+```csharp
+await using ( TerminalPointerShapeLease pointer =
+	await session.AcquirePointerShapeAsync(
+		TerminalPointerShape.Pointer
+	) ) {
+	await using ( TerminalPointerShapeLease wait =
+		await session.AcquirePointerShapeAsync(
+			TerminalPointerShape.Wait
+		) ) {
+		// Wait controls while the inner owner is active.
+	}
+
+	// Pointer is restored here.
+}
+
+// Final release resets pointer shape to terminal policy.
+```
+
+The sample also issues explicit bounded Kitty-compatible support/current-shape queries. Query timeout is reported as an unanswered query rather than being misinterpreted as proof that OSC 22 is unsupported.
+
+`TerminalPointerShape.Default` means the CSS `default` pointer shape. It is deliberately distinct from `ResetPointerShapeAsync()`, which emits an empty OSC 22 payload and releases pointer shape back to terminal policy.
+
+Successful pointer mutation proves that the complete OSC 22 frame was emitted; it does not prove that the attached terminal recognizes or visually applies the requested pointer shape.
+
 ## Icod.Terminal.Progress.Sample
 
 `Icod.Terminal.Progress.Sample` is the focused 0.10 OSC 9;4 terminal-progress demonstration.
