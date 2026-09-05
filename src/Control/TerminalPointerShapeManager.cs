@@ -42,6 +42,25 @@ internal sealed class TerminalPointerShapeManager : ITerminalSessionLifecyclePar
 		this.MarkInvalidated();
 	}
 
+	internal ValueTask SetAsync(
+		TerminalPointerShape shape,
+		CancellationToken cancellationToken
+	) {
+		return this.SetExplicitAsync(
+			TerminalPointerShapeCodec.GetWireName( shape ),
+			cancellationToken
+		);
+	}
+
+	internal ValueTask ResetAsync(
+		CancellationToken cancellationToken
+	) {
+		return this.SetExplicitAsync(
+			null,
+			cancellationToken
+		);
+	}
+
 	internal async ValueTask<long> AcquireAsync(
 		TerminalPointerShape shape,
 		CancellationToken cancellationToken
@@ -286,6 +305,46 @@ internal sealed class TerminalPointerShapeManager : ITerminalSessionLifecyclePar
 	private bool IsInvalidated {
 		get {
 			return 0 != Volatile.Read( ref this.invalidated );
+		}
+	}
+
+	private async ValueTask SetExplicitAsync(
+		string? wireName,
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateOutputEndpoint();
+
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			this.ThrowIfClosed();
+			if ( this.suspended ) {
+				throw new InvalidOperationException(
+					"Terminal pointer-shape mutation is unavailable while terminal session state is suspended."
+				);
+			}
+			if ( 0 != this.entries.Count ) {
+				throw new InvalidOperationException(
+					"Unscoped pointer-shape mutation is unavailable while a pointer-shape lease is active."
+				);
+			}
+			if ( this.cleanupRequired || this.IsInvalidated ) {
+				throw new InvalidOperationException(
+					"Terminal pointer-shape mutation is unavailable while cleanup or state recovery remains pending."
+				);
+			}
+
+			byte[] frame = OscWriter.EncodeOsc22PointerShapeFrame( wireName );
+			using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+			cancellationToken.ThrowIfCancellationRequested();
+			await this.session.Output.WriteAsync(
+				frame,
+				CancellationToken.None
+			).ConfigureAwait( false );
+		} finally {
+			this.gate.Release();
 		}
 	}
 
