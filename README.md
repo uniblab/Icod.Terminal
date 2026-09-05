@@ -6,7 +6,7 @@
 
 ## Status
 
-`0.9.0` is the current stable release candidate. It adds scoped synchronized-output ownership using DEC private mode 2026, identity-aware first-owner/last-owner nesting, lifecycle-safe leave/re-entry, retryable cleanup after output failures, and downstream `Icod.DCurses` refresh acceptance.
+`0.9.0` is the current stable release. It adds scoped synchronized-output ownership using DEC private mode 2026, identity-aware first-owner/last-owner nesting, lifecycle-safe leave/re-entry, retryable cleanup after output failures, and downstream `Icod.DCurses` refresh acceptance.
 
 The release preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 52 clipboard, and 0.8 cursor-style contracts.
 
@@ -311,7 +311,7 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Distribution validation builds/tests the solution, builds the focused 0.9 sample, runs real downstream `Icod.DCurses` synchronized-refresh acceptance, packs the NuGet artifacts, verifies package structure and XML documentation, and runs fresh package-only consumers.
+Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Distribution validation builds/tests the solution—including the focused 0.9 sample—runs real downstream `Icod.DCurses` synchronized-refresh acceptance, packs the NuGet artifacts, verifies package structure and XML documentation, and runs fresh package-only consumers.
 
 The 0.8 cursor-style and 0.9 synchronized-output package consumers are both required to restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
 
@@ -327,7 +327,7 @@ Stable release readiness requires:
 6. Release distribution validation green on the `main` architecture matrix;
 7. only then create tag `v0.9.0`.
 
-The tag workflow rebuilds and retests the tagged commit, rebuilds the focused sample, reruns downstream DCurses acceptance, selects the exact package matching the tag, reruns package verification including both the 0.8 and 0.9 public contracts, and only then publishes to NuGet.org and GitHub Packages.
+The tag workflow rebuilds and retests the tagged solution, reruns downstream DCurses acceptance, selects the exact package matching the tag, reruns package verification including both the 0.8 and 0.9 public contracts, and only then publishes to NuGet.org and GitHub Packages.
 
 ## Development roadmap
 
