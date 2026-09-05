@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.10.0`  
-**Development version:** `0.10.0-alpha.7`  
+**Current version:** `0.10.0`  
 **Predecessor:** `0.9.0` — synchronized output and nested transactional output state  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** safe semantic OSC 9 operations centered on OSC 9;4 terminal progress/activity state  
-**Status:** T100–T106 implemented; T107 stable closure in progress
+**Status:** T100–T107 complete; merge requires exact stable-head green validation
 
 ---
 
@@ -63,8 +63,8 @@ No `Icod.TermInfo` change, query parser, response router, or capability-database
 | T103 | `0.10.0-alpha.4` | Complete | Session-owned ordered progress manager and nested restoration. |
 | T104 | `0.10.0-alpha.5` | Complete | Public `TerminalProgressLease` and `AcquireProgressAsync(...)`. |
 | T105 | `0.10.0-alpha.6` | Complete | Lifecycle, invalidation, failure, cleanup retry, and disposal hardening. |
-| T106 | `0.10.0-alpha.7` | Implemented | Composition plus real `Icod.DCurses` progress acceptance. |
-| T107 | `0.10.0` | In progress | Public API/package/docs/sample/stable closure. |
+| T106 | `0.10.0-alpha.7` | Complete | Composition plus real `Icod.DCurses` progress acceptance. |
+| T107 | `0.10.0` | Complete | Public API/package/docs/sample/stable closure. |
 
 ---
 
@@ -209,7 +209,7 @@ Record: `docs/T105-Progress-Lifecycle-Failure-and-Disposal.md`.
 
 ## 10. T106 — composition and downstream acceptance
 
-Implemented:
+Implemented and validated:
 
 - byte-exact composition with text, OSC 0, OSC 7, OSC 8, OSC 52, cursor style, presentation state, synchronized output, and active queries;
 - real downstream consumer using published `Icod.DCurses 0.1.0` and current Terminal source;
@@ -221,45 +221,42 @@ Implemented:
 
 Record: `docs/T106-Progress-Composition-and-DCurses-Acceptance.md`.
 
-Cumulative exact-head validation is required before the stable version bump.
-
 ---
 
 ## 11. T107 — public API, docs, sample, package, stable closure
 
-Already prepared on the alpha.7 line:
+Completed:
 
 - `docs/Public-API-Baseline-0.10.md`;
-- root README 0.10 release-candidate documentation;
+- root README stable 0.10 documentation;
 - solution-owned `Icod.Terminal.Progress.Sample`;
 - `samples/README.md` progress documentation;
 - package release notes/tags;
 - fresh package-only progress consumer on net8.0/net9.0/net10.0;
-- XML-documentation assertions for the complete 0.10 public delta;
+- XML-documentation assertions for the complete 0.10 public delta including enum members;
 - retained 0.8 and 0.9 package-contract gates;
-- new 0.10 progress package gate in PR/distribution/release validation.
+- 0.10 progress package gate in PR/distribution/release validation;
+- explicit redirected-output rejection coverage;
+- explicit session-disposal ordering coverage;
+- stable `0.10.0` metadata.
 
-Stable closure remains gated on:
+Remaining release sequence:
 
-1. cumulative alpha.7 head green on Windows/Linux/macOS;
-2. both DCurses acceptance gates green;
-3. fresh 0.10 package-only consumer/XML-doc gate green;
-4. empty `VersionSuffix` and stable README/status wording;
-5. exact stable PR head green;
-6. merge to `main`;
-7. Release distribution validation green on exact `main`;
-8. only then tag `v0.10.0`.
+1. exact stable PR head green;
+2. merge to `main`;
+3. Release distribution validation green on exact `main`;
+4. only then tag `v0.10.0`.
 
 ---
 
-## 12. Current development state
+## 12. Current stable state
 
 ```text
 VersionPrefix:   0.10.0
-VersionSuffix:   alpha.7
-Version:         0.10.0-alpha.7
-PackageVersion:  0.10.0-alpha.7
+VersionSuffix:   <empty>
+Version:         0.10.0
+PackageVersion:  0.10.0
 AssemblyVersion: 0.10.0.0
 ```
 
-**T107 stable closure is the current tranche.**
+**T100–T107 are complete. Merge requires exact stable-head green validation; publication still requires post-merge `main` Release validation before `v0.10.0`.**
