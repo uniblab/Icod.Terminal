@@ -33,6 +33,15 @@ public sealed class TerminalProgressLease : IAsyncDisposable {
 	/// <param name="total">The positive total work count.</param>
 	/// <param name="cancellationToken">Cancellation observed before update commit.</param>
 	/// <returns>A value task representing the progress update.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// <paramref name="total"/> is not positive or <paramref name="completed"/> is
+	/// negative or greater than <paramref name="total"/>.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// Terminal state is suspended or unresolved progress cleanup must first be recovered.
+	/// </exception>
+	/// <exception cref="ObjectDisposedException">The progress lease is no longer active.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before update commit.</exception>
 	public ValueTask ReportAsync(
 		long completed,
 		long total,
@@ -54,6 +63,16 @@ public sealed class TerminalProgressLease : IAsyncDisposable {
 	/// <param name="total">The positive total work count.</param>
 	/// <param name="cancellationToken">Cancellation observed before update commit.</param>
 	/// <returns>A value task representing the progress update.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// <paramref name="state"/> is not defined, <paramref name="total"/> is not
+	/// positive, or <paramref name="completed"/> is negative or greater than
+	/// <paramref name="total"/>.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// Terminal state is suspended or unresolved progress cleanup must first be recovered.
+	/// </exception>
+	/// <exception cref="ObjectDisposedException">The progress lease is no longer active.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before update commit.</exception>
 	public async ValueTask ReportAsync(
 		TerminalProgressState state,
 		long completed,
@@ -85,6 +104,11 @@ public sealed class TerminalProgressLease : IAsyncDisposable {
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation observed before update commit.</param>
 	/// <returns>A value task representing the progress update.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// Terminal state is suspended or unresolved progress cleanup must first be recovered.
+	/// </exception>
+	/// <exception cref="ObjectDisposedException">The progress lease is no longer active.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before update commit.</exception>
 	public async ValueTask SetIndeterminateAsync(
 		CancellationToken cancellationToken = default
 	) {
