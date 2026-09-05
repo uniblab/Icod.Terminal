@@ -232,36 +232,36 @@ internal sealed class TerminalSynchronizedOutputManager : ITerminalSessionLifecy
 	private async ValueTask EnterFirstOwnerAsync(
 		CancellationToken cancellationToken
 	) {
-		IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
+		using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
 			cancellationToken
 		).ConfigureAwait( false );
-		using ( outputLease ) {
-			try {
-				await CsiWriter.WriteSynchronizedOutputBeginAsync(
-					this.session.Output,
-					cancellationToken
-				).ConfigureAwait( false );
-				this.physicalActive = true;
-				return;
-			} catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested ) {
-				throw;
-			} catch ( Exception enterFailure ) {
-				this.physicalActive = true;
-				this.cleanupRequired = true;
-				try {
-					await this.LeaveAndFlushCoreAsync().ConfigureAwait( false );
-					this.physicalActive = false;
-					this.cleanupRequired = false;
-				} catch ( Exception cleanupFailure ) {
-					throw new AggregateException(
-						"Synchronized-output acquisition failed and cleanup also reported an error.",
-						enterFailure,
-						cleanupFailure
-					);
-				}
 
-				throw;
+		byte[] frame = CsiWriter.EncodeSynchronizedOutputBeginFrame();
+		cancellationToken.ThrowIfCancellationRequested();
+
+		try {
+			await this.session.Output.WriteAsync(
+				frame,
+				CancellationToken.None
+			).ConfigureAwait( false );
+			this.physicalActive = true;
+			return;
+		} catch ( Exception enterFailure ) {
+			this.physicalActive = true;
+			this.cleanupRequired = true;
+			try {
+				await this.LeaveAndFlushCoreAsync().ConfigureAwait( false );
+				this.physicalActive = false;
+				this.cleanupRequired = false;
+			} catch ( Exception cleanupFailure ) {
+				throw new AggregateException(
+					"Synchronized-output acquisition failed and cleanup also reported an error.",
+					enterFailure,
+					cleanupFailure
+				);
 			}
+
+			throw;
 		}
 	}
 
