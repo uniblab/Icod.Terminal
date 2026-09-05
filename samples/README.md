@@ -5,6 +5,34 @@ The release package itself is validated separately by the package-verification
 harnesses under `tools/`. Focused package consumers use only the freshly produced
 NuGet artifact and run under `net8.0`, `net9.0`, and `net10.0`.
 
+## Icod.Terminal.Progress.Sample
+
+`Icod.Terminal.Progress.Sample` is the focused 0.10 OSC 9;4 terminal-progress demonstration.
+
+```text
+dotnet run --project samples/Icod.Terminal.Progress.Sample/Icod.Terminal.Progress.Sample.csproj -f net10.0
+```
+
+The sample acquires one semantic progress lease, reports three determinate stages as completed/total values, switches to indeterminate progress for work without a known duration, then demonstrates the neutral attention state:
+
+```csharp
+await using TerminalProgressLease progress =
+	await session.AcquireProgressAsync();
+
+await progress.ReportAsync( 1, 3 );
+await progress.ReportAsync( 2, 3 );
+await progress.SetIndeterminateAsync();
+await progress.ReportAsync(
+	TerminalProgressState.Attention,
+	3,
+	3
+);
+```
+
+Callers never need to compute OSC percentages or construct escape strings. Disposing the final progress owner clears library-owned terminal progress automatically.
+
+Successful completion proves that the OSC 9;4 frames were emitted; it does not prove that the attached terminal renders terminal progress. Nested progress owners are identity-aware and may be disposed out of order. A newer owner which has not yet reported a value does not mask a lower reported owner.
+
 ## Icod.Terminal.SynchronizedOutput.Sample
 
 `Icod.Terminal.SynchronizedOutput.Sample` is the focused 0.9 DEC private mode 2026 demonstration.
