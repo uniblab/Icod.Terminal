@@ -173,6 +173,7 @@ public sealed class TerminalPointerShapeManagerTests {
 			new EmptyInput(),
 			output,
 			new TerminalSessionOptions {
+				RequireInteractiveOutput = outputIsTerminal,
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
 				ObserveLifecycleEvents = false
