@@ -41,6 +41,9 @@ try {
     & (Join-Path $PSScriptRoot 'VerifyDCursesProgress.ps1') `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyDCursesPointerShape.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
