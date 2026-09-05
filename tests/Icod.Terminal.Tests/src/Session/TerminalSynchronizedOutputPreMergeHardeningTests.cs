@@ -155,23 +155,25 @@ public sealed class TerminalSynchronizedOutputPreMergeHardeningTests {
 	}
 
 	private sealed class RecordingTerminalControlProvider : ITerminalControlProvider {
-		private readonly bool isTerminal;
+		private readonly bool outputIsTerminal;
 		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreateWindowsConsole(
 			TerminalConsoleDirection.Input,
 			0x00000007u
 		);
 
 		internal RecordingTerminalControlProvider(
-			bool isTerminal
+			bool outputIsTerminal
 		) {
-			this.isTerminal = isTerminal;
+			this.outputIsTerminal = outputIsTerminal;
 		}
 
 		public TerminalControlResult<TerminalEndpointObservation> Observe(
 			TerminalEndpoint endpoint
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
-			if ( !this.isTerminal ) {
+			bool isTerminal = this.outputIsTerminal
+				|| 1 != endpoint.FileDescriptor;
+			if ( !isTerminal ) {
 				return TerminalControlResult<TerminalEndpointObservation>.Available(
 					new TerminalEndpointObservation(
 						false,
