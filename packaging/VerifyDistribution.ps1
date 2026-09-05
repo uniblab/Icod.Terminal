@@ -34,6 +34,10 @@ try {
         '--no-restore',
         '--logger', 'trx'
     )
+
+    & (Join-Path $PSScriptRoot 'VerifyDCursesSynchronizedOutput.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
