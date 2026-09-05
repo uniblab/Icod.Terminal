@@ -238,10 +238,11 @@ internal static class TerminalColorCodec {
 
 		for ( int index = 3; 0 <= index; --index ) {
 			int digit = value & 0x0f;
-			destination[ index ] = (byte)( ( 10 > digit )
-				? ( '0' + digit )
-				: ( 'a' + digit - 10 )
-			);
+			if ( 10 > digit ) {
+				destination[ index ] = (byte)( '0' + digit );
+			} else {
+				destination[ index ] = (byte)( 'a' + digit - 10 );
+			}
 			value >>= 4;
 		}
 	}
