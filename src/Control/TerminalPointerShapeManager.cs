@@ -77,36 +77,49 @@ internal sealed class TerminalPointerShapeManager : ITerminalSessionLifecyclePar
 					"Terminal pointer-shape ownership cannot be acquired while terminal session state is suspended."
 				);
 			}
-			if ( this.IsInvalidated
-				&& 0 == this.entries.Count
-				&& !this.physicalActive
-				&& !this.cleanupRequired ) {
-				this.ClearInvalidated();
-			}
-			if ( this.cleanupRequired || this.IsInvalidated ) {
-				throw new InvalidOperationException(
-					"Terminal pointer-shape cleanup remains pending from a prior failed or invalidated transition."
-				);
-			}
 			if ( long.MaxValue == this.nextOwnerId ) {
 				throw new InvalidOperationException(
 					"The terminal pointer-shape owner identifier space has been exhausted."
 				);
 			}
 
-			byte[] frame = OscWriter.EncodeOsc22PointerShapeFrame( wireName );
+			if ( this.cleanupRequired || this.IsInvalidated ) {
+				await this.RecoverPhysicalStateAsync().ConfigureAwait( false );
+				cancellationToken.ThrowIfCancellationRequested();
+			}
+
+			byte[] requestedFrame = OscWriter.EncodeOsc22PointerShapeFrame( wireName );
+			byte[] previousFrame = 0 == this.entries.Count
+				? OscWriter.EncodeOsc22PointerShapeFrame( null )
+				: EncodeShapeFrame( this.entries[ ^1 ].Shape )
+			;
+			bool emissionAttempted = false;
 			try {
 				using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
 					cancellationToken
 				).ConfigureAwait( false );
 				cancellationToken.ThrowIfCancellationRequested();
+				emissionAttempted = true;
 				await this.session.Output.WriteAsync(
-					frame,
+					requestedFrame,
 					CancellationToken.None
 				).ConfigureAwait( false );
-			} catch {
-				this.cleanupRequired = true;
-				this.MarkInvalidated();
+			} catch ( Exception acquisitionFailure ) when ( emissionAttempted ) {
+				try {
+					await this.WriteCleanupFrameAsync( previousFrame ).ConfigureAwait( false );
+					this.physicalActive = 0 != this.entries.Count;
+					this.cleanupRequired = false;
+					this.ClearInvalidated();
+				} catch ( Exception cleanupFailure ) {
+					this.cleanupRequired = true;
+					this.MarkInvalidated();
+					throw new AggregateException(
+						"Terminal pointer-shape acquisition failed and restoring the prior pointer state also failed.",
+						acquisitionFailure,
+						cleanupFailure
+					);
+				}
+
 				throw;
 			}
 
@@ -328,21 +341,45 @@ internal sealed class TerminalPointerShapeManager : ITerminalSessionLifecyclePar
 					"Unscoped pointer-shape mutation is unavailable while a pointer-shape lease is active."
 				);
 			}
+
 			if ( this.cleanupRequired || this.IsInvalidated ) {
-				throw new InvalidOperationException(
-					"Terminal pointer-shape mutation is unavailable while cleanup or state recovery remains pending."
-				);
+				await this.RecoverPhysicalStateAsync().ConfigureAwait( false );
+				cancellationToken.ThrowIfCancellationRequested();
 			}
 
 			byte[] frame = OscWriter.EncodeOsc22PointerShapeFrame( wireName );
-			using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
-				cancellationToken
-			).ConfigureAwait( false );
-			cancellationToken.ThrowIfCancellationRequested();
-			await this.session.Output.WriteAsync(
-				frame,
-				CancellationToken.None
-			).ConfigureAwait( false );
+			bool emissionAttempted = false;
+			try {
+				using IDisposable outputLease = await this.session.AcquireSessionOutputAsync(
+					cancellationToken
+				).ConfigureAwait( false );
+				cancellationToken.ThrowIfCancellationRequested();
+				emissionAttempted = true;
+				await this.session.Output.WriteAsync(
+					frame,
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception mutationFailure ) when ( emissionAttempted ) {
+				try {
+					await this.WriteResetAsync().ConfigureAwait( false );
+					this.physicalActive = false;
+					this.cleanupRequired = false;
+					this.ClearInvalidated();
+				} catch ( Exception cleanupFailure ) {
+					this.cleanupRequired = true;
+					this.MarkInvalidated();
+					throw new AggregateException(
+						"Terminal pointer-shape mutation failed and resetting pointer state also failed.",
+						mutationFailure,
+						cleanupFailure
+					);
+				}
+
+				throw;
+			}
+
+			this.cleanupRequired = false;
+			this.ClearInvalidated();
 		} finally {
 			this.gate.Release();
 		}
