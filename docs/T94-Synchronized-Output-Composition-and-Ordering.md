@@ -3,8 +3,8 @@
 **Release:** `0.9.0`  
 **Tranche:** `T94`  
 **Development version:** `0.9.0-alpha.5`  
-**Status:** Implemented; exact-head validation pending  
-**Theme:** shared output serialization and composition with existing semantic terminal operations
+**Status:** Implemented; cumulative exact-head validation required  
+**Theme:** composition with existing semantic terminal operations without changing established low-level output contracts
 
 ## 1. Objective
 
@@ -17,28 +17,25 @@ first owner -> CSI ? 2026 h
 last owner  -> CSI ? 2026 l + one flush
 ```
 
-Contained operations retain their existing framing, cancellation, query, and flush behavior.
+Contained operations retain their existing framing, cancellation, ordering, and flush behavior.
 
-## 2. Shared output gate
+## 2. Existing output coordination remains authoritative
 
-All session-owned protocol output must serialize through the existing `TerminalSession` control-output gate.
+Most semantic session operations serialize through the existing `TerminalSession` control-output gate. Higher-level transition managers such as presentation and rich-input protocol ownership already acquire that gate around their transition batches.
 
-During the T94 audit, the terminfo path exposed a pre-existing exception to that rule: `WriteTerminalStringAsync(...)` delegated through `TerminalOutputStream` without first acquiring `AcquireSessionOutputAsync(...)`.
+The pre-existing `WriteTerminalStringAsync(...)` / `WriteCapabilityAsync(...)` surface is different by design. `WriteTerminalStringAsync(...)` is the advanced low-level terminfo primitive used by transition managers while they already own the control-output lease. Its core writer therefore must not recursively acquire the non-reentrant session gate.
 
-T94 corrects that path so resolved terminfo strings and `WriteCapabilityAsync(...)` now participate in the same session-owned serialization domain as:
+T94 initially attempted to move the core terminfo writer under `AcquireSessionOutputAsync(...)`. The regression suite correctly exposed that as a self-deadlock because presentation/input-protocol managers already hold the gate before invoking terminfo output. The change was reverted and the historical contract retained:
 
-- application text;
-- synchronized-output begin/end frames;
-- OSC title/location/hyperlink/clipboard output;
-- cursor-style frames;
-- presentation transitions;
-- active query requests.
+- higher-level session managers provide ordered terminfo transition batches while holding the control-output gate;
+- direct external callers of the low-level `WriteTerminalStringAsync(...)` primitive remain responsible for coordinating that raw protocol output with other concurrent session traffic;
+- synchronized output does not redefine that established responsibility.
 
 No second gate or synchronized-output-specific writer is introduced.
 
 ## 3. Semantic output composition
 
-The acceptance matrix brackets existing operations inside one synchronized-output lease and verifies deterministic byte order:
+The acceptance matrix brackets sequential existing operations inside one synchronized-output lease and verifies deterministic byte order:
 
 ```text
 CSI ? 2026 h
@@ -57,6 +54,8 @@ CSI ? 2026 l
 ```
 
 The synchronized-output lease does not rewrite, buffer, aggregate, or otherwise reinterpret these operations.
+
+The raw terminfo call in this acceptance sequence is intentionally sequential. T94 does not create a new concurrent-serialization guarantee for `WriteTerminalStringAsync(...)`.
 
 ## 4. Flush composition
 
@@ -84,9 +83,9 @@ If a terminal implementation chooses to delay a response while mode 2026 is acti
 
 ## 6. Public API impact
 
-T94 adds no public API.
+T94 adds no public API and does not redefine the concurrency contract of existing low-level terminfo output APIs.
 
-The public surface remains:
+The synchronized-output public surface remains:
 
 ```csharp
 public sealed class TerminalSynchronizedOutputLease : IAsyncDisposable
@@ -100,16 +99,18 @@ public ValueTask<TerminalSynchronizedOutputLease> AcquireSynchronizedOutputAsync
 
 `TerminalSynchronizedOutputCompositionTests` verifies:
 
-- synchronized-output begin precedes all contained semantic output;
+- synchronized-output begin precedes sequential contained output;
 - existing semantic frames remain byte-exact;
-- resolved terminfo output is ordered through the shared session gate;
+- resolved terminfo output remains usable inside synchronized output;
 - presentation transitions remain legal inside synchronized output;
 - contained flush semantics are preserved;
 - final synchronized-output release is the final frame and contributes one flush;
 - an active Device Status Report query completes while synchronized output is active.
 
+The existing presentation/input-protocol regression suite separately proves that manager-owned terminfo transition batches remain non-deadlocking under their established gate ownership.
+
 ## 8. T94 decision
 
-Synchronized output is an ownership and presentation-timing bracket around ordinary `TerminalSession` activity. It is not a new byte-buffering subsystem and it does not change the semantics of the operations executed within the scope.
+Synchronized output is an ownership and presentation-timing bracket around ordinary `TerminalSession` activity. It is not a new byte-buffering subsystem and it does not silently strengthen or weaken the pre-existing concurrency contract of advanced raw terminfo output.
 
-T95 may therefore focus exclusively on lifecycle, cancellation, failure recovery, and disposal stress rather than further output-path architecture changes.
+T95 therefore focuses on lifecycle, cancellation, failure recovery, and disposal stress rather than redesigning the established output architecture.
