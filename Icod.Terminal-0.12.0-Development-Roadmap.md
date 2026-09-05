@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.12.0`  
-**Development version:** `0.12.0-alpha.1`  
+**Development version:** `0.12.0-alpha.5`  
 **Predecessor:** `0.11.0` — OSC 22 terminal mouse-pointer shape control  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** semantic OSC 133 shell-integration / semantic-prompt markers  
-**Status:** T120 contract/reference freeze in progress
+**Status:** T124 public OSC 133 API implemented; validation pending
 
 ---
 
@@ -21,7 +21,8 @@ The release SHALL provide a portable core for marking the lifecycle of an intera
 - command-line input start / prompt end;
 - command execution / output start;
 - command completion;
-- optional command exit status;
+- explicit command abort/cancellation;
+- command completion with exit status `0..255`;
 - deterministic ordering through the existing session output domain;
 - composition with text, presentation, synchronized output, progress, pointer shape, OSC 7 current-location publication, and active queries;
 - downstream `Icod.DCurses` acceptance where semantic command-region marking is useful.
@@ -38,7 +39,8 @@ The portable 0.12 core SHALL be based on the broadly implemented FinalTerm/iTerm
 OSC 133 ; A ST
 OSC 133 ; B ST
 OSC 133 ; C ST
-OSC 133 ; D [ ; exit-status ] ST
+OSC 133 ; D ST
+OSC 133 ; D ; exit-status ST
 ```
 
 Semantic meaning:
@@ -46,11 +48,10 @@ Semantic meaning:
 - `A` — prompt begins;
 - `B` — prompt ends and command-line input begins;
 - `C` — command line ends / command execution has begun / command output begins;
-- `D` — command region is finished, optionally with a decimal exit status.
+- bare `D` — command region aborted/cancelled;
+- `D;0..255` — command completed with an explicit exit status.
 
-The exact API names and exit-status validation are frozen in T120 before implementation.
-
-Canonical outbound OSC termination for 0.12 SHALL be ST (`ESC \\`) unless T120 finds a compelling interoperability reason to do otherwise.
+Canonical outbound OSC termination for 0.12 is ST (`ESC \\`).
 
 ---
 
@@ -58,7 +59,7 @@ Canonical outbound OSC termination for 0.12 SHALL be ST (`ESC \\`) unless T120 f
 
 OSC 133 has accumulated terminal-specific extensions. 0.12 SHALL not treat them as portable merely because one terminal accepts them.
 
-Examples requiring explicit review include:
+Examples outside the portable core include:
 
 - Kitty `A` properties such as `k=s`, `redraw=0`, `special_key=1`, and `click_events=...`;
 - Kitty command-line metadata attached to `C`;
@@ -90,114 +91,150 @@ No public raw OSC 133 field list or arbitrary metadata dictionary is planned for
 - no generic OSC escape hatch;
 - no second output transport.
 
-OSC 133 marks are transient output annotations, not long-lived terminal modes. Therefore scoped lifecycle ownership is expected to be substantially lighter than OSC 22, OSC 9;4, or synchronized output. T120 SHALL nevertheless define what happens when a command region is logically open during session disposal, suspend, or failure.
+OSC 133 marks are transient output annotations, not long-lived terminal modes. T120 froze that they do not create a lifecycle participant, a command-region lease, or an in-memory shell-history state machine.
 
 ---
 
 ## 5. T120 — OSC 133 contract and reference freeze
 
-Freeze:
+**Status:** Complete.  
+**Development version:** `0.12.0-alpha.1`.
 
-- authoritative FinalTerm/iTerm2/Kitty/Windows Terminal/WezTerm-compatible references;
-- exact A/B/C/D semantics;
-- exact D exit-status grammar and numeric domain;
-- canonical ST/BEL policy;
-- public semantic naming;
-- whether 0.12 exposes individual marker methods, a scoped command-region API, or both;
-- state-machine rules for legal/illegal ordering;
-- nested-region policy;
-- suspend/resume/disposal behavior when a region is open;
-- failure and cancellation semantics;
-- relationship to OSC 7 current directory publication;
-- composition with synchronized output and progress/pointer shape;
-- explicit extension/non-goal disposition.
+Frozen decisions include:
 
-**Gate T120:** no public OSC 133 API is implemented until the portable semantic contract and ordering model are frozen.
+- portable FinalTerm/iTerm2 A/B/C/D core;
+- `A` = prompt start;
+- `B` = command-input start / prompt end;
+- `C` = command-output start / command executed;
+- `D;0..255` = completed command with exit status;
+- bare `D` = aborted/cancelled command region;
+- canonical outbound ST termination;
+- `byte` completion status;
+- no nullable status API conflating abort with completion;
+- independently callable semantic markers rather than a synthetic shell-history state machine;
+- no long-lived OSC 133 lease;
+- no automatic marker emission on suspend/resume/disposal;
+- no compensating markers after failed writes;
+- no automatic support detection;
+- no raw OSC 133 strings or arbitrary metadata dictionaries.
 
-Expected development version: `0.12.0-alpha.1`.
+Record: `docs/T120-OSC-133-Semantic-Prompt-Contract-and-Reference-Freeze.md`.
 
 ---
 
 ## 6. T121 — byte-exact OSC 133 writer
 
-Implement:
+**Status:** Complete.  
+**Development version:** `0.12.0-alpha.2`.
+
+Implemented:
 
 - specialized internal A/B/C/D encoders;
-- optional D exit-status encoding;
-- canonical termination;
-- strict validation;
+- bare D abort and `D;0..255` completion forms;
+- canonical ST termination;
+- minimal ASCII decimal status encoding;
 - complete-frame non-cancellable commit;
 - no implicit flush;
-- byte-exact tests for every portable form;
-- invalid-value and pre-cancellation no-emission tests.
+- byte-exact tests and pre-cancellation no-emission tests.
 
-Expected development version: `0.12.0-alpha.2`.
+Record: `docs/T121-OSC-133-Byte-Exact-Writer.md`.
 
 ---
 
 ## 7. T122 — semantic marker model
 
-Implement the reviewed public/internal value layer:
+**Status:** Complete.  
+**Development version:** `0.12.0-alpha.3`.
 
-- semantic marker names/types from T120;
-- typed command-completion representation if appropriate;
-- explicit distinction between command completion with no reported status and status `0`;
-- exhaustive mapping/validation tests;
+Implemented:
+
+- internal typed semantic marker vocabulary;
+- typed `byte` command-completion status;
+- explicit distinction between abort and completed status `0`;
+- exhaustive semantic-to-wire mapping tests;
+- invalid default/uninitialized marker rejection;
 - no public raw marker strings.
 
-Expected development version: `0.12.0-alpha.3`.
+Record: `docs/T122-OSC-133-Semantic-Marker-Model.md`.
 
 ---
 
-## 8. T123 — session command-region state model
+## 8. T123 — session marker integration and ordering semantics
 
-Implement the T120 ordering contract through `TerminalSession`:
+**Status:** Complete.  
+**Development version:** `0.12.0-alpha.4`.
 
-- legal prompt/input/execution/completion transitions;
-- deterministic serialization;
-- misuse detection where meaningful;
+T123 implements the frozen T120 ordering posture through `TerminalSession` without adding a synthetic command-region state machine.
+
+Implemented:
+
+- deterministic serialization through the existing session output gate;
+- ordering relative to application text and control output;
+- interactive-output validation;
+- caller cancellation while waiting for the output gate and immediately before commit;
 - no lifetime-held output gate;
-- truthful state after output failure;
-- invalidation policy if session state becomes uncertain.
+- no retained prompt/input/output/completion state;
+- no transition rejection merely because earlier markers were not observed through the same session;
+- failed committed marker writes propagate without compensating markers or fabricated history;
+- later independently callable markers remain available after a failed write;
+- session-output closure rejects new markers after disposal begins.
 
-If T120 chooses a scoped command-region abstraction, its ownership/state manager is implemented here.
+No nested-region owner, lifecycle participant, cleanup state, or recovery marker is required because OSC 133 annotations are transient events rather than library-owned terminal modes.
 
-Expected development version: `0.12.0-alpha.4`.
+Record: `docs/T123-OSC-133-Session-Marker-Integration-and-Ordering-Semantics.md`.
 
 ---
 
 ## 9. T124 — public OSC 133 API
 
-Expose the frozen semantic public surface.
+**Status:** Implemented; validation pending.  
+**Development version:** `0.12.0-alpha.5`.
 
-The likely API shape will include semantic operations equivalent to:
+Expose the frozen semantic public surface:
 
 ```csharp
-PromptStart
-CommandInputStart
-CommandOutputStart
-CommandFinished
+ValueTask BeginPromptAsync(
+	CancellationToken cancellationToken = default
+);
+
+ValueTask BeginCommandInputAsync(
+	CancellationToken cancellationToken = default
+);
+
+ValueTask BeginCommandOutputAsync(
+	CancellationToken cancellationToken = default
+);
+
+ValueTask FinishCommandAsync(
+	byte exitStatus,
+	CancellationToken cancellationToken = default
+);
+
+ValueTask AbortCommandAsync(
+	CancellationToken cancellationToken = default
+);
 ```
 
-but exact method/type names remain a T120 decision.
+The public surface SHALL retain T120's independent-call semantics and SHALL NOT expose raw OSC 133 marker letters, arbitrary metadata, a nullable completion-status overload, or a scoped command-region lease.
 
-If a scoped command-region helper is justified, it SHALL be additive to the primitive semantic markers and SHALL not obscure the actual A/B/C/D transitions.
-
-Expected development version: `0.12.0-alpha.5`.
+Record: `docs/T124-Public-OSC-133-Semantic-Prompt-API.md`.
 
 ---
 
 ## 10. T125 — lifecycle, failure, and ordering hardening
 
-Prove:
+Prove the final public surface across lifecycle and failure edges:
 
 - pre-commit cancellation emits nothing;
-- failed committed marker writes do not silently advance logical state;
-- recovery policy after uncertain writes is truthful;
-- session disposal does not fabricate a successful command completion unless explicitly frozen by T120;
-- managed suspend/resume behavior is deterministic;
-- repeated cleanup/disposal is idempotent where ownership exists;
-- malformed ordering is rejected or documented according to the T120 state model.
+- cancellation while queued for session output emits nothing;
+- failed committed marker writes propagate without compensating markers;
+- later independent marker calls remain truthful after a failed write;
+- session disposal emits no automatic finish or abort marker;
+- managed suspend emits no OSC 133 marker;
+- managed resume replays no OSC 133 marker;
+- repeated disposal remains idempotent without OSC 133 cleanup ownership;
+- noncanonical ordering remains accepted as frozen by T120;
+- lifecycle and output-state failure cannot fabricate semantic command history.
 
 Expected development version: `0.12.0-alpha.6`.
 
@@ -267,10 +304,10 @@ Expected stable version: `0.12.0`.
 
 ```text
 VersionPrefix:   0.12.0
-VersionSuffix:   alpha.1
-Version:         0.12.0-alpha.1
-PackageVersion:  0.12.0-alpha.1
+VersionSuffix:   alpha.5
+Version:         0.12.0-alpha.5
+PackageVersion:  0.12.0-alpha.5
 AssemblyVersion: 0.12.0.0
 ```
 
-**T120 contract/reference freeze is the current tranche.**
+**T124 public OSC 133 API is implemented. Exact-head validation is required before T125 begins.**
