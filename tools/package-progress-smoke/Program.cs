@@ -1,5 +1,6 @@
 using System.Text;
 using Icod.Terminal;
+using Icod.TermInfo;
 
 static void Require(
 	bool condition,
