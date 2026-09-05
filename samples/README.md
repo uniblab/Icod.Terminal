@@ -16,7 +16,7 @@ name; the default is `SteadyBar`.
 dotnet run --project samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj -f net10.0 -- SteadyUnderline
 ```
 
-The sample demonstrates explicit observation first:
+The sample first demonstrates an explicit observation:
 
 ```csharp
 TerminalCursorStyleObservation observation =
@@ -35,11 +35,16 @@ await using TerminalCursorStyleLease lease =
 	);
 ```
 
-The outermost lease observes the terminal's actual semantic cursor style before
-mutation and restores that observed style on disposal. If the terminal explicitly
-reports DECRQSS cursor-style observation as unsupported, the sample does not acquire
-a lease and does not change cursor style. A query timeout is reported as a timeout,
-not misinterpreted as proof of unsupported behavior.
+These are deliberately two separate observations. The first query demonstrates the
+explicit observation API. `AcquireCursorStyleAsync(...)` independently re-observes
+the terminal's current semantic cursor style immediately before mutation and uses
+that second observation as its restoration baseline. The lease never assumes that
+an earlier caller query is still current.
+
+If either explicit observation reports DECRQSS cursor-style state as unsupported,
+the sample does not claim support. If lease acquisition cannot establish its own
+baseline, no leased style is retained. Query timeout is reported as timeout rather
+than being misinterpreted as proof of unsupported behavior.
 
 Cursor style and cursor visibility are separate concepts. This sample changes
 shape/blink policy only; it does not hide or show the cursor.
