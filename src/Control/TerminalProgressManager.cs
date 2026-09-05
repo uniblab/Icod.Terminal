@@ -14,6 +14,7 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 	private bool cleanupRequired;
 	private bool suspended;
 	private bool closed;
+	private int invalidated;
 
 	internal TerminalProgressManager(
 		TerminalSession session
@@ -37,6 +38,10 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 		return this.ReenterAsync();
 	}
 
+	internal void Invalidate() {
+		this.MarkInvalidated();
+	}
+
 	internal async ValueTask<long> AcquireAsync(
 		CancellationToken cancellationToken
 	) {
@@ -51,9 +56,15 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 					"Terminal progress ownership cannot be acquired while terminal session state is suspended."
 				);
 			}
-			if ( this.cleanupRequired ) {
+			if ( this.IsInvalidated
+				&& 0 == this.entries.Count
+				&& !this.physicalActive
+				&& !this.cleanupRequired ) {
+				this.ClearInvalidated();
+			}
+			if ( this.cleanupRequired || this.IsInvalidated ) {
 				throw new InvalidOperationException(
-					"Terminal progress cleanup remains pending from a prior failed transition."
+					"Terminal progress cleanup remains pending from a prior failed or invalidated transition."
 				);
 			}
 			if ( long.MaxValue == this.nextOwnerId ) {
@@ -102,7 +113,7 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 				);
 			}
 
-			if ( this.cleanupRequired ) {
+			if ( this.cleanupRequired || this.IsInvalidated ) {
 				await this.RecoverPhysicalStateAsync().ConfigureAwait( false );
 				cancellationToken.ThrowIfCancellationRequested();
 			}
@@ -128,11 +139,13 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 					).ConfigureAwait( false );
 				} catch {
 					this.cleanupRequired = true;
+					this.MarkInvalidated();
 					throw;
 				}
 
 				this.physicalActive = true;
 				this.cleanupRequired = false;
+				this.ClearInvalidated();
 			}
 
 			this.entries[ index ] = this.entries[ index ] with {
@@ -165,7 +178,7 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 				return;
 			}
 
-			if ( this.cleanupRequired ) {
+			if ( this.cleanupRequired || this.IsInvalidated ) {
 				await this.RecoverPhysicalStateAsync().ConfigureAwait( false );
 			}
 
@@ -188,12 +201,14 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 				await this.WriteCleanupFrameAsync( frame ).ConfigureAwait( false );
 			} catch {
 				this.cleanupRequired = true;
+				this.MarkInvalidated();
 				throw;
 			}
 
 			this.entries.RemoveAt( index );
 			this.physicalActive = 0 <= nextControllerIndex;
 			this.cleanupRequired = false;
+			this.ClearInvalidated();
 		} finally {
 			this.gate.Release();
 		}
@@ -205,7 +220,9 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 			if ( this.closed || this.suspended ) {
 				return;
 			}
-			if ( !this.physicalActive && !this.cleanupRequired ) {
+			if ( !this.physicalActive
+				&& !this.cleanupRequired
+				&& !this.IsInvalidated ) {
 				this.suspended = true;
 				return;
 			}
@@ -215,9 +232,11 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 				this.physicalActive = false;
 				this.cleanupRequired = false;
 				this.suspended = true;
+				this.ClearInvalidated();
 			} catch {
 				this.cleanupRequired = true;
 				this.suspended = true;
+				this.MarkInvalidated();
 				throw;
 			}
 		} finally {
@@ -232,13 +251,15 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 				return;
 			}
 
-			if ( this.cleanupRequired ) {
+			if ( this.cleanupRequired || this.IsInvalidated ) {
 				try {
 					await this.WriteClearAsync().ConfigureAwait( false );
 					this.cleanupRequired = false;
 					this.physicalActive = false;
+					this.ClearInvalidated();
 				} catch {
 					this.suspended = true;
+					this.MarkInvalidated();
 					throw;
 				}
 			}
@@ -258,13 +279,16 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 				this.physicalActive = true;
 				this.cleanupRequired = false;
 				this.suspended = false;
+				this.ClearInvalidated();
 			} catch ( Exception enterFailure ) {
 				this.cleanupRequired = true;
 				this.suspended = true;
+				this.MarkInvalidated();
 				try {
 					await this.WriteClearAsync().ConfigureAwait( false );
 					this.physicalActive = false;
 					this.cleanupRequired = false;
+					this.ClearInvalidated();
 				} catch ( Exception cleanupFailure ) {
 					throw new AggregateException(
 						"Terminal progress re-entry failed and cleanup also reported an error.",
@@ -281,33 +305,43 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 	}
 
 	internal async ValueTask CloseAsync() {
+		bool releaseLifecycleRegistration = false;
 		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
 		try {
 			if ( this.closed ) {
 				return;
 			}
 
-			Exception? exception = null;
-			if ( this.physicalActive || this.cleanupRequired ) {
+			if ( this.physicalActive
+				|| this.cleanupRequired
+				|| this.IsInvalidated ) {
 				try {
 					await this.WriteClearAsync().ConfigureAwait( false );
-				} catch ( Exception failure ) {
-					exception = failure;
+					this.physicalActive = false;
+					this.cleanupRequired = false;
+					this.ClearInvalidated();
+				} catch {
+					this.cleanupRequired = true;
+					this.MarkInvalidated();
+					throw;
 				}
 			}
 
 			this.closed = true;
 			this.suspended = true;
-			this.physicalActive = false;
-			this.cleanupRequired = false;
 			this.entries.Clear();
-
-			if ( exception is not null ) {
-				throw exception;
-			}
+			releaseLifecycleRegistration = true;
 		} finally {
 			this.gate.Release();
-			this.lifecycleRegistration.Dispose();
+			if ( releaseLifecycleRegistration ) {
+				this.lifecycleRegistration.Dispose();
+			}
+		}
+	}
+
+	private bool IsInvalidated {
+		get {
+			return 0 != Volatile.Read( ref this.invalidated );
 		}
 	}
 
@@ -325,8 +359,10 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 			await this.WriteCleanupFrameAsync( frame ).ConfigureAwait( false );
 			this.cleanupRequired = false;
 			this.physicalActive = 0 <= controllerIndex;
+			this.ClearInvalidated();
 		} catch {
 			this.cleanupRequired = true;
+			this.MarkInvalidated();
 			throw;
 		}
 	}
@@ -388,6 +424,14 @@ internal sealed class TerminalProgressManager : ITerminalSessionLifecyclePartici
 		if ( this.closed ) {
 			throw new ObjectDisposedException( nameof( TerminalSession ) );
 		}
+	}
+
+	private void MarkInvalidated() {
+		Volatile.Write( ref this.invalidated, 1 );
+	}
+
+	private void ClearInvalidated() {
+		Volatile.Write( ref this.invalidated, 0 );
 	}
 
 	private static byte[] EncodeValueFrame(
