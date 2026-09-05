@@ -31,7 +31,10 @@ Console.WriteLine(
 	$"Requesting cursor style: {requestedStyle}"
 );
 Console.WriteLine(
-	"The sample first queries the current style so it can demonstrate truthful restoration."
+	"The sample first demonstrates an explicit cursor-style observation."
+);
+Console.WriteLine(
+	"The scoped lease then performs its own baseline observation before mutation so restoration remains authoritative."
 );
 
 try {
@@ -52,7 +55,7 @@ try {
 		$"Observed current style: {observation.Style}"
 	);
 	Console.WriteLine(
-		"Acquiring a scoped cursor-style lease for five seconds."
+		"Acquiring a scoped cursor-style lease. The lease re-observes its own restoration baseline."
 	);
 
 	await using TerminalCursorStyleLease lease = await session.AcquireCursorStyleAsync(
@@ -64,13 +67,17 @@ try {
 		$"Leased style: {lease.Style}"
 	);
 	Console.WriteLine(
-		"Press any key to restore the observed prior style immediately."
+		"Press any key to restore the lease's independently observed prior style immediately."
 	);
 
 	_ = await session.ReadEventAsync();
+} catch ( NotSupportedException ) {
+	Console.WriteLine(
+		"The lease's baseline observation reported cursor-style state as unsupported. No leased style was retained."
+	);
 } catch ( TimeoutException ) {
 	Console.WriteLine(
-		"The cursor-style query timed out. No support conclusion is inferred from a timeout."
+		"A cursor-style query timed out. No support conclusion is inferred from a timeout."
 	);
 } catch ( FormatException exception ) {
 	Console.WriteLine(
