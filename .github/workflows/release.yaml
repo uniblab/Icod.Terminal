@@ -75,8 +75,6 @@ jobs:
       - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
       - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
-      - name: Build 0.9 synchronized-output sample
-        run: dotnet build 'samples/Icod.Terminal.SynchronizedOutput.Sample/Icod.Terminal.SynchronizedOutput.Sample.csproj' -c ${{ env.CONFIGURATION }} -p:ContinuousIntegrationBuild=true
       - name: Verify DCurses synchronized-output acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesSynchronizedOutput.ps1 -Configuration '${{ env.CONFIGURATION }}'
