@@ -6,16 +6,14 @@
 
 ## Status
 
-`0.10.0` is the current stable release. `0.11.0-alpha.7` is the current release candidate and adds semantic OSC 22 terminal mouse-pointer shape control with 30 CSS-compatible shapes, explicit set/reset and bounded Kitty-compatible queries, identity-aware scoped ownership, lifecycle/failure recovery, and downstream `Icod.DCurses` refresh acceptance.
+`0.11.0` is the current stable release. It adds semantic OSC 22 terminal mouse-pointer shape control with 30 CSS-compatible shapes, explicit set/reset and bounded Kitty-compatible queries, identity-aware scoped ownership, lifecycle/failure recovery, and downstream `Icod.DCurses` refresh acceptance.
 
-The 0.11 release candidate preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 9;4 progress, OSC 52 clipboard, cursor-style, and synchronized-output contracts.
+The release preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 9;4 progress, OSC 52 clipboard, cursor-style, and synchronized-output contracts.
 
 ## Installation
 
-Current stable package:
-
 ```text
-dotnet add package Icod.Terminal --version 0.10.0
+dotnet add package Icod.Terminal --version 0.11.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
@@ -274,7 +272,7 @@ ESC [ ? 2 0 2 6 l
 
 followed by one output flush.
 
-Nested acquisitions share the same physical terminal mode request. Because every owner requests the same boolean synchronized-output state, nested leases are identity-aware rather than strict-LIFO and may be disposed out of order. Non-final releases emit nothing and do not flush.
+Nested acquisitions share the same physical mode request. Because every owner requests the same boolean synchronized-output state, nested leases are identity-aware rather than strict-LIFO and may be disposed out of order. Non-final releases emit nothing and do not flush.
 
 ### Truthful support posture
 
@@ -506,17 +504,15 @@ The 0.8 cursor-style, 0.9 synchronized-output, 0.10 terminal-progress, and 0.11 
 
 ## Release process
 
-Stable 0.11 release readiness requires:
+Publishing 0.11.0 requires:
 
-1. cumulative `0.11.0-alpha.7` validation green on Windows, Linux, and macOS;
+1. exact stable PR-head validation green on Windows, Linux, and macOS;
 2. exact Staging package verification green;
 3. all three real downstream `Icod.DCurses` synchronized-output, terminal-progress, and pointer-shape acceptance gates green;
-4. retained 0.8/0.9/0.10 and new 0.11 XML documentation/package-only smoke gates green on all supported TFMs;
-5. stable-version metadata and documentation closure;
-6. exact stable PR head green;
-7. merge to `main`;
-8. Release distribution validation green on the resulting exact `main` commit;
-9. only then create tag `v0.11.0`.
+4. retained 0.8/0.9/0.10 and 0.11 XML documentation/package-only smoke gates green on all supported TFMs;
+5. merge to `main`;
+6. Release distribution validation green on the resulting exact `main` commit;
+7. only then create tag `v0.11.0`.
 
 The tag workflow rebuilds and retests the tagged solution, reruns all three downstream DCurses acceptance gates, selects the exact package matching the tag, reruns package verification including the 0.8, 0.9, 0.10, and 0.11 public contracts, and only then publishes to NuGet.org and GitHub Packages.
 
