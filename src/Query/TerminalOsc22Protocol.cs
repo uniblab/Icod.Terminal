@@ -47,17 +47,17 @@ internal static class TerminalOsc22Protocol {
 				"The OSC 22 pointer-shape response payload is empty."
 			);
 		}
-
-		string wireName;
-		try {
-			wireName = Encoding.ASCII.GetString( payload );
-		} catch ( Exception exception ) {
-			throw new FormatException(
-				"The OSC 22 pointer-shape response is not valid ASCII.",
-				exception
-			);
+		for ( int index = 0; index < payload.Length; ++index ) {
+			if ( 0x7f < payload[ index ] ) {
+				throw new FormatException(
+					"The OSC 22 pointer-shape response is not valid ASCII."
+				);
+			}
 		}
-		return TerminalPointerShapeCodec.ParseWireName( wireName );
+
+		return TerminalPointerShapeCodec.ParseWireName(
+			Encoding.ASCII.GetString( payload )
+		);
 	}
 
 	internal static bool ParseSingleShapeSupport(
@@ -84,7 +84,7 @@ internal static class TerminalOsc22Protocol {
 	) {
 		ArgumentException.ThrowIfNullOrEmpty( queryName );
 		byte[] payload = Encoding.ASCII.GetBytes( queryName );
-		byte[] frame = new byte[ 7 + payload.Length + 2 ];
+		byte[] frame = new byte[ 6 + payload.Length + 2 ];
 		frame[ 0 ] = 0x1b;
 		frame[ 1 ] = (byte)']';
 		frame[ 2 ] = (byte)'2';
