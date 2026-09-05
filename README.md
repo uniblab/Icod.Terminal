@@ -6,14 +6,14 @@
 
 ## Status
 
-`0.10.0` is the current stable release. It adds scoped OSC 9;4 terminal-progress ownership with completed/total stage reporting, indeterminate progress, normal/error/attention states, nested restoration, lifecycle-safe cleanup, and downstream `Icod.DCurses` refresh acceptance.
+`0.11.0` is the current stable release. It adds semantic OSC 22 terminal mouse-pointer shape control with 30 CSS-compatible shapes, explicit set/reset and bounded Kitty-compatible queries, identity-aware scoped ownership, lifecycle/failure recovery, and downstream `Icod.DCurses` refresh acceptance.
 
-The release preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 52 clipboard, cursor-style, and synchronized-output contracts.
+The release preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 9;4 progress, OSC 52 clipboard, cursor-style, and synchronized-output contracts.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 0.10.0
+dotnet add package Icod.Terminal --version 0.11.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
@@ -49,17 +49,127 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-await using TerminalProgressLease progress =
-	await session.AcquireProgressAsync();
+await using TerminalPointerShapeLease pointer =
+	await session.AcquirePointerShapeAsync(
+		TerminalPointerShape.Pointer
+	);
 
-await progress.ReportAsync( 1, 3 );
-await session.WriteTextAsync( "stage one complete\r\n" );
-
-await progress.SetIndeterminateAsync();
-await session.WriteTextAsync( "finishing work\r\n" );
+await session.WriteTextAsync(
+	"pointer shape is owned while this scope is active\r\n"
+);
 ```
 
-The session borrows process-standard endpoints, owns only terminal state transitions it applies, and restores captured state during `DisposeAsync()`.
+The session borrows process-standard endpoints, owns only terminal state transitions it applies, and restores or resets captured/session-owned state during `DisposeAsync()`.
+
+## 0.11 terminal mouse-pointer shape
+
+### Semantic OSC 22 shapes
+
+OSC 22 controls the terminal mouse pointer. It is independent of DECSCUSR `TerminalCursorStyle`, which controls the text cursor, and independent of `TerminalCursorVisibility`.
+
+`TerminalPointerShape` exposes the complete 30-name CSS-compatible vocabulary used by Kitty-compatible OSC 22 implementations:
+
+```text
+Alias                Cell                 Copy
+Crosshair            Default              EastResize
+EastWestResize       Grab                 Grabbing
+Help                 Move                 NorthResize
+NorthEastResize      NorthEastSouthWestResize
+NoDrop               NotAllowed           NorthSouthResize
+NorthWestResize      NorthWestSouthEastResize
+Pointer              Progress             SouthResize
+SouthEastResize      SouthWestResize      Text
+VerticalText         WestResize           Wait
+ZoomIn               ZoomOut
+```
+
+Callers never provide raw OSC 22 or terminal-specific X11 cursor names.
+
+### Explicit set and reset
+
+```csharp
+await session.SetPointerShapeAsync(
+	TerminalPointerShape.Crosshair
+);
+
+await session.ResetPointerShapeAsync();
+```
+
+The canonical setter is:
+
+```text
+ESC ] 22 ; shape ESC \
+```
+
+and terminal-policy reset is:
+
+```text
+ESC ] 22 ; ESC \
+```
+
+`TerminalPointerShape.Default` requests the CSS pointer shape named `default` and therefore emits `ESC ] 22 ; default ESC \`. It is deliberately distinct from `ResetPointerShapeAsync()`, which releases the application's explicit pointer request back to terminal policy.
+
+### Scoped ownership
+
+```csharp
+await using TerminalPointerShapeLease pointer =
+	await session.AcquirePointerShapeAsync(
+		TerminalPointerShape.Pointer
+	);
+```
+
+Pointer-shape owners are ordered and identity-aware. The newest active owner controls physical pointer shape. Nested owners may be disposed out of order; releasing a non-controlling owner emits nothing, while releasing the controlling owner restores the newest remaining Icod-owned shape.
+
+Final release emits terminal-policy reset. Portable base OSC 22 cannot query an arbitrary preexisting external pointer shape, so the library does not pretend to restore state it never observed.
+
+The lease implementation does not depend on Kitty's terminal-side pointer push/pop stack.
+
+### Explicit Kitty-compatible queries
+
+Queries remain explicit and bounded:
+
+```csharp
+TimeSpan timeout = TimeSpan.FromMilliseconds( 750 );
+
+bool supportsPointer = await session.QueryPointerShapeSupportAsync(
+	TerminalPointerShape.Pointer,
+	timeout
+);
+
+TerminalPointerShapeObservation current =
+	await session.QueryCurrentPointerShapeAsync( timeout );
+```
+
+The public query family includes:
+
+```text
+QueryCurrentPointerShapeAsync
+QueryDefaultPointerShapeAsync
+QueryGrabbedPointerShapeAsync
+QueryPointerShapeSupportAsync
+```
+
+They reuse the existing session-owned active-query transaction manager and response router. Opening a session, setting a pointer shape, acquiring a lease, suspending/resuming, and disposing never issue an automatic OSC 22 support query.
+
+A current-state reply of `0` is represented as `HasShape == false` and `Shape == null`; that is distinct from the CSS `Default` shape. A support query accepts only explicit `0` or `1` responses. Timeout remains `TimeoutException` and does not prove that OSC 22 is unsupported.
+
+### Lifecycle and failure recovery
+
+Managed suspension resets physical pointer state to terminal policy while preserving logical owners. Resume re-applies the newest remaining owner. Releasing every owner while suspended prevents re-entry.
+
+`TerminalSession.InvalidateState()` marks pointer physical state untrusted. The next semantic pointer transition re-establishes the current logical shape, or resets when no owner remains, before continuing.
+
+Failed acquisition and failed unscoped mutation perform best-effort recovery. Failed controlling release retains ownership so the same lease may retry cleanup. Session disposal performs authoritative pointer reset before later output-state closure.
+
+Pointer recovery/cleanup writes are non-caller-cancellable and do not implicitly flush.
+
+### Truthful support posture
+
+Successful completion proves that a complete OSC 22 frame was emitted. It does not prove that the terminal supports OSC 22, recognizes the requested CSS name, visually applies it, or continues displaying it while the terminal performs its own interactions such as text selection, link hovering, or dragging.
+
+`Icod.Terminal` does not infer pointer-shape support from operating system, `TERM`, terminal-emulator identity, or environment variables.
+
+The reviewed 0.11 public surface is frozen in [`docs/Public-API-Baseline-0.11.md`](docs/Public-API-Baseline-0.11.md). Composition and real downstream acceptance are recorded in [`docs/T116-Pointer-Shape-Composition-and-DCurses-Acceptance.md`](docs/T116-Pointer-Shape-Composition-and-DCurses-Acceptance.md).
 
 ## 0.10 terminal progress
 
@@ -162,7 +272,7 @@ ESC [ ? 2 0 2 6 l
 
 followed by one output flush.
 
-Nested acquisitions share the same physical terminal mode request. Because every owner requests the same boolean synchronized-output state, nested leases are identity-aware rather than strict-LIFO and may be disposed out of order. Non-final releases emit nothing and do not flush.
+Nested acquisitions share the same physical mode request. Because every owner requests the same boolean synchronized-output state, nested leases are identity-aware rather than strict-LIFO and may be disposed out of order. Non-final releases emit nothing and do not flush.
 
 ### Truthful support posture
 
@@ -174,7 +284,7 @@ The terminal may independently stop deferring presentation because of its own ti
 
 ### Composition and lifecycle
 
-Synchronized output is a terminal-side presentation-timing bracket, not an application-side byte buffer. Existing operations retain their normal framing and flush behavior inside the lease, including text, OSC title/location/hyperlink/clipboard operations, progress, cursor style, presentation state, and explicit active terminal queries.
+Synchronized output is a terminal-side presentation-timing bracket, not an application-side byte buffer. Existing operations retain their normal framing and flush behavior inside the lease, including text, OSC title/location/hyperlink/clipboard operations, progress, pointer shape, cursor style, presentation state, and explicit active terminal queries.
 
 Managed suspension physically leaves synchronized output and flushes before suspension while retaining logical ownership. Resume re-enters mode 2026 only if logical owners remain. Releasing all owners while suspended is logical-only and prevents re-entry.
 
@@ -360,6 +470,7 @@ Presentation state such as alternate screen, keypad mode, and cursor visibility 
 
 The repository contains focused samples for each major public family:
 
+- [`Icod.Terminal.PointerShape.Sample`](samples/Icod.Terminal.PointerShape.Sample/) — 0.11 OSC 22 semantic pointer set/reset, scoped ownership, and explicit queries;
 - [`Icod.Terminal.Progress.Sample`](samples/Icod.Terminal.Progress.Sample/) — 0.10 OSC 9;4 determinate/indeterminate progress ownership;
 - [`Icod.Terminal.SynchronizedOutput.Sample`](samples/Icod.Terminal.SynchronizedOutput.Sample/) — 0.9 scoped synchronized output;
 - [`Icod.Terminal.CursorStyle.Sample`](samples/Icod.Terminal.CursorStyle.Sample/) — 0.8 cursor-style observation and truthful scoped restoration;
@@ -387,27 +498,29 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Distribution validation builds/tests the complete solution—including the focused 0.10 progress sample—runs real downstream `Icod.DCurses` synchronized-output and terminal-progress acceptance, packs the NuGet artifacts, verifies package structure/XML documentation, and runs fresh package-only consumers.
+Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Distribution validation builds/tests the complete solution—including the focused 0.11 pointer-shape sample—runs real downstream `Icod.DCurses` synchronized-output, terminal-progress, and pointer-shape acceptance, packs the NuGet artifacts, verifies package structure/XML documentation, and runs fresh package-only consumers.
 
-The 0.8 cursor-style, 0.9 synchronized-output, and 0.10 terminal-progress package consumers are all required to restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
+The 0.8 cursor-style, 0.9 synchronized-output, 0.10 terminal-progress, and 0.11 pointer-shape package consumers are all required to restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
 
 ## Release process
 
-Publishing 0.10.0 requires:
+Publishing 0.11.0 requires:
 
 1. exact stable PR-head validation green on Windows, Linux, and macOS;
 2. exact Staging package verification green;
-3. both real downstream `Icod.DCurses` synchronized-output and terminal-progress acceptance gates green;
-4. retained 0.8/0.9 and new 0.10 XML documentation/package-only smoke gates green on all supported TFMs;
+3. all three real downstream `Icod.DCurses` synchronized-output, terminal-progress, and pointer-shape acceptance gates green;
+4. retained 0.8/0.9/0.10 and 0.11 XML documentation/package-only smoke gates green on all supported TFMs;
 5. merge to `main`;
 6. Release distribution validation green on the resulting exact `main` commit;
-7. only then create tag `v0.10.0`.
+7. only then create tag `v0.11.0`.
 
-The tag workflow rebuilds and retests the tagged solution, reruns both downstream DCurses acceptance gates, selects the exact package matching the tag, reruns package verification including the 0.8, 0.9, and 0.10 public contracts, and only then publishes to NuGet.org and GitHub Packages.
+The tag workflow rebuilds and retests the tagged solution, reruns all three downstream DCurses acceptance gates, selects the exact package matching the tag, reruns package verification including the 0.8, 0.9, 0.10, and 0.11 public contracts, and only then publishes to NuGet.org and GitHub Packages.
 
 ## Development roadmap
 
-The 0.10 milestone is documented in [`Icod.Terminal-0.10.0-Development-Roadmap.md`](Icod.Terminal-0.10.0-Development-Roadmap.md), with tranche records T100–T107 under `docs/`.
+The 0.11 milestone is documented in [`Icod.Terminal-0.11.0-Development-Roadmap.md`](Icod.Terminal-0.11.0-Development-Roadmap.md), with tranche records T110–T117 under `docs/`.
+
+The completed 0.10 progress milestone is documented in [`Icod.Terminal-0.10.0-Development-Roadmap.md`](Icod.Terminal-0.10.0-Development-Roadmap.md).
 
 The completed protocol-closure sequence through 0.9 is documented in [`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
 
