@@ -26,9 +26,12 @@ await session.FinishCommandAsync( 0 );
 
 await session.BeginPromptAsync();
 await session.WriteTextAsync(
-	"demo> cancelled command\r\n"
+	"demo> "
 );
 await session.BeginCommandInputAsync();
+await session.WriteTextAsync(
+	"cancelled command^C\r\n"
+);
 await session.AbortCommandAsync();
 
 await session.WriteTextAsync(

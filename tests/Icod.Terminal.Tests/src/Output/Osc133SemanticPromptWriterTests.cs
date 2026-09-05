@@ -1,5 +1,6 @@
 namespace Icod.Terminal.Tests.Output;
 
+using System.Globalization;
 using System.Text;
 using Icod.Terminal;
 using Xunit;
@@ -64,6 +65,21 @@ public sealed class Osc133SemanticPromptWriterTests {
 			Encoding.ASCII.GetBytes( expected ),
 			OscWriter.EncodeOsc133CommandFinishedFrame( (byte)exitStatus )
 		);
+	}
+
+	[Fact]
+	public void CompletionEncodesEveryByteValueExactly() {
+		for ( int exitStatus = byte.MinValue; exitStatus <= byte.MaxValue; ++exitStatus ) {
+			string expected = string.Concat(
+				"\u001b]133;D;",
+				exitStatus.ToString( CultureInfo.InvariantCulture ),
+				"\u001b\\"
+			);
+			Assert.Equal(
+				Encoding.ASCII.GetBytes( expected ),
+				OscWriter.EncodeOsc133CommandFinishedFrame( (byte)exitStatus )
+			);
+		}
 	}
 
 	[Fact]
