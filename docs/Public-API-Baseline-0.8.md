@@ -110,6 +110,8 @@ Dispose A -> restore B
 
 Out-of-order release fails without changing tracked or physical state. A failed release retains restoration ownership for retry or session-disposal cleanup.
 
+If the requested DECSCUSR write reports a transport failure after emission has been attempted, acquisition performs a best-effort write of the known prior semantic style before propagating the acquisition failure. If that recovery write also fails, both failures are reported and an outermost known baseline remains owned by the session for final disposal retry. Cancellation that occurs before the requested style write commits still causes no cursor-style mutation.
+
 Before managed suspension, an active cursor-style lease restores the originally observed baseline. After successful session re-entry, the innermost active logical style is re-applied. Releasing a lease while suspended updates logical ownership without emitting an extra cursor-style frame. Session disposal performs final best-effort restoration of the observed baseline and invalidates outstanding lease objects.
 
 Exact restoration never means emitting a guessed reset. The implementation does not use DECSCUSR parameter `0`, a hard-coded block cursor, or xterm parameter `7` as a substitute for an observed prior state.
@@ -149,8 +151,9 @@ The 0.8 surface passes the stable-release regret audit because:
 5. query timeout, unsupported response, malformed response, and cancellation remain distinct outcomes;
 6. exact restoration is offered only when prior state was actually observed;
 7. nested ownership is deterministic and strict LIFO;
-8. cursor shape and cursor visibility remain independent public concepts;
-9. the implementation reuses the existing single-reader query architecture and shared output gate;
-10. no 0.9 synchronized-output policy is prematurely frozen into the 0.8 API.
+8. failed acquisition does not silently abandon a known restoration baseline;
+9. cursor shape and cursor visibility remain independent public concepts;
+10. the implementation reuses the existing single-reader query architecture and shared output gate;
+11. no 0.9 synchronized-output policy is prematurely frozen into the 0.8 API.
 
 No further public surface is required for `0.8.0`.
