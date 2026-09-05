@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<!-- Repository-wide release version authority. -->
 		<VersionPrefix>0.13.0</VersionPrefix>
-		<VersionSuffix>alpha.1</VersionSuffix>
+		<VersionSuffix>alpha.2</VersionSuffix>
 		<Version Condition="'$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
 		<Version Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
 		<PackageVersion>$(Version)</PackageVersion>
