@@ -3,9 +3,6 @@
 		<!-- Repository-wide release version authority. -->
 		<VersionPrefix>0.7.0</VersionPrefix>
 		<VersionSuffix></VersionSuffix>
-		<Version Condition="'$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
-		<Version Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
-		<PackageVersion>$(Version)</PackageVersion>
 		<AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
 
 		<LangVersion>13.0</LangVersion>
