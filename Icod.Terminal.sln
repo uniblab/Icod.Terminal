@@ -26,6 +26,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Clipboard.Sam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.CursorStyle.Sample", "samples\Icod.Terminal.CursorStyle.Sample\Icod.Terminal.CursorStyle.Sample.csproj", "{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.SynchronizedOutput.Sample", "samples\Icod.Terminal.SynchronizedOutput.Sample\Icod.Terminal.SynchronizedOutput.Sample.csproj", "{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,12 @@ Global
 		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -107,5 +115,6 @@ Global
 		{0B00CC3E-5263-4E41-B071-63DFE35C333D} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{D3BB7F31-4274-4BF0-9D4E-55E486D01234} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{A0F2D8C5-5E31-4D0E-9F3D-8B6C2A714E91} = {4C994810-850E-4753-82E5-4BD346EF574C}
+		{B2A60B37-7B72-4E70-9E92-2BEE4D6E95D7} = {4C994810-850E-4753-82E5-4BD346EF574C}
 	EndGlobalSection
 EndGlobal

@@ -62,6 +62,12 @@ public sealed partial class TerminalSession {
 			exceptions.Add( exception );
 		}
 
+		Exception? synchronizedOutputException =
+			await this.CloseSynchronizedOutputStateAsync().ConfigureAwait( false );
+		if ( synchronizedOutputException is not null ) {
+			exceptions.Add( synchronizedOutputException );
+		}
+
 		return exceptions.Count switch {
 			0 => null,
 			1 => exceptions[ 0 ],

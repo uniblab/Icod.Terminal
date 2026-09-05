@@ -59,6 +59,9 @@ jobs:
       - run: dotnet restore '${{ steps.repository.outputs.solution_path }}'
       - run: dotnet build '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
+      - name: Verify DCurses synchronized-output acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesSynchronizedOutput.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - name: Pack Staging artifacts
         if: matrix.verify_packages
         run: dotnet pack '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts -p:ContinuousIntegrationBuild=true
@@ -70,6 +73,10 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: ./packaging/VerifyCursorStylePackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify 0.9 synchronized-output package contract
+        if: matrix.verify_packages
+        shell: pwsh
+        run: ./packaging/VerifySynchronizedOutputPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
       - name: Upload validated Staging package artifacts
         if: matrix.verify_packages
         uses: actions/upload-artifact@v4
