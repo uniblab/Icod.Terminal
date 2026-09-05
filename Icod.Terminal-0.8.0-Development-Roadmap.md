@@ -195,6 +195,8 @@ Deliverables:
 
 **Gate T80:** no production public cursor-style implementation until numeric mapping, query interpretation, extension policy, and restoration semantics are frozen.
 
+**T80 implementation record:** [`docs/T80-Cursor-Style-Contract-and-Reference-Freeze.md`](docs/T80-Cursor-Style-Contract-and-Reference-Freeze.md) — contract frozen at `0.8.0-alpha.1`.
+
 ### T81 — reusable CSI intermediate-byte output primitive
 
 Deliverables:
@@ -329,9 +331,9 @@ Synchronized output remains the planned `0.9.0` closure milestone.
 
 ---
 
-## 12. Initial development state
+## 12. Current development state
 
-The `0.8.0` branch begins at:
+The `0.8.0` branch is currently at:
 
 ```text
 VersionPrefix: 0.8.0
@@ -341,4 +343,4 @@ PackageVersion:0.8.0-alpha.1
 AssemblyVersion:0.8.0.0
 ```
 
-The first implementation tranche is **T80 — cursor-style contract and reference freeze**.
+**T80 is complete.** The next implementation tranche is **T81 — reusable CSI intermediate-byte output primitive**.
