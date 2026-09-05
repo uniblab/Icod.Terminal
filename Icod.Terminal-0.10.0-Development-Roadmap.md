@@ -2,250 +2,264 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.10.0`  
-**Development version:** `0.10.0-alpha.1`  
+**Development version:** `0.10.0-alpha.7`  
 **Predecessor:** `0.9.0` — synchronized output and nested transactional output state  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
-**Theme:** safe semantic OSC 9 operations, centered on terminal progress/activity state  
-**Status:** T100 contract/reference freeze in progress
+**Theme:** safe semantic OSC 9 operations centered on OSC 9;4 terminal progress/activity state  
+**Status:** T100–T106 implemented; T107 stable closure in progress
 
 ---
 
 ## 1. Release objective
 
-`Icod.Terminal 0.10.0` SHALL add a reviewed semantic subset of the OSC 9 extension family without exposing arbitrary host-control escape injection.
+`Icod.Terminal 0.10.0` adds a reviewed semantic OSC 9;4 progress subsystem without exposing arbitrary OSC or host-control escape construction.
 
-The principal feature is OSC 9;4 terminal progress state, including:
+The release provides:
 
 - determinate progress;
 - indeterminate progress;
-- normal/error/attention rendering state;
-- caller-friendly completed/total reporting rather than forcing callers to compute wire percentages;
+- normal/error/attention semantic states;
+- caller-friendly completed/total reporting;
 - scoped owned progress state;
-- deterministic nesting and restoration among library-owned progress scopes;
+- deterministic nested restoration;
 - managed suspend/resume participation;
+- invalidation and failure recovery;
 - cleanup on lease/session disposal;
-- composition with existing output serialization and synchronized output.
+- composition with synchronized output and existing terminal operations;
+- downstream `Icod.DCurses` acceptance.
 
-The release MAY include additional OSC 9 operations only when they satisfy the same semantic, non-host-executing design standard.
-
----
-
-## 2. OSC 9 family classification
-
-OSC 9 is a vendor-extension namespace with subcommands of very different risk and portability characteristics. `0.10.0` SHALL classify each candidate before implementation.
-
-### Primary in-scope operation
-
-- **OSC 9;4 — terminal progress/activity state.**
-
-This is the mandatory feature family for 0.10.0.
-
-### Candidate compatibility operation
-
-- **OSC 9;9 — current-working-directory publication.**
-
-This overlaps semantically with existing OSC 7 location publication and therefore requires a compatibility decision rather than automatic addition.
-
-### Explicitly excluded from 0.10.0 public API
-
-Host-control or host-executing OSC 9 extensions such as commands which:
-
-- sleep or block the host terminal;
-- show native message boxes;
-- wait for native key input outside the ordinary terminal input path;
-- execute GUI macros;
-- launch host processes;
-- read or mutate host environment state;
-- change emulator-global compatibility modes.
-
-These are outside `Icod.Terminal`'s terminal-protocol abstraction and SHALL NOT be exposed merely because an emulator accepts them.
+OSC 9;9 does not create a duplicate public CWD API over the existing OSC 7 operation. Host-executing/blocking OSC 9 commands and OSC 4 palette mutation remain explicit non-goals.
 
 ---
 
-## 3. Architectural rules
+## 2. Architectural rules
 
-0.10 reuses the established protocol architecture:
+0.10 preserves the established protocol architecture:
 
 - semantic public APIs rather than arbitrary OSC construction;
 - complete-frame construction before commit;
-- caller cancellation observed before commit;
-- committed control frames written non-cancellably;
+- caller cancellation before commit only;
+- non-caller-cancellable committed control frames;
 - session-owned output serialization;
 - interactive-output requirement for terminal-control operations;
 - truthful optimistic support semantics;
 - lifecycle participants for scoped terminal state;
+- retryable cleanup debt;
 - authoritative session-disposal cleanup;
 - no second reader or output transport.
 
-OSC 9 progress does not require `Icod.TermInfo` changes, a query parser, response routing, or capability-database changes.
+No `Icod.TermInfo` change, query parser, response router, or capability-database change is required for OSC 9;4 progress.
 
 ---
 
-## 4. T100 — OSC 9 contract and reference freeze
+## 3. Tranche record
 
-Freeze:
+| Tranche | Version | Status | Outcome |
+| --- | --- | --- | --- |
+| T100 | `0.10.0-alpha.1` | Complete | OSC 9 reference/scope and progress ownership contract frozen. |
+| T101 | `0.10.0-alpha.2` | Complete | Byte-exact OSC 9;4 writer with canonical BEL termination. |
+| T102 | `0.10.0-alpha.3` | Complete | Semantic progress state/value model and overflow-safe stage conversion. |
+| T103 | `0.10.0-alpha.4` | Complete | Session-owned ordered progress manager and nested restoration. |
+| T104 | `0.10.0-alpha.5` | Complete | Public `TerminalProgressLease` and `AcquireProgressAsync(...)`. |
+| T105 | `0.10.0-alpha.6` | Complete | Lifecycle, invalidation, failure, cleanup retry, and disposal hardening. |
+| T106 | `0.10.0-alpha.7` | Implemented | Composition plus real `Icod.DCurses` progress acceptance. |
+| T107 | `0.10.0` | In progress | Public API/package/docs/sample/stable closure. |
 
-- authoritative OSC 9 references and supported-emulator evidence;
-- exact OSC 9;4 wire grammar and terminator policy;
-- semantic state names for wire states 0 through 4;
-- completed/total to percentage conversion and rounding;
-- validation rules;
-- support/compatibility posture;
-- scoped ownership and nesting semantics;
-- suspend/resume/disposal behavior;
-- failure and cancellation semantics;
-- interaction with synchronized output;
-- OSC 9;9 disposition;
-- explicit OSC 9 non-goals.
+---
 
-**Gate T100:** no encoder or public API implementation begins until the progress ownership model and wire-state terminology are frozen.
+## 4. T100 — contract/reference freeze
+
+Frozen in `docs/T100-OSC-9-Contract-and-Reference-Freeze.md`:
+
+- canonical wire form `ESC ] 9 ; 4 ; state ; progress BEL`;
+- wire states clear/normal/error/indeterminate/attention;
+- public semantic `Attention` for vendor wire state 4;
+- `long completed, long total` caller model;
+- integer nearest-percentage rounding with exact halves upward;
+- acquisition emits no frame;
+- ordered, identity-aware, out-of-order-safe nesting;
+- suspend/session disposal clear progress;
+- resume restores current reported owner;
+- no support inference/probe;
+- OSC 9;9 does not duplicate OSC 7;
+- host-control OSC 9 commands excluded;
+- OSC 4 palette work orthogonal.
+
+Workflow #376 green.
 
 ---
 
 ## 5. T101 — byte-exact OSC 9;4 writer
 
-Implement:
+Implemented:
 
-- specialized internal OSC 9;4 encoder/writer;
-- canonical complete-frame output;
-- determinate, indeterminate, attention/error, and clear frames;
-- byte-exact tests;
-- pre-commit cancellation tests;
-- no flush unless frozen by T100;
-- no generic OSC 9 public writer.
+- internal `Osc9ProgressState`;
+- specialized encoder/writer;
+- canonical BEL termination;
+- progress range validation;
+- canonical zero for clear/indeterminate;
+- one complete non-cancellable committed write;
+- no implicit flush;
+- byte-exact and cancellation tests.
 
-Expected development version: `0.10.0-alpha.2`.
+Record: `docs/T101-OSC-9-4-Byte-Exact-Writer.md`.
 
 ---
 
 ## 6. T102 — progress value model and stage conversion
 
-Implement the typed semantic value layer:
+Implemented:
 
-- terminal progress state enum/value type as frozen by T100;
+- public `TerminalProgressState { Normal, Error, Attention }`;
+- internal immutable `TerminalProgressValue`;
 - completed/total validation;
-- integer-safe percentage conversion;
-- deterministic rounding;
-- boundary tests for 0%, 100%, uneven stage counts, and large integral counts;
-- no floating-point dependency in public progress conversion.
+- `UInt128` overflow-safe percentage arithmetic;
+- deterministic nearest-integer rounding;
+- large-count, uneven-stage, boundary, and invalid-input tests.
 
-Expected development version: `0.10.0-alpha.3`.
+Corrected cumulative validation green in workflow #386.
+
+Record: `docs/T102-Progress-Value-Model-and-Stage-Conversion.md`.
 
 ---
 
 ## 7. T103 — session progress manager and nesting
 
-Implement session-owned logical progress state:
+Implemented:
 
-- nested progress owners;
-- current logical value per owner;
-- deterministic restoration of the previous library-owned state when an inner owner releases;
-- outermost final release clears progress;
-- identity/order rules frozen by T100;
-- output serialization through the existing session control-output domain;
-- failure-retained cleanup ownership.
+- lazy session-owned manager;
+- acquisition order separated from reported-value precedence;
+- unreported newer owners do not mask lower progress;
+- non-controlling reports are logical-only;
+- controlling release restores newest remaining reported owner;
+- out-of-order non-controlling release is silent;
+- final release clears progress;
+- failed transitions retain cleanup debt;
+- progress cleanup precedes synchronized-output final leave on session disposal.
 
-Expected development version: `0.10.0-alpha.4`.
+Workflow #392 green.
+
+Record: `docs/T103-Session-Progress-Manager-and-Nesting.md`.
 
 ---
 
 ## 8. T104 — public progress lease/API
 
-Add the reviewed semantic API, expected to include a scoped `TerminalProgressLease` with operations for:
+Frozen public delta:
 
-- reporting completed/total progress;
-- entering indeterminate state;
-- changing semantic progress state;
-- asynchronous disposal/clear.
+```csharp
+public enum TerminalProgressState {
+	Normal,
+	Error,
+	Attention
+}
 
-Public API SHALL NOT expose raw OSC 9 subcommand numbers or require callers to compute escape strings.
+public sealed class TerminalProgressLease : IAsyncDisposable {
+	public ValueTask ReportAsync(
+		long completed,
+		long total,
+		CancellationToken cancellationToken = default
+	);
 
-Expected development version: `0.10.0-alpha.5`.
+	public ValueTask ReportAsync(
+		TerminalProgressState state,
+		long completed,
+		long total,
+		CancellationToken cancellationToken = default
+	);
+
+	public ValueTask SetIndeterminateAsync(
+		CancellationToken cancellationToken = default
+	);
+
+	public ValueTask DisposeAsync();
+}
+
+public ValueTask<TerminalProgressLease> AcquireProgressAsync(
+	CancellationToken cancellationToken = default
+);
+```
+
+Workflow #398 green.
+
+Record: `docs/T104-Public-Terminal-Progress-Lease-and-API.md`.
 
 ---
 
-## 9. T105 — lifecycle, cancellation, failure, and disposal
+## 9. T105 — lifecycle, invalidation, failure, disposal
 
-Prove:
+Implemented and proved:
 
-- managed suspend clears library-owned progress before giving control back;
-- resume restores the current logical progress state if owners remain;
-- releasing all owners while suspended prevents re-entry;
-- session disposal clears progress best-effort;
-- failed update/clear operations retain truthful cleanup responsibility;
-- caller cancellation cannot truncate a committed OSC frame;
-- late lease disposal after session disposal emits nothing.
+- suspend clear and resume restoration;
+- release-all-while-suspended prevents re-entry;
+- `TerminalSession.InvalidateState()` participation;
+- invalidated-state recovery before later report/release;
+- failed update/clear cleanup debt;
+- retryable final lease cleanup;
+- retryable manager/session cleanup;
+- re-entry plus cleanup double-failure aggregation;
+- non-caller-cancellable cleanup.
 
-Expected development version: `0.10.0-alpha.6`.
+Workflow #404 green.
+
+Record: `docs/T105-Progress-Lifecycle-Failure-and-Disposal.md`.
 
 ---
 
 ## 10. T106 — composition and downstream acceptance
 
-Prove composition with:
+Implemented:
 
-- ordinary text writes;
-- OSC 0/1/2 title operations;
-- OSC 7 location publication;
-- OSC 8 hyperlinks;
-- OSC 52 clipboard operations;
-- cursor style;
-- presentation state;
-- synchronized output;
-- active terminal queries;
-- downstream `Icod.DCurses` refresh flow.
+- byte-exact composition with text, OSC 0, OSC 7, OSC 8, OSC 52, cursor style, presentation state, synchronized output, and active queries;
+- real downstream consumer using published `Icod.DCurses 0.1.0` and current Terminal source;
+- stage 1/10 and 2/10 reports around real `CursesSession.RefreshAsync()`;
+- indeterminate progress around a real refresh;
+- attention-state report and final clear;
+- net8.0/net9.0/net10.0 acceptance;
+- PR/distribution/tagged-release integration.
 
-Add downstream acceptance showing a higher-level consumer can report stages and indeterminate progress without constructing OSC bytes.
+Record: `docs/T106-Progress-Composition-and-DCurses-Acceptance.md`.
 
-Expected development version: `0.10.0-alpha.7`.
+Cumulative exact-head validation is required before the stable version bump.
 
 ---
 
-## 11. T107 — public API, docs, sample, package, and stable closure
+## 11. T107 — public API, docs, sample, package, stable closure
 
-Deliver:
+Already prepared on the alpha.7 line:
 
 - `docs/Public-API-Baseline-0.10.md`;
-- root README update;
-- focused terminal-progress sample;
-- package XML-documentation assertions;
-- fresh package-only consumer on net8.0/net9.0/net10.0;
+- root README 0.10 release-candidate documentation;
+- solution-owned `Icod.Terminal.Progress.Sample`;
+- `samples/README.md` progress documentation;
+- package release notes/tags;
+- fresh package-only progress consumer on net8.0/net9.0/net10.0;
+- XML-documentation assertions for the complete 0.10 public delta;
 - retained 0.8 and 0.9 package-contract gates;
-- stable `0.10.0` metadata;
-- PR/main/tag release gates.
+- new 0.10 progress package gate in PR/distribution/release validation.
 
-Expected stable version: `0.10.0`.
+Stable closure remains gated on:
 
----
-
-## 12. Explicit non-goals
-
-0.10 SHALL NOT add:
-
-- public arbitrary OSC 9 construction;
-- public generic OSC construction;
-- host process launching through OSC 9;
-- GUI macro execution;
-- native message-box APIs;
-- host environment-variable access through OSC;
-- blocking/wait-key host commands;
-- OSC 4 palette mutation as part of the OSC 9 feature family;
-- background capability probing;
-- a retained-mode progress renderer inside `Icod.Terminal`.
-
-OSC 4 palette mutation remains orthogonal. `Icod.TermInfo` already describes standard color capabilities, including `initc`/`orig_colors`, but that work is not a prerequisite for OSC 9 progress.
+1. cumulative alpha.7 head green on Windows/Linux/macOS;
+2. both DCurses acceptance gates green;
+3. fresh 0.10 package-only consumer/XML-doc gate green;
+4. empty `VersionSuffix` and stable README/status wording;
+5. exact stable PR head green;
+6. merge to `main`;
+7. Release distribution validation green on exact `main`;
+8. only then tag `v0.10.0`.
 
 ---
 
-## 13. Current development state
+## 12. Current development state
 
 ```text
 VersionPrefix:   0.10.0
-VersionSuffix:   alpha.1
-Version:         0.10.0-alpha.1
-PackageVersion:  0.10.0-alpha.1
+VersionSuffix:   alpha.7
+Version:         0.10.0-alpha.7
+PackageVersion:  0.10.0-alpha.7
 AssemblyVersion: 0.10.0.0
 ```
 
-**T100 contract/reference freeze is the current tranche.**
+**T107 stable closure is the current tranche.**
