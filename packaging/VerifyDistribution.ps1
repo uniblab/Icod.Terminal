@@ -38,6 +38,9 @@ try {
     & (Join-Path $PSScriptRoot 'VerifyDCursesSynchronizedOutput.ps1') `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyDCursesProgress.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
