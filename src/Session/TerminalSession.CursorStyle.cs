@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Provides semantic DECSCUSR cursor-style mutation for a live terminal session.
+/// Provides semantic DECSCUSR cursor-style operations for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
 	/// <summary>
@@ -47,5 +47,57 @@ public sealed partial class TerminalSession {
 			parameter,
 			cancellationToken
 		).ConfigureAwait( false );
+	}
+
+	/// <summary>
+	/// Explicitly queries the current terminal text-cursor style through DECRQSS.
+	/// </summary>
+	/// <param name="timeout">The caller-visible query timeout.</param>
+	/// <param name="cancellationToken">Cancellation for the caller's wait.</param>
+	/// <returns>
+	/// A typed cursor-style observation. An explicit negative DECRQSS response is
+	/// returned with <see cref="TerminalCursorStyleObservation.IsSupported"/> set
+	/// to <see langword="false"/>.
+	/// </returns>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// The timeout is outside the supported terminal-query range.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">
+	/// The session endpoints cannot support an active terminal query.
+	/// </exception>
+	/// <exception cref="OperationCanceledException">The caller cancels the query.</exception>
+	/// <exception cref="TimeoutException">The caller-visible response deadline expires.</exception>
+	/// <exception cref="FormatException">
+	/// The terminal returns a correlated malformed response or a positive cursor-style
+	/// value outside the frozen semantic set.
+	/// </exception>
+	/// <remarks>
+	/// This operation reuses the existing DECRQSS <c>SP q</c> transaction path. It
+	/// does not probe automatically during session open, lifecycle handling, or
+	/// disposal, and it does not cache support state.
+	/// </remarks>
+	public async ValueTask<TerminalCursorStyleObservation> QueryCursorStyleAsync(
+		TimeSpan timeout,
+		CancellationToken cancellationToken = default
+	) {
+		TerminalStatusStringResponse response = await this.QueryStatusStringAsync(
+			TerminalStatusStringKind.CursorStyle,
+			timeout,
+			cancellationToken
+		).ConfigureAwait( false );
+		if ( !response.IsSupported ) {
+			return new TerminalCursorStyleObservation(
+				isSupported: false,
+				style: null
+			);
+		}
+
+		TerminalCursorStyle style = TerminalCursorStyleCodec.ParseStatusString(
+			response.StatusString!
+		);
+		return new TerminalCursorStyleObservation(
+			isSupported: true,
+			style
+		);
 	}
 }
