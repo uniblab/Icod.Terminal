@@ -2,7 +2,7 @@
 
 **Release:** `0.11.0`  
 **Theme:** OSC 22 terminal mouse-pointer shape control  
-**Status:** Reviewed public surface; stable closure pending
+**Status:** Frozen stable public surface
 
 ---
 
