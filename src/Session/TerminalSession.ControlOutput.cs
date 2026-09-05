@@ -57,7 +57,7 @@ public sealed partial class TerminalSession {
 		);
 	}
 
-	internal async ValueTask WriteTerminalStringCoreAsync(
+	internal ValueTask WriteTerminalStringCoreAsync(
 		string value,
 		int affectedLines,
 		CancellationToken cancellationToken
@@ -69,7 +69,6 @@ public sealed partial class TerminalSession {
 				"The number of affected terminal lines must be positive."
 			);
 		}
-		cancellationToken.ThrowIfCancellationRequested();
 
 		TermInfoOutputOptions outputOptions = new(
 			this.Terminal,
@@ -78,17 +77,14 @@ public sealed partial class TerminalSession {
 			this.Options.CapabilityDelayProvider
 		);
 
-		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
-			cancellationToken
-		).ConfigureAwait( false );
-		await TermInfoOutput.TPutsAsync(
+		return TermInfoOutput.TPutsAsync(
 			value,
 			affectedLines,
 			this.terminalOutputStream,
 			Encoding.Latin1,
 			outputOptions,
 			cancellationToken
-		).ConfigureAwait( false );
+		);
 	}
 
 	private sealed class ControlOutputLease : IDisposable {
