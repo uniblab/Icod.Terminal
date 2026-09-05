@@ -62,6 +62,12 @@ public sealed partial class TerminalSession {
 			exceptions.Add( exception );
 		}
 
+		Exception? progressException =
+			await this.CloseProgressStateAsync().ConfigureAwait( false );
+		if ( progressException is not null ) {
+			exceptions.Add( progressException );
+		}
+
 		Exception? synchronizedOutputException =
 			await this.CloseSynchronizedOutputStateAsync().ConfigureAwait( false );
 		if ( synchronizedOutputException is not null ) {
