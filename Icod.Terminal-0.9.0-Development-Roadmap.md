@@ -7,7 +7,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** synchronized output and nested transactional output state  
-**Status:** T90–T97 implemented; exact stable-head validation pending
+**Status:** T90–T97 complete; merge requires exact-head green validation
 
 ---
 
@@ -127,6 +127,7 @@ Frozen behavior:
 - successful disposal idempotent;
 - failed final disposal remains retryable through the same lease;
 - session disposal is authoritative cleanup;
+- acquisition requires interactive terminal output;
 - no support bit, raw mode number, or nesting-depth property.
 
 Workflow #325 was green.
@@ -186,22 +187,24 @@ Workflow #347 passed normal tests and DCurses acceptance on Windows, Linux, and 
 
 Record: `docs/T96-Synchronized-Output-Integration-Compatibility-and-DCurses-Acceptance.md`.
 
-### T97 — public API, docs, sample, package, and stable closure — implemented
+### T97 — public API, docs, sample, package, and stable closure — complete
 
 Delivered:
 
 - `docs/Public-API-Baseline-0.9.md`;
 - root README update;
-- focused `Icod.Terminal.SynchronizedOutput.Sample`;
+- focused `Icod.Terminal.SynchronizedOutput.Sample` as a normal `Icod.Terminal.sln` project;
 - package XML-documentation assertions;
 - fresh package-only consumer smoke on net8.0/net9.0/net10.0;
 - stable `0.9.0` metadata;
-- PR/distribution/tag gates for the sample and 0.9 package contract;
+- PR/distribution/tag gates through the ordinary solution build plus the 0.9 package contract;
 - retained 0.8 cursor-style package gate;
 - retained real downstream DCurses acceptance in PR/distribution/release validation;
+- redirected-output rejection coverage;
+- disposal-ordering coverage proving presentation restoration precedes the final synchronized-output end frame;
 - `docs/T97-0.9.0-Public-API-Package-and-Stable-Closure.md`.
 
-Exact stable-head validation is the remaining PR gate.
+The merge gate is exact-head validation of the completed release candidate.
 
 ---
 
@@ -327,7 +330,7 @@ Synchronized output controls terminal presentation timing; it does not make `Ico
 6. suspend/resume/disposal cannot leak library-owned synchronized mode;
 7. Windows/Linux/macOS exact stable-head PR validation is green;
 8. downstream `Icod.DCurses` acceptance is green;
-9. focused synchronized-output sample build is green;
+9. focused synchronized-output sample builds as part of the solution;
 10. fresh package-only consumers pass on net8.0/net9.0/net10.0;
 11. packaged XML documentation contains the reviewed 0.9 public delta;
 12. `main` Release distribution validation is green after merge;
@@ -335,7 +338,7 @@ Synchronized output controls terminal presentation timing; it does not make `Ico
 
 ---
 
-## 12. Current stable-candidate state
+## 12. Current stable state
 
 ```text
 VersionPrefix:   0.9.0
@@ -345,4 +348,4 @@ PackageVersion:  0.9.0
 AssemblyVersion: 0.9.0.0
 ```
 
-**T90–T97 are implemented. The remaining branch gate is exact-head stable validation before merge.**
+**T90–T97 are complete. Merge requires exact-head green validation; publication still requires post-merge `main` Release validation.**
