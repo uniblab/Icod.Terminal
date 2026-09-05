@@ -7,14 +7,18 @@ using Icod.TermInfo;
 using Xunit;
 
 /// <summary>
-/// Verifies common dynamic-color mutation, observation, and reset.
+/// Verifies selected dynamic-color mutation, observation, and reset.
 /// </summary>
 public sealed class TerminalDynamicColorQueryTests {
 	[Theory]
 	[InlineData( TerminalDynamicColor.DefaultForeground, 10, 110 )]
 	[InlineData( TerminalDynamicColor.DefaultBackground, 11, 111 )]
 	[InlineData( TerminalDynamicColor.TextCursor, 12, 112 )]
-	public async Task CommonColorsUseCanonicalSetQueryAndResetFrames(
+	[InlineData( TerminalDynamicColor.MouseForeground, 13, 113 )]
+	[InlineData( TerminalDynamicColor.MouseBackground, 14, 114 )]
+	[InlineData( TerminalDynamicColor.HighlightBackground, 17, 117 )]
+	[InlineData( TerminalDynamicColor.HighlightForeground, 19, 119 )]
+	public async Task SelectedColorsUseCanonicalSetQueryAndResetFrames(
 		TerminalDynamicColor kind,
 		int osc,
 		int resetOsc
@@ -66,18 +70,18 @@ public sealed class TerminalDynamicColorQueryTests {
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
 		Task<TerminalColor> query = session.QueryDynamicColorAsync(
-			TerminalDynamicColor.DefaultForeground,
+			TerminalDynamicColor.MouseForeground,
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
 		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b]11;rgb:ffff/0000/0000\u001b\\" )
+			Encoding.ASCII.GetBytes( "\u001b]14;rgb:ffff/0000/0000\u001b\\" )
 		);
 		await Task.Delay( 50 );
 		Assert.False( query.IsCompleted );
 
 		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b]10;rgb:0000/ffff/0000\u001b\\" )
+			Encoding.ASCII.GetBytes( "\u001b]13;rgb:0000/ffff/0000\u001b\\" )
 		);
 		Assert.Equal(
 			new TerminalColor( 0x0000, 0xffff, 0x0000 ),
@@ -91,25 +95,26 @@ public sealed class TerminalDynamicColorQueryTests {
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
 		Task<TerminalColor> query = session.QueryDynamicColorAsync(
-			TerminalDynamicColor.TextCursor,
+			TerminalDynamicColor.HighlightForeground,
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
 		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b]12;not-a-color\u001b\\" )
+			Encoding.ASCII.GetBytes( "\u001b]19;not-a-color\u001b\\" )
 		);
 
 		await Assert.ThrowsAsync<FormatException>( () => query );
 	}
 
 	[Fact]
-	public async Task ExtendedIdentityIsRejectedBeforeOutputInT134() {
+	public async Task InvalidIdentityIsRejectedBeforeOutput() {
 		DynamicColorTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
+		TerminalDynamicColor invalid = (TerminalDynamicColor)999;
 
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
 			() => session.SetDynamicColorAsync(
-				TerminalDynamicColor.MouseForeground,
+				invalid,
 				new TerminalColor( 1, 2, 3 )
 			).AsTask()
 		);
@@ -117,7 +122,7 @@ public sealed class TerminalDynamicColorQueryTests {
 
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
 			() => session.QueryDynamicColorAsync(
-				TerminalDynamicColor.HighlightForeground,
+				invalid,
 				TimeSpan.FromSeconds( 1 )
 			).AsTask()
 		);
@@ -125,16 +130,16 @@ public sealed class TerminalDynamicColorQueryTests {
 	}
 
 	[Fact]
-	public async Task BelTerminatedCommonColorReplyIsAccepted() {
+	public async Task BelTerminatedExtendedColorReplyIsAccepted() {
 		DynamicColorTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		Task<TerminalColor> query = session.QueryDynamicColorAsync(
-			TerminalDynamicColor.DefaultBackground,
+			TerminalDynamicColor.HighlightBackground,
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
 		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b]11;#123456\u0007" )
+			Encoding.ASCII.GetBytes( "\u001b]17;#123456\u0007" )
 		);
 
 		Assert.Equal(
@@ -288,6 +293,7 @@ public sealed class TerminalDynamicColorQueryTests {
 		public TerminalControlResult<TerminalSize> GetSize(
 			TerminalEndpoint endpoint
 		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
 			return TerminalControlResult<TerminalSize>.Unsupported(
 				"Size is not used by dynamic-color query tests."
 			);
@@ -296,6 +302,7 @@ public sealed class TerminalDynamicColorQueryTests {
 		public TerminalControlResult<TerminalModeSnapshot> GetMode(
 			TerminalEndpoint endpoint
 		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
 			return TerminalControlResult<TerminalModeSnapshot>.Available( this.baseline );
 		}
 
@@ -304,6 +311,11 @@ public sealed class TerminalDynamicColorQueryTests {
 			TerminalModeSnapshot mode,
 			TerminalModeApplyTiming timing
 		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			ArgumentNullException.ThrowIfNull( mode );
+			if ( !Enum.IsDefined( timing ) ) {
+				throw new ArgumentOutOfRangeException( nameof( timing ) );
+			}
 			return TerminalControlMutationResult.Success();
 		}
 	}
