@@ -2,7 +2,7 @@
 
 **Release:** `0.10.0`  
 **Theme:** OSC 9;4 terminal progress ownership  
-**Status:** Reviewed public surface; stable closure pending
+**Status:** Frozen stable public surface
 
 ---
 
