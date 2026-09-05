@@ -88,6 +88,9 @@ jobs:
       - name: Verify exact release package artifacts
         shell: pwsh
         run: ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.8 cursor-style release contract
+        shell: pwsh
+        run: ./packaging/VerifyCursorStylePackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:
