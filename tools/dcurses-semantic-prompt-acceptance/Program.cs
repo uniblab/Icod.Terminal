@@ -168,6 +168,7 @@ internal sealed class RecordingOutput : ITerminalOutput {
 				if ( this.writes[ index ].AsSpan().SequenceEqual( expected ) ) {
 					return index;
 				}
+			}
 		}
 		return -1;
 	}
