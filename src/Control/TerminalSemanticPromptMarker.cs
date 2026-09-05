@@ -149,7 +149,7 @@ internal static class TerminalSemanticPromptMarkerCodec {
 		};
 	}
 
-	private static void Validate(
+	internal static void Validate(
 		TerminalSemanticPromptMarker marker
 	) {
 		if ( !Enum.IsDefined( marker.Kind ) ) {
