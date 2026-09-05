@@ -75,8 +75,8 @@ public sealed class TerminalPointerShapeTests {
 			TerminalPointerShapeCodec.GetWireName( TerminalPointerShape.Default )
 		);
 		Assert.NotEqual(
-			OscWriter.EncodePointerShapeResetFrame(),
-			OscWriter.EncodePointerShapeFrame(
+			OscWriter.EncodeOsc22PointerShapeFrame( null ),
+			OscWriter.EncodeOsc22PointerShapeFrame(
 				TerminalPointerShapeCodec.GetWireName( TerminalPointerShape.Default )
 			)
 		);
