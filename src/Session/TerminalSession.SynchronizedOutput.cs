@@ -18,13 +18,24 @@ public sealed partial class TerminalSession {
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
 	/// <returns>A lease owning one logical synchronized-output request.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// The output endpoint is not an interactive terminal, terminal state is suspended,
+	/// or cleanup remains pending from an earlier failed synchronized-output transition.
+	/// </exception>
+	/// <exception cref="OperationCanceledException">
+	/// The caller cancels acquisition before logical ownership is committed.
+	/// </exception>
 	/// <remarks>
+	/// <para>
 	/// The first active lease emits <c>CSI ? 2026 h</c>. Nested logical leases share
 	/// the same physical terminal mode and emit no additional begin frame. The final
 	/// active lease emits <c>CSI ? 2026 l</c> and flushes once on release.
+	/// </para>
+	/// <para>
 	/// Successful acquisition proves only that the required begin frame was emitted,
 	/// or that an existing logical synchronized-output owner was joined. It does not
 	/// prove that the terminal recognizes or continues honoring mode 2026.
+	/// </para>
 	/// </remarks>
 	public async ValueTask<TerminalSynchronizedOutputLease> AcquireSynchronizedOutputAsync(
 		CancellationToken cancellationToken = default
