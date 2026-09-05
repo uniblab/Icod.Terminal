@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.13.0`  
-**Development version:** `0.13.0-alpha.6`  
+**Development version:** `0.13.0-alpha.7`  
 **Predecessor:** `0.12.0` — OSC 133 semantic prompt integration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** observable terminal palette and dynamic-color control  
-**Status:** T130–T134 complete/green; T135 extended dynamic colors implemented; T136 next after validation
+**Status:** T130–T135 complete/green; T136 lifecycle/ownership decision implemented; T137 next after validation
 
 ---
 
@@ -43,6 +43,8 @@ The release uses:
 - terminal-policy reset kept distinct from exact restoration;
 - no `System.Drawing` dependency;
 - future `Icod.DCurses` typed observation consumption.
+
+T136 additionally freezes all 0.13 color mutation as **unscoped**. The session does not automatically capture, replay, or restore color state across invalidation, suspend/resume, or disposal.
 
 ---
 
@@ -123,8 +125,9 @@ Record: `docs/T134-Common-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 
 ### T135 — extended dynamic colors
 
-**Status:** Implemented; exact-head validation pending.  
-**Version:** `0.13.0-alpha.6`.
+**Status:** Complete and green.  
+**Version:** `0.13.0-alpha.6`.  
+**Validation:** workflow #566.
 
 Activated the same public API for:
 
@@ -133,22 +136,36 @@ Activated the same public API for:
 - `HighlightBackground` — OSC 17 / 117;
 - `HighlightForeground` — OSC 19 / 119.
 
-Tests cover exact set/query/reset framing for all seven identities, extended-tier response correlation, malformed correlated replies, BEL-terminated extended observations, invalid enum rejection, and retained non-cancellable committed writes/no implicit mutation-reset flush.
-
 Record: `docs/T135-Extended-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 
-### T136 — truthful scoped color ownership
+### T136 — scoped color ownership feasibility and lifecycle decision
 
-**Status:** Next after T135 validation.  
-**Expected version:** `0.13.0-alpha.7`.
+**Status:** Implemented; exact-head validation pending.  
+**Version:** `0.13.0-alpha.7`.
 
-Evaluate and, where contractually sound, implement query-before-mutate scoped restoration for indexed palette and/or dynamic colors. Exact restoration requires a successfully observed baseline and explicit color replay; OSC 104/110–119 resets do not substitute for restoration.
+Decision:
+
+- no public palette-color lease in 0.13;
+- no public dynamic-color lease in 0.13;
+- existing color mutation remains explicitly unscoped;
+- OSC 104/110–119 reset is never presented as exact restoration;
+- a stale pre-suspend baseline is not considered authoritative after resume;
+- lifecycle-safe ownership would require post-resume re-observation before reapplying owned state;
+- current lifecycle ordering deliberately re-enables active queries only after lifecycle participants resume;
+- changing that core ordering merely to enable color leases is deferred to a future lifecycle-architecture tranche/release.
+
+T136 adds lifecycle tests proving unscoped color mutation is not reset/replayed by `InvalidateState()`, suspend/resume, or disposal.
+
+Record: `docs/T136-Scoped-Color-Ownership-Feasibility-and-Lifecycle-Decision.md`.
 
 ### T137 — lifecycle, composition, and downstream acceptance
 
+**Status:** Next after T136 validation.  
 **Expected version:** `0.13.0-alpha.8`.
 
-Prove composition with existing output/query families and add real downstream `Icod.DCurses` acceptance consuming typed observations without raw OSC parsing or another input path.
+Prove composition with ordinary application output, presentation/input-protocol ownership, cursor style, synchronized output, progress, pointer shape, OSC 7/8/52/133, and active terminal queries.
+
+Add real downstream `Icod.DCurses` acceptance consuming typed palette/dynamic-color observations without raw OSC parsing or a second input path.
 
 ### T138 — public API/docs/samples/package/stable closure
 
@@ -160,13 +177,13 @@ Deliver the 0.13 public API baseline, README/sample updates, release metadata, X
 
 ## 5. Testing expectations
 
-0.13 testing includes byte-exact framing, palette boundaries, all selected dynamic identities, channel/precision grammar coverage, malformed responses, timeout/cancellation, output serialization, committed-write non-cancellability, query isolation, redirected-output rejection, reset/restoration distinction, lifecycle recovery for any T136 ownership, composition, package consumers, and real `Icod.DCurses` typed observation consumption.
+0.13 testing includes byte-exact framing, palette boundaries, all selected dynamic identities, channel/precision grammar coverage, malformed responses, timeout/cancellation, output serialization, committed-write non-cancellability, query isolation, redirected-output rejection, reset/restoration distinction, explicit unscoped lifecycle semantics, composition, package consumers, and real `Icod.DCurses` typed observation consumption.
 
 ---
 
 ## 6. Explicit non-goals
 
-0.13 does not add arbitrary OSC construction, raw public color strings, X11 named-color injection, Tektronix dynamic colors, emulator detection as a support oracle, automatic palette probing, authoritative long-lived color caching, `System.Drawing` dependency, or downstream color-selection/contrast/theme policy.
+0.13 does not add arbitrary OSC construction, raw public color strings, X11 named-color injection, Tektronix dynamic colors, emulator detection as a support oracle, automatic palette probing, authoritative long-lived color caching, `System.Drawing` dependency, downstream color-selection/contrast/theme policy, or lifecycle-safe color leases.
 
 ---
 
@@ -174,10 +191,10 @@ Deliver the 0.13 public API baseline, README/sample updates, release metadata, X
 
 ```text
 VersionPrefix:   0.13.0
-VersionSuffix:   alpha.6
-Version:         0.13.0-alpha.6
-PackageVersion:  0.13.0-alpha.6
+VersionSuffix:   alpha.7
+Version:         0.13.0-alpha.7
+PackageVersion:  0.13.0-alpha.7
 AssemblyVersion: 0.13.0.0
 ```
 
-**Next after green validation:** T136 — truthful scoped color ownership/restoration.
+**Next after green validation:** T137 — lifecycle/composition and downstream `Icod.DCurses` observation acceptance.
