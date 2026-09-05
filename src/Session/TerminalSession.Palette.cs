@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// OSC 4 indexed-palette mutation and observation for <see cref="TerminalSession"/>.
+/// OSC 4/104 indexed-palette mutation, observation, and reset for <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
 	/// <summary>
@@ -97,6 +97,67 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	/// <summary>
+	/// Resets one indexed palette entry to terminal policy using OSC 104.
+	/// </summary>
+	/// <param name="index">The palette index to reset.</param>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing reset emission.</returns>
+	/// <remarks>
+	/// This is a terminal-policy reset. It does not restore a color previously observed
+	/// by this library and does not create or update a restoration baseline.
+	/// </remarks>
+	public ValueTask ResetPaletteColorAsync(
+		byte index,
+		CancellationToken cancellationToken = default
+	) {
+		return this.WritePaletteFrameAsync(
+			TerminalOsc104Protocol.CreateResetFrame( index ),
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Resets multiple distinct indexed palette entries to terminal policy in one OSC 104 frame.
+	/// </summary>
+	/// <param name="indices">One through 256 distinct palette indices.</param>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing reset emission.</returns>
+	/// <exception cref="ArgumentNullException"><paramref name="indices"/> is null.</exception>
+	/// <exception cref="ArgumentException">The collection is empty, too large, or contains a duplicate index.</exception>
+	/// <remarks>
+	/// All indices are validated before output commitment. This operation requests
+	/// terminal-policy reset only; it is not exact restoration of prior observed colors.
+	/// </remarks>
+	public ValueTask ResetPaletteColorsAsync(
+		IReadOnlyList<byte> indices,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( indices );
+		return this.WritePaletteFrameAsync(
+			TerminalOsc104Protocol.CreateResetFrame( indices ),
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Resets the entire indexed palette to terminal policy using bare OSC 104.
+	/// </summary>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing reset emission.</returns>
+	/// <remarks>
+	/// This emits bare OSC 104 and therefore requests the terminal's configured/default
+	/// palette. It does not restore a library-observed palette snapshot.
+	/// </remarks>
+	public ValueTask ResetPaletteAsync(
+		CancellationToken cancellationToken = default
+	) {
+		return this.WritePaletteFrameAsync(
+			TerminalOsc104Protocol.CreateResetAllFrame(),
+			cancellationToken
+		);
+	}
+
 	private async ValueTask WritePaletteFrameAsync(
 		byte[] frame,
 		CancellationToken cancellationToken
@@ -105,7 +166,7 @@ public sealed partial class TerminalSession {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( !this.OutputObservation.IsTerminal ) {
 			throw new InvalidOperationException(
-				"OSC 4 palette mutation requires an interactive terminal output endpoint."
+				"OSC palette mutation/reset requires an interactive terminal output endpoint."
 			);
 		}
 
