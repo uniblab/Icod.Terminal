@@ -13,6 +13,8 @@ static void Require(
 	}
 }
 
+byte[] synchronizedBegin = Encoding.ASCII.GetBytes( "\u001b[?2026h" );
+byte[] synchronizedEnd = Encoding.ASCII.GetBytes( "\u001b[?2026l" );
 RecordingOutput output = new();
 RecordingTerminalControlProvider provider = new();
 TerminalDescription terminal = new TerminalDescriptionBuilder(
@@ -66,12 +68,8 @@ Require(
 	beforeRefresh < output.WriteCount,
 	"DCurses refresh produced no terminal output."
 );
-int beginIndex = output.IndexOf(
-	CsiWriter.EncodeSynchronizedOutputBeginFrame()
-);
-int endIndex = output.IndexOf(
-	CsiWriter.EncodeSynchronizedOutputEndFrame()
-);
+int beginIndex = output.IndexOf( synchronizedBegin );
+int endIndex = output.IndexOf( synchronizedEnd );
 Require(
 	0 <= beginIndex,
 	"The synchronized-output begin frame was not emitted."
