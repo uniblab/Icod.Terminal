@@ -6,11 +6,13 @@
 
 ## Status
 
-`0.9.0` is the current stable release. It adds scoped synchronized-output ownership using DEC private mode 2026, identity-aware first-owner/last-owner nesting, lifecycle-safe leave/re-entry, retryable cleanup after output failures, and downstream `Icod.DCurses` refresh acceptance.
+`0.9.0` is the current stable release. `0.10.0-alpha.7` is the current release candidate and adds scoped OSC 9;4 terminal-progress ownership with completed/total stage reporting, indeterminate progress, normal/error/attention states, nested restoration, lifecycle-safe cleanup, and downstream `Icod.DCurses` refresh acceptance.
 
-The release preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 52 clipboard, and 0.8 cursor-style contracts.
+The 0.10 release candidate preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 52 clipboard, cursor-style, and synchronized-output contracts.
 
 ## Installation
+
+Current stable package:
 
 ```text
 dotnet add package Icod.Terminal --version 0.9.0
@@ -49,18 +51,93 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-await using ( TerminalSynchronizedOutputLease synchronized =
-	await session.AcquireSynchronizedOutputAsync() ) {
-	await session.WriteTextAsync( "updating terminal state\r\n" );
-	await session.SetWindowTitleAsync( "my terminal app" );
-	await session.PublishCurrentLocationAsync(
-		"/usr/local/src",
-		TerminalLocationPathStyle.Posix
-	);
-}
+await using TerminalProgressLease progress =
+	await session.AcquireProgressAsync();
+
+await progress.ReportAsync( 1, 3 );
+await session.WriteTextAsync( "stage one complete\r\n" );
+
+await progress.SetIndeterminateAsync();
+await session.WriteTextAsync( "finishing work\r\n" );
 ```
 
 The session borrows process-standard endpoints, owns only terminal state transitions it applies, and restores captured state during `DisposeAsync()`.
+
+## 0.10 terminal progress
+
+### Semantic OSC 9;4 ownership
+
+Terminal progress is exposed through a scoped semantic lease rather than a raw OSC writer:
+
+```csharp
+await using TerminalProgressLease progress =
+	await session.AcquireProgressAsync();
+```
+
+Acquisition itself emits no progress frame. Callers report work naturally as completed/total values:
+
+```csharp
+await progress.ReportAsync( 1, 10 );
+await progress.ReportAsync( 2, 10 );
+```
+
+`Icod.Terminal` converts those values to the canonical OSC 9;4 percentage internally. For example, `1 / 3` becomes 33 percent and `2 / 3` becomes 67 percent using integer-only nearest-percentage rounding with exact halves upward.
+
+The canonical emitted protocol form is:
+
+```text
+ESC ] 9 ; 4 ; state ; progress BEL
+```
+
+### Progress states
+
+Normal determinate progress is the default overload:
+
+```csharp
+await progress.ReportAsync( 7, 10 );
+```
+
+Error and attention determinate states are explicit:
+
+```csharp
+await progress.ReportAsync(
+	TerminalProgressState.Error,
+	7,
+	10
+);
+
+await progress.ReportAsync(
+	TerminalProgressState.Attention,
+	7,
+	10
+);
+```
+
+`Attention` is the neutral semantic name for OSC 9;4 wire state 4: Windows Terminal describes that state as warning while ConEmu describes it as paused.
+
+Indeterminate progress is separate from determinate reporting:
+
+```csharp
+await progress.SetIndeterminateAsync();
+```
+
+The library emits canonical state 3 with progress value 0.
+
+### Nesting and restoration
+
+Progress ownership is identity-aware and may be released out of order. A newly acquired owner which has not yet reported a value does not mask an existing lower owner's visible progress. Once an inner owner reports, it controls physical progress until it releases or a newer reported owner takes control.
+
+If a controlling owner releases, the newest remaining reported owner is restored. Final release emits the canonical clear state. Successful repeated disposal is idempotent, while failed cleanup retains ownership so the same lease can retry.
+
+### Lifecycle and support posture
+
+Managed suspension clears physical progress while retaining logical owners. Resume restores the current controlling logical value only when one remains. Releasing every owner while suspended prevents re-entry.
+
+`TerminalSession.InvalidateState()` marks progress physical state untrusted and the next controlled transition re-establishes the logical state before proceeding. Session disposal performs authoritative cleanup before synchronized output performs its final leave operation.
+
+Successful progress API completion proves that the complete OSC 9;4 frame was emitted. It does not prove that the terminal recognizes or renders progress. `Icod.Terminal` does not infer support from operating system, `TERM`, emulator identity, or environment variables and performs no automatic support probe.
+
+The reviewed 0.10 API is frozen in [`docs/Public-API-Baseline-0.10.md`](docs/Public-API-Baseline-0.10.md). Downstream composition and `Icod.DCurses` acceptance are recorded in [`docs/T106-Progress-Composition-and-DCurses-Acceptance.md`](docs/T106-Progress-Composition-and-DCurses-Acceptance.md).
 
 ## 0.9 synchronized output
 
@@ -99,7 +176,7 @@ The terminal may independently stop deferring presentation because of its own ti
 
 ### Composition and lifecycle
 
-Synchronized output is a terminal-side presentation-timing bracket, not an application-side byte buffer. Existing operations retain their normal framing and flush behavior inside the lease, including text, OSC title/location/hyperlink/clipboard operations, cursor style, presentation state, and explicit active terminal queries.
+Synchronized output is a terminal-side presentation-timing bracket, not an application-side byte buffer. Existing operations retain their normal framing and flush behavior inside the lease, including text, OSC title/location/hyperlink/clipboard operations, progress, cursor style, presentation state, and explicit active terminal queries.
 
 Managed suspension physically leaves synchronized output and flushes before suspension while retaining logical ownership. Resume re-enters mode 2026 only if logical owners remain. Releasing all owners while suspended is logical-only and prevents re-entry.
 
@@ -285,6 +362,7 @@ Presentation state such as alternate screen, keypad mode, and cursor visibility 
 
 The repository contains focused samples for each major public family:
 
+- [`Icod.Terminal.Progress.Sample`](samples/Icod.Terminal.Progress.Sample/) — 0.10 OSC 9;4 determinate/indeterminate progress ownership;
 - [`Icod.Terminal.SynchronizedOutput.Sample`](samples/Icod.Terminal.SynchronizedOutput.Sample/) — 0.9 scoped synchronized output;
 - [`Icod.Terminal.CursorStyle.Sample`](samples/Icod.Terminal.CursorStyle.Sample/) — 0.8 cursor-style observation and truthful scoped restoration;
 - [`Icod.Terminal.Clipboard.Sample`](samples/Icod.Terminal.Clipboard.Sample/) — 0.7 OSC 52 clipboard writes and reads;
@@ -311,29 +389,31 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Distribution validation builds/tests the solution—including the focused 0.9 sample—runs real downstream `Icod.DCurses` synchronized-refresh acceptance, packs the NuGet artifacts, verifies package structure and XML documentation, and runs fresh package-only consumers.
+Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`. Distribution validation builds/tests the complete solution—including the focused 0.10 progress sample—runs real downstream `Icod.DCurses` synchronized-output and terminal-progress acceptance, packs the NuGet artifacts, verifies package structure/XML documentation, and runs fresh package-only consumers.
 
-The 0.8 cursor-style and 0.9 synchronized-output package consumers are both required to restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
+The 0.8 cursor-style, 0.9 synchronized-output, and 0.10 terminal-progress package consumers are all required to restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
 
 ## Release process
 
-Stable release readiness requires:
+Stable 0.10 release readiness requires:
 
-1. PR validation green on Windows, Linux, and macOS;
+1. cumulative `0.10.0-alpha.7` validation green on Windows, Linux, and macOS;
 2. exact Staging package verification green;
-3. synchronized-output source sample and downstream `Icod.DCurses` acceptance green;
-4. retained 0.8 cursor-style and new 0.9 synchronized-output XML documentation/package-only smoke gates green on all supported TFMs;
-5. merge to `main`;
-6. Release distribution validation green on the `main` architecture matrix;
-7. only then create tag `v0.9.0`.
+3. both real downstream `Icod.DCurses` synchronized-output and terminal-progress acceptance gates green;
+4. retained 0.8/0.9 and new 0.10 XML documentation/package-only smoke gates green on all supported TFMs;
+5. stable-version metadata and documentation closure;
+6. exact stable PR head green;
+7. merge to `main`;
+8. Release distribution validation green on the resulting exact `main` commit;
+9. only then create tag `v0.10.0`.
 
-The tag workflow rebuilds and retests the tagged solution, reruns downstream DCurses acceptance, selects the exact package matching the tag, reruns package verification including both the 0.8 and 0.9 public contracts, and only then publishes to NuGet.org and GitHub Packages.
+The tag workflow rebuilds and retests the tagged solution, reruns both downstream DCurses acceptance gates, selects the exact package matching the tag, reruns package verification including the 0.8, 0.9, and 0.10 public contracts, and only then publishes to NuGet.org and GitHub Packages.
 
 ## Development roadmap
 
-The 0.9 milestone is documented in [`Icod.Terminal-0.9.0-Development-Roadmap.md`](Icod.Terminal-0.9.0-Development-Roadmap.md), with tranche records T90–T97 under `docs/`.
+The 0.10 milestone is documented in [`Icod.Terminal-0.10.0-Development-Roadmap.md`](Icod.Terminal-0.10.0-Development-Roadmap.md), with tranche records T100–T107 under `docs/`.
 
-The broader protocol-closure sequence is documented in [`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
+The completed protocol-closure sequence through 0.9 is documented in [`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
 
 ## License
 
