@@ -37,6 +37,9 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
 
 $requiredMembers = @(
     'T:Icod.Terminal.TerminalProgressState',
+    'F:Icod.Terminal.TerminalProgressState.Normal',
+    'F:Icod.Terminal.TerminalProgressState.Error',
+    'F:Icod.Terminal.TerminalProgressState.Attention',
     'T:Icod.Terminal.TerminalProgressLease',
     'M:Icod.Terminal.TerminalProgressLease.ReportAsync(System.Int64,System.Int64,System.Threading.CancellationToken)',
     'M:Icod.Terminal.TerminalProgressLease.ReportAsync(Icod.Terminal.TerminalProgressState,System.Int64,System.Int64,System.Threading.CancellationToken)',
