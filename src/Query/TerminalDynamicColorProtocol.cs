@@ -4,14 +4,14 @@ using System.Globalization;
 using System.Text;
 
 /// <summary>
-/// Implements OSC 10-12 / 110-112 dynamic-color framing and response correlation.
+/// Implements the selected non-Tektronix OSC 10-19 / 110-119 dynamic-color framing and response correlation.
 /// </summary>
 internal static class TerminalDynamicColorProtocol {
 	internal static byte[] CreateSetRequest(
 		TerminalDynamicColor kind,
 		TerminalColor color
 	) {
-		int osc = GetCommonOscNumber( kind );
+		int osc = GetOscNumber( kind );
 		byte[] oscBytes = Encoding.ASCII.GetBytes(
 			osc.ToString( CultureInfo.InvariantCulture )
 		);
@@ -33,7 +33,7 @@ internal static class TerminalDynamicColorProtocol {
 	internal static byte[] CreateQueryRequest(
 		TerminalDynamicColor kind
 	) {
-		int osc = GetCommonOscNumber( kind );
+		int osc = GetOscNumber( kind );
 		byte[] oscBytes = Encoding.ASCII.GetBytes(
 			osc.ToString( CultureInfo.InvariantCulture )
 		);
@@ -53,7 +53,7 @@ internal static class TerminalDynamicColorProtocol {
 	internal static byte[] CreateResetRequest(
 		TerminalDynamicColor kind
 	) {
-		int resetOsc = GetCommonOscNumber( kind ) + 100;
+		int resetOsc = GetOscNumber( kind ) + 100;
 		byte[] oscBytes = Encoding.ASCII.GetBytes(
 			resetOsc.ToString( CultureInfo.InvariantCulture )
 		);
@@ -72,7 +72,7 @@ internal static class TerminalDynamicColorProtocol {
 		TerminalDynamicColor kind
 	) {
 		return new DynamicColorResponseMatcher(
-			GetCommonOscNumber( kind )
+			GetOscNumber( kind )
 		);
 	}
 
@@ -86,7 +86,7 @@ internal static class TerminalDynamicColorProtocol {
 		}
 		if ( !TryGetPayload(
 			frame.Bytes.Span,
-			GetCommonOscNumber( kind ),
+			GetOscNumber( kind ),
 			out ReadOnlySpan<byte> payload
 		) ) {
 			throw new FormatException(
@@ -96,17 +96,21 @@ internal static class TerminalDynamicColorProtocol {
 		return TerminalColorCodec.Parse( payload );
 	}
 
-	private static int GetCommonOscNumber(
+	private static int GetOscNumber(
 		TerminalDynamicColor kind
 	) {
 		return kind switch {
 			TerminalDynamicColor.DefaultForeground => 10,
 			TerminalDynamicColor.DefaultBackground => 11,
 			TerminalDynamicColor.TextCursor => 12,
+			TerminalDynamicColor.MouseForeground => 13,
+			TerminalDynamicColor.MouseBackground => 14,
+			TerminalDynamicColor.HighlightBackground => 17,
+			TerminalDynamicColor.HighlightForeground => 19,
 			_ => throw new ArgumentOutOfRangeException(
 				nameof( kind ),
 				kind,
-				"T134 supports only default foreground, default background, and text-cursor dynamic colors."
+				"The dynamic-color identity is not part of the selected 0.13 contract."
 			)
 		};
 	}
