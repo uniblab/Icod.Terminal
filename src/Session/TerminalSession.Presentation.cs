@@ -32,6 +32,7 @@ public sealed partial class TerminalSession {
 	private void InvalidatePresentationState() {
 		this.presentationManager.Invalidate();
 		this.InvalidateProgressState();
+		this.InvalidatePointerShapeState();
 	}
 
 	private ValueTask SuspendPresentationStateAsync() {
@@ -61,6 +62,12 @@ public sealed partial class TerminalSession {
 			await this.presentationManager.CloseAsync().ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );
+		}
+
+		Exception? pointerShapeException =
+			await this.ClosePointerShapeStateAsync().ConfigureAwait( false );
+		if ( pointerShapeException is not null ) {
+			exceptions.Add( pointerShapeException );
 		}
 
 		Exception? progressException =
