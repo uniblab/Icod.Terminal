@@ -2,12 +2,15 @@
 
 `Icod.Terminal.PackageVerifier` performs repository-side structural validation of an already packed `Icod.Terminal` `.nupkg` and `.snupkg`.
 
+Repository-wide release version metadata is centralized in the root `Directory.Build.props`. `VersionPrefix` and optional `VersionSuffix` are the release inputs; `Version` and `PackageVersion` are derived from them, and `AssemblyVersion` is derived from the numeric prefix. Individual project files do not carry release-version literals.
+
 It verifies:
 
-- `<Version>` and `<PackageVersion>` remain present and identical;
-- `<AssemblyVersion>` is present and valid;
+- the centralized `Directory.Build.props` version contract is present and internally consistent;
+- the derived package version matches the packed NuGet artifact;
+- the derived assembly version is valid and matches every packaged target-framework assembly;
 - the `net8.0`, `net9.0`, and `net10.0` library and XML-documentation payloads are present;
-- all packaged assemblies match the project-declared assembly version and remain unsigned;
+- all packaged assemblies remain unsigned;
 - package metadata identifies the expected id, title, author, project, readme, icon, LGPL license expression, repository, and source commit;
 - the package contains the non-empty README image referenced by `README.md`;
 - each target-framework dependency group contains exactly `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`;
