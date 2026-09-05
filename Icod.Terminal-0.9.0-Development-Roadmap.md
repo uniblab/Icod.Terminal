@@ -2,29 +2,29 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.9.0`  
-**Development version:** `0.9.0-alpha.1`  
+**Current version:** `0.9.0`  
 **Predecessor:** `0.8.0` — typed cursor-style control and truthful restoration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** synchronized output and nested transactional output state  
-**Status:** T90 contract freeze in progress
+**Status:** T90–T97 implemented; exact stable-head validation pending
 
 ---
 
 ## 1. Release objective
 
-`Icod.Terminal 0.9.0` SHALL complete the 0.4–0.9 operational protocol-closure sequence by adding semantic synchronized-output ownership on top of the session output gate, lifecycle machinery, active query substrate, and scoped-state mechanisms established in earlier releases.
+`Icod.Terminal 0.9.0` completes the 0.4–0.9 operational protocol-closure sequence by adding semantic synchronized-output ownership on top of the session output gate, lifecycle machinery, active query substrate, and scoped-state mechanisms established in earlier releases.
 
-The primary protocol target is DEC private mode 2026:
+The protocol target is DEC private mode 2026:
 
 ```text
 CSI ? 2026 h
 CSI ? 2026 l
 ```
 
-Public callers SHALL work with semantic synchronized-output ownership rather than raw DECSET/DECRST construction.
+Public callers work with semantic synchronized-output ownership rather than raw DECSET/DECRST construction.
 
-Synchronized output SHALL remain opt-in. Ordinary terminal writes SHALL NOT silently enable it.
+Synchronized output remains opt-in. Ordinary terminal writes do not silently enable it.
 
 ---
 
@@ -32,11 +32,11 @@ Synchronized output SHALL remain opt-in. Ordinary terminal writes SHALL NOT sile
 
 0.9 builds on:
 
-- session-owned serialized output;
+- session-owned serialized semantic output;
 - complete-frame commit semantics;
 - canonical seven-bit CSI output;
 - reversible presentation leases;
-- strict-LIFO hyperlink and cursor-style ownership patterns;
+- hyperlink and cursor-style ownership patterns;
 - lifecycle prepare/suspend/resume participation;
 - deterministic session disposal;
 - one shared input reader and query transaction manager;
@@ -46,68 +46,99 @@ Synchronized output SHALL remain opt-in. Ordinary terminal writes SHALL NOT sile
 
 No second output transport, reader loop, or raw public CSI surface is introduced.
 
+The historical advanced `WriteTerminalStringAsync(...)` surface remains a deliberate low-level exception: session semantic managers hold the shared control-output gate around their terminfo transition batches, while direct external callers remain responsible for coordinating that raw output with concurrent session traffic.
+
 ---
 
-## 3. Tranche sequence
+## 3. Completed tranche sequence
 
-### T90 — synchronized-output contract and reference freeze
+### T90 — synchronized-output contract and reference freeze — complete
 
-Freeze:
+Frozen in `docs/T90-Synchronized-Output-Contract-and-Reference-Freeze.md`:
 
-- DEC private mode 2026 wire semantics;
-- begin/end ownership rules;
-- nesting model;
-- flush policy;
-- cancellation and commit boundary;
+- canonical seven-bit DEC private mode 2026 begin/end bytes;
+- first-owner/last-owner physical transitions;
+- identity-aware logical ownership with out-of-order disposal allowed;
+- no repeated nested begin frames;
+- no implicit flush after begin;
+- final physical leave emits mode-off and flushes once;
+- cancellation-before-commit semantics;
+- failure-retained cleanup ownership;
 - suspend/resume/disposal behavior;
-- interaction with unscoped session output;
-- interaction with presentation, hyperlink, clipboard, cursor-style, and query output;
-- capability/query posture;
-- failure-recovery guarantees;
-- public API direction.
+- composition with text, presentation, OSC, cursor style, and active queries;
+- optimistic support posture with no TERM/OS/emulator inference;
+- no automatic DECRQM probe;
+- terminal-side timeout/implementation limits acknowledged explicitly;
+- no public generic CSI/DECSET/DECRST surface.
 
-**Gate T90:** no implementation begins until the ownership and flush contracts are internally consistent.
+### T91 — internal synchronized-output CSI primitive — complete
 
-### T91 — internal synchronized-output CSI primitive
+Implemented:
 
-Implement:
-
-- internal canonical seven-bit `CSI ? 2026 h` begin frame;
-- internal canonical seven-bit `CSI ? 2026 l` end frame;
-- structural private-parameter CSI support as needed without exposing a public generic writer;
+- internal canonical `CSI ? 2026 h` begin frame;
+- internal canonical `CSI ? 2026 l` end frame;
+- specialized `CsiWriter` helpers built on the existing structural CSI encoder;
 - complete-frame construction before commit;
 - cancellation-before-commit behavior;
-- byte-exact tests.
+- byte-exact tests;
+- no generic private-mode API.
 
-### T92 — synchronized-output state manager and nesting
+Workflow #313 was green.
 
-Implement:
+Record: `docs/T91-Synchronized-Output-CSI-Primitive.md`.
 
-- session-owned synchronized-output manager;
-- deterministic nested ownership;
-- first-owner enter / last-owner leave semantics unless T90 freezes a stricter model;
+### T92 — synchronized-output state manager and nesting — complete
+
+Implemented:
+
+- session-owned `TerminalSynchronizedOutputManager`;
+- logical owner IDs independent from physical mode state;
+- first-owner enter / last-owner leave semantics;
+- arbitrary non-final release order;
 - failure-retained ownership;
 - session-disposal cleanup;
-- no duplicate physical mode toggles for nested logical owners.
+- lifecycle participant integration;
+- no duplicate physical mode toggles for nested logical owners;
+- lock ordering: manager gate followed by short-lived session output gate only during a physical transition.
 
-### T93 — public synchronized-output lease/API
+Workflow #320 was green.
 
-Add the reviewed semantic API, expected to resemble:
+Record: `docs/T92-Synchronized-Output-State-Manager-and-Nesting.md`.
+
+### T93 — public synchronized-output lease/API — complete
+
+Stable public API:
 
 ```csharp
+public sealed class TerminalSynchronizedOutputLease : IAsyncDisposable {
+	public ValueTask DisposeAsync();
+}
+
 public ValueTask<TerminalSynchronizedOutputLease> AcquireSynchronizedOutputAsync(
-    CancellationToken cancellationToken = default
+	CancellationToken cancellationToken = default
 );
 ```
 
-Exact naming remains subject to T90.
+Frozen behavior:
 
-### T94 — transactional output composition
+- logical ownership rather than proof of terminal support;
+- nested public leases share one physical begin/end pair;
+- out-of-order public disposal supported;
+- successful disposal idempotent;
+- failed final disposal remains retryable through the same lease;
+- session disposal is authoritative cleanup;
+- no support bit, raw mode number, or nesting-depth property.
 
-Prove deterministic composition with:
+Workflow #325 was green.
+
+Record: `docs/T93-Public-Synchronized-Output-Lease-and-API.md`.
+
+### T94 — transactional output composition — complete
+
+Accepted composition with:
 
 - `WriteTextAsync`;
-- terminfo capability output;
+- sequential low-level terminfo output;
 - OSC 0/1/2 titles;
 - OSC 7 locations;
 - OSC 8 hyperlinks;
@@ -116,104 +147,116 @@ Prove deterministic composition with:
 - presentation transitions;
 - active query requests.
 
-The synchronized-output scope must not introduce a second serialization domain.
+Synchronized output introduces no second serialization domain and no application-side transaction buffer.
 
-### T95 — lifecycle, cancellation, failure recovery, and disposal
+The regression suite caught and rejected an attempted recursive gating change to the historical low-level terminfo primitive. The established advanced-output contract was restored before stable closure.
 
-Prove:
+Record: `docs/T94-Synchronized-Output-Composition-and-Ordering.md`.
 
-- suspend leaves no library-owned synchronized-output mode active in the shell/parent environment;
-- resume re-enters active logical synchronized-output ownership when appropriate;
-- release failures remain retryable or cleanup-owned;
-- acquisition/release output failures do not silently corrupt ownership state;
-- session disposal performs final best-effort leave;
-- pre-commit cancellation emits nothing;
-- post-commit cancellation cannot truncate a frame.
+### T95 — lifecycle, cancellation, failure recovery, and disposal — complete
 
-### T96 — integration, compatibility, and downstream acceptance
+Proven:
 
-Deliver:
+- explicit first-owner begin commit boundary;
+- cancellation while waiting for the output gate emits no begin/end bytes;
+- begin-write failure triggers immediate best-effort end + flush cleanup;
+- begin failure plus cleanup failure retains session-owned cleanup for disposal retry;
+- final end-write failure remains retryable through the same lease;
+- final flush failure remains retryable through the same lease;
+- suspend physically leaves mode 2026 and preserves logical owners;
+- resume re-enters only if logical owners remain;
+- releasing the final owner while suspended is logical-only and prevents re-entry;
+- session disposal performs final best-effort cleanup.
+
+Record: `docs/T95-Synchronized-Output-Lifecycle-Failure-and-Disposal.md`.
+
+### T96 — integration, compatibility, concurrency, and downstream acceptance — complete
+
+Delivered:
 
 - Windows/Linux/macOS regression acceptance;
-- nested/ref-counted semantics under concurrent callers;
-- output-ordering regression matrix;
-- `Icod.DCurses` acceptance showing a full-screen refresh can use synchronized output without private escape sequences;
-- compatibility notes for terminals which ignore mode 2026;
-- no fabricated support from TERM/emulator identity.
+- 64 simultaneous public owners plus repeated concurrent acquisition/release rounds;
+- one physical begin / one final end+flush per logical transaction;
+- real downstream acceptance using published `Icod.DCurses 0.1.0` with current Terminal source;
+- real `CursesSession.RefreshAsync()` executed between canonical mode-2026 begin/end frames;
+- acceptance on net8.0/net9.0/net10.0;
+- no fabricated support inference.
 
-### T97 — public API, docs, sample, package, and stable closure
+Workflow #347 passed normal tests and DCurses acceptance on Windows, Linux, and macOS.
 
-Deliver:
+Record: `docs/T96-Synchronized-Output-Integration-Compatibility-and-DCurses-Acceptance.md`.
+
+### T97 — public API, docs, sample, package, and stable closure — implemented
+
+Delivered:
 
 - `docs/Public-API-Baseline-0.9.md`;
-- README update;
-- focused synchronized-output sample;
+- root README update;
+- focused `Icod.Terminal.SynchronizedOutput.Sample`;
 - package XML-documentation assertions;
 - fresh package-only consumer smoke on net8.0/net9.0/net10.0;
 - stable `0.9.0` metadata;
-- final PR/main/tag release gates.
+- PR/distribution/tag gates for the sample and 0.9 package contract;
+- retained 0.8 cursor-style package gate;
+- retained real downstream DCurses acceptance in PR/distribution/release validation;
+- `docs/T97-0.9.0-Public-API-Package-and-Stable-Closure.md`.
+
+Exact stable-head validation is the remaining PR gate.
 
 ---
 
-## 4. Preliminary API direction
+## 4. Frozen API direction
 
-The preferred public shape is a scoped semantic lease rather than explicit enable/disable methods because ownership is inherently paired and nested.
-
-The working direction is:
+The public shape is a scoped semantic lease rather than explicit enable/disable methods because ownership is inherently paired and nested:
 
 ```csharp
 await using TerminalSynchronizedOutputLease lease =
-    await session.AcquireSynchronizedOutputAsync();
+	await session.AcquireSynchronizedOutputAsync();
 
 await session.WriteTextAsync( "..." );
 ```
 
-A lease SHALL represent logical ownership, not proof that the terminal honors DEC private mode 2026.
+A lease represents logical ownership, not proof that the terminal honors DEC private mode 2026.
 
-No public `SetPrivateModeAsync( 2026, true )`, raw `DECSET`, raw `DECRST`, or generic CSI API is planned.
+No public `SetPrivateModeAsync( 2026, true )`, raw `DECSET`, raw `DECRST`, generic CSI API, or inferred support flag is part of 0.9.
 
 ---
 
-## 5. Preliminary nesting direction
+## 5. Frozen nesting model
 
-T90 will decide exact mechanics, but the default design target is first-owner/last-owner physical transitions:
+Synchronized output uses identity-aware first-owner/last-owner physical transitions:
 
 ```text
 Acquire A -> emit begin
 Acquire B -> no additional begin
-Dispose B -> no end
-Dispose A -> emit end
+Dispose A -> no end
+Dispose B -> emit end + flush
 ```
 
-This differs from cursor-style and hyperlink strict-LIFO state replacement because synchronized output is one boolean terminal mode with identical desired state for every owner.
+This differs from cursor-style and hyperlink state replacement because every synchronized-output owner requests the same boolean active state.
 
-Out-of-order disposal MAY therefore be safe if the implementation uses identity-aware reference ownership rather than stack restoration. T90 must freeze this explicitly.
-
----
-
-## 6. Flush policy to freeze in T90
-
-The release must define whether begin/end perform flushes and at which side of the control frame.
-
-The design goal is that a caller can use a synchronized-output lease to create a terminal-visible transaction without hidden arbitrary flushes between contained writes.
-
-Candidate policy:
-
-- acquisition serializes and emits begin;
-- no implicit flush after begin unless protocol evidence requires it;
-- contained writes behave according to their existing contracts;
-- final release emits end and performs the minimum flush necessary to make the completed transaction visible deterministically;
-- nested logical release performs no physical frame or flush.
-
-T90 must freeze this before T91 implementation.
+Out-of-order disposal is therefore valid.
 
 ---
 
-## 7. Capability/query posture
+## 6. Frozen flush policy
 
-Successful frame emission SHALL NOT prove synchronized-output support.
+- first acquisition emits begin without an implicit flush;
+- nested acquisition emits nothing and flushes nothing;
+- contained operations retain their existing flush semantics;
+- non-final release emits nothing and flushes nothing;
+- final release emits end and performs one flush;
+- lifecycle/disposal cleanup which physically leaves synchronized output also flushes after the leave frame.
 
-0.9 SHALL NOT infer support from:
+The final flush is a library-side transport boundary, not a stronger guarantee about terminal-side rendering behavior.
+
+---
+
+## 7. Frozen capability/query posture
+
+Successful frame emission does not prove synchronized-output support.
+
+0.9 does not infer support from:
 
 - `TERM`;
 - operating system;
@@ -221,49 +264,42 @@ Successful frame emission SHALL NOT prove synchronized-output support.
 - xterm lineage;
 - environment variables.
 
-T90 will determine whether DECRQM status observation for private mode 2026 is required, optional, or deferred. A public lease must remain usable under explicit optimistic-emission semantics if support cannot be queried portably enough.
+Ordinary acquisition does not perform DECRQM status observation. Active queries remain legal inside synchronized output and retain their existing caller-visible timeouts and flush semantics.
 
 ---
 
-## 8. Lifecycle posture
-
-Library-owned synchronized mode must not leak across managed suspension or session disposal.
-
-T90 is expected to freeze:
+## 8. Frozen lifecycle posture
 
 ```text
 active logical owners
     |
-prepare suspend -> physically leave mode 2026
+prepare suspend -> physically leave mode 2026 + flush
     |
-resume -> physically re-enter if logical owners remain
+logical ownership retained while suspended
     |
-last owner release -> physically leave
+resume -> physically re-enter only if owners remain
+    |
+last owner release -> physically leave + flush
 ```
 
-Release while suspended should update logical ownership without emitting unnecessary bytes, following the pattern proven by cursor-style state where applicable.
+Release while suspended updates logical ownership without unnecessary bytes.
 
 ---
 
-## 9. Failure-recovery posture
+## 9. Frozen failure-recovery posture
 
-The implementation must distinguish logical ownership from physical-write success.
-
-At minimum:
-
-- failure to enter on first acquisition means no lease is returned;
-- if entry write may have partially committed before reporting failure, best-effort leave is required;
-- failure to leave on final release retains cleanup responsibility;
-- disposal retries outstanding cleanup best-effort;
-- no caller cancellation may truncate a committed control frame.
-
-The exact retry/aggregate-exception semantics are frozen in T90.
+- failure before begin commit produces no terminal mutation;
+- begin-write failure after commit may mean mode 2026 became active and therefore triggers best-effort leave;
+- acquisition plus cleanup failure reports both failures and retains session cleanup responsibility;
+- failure to leave or flush on final release keeps the final lease owned for retry;
+- session disposal performs authoritative best-effort cleanup;
+- caller cancellation never truncates a committed control frame.
 
 ---
 
 ## 10. Explicit non-goals
 
-0.9 SHALL NOT add:
+0.9 does not add:
 
 - public generic CSI/DECSET/DECRST construction;
 - synchronized output automatically around every write;
@@ -283,29 +319,30 @@ Synchronized output controls terminal presentation timing; it does not make `Ico
 
 `0.9.0` is ready for stable publication only when:
 
-1. T90 ownership/flush/lifecycle contracts are frozen;
+1. T90–T97 are implemented and documented;
 2. mode-2026 framing is structural and byte-exact;
 3. nested ownership is deterministic;
-4. output composition uses the existing session serialization domain;
+4. semantic output composition preserves established ownership contracts;
 5. failure paths retain truthful cleanup ownership;
 6. suspend/resume/disposal cannot leak library-owned synchronized mode;
-7. Windows/Linux/macOS validation is green;
+7. Windows/Linux/macOS exact stable-head PR validation is green;
 8. downstream `Icod.DCurses` acceptance is green;
-9. package-only consumers pass on net8.0/net9.0/net10.0;
-10. packaged XML documentation contains the reviewed 0.9 public delta;
-11. `main` Release validation is green after merge;
-12. only then is tag `v0.9.0` created.
+9. focused synchronized-output sample build is green;
+10. fresh package-only consumers pass on net8.0/net9.0/net10.0;
+11. packaged XML documentation contains the reviewed 0.9 public delta;
+12. `main` Release distribution validation is green after merge;
+13. only then is tag `v0.9.0` created.
 
 ---
 
-## 12. Current development state
+## 12. Current stable-candidate state
 
 ```text
 VersionPrefix:   0.9.0
-VersionSuffix:   alpha.1
-Version:         0.9.0-alpha.1
-PackageVersion:  0.9.0-alpha.1
+VersionSuffix:   <empty>
+Version:         0.9.0
+PackageVersion:  0.9.0
 AssemblyVersion: 0.9.0.0
 ```
 
-**T90 contract freeze is the current tranche.**
+**T90–T97 are implemented. The remaining branch gate is exact-head stable validation before merge.**
