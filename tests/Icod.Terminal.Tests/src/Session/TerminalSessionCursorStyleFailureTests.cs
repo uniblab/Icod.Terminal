@@ -161,6 +161,7 @@ public sealed class TerminalSessionCursorStyleFailureTests {
 				lock ( this.sync ) {
 					return this.writes.Count;
 				}
+			}
 		}
 
 		internal int CursorStyleMutationCount {
