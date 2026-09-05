@@ -35,6 +35,10 @@ try {
 	await session.WriteTextAsync(
 		"The terminal did not return an OSC 52 clipboard response before the timeout.\r\n"
 	);
+} catch ( FormatException exception ) {
+	await session.WriteTextAsync(
+		$"The terminal returned an invalid OSC 52 clipboard response: {exception.Message}\r\n"
+	);
 }
 
 return 0;
