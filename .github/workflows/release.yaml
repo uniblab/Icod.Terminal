@@ -81,6 +81,9 @@ jobs:
       - name: Verify DCurses terminal-progress acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesProgress.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses pointer-shape acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesPointerShape.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
         shell: pwsh
