@@ -140,6 +140,7 @@ internal sealed class RecordingOutput : ITerminalOutput {
 				return this.writes.Count;
 			}
 		}
+	}
 
 	internal int FlushCount {
 		get {
