@@ -74,6 +74,8 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
       - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
+      - name: Build 0.8 cursor-style sample
+        run: dotnet build 'samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj' -c ${{ env.CONFIGURATION }} -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
