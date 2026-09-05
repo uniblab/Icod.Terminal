@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.13.0`  
-**Development version:** `0.13.0-alpha.7`  
+**Development version:** `0.13.0-alpha.8`  
 **Predecessor:** `0.12.0` — OSC 133 semantic prompt integration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** observable terminal palette and dynamic-color control  
-**Status:** T130–T135 complete/green; T136 lifecycle/ownership decision implemented; T137 next after validation
+**Status:** T130–T136 complete/green; T137 composition/downstream acceptance implemented; T138 stable closure next after validation
 
 ---
 
@@ -24,7 +24,7 @@
 - OSC 17 / 117 — highlight background;
 - OSC 19 / 119 — highlight foreground.
 
-Observation remains a first-class requirement for future `Icod.DCurses` consumption.
+Observation is a first-class requirement for downstream `Icod.DCurses` consumption.
 
 ---
 
@@ -42,9 +42,9 @@ The release uses:
 - no automatic probing or authoritative color cache;
 - terminal-policy reset kept distinct from exact restoration;
 - no `System.Drawing` dependency;
-- future `Icod.DCurses` typed observation consumption.
+- typed downstream observation consumption.
 
-T136 additionally freezes all 0.13 color mutation as **unscoped**. The session does not automatically capture, replay, or restore color state across invalidation, suspend/resume, or disposal.
+T136 freezes all 0.13 color mutation as **unscoped**. The session does not automatically capture, replay, or restore color state across invalidation, suspend/resume, or disposal.
 
 ---
 
@@ -129,19 +129,15 @@ Record: `docs/T134-Common-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 **Version:** `0.13.0-alpha.6`.  
 **Validation:** workflow #566.
 
-Activated the same public API for:
-
-- `MouseForeground` — OSC 13 / 113;
-- `MouseBackground` — OSC 14 / 114;
-- `HighlightBackground` — OSC 17 / 117;
-- `HighlightForeground` — OSC 19 / 119.
+Activated the same public API for mouse foreground/background and highlight background/foreground.
 
 Record: `docs/T135-Extended-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 
 ### T136 — scoped color ownership feasibility and lifecycle decision
 
-**Status:** Implemented; exact-head validation pending.  
-**Version:** `0.13.0-alpha.7`.
+**Status:** Complete and green.  
+**Version:** `0.13.0-alpha.7`.  
+**Validation:** workflow #572.
 
 Decision:
 
@@ -149,29 +145,47 @@ Decision:
 - no public dynamic-color lease in 0.13;
 - existing color mutation remains explicitly unscoped;
 - OSC 104/110–119 reset is never presented as exact restoration;
-- a stale pre-suspend baseline is not considered authoritative after resume;
-- lifecycle-safe ownership would require post-resume re-observation before reapplying owned state;
-- current lifecycle ordering deliberately re-enables active queries only after lifecycle participants resume;
-- changing that core ordering merely to enable color leases is deferred to a future lifecycle-architecture tranche/release.
-
-T136 adds lifecycle tests proving unscoped color mutation is not reset/replayed by `InvalidateState()`, suspend/resume, or disposal.
+- lifecycle-safe ownership requiring post-resume re-observation is deferred rather than changing core lifecycle/query ordering in 0.13.
 
 Record: `docs/T136-Scoped-Color-Ownership-Feasibility-and-Lifecycle-Decision.md`.
 
 ### T137 — lifecycle, composition, and downstream acceptance
 
-**Status:** Next after T136 validation.  
-**Expected version:** `0.13.0-alpha.8`.
+**Status:** Implemented; exact-head validation pending.  
+**Version:** `0.13.0-alpha.8`.
 
-Prove composition with ordinary application output, presentation/input-protocol ownership, cursor style, synchronized output, progress, pointer shape, OSC 7/8/52/133, and active terminal queries.
+Delivered:
 
-Add real downstream `Icod.DCurses` acceptance consuming typed palette/dynamic-color observations without raw OSC parsing or a second input path.
+- color mutation/reset composition with ordinary text and OSC 133 output in exact serialized order;
+- active color observation coexisting with independently serialized control output while awaiting a correlated reply;
+- exact palette-versus-dynamic query correlation tests;
+- standalone `tools/dcurses-color-observation-acceptance` project;
+- real `Icod.DCurses 0.1.0` package consumption;
+- scripted OSC 4 and OSC 11 observations returning typed 16-bit `TerminalColor` values;
+- explicit downstream adaptation to the current 8-bit `CursesColor.Rgb` model;
+- `CursesStyle` rendering through `setrgbf`/`setrgbb` capabilities;
+- no raw OSC parsing in the downstream layer;
+- acceptance verifier on net8.0/net9.0/net10.0;
+- PR, distribution, and tagged-release wiring for the new downstream gate.
+
+Record: `docs/T137-Color-Composition-and-DCurses-Observation-Acceptance.md`.
 
 ### T138 — public API/docs/samples/package/stable closure
 
+**Status:** Next after T137 validation.  
 **Expected stable version:** `0.13.0`.
 
-Deliver the 0.13 public API baseline, README/sample updates, release metadata, XML API assertions, fresh NuGet-only consumers, retained historical gates, new color gates, and exact stable PR/main/tag validation.
+Deliver:
+
+- `docs/Public-API-Baseline-0.13.md`;
+- root README update;
+- focused palette/dynamic-color sample(s);
+- package release notes/tags;
+- XML documentation assertions for the full 0.13 public delta;
+- fresh NuGet-only consumer on net8/net9/net10;
+- retained historical package-contract gates;
+- retained and new downstream `Icod.DCurses` gates;
+- stable metadata and exact PR/main/tag release validation.
 
 ---
 
@@ -191,10 +205,10 @@ Deliver the 0.13 public API baseline, README/sample updates, release metadata, X
 
 ```text
 VersionPrefix:   0.13.0
-VersionSuffix:   alpha.7
-Version:         0.13.0-alpha.7
-PackageVersion:  0.13.0-alpha.7
+VersionSuffix:   alpha.8
+Version:         0.13.0-alpha.8
+PackageVersion:  0.13.0-alpha.8
 AssemblyVersion: 0.13.0.0
 ```
 
-**Next after green validation:** T137 — lifecycle/composition and downstream `Icod.DCurses` observation acceptance.
+**Next after green validation:** T138 — public API/docs/samples/package/stable closure.
