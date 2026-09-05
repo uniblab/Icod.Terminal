@@ -51,6 +51,28 @@ internal static class CsiWriter {
 	}
 
 	/// <summary>
+	/// Encodes the canonical seven-bit synchronized-output begin frame.
+	/// </summary>
+	internal static byte[] EncodeSynchronizedOutputBeginFrame() {
+		return EncodeFrame(
+			[ (byte)'?', (byte)'2', (byte)'0', (byte)'2', (byte)'6' ],
+			ReadOnlySpan<byte>.Empty,
+			(byte)'h'
+		);
+	}
+
+	/// <summary>
+	/// Encodes the canonical seven-bit synchronized-output end frame.
+	/// </summary>
+	internal static byte[] EncodeSynchronizedOutputEndFrame() {
+		return EncodeFrame(
+			[ (byte)'?', (byte)'2', (byte)'0', (byte)'2', (byte)'6' ],
+			ReadOnlySpan<byte>.Empty,
+			(byte)'l'
+		);
+	}
+
+	/// <summary>
 	/// Emits one complete DECSCUSR cursor-style frame through one output write.
 	/// </summary>
 	/// <remarks>
@@ -69,6 +91,52 @@ internal static class CsiWriter {
 		cancellationToken.ThrowIfCancellationRequested();
 
 		byte[] frame = EncodeCursorStyleFrame( parameter );
+		cancellationToken.ThrowIfCancellationRequested();
+		return output.WriteAsync(
+			frame,
+			CancellationToken.None
+		);
+	}
+
+	/// <summary>
+	/// Emits one complete synchronized-output begin frame through one output write.
+	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission commits. The transport write
+	/// is intentionally non-cancellable once emission begins. This operation does
+	/// not flush the output service.
+	/// </remarks>
+	internal static ValueTask WriteSynchronizedOutputBeginAsync(
+		ITerminalOutput output,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( output );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		byte[] frame = EncodeSynchronizedOutputBeginFrame();
+		cancellationToken.ThrowIfCancellationRequested();
+		return output.WriteAsync(
+			frame,
+			CancellationToken.None
+		);
+	}
+
+	/// <summary>
+	/// Emits one complete synchronized-output end frame through one output write.
+	/// </summary>
+	/// <remarks>
+	/// Cancellation is observed before transmission commits. The transport write
+	/// is intentionally non-cancellable once emission begins. Flush policy belongs
+	/// to the synchronized-output state manager rather than this framing primitive.
+	/// </remarks>
+	internal static ValueTask WriteSynchronizedOutputEndAsync(
+		ITerminalOutput output,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( output );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		byte[] frame = EncodeSynchronizedOutputEndFrame();
 		cancellationToken.ThrowIfCancellationRequested();
 		return output.WriteAsync(
 			frame,
