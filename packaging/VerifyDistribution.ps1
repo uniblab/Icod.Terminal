@@ -69,6 +69,10 @@ try {
         -ArtifactDirectory $packageDirectory `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyPointerShapePackage.ps1') `
+        -ArtifactDirectory $packageDirectory `
+        -Configuration $Configuration
+
     Write-Host ''
     Write-Host "Distribution verification completed successfully ($Configuration)."
     Write-Host "  Solution: $solutionPath"
