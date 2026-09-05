@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.12.0`  
-**Development version:** `0.12.0-alpha.5`  
+**Development version:** `0.12.0-alpha.6`  
 **Predecessor:** `0.11.0` — OSC 22 terminal mouse-pointer shape control  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** semantic OSC 133 shell-integration / semantic-prompt markers  
-**Status:** T124 public OSC 133 API implemented; validation pending
+**Status:** T125 lifecycle/failure/order hardening implemented; validation pending
 
 ---
 
@@ -187,10 +187,10 @@ Record: `docs/T123-OSC-133-Session-Marker-Integration-and-Ordering-Semantics.md`
 
 ## 9. T124 — public OSC 133 API
 
-**Status:** Implemented; validation pending.  
+**Status:** Complete.  
 **Development version:** `0.12.0-alpha.5`.
 
-Expose the frozen semantic public surface:
+Exposed frozen semantic public surface:
 
 ```csharp
 ValueTask BeginPromptAsync(
@@ -215,7 +215,7 @@ ValueTask AbortCommandAsync(
 );
 ```
 
-The public surface SHALL retain T120's independent-call semantics and SHALL NOT expose raw OSC 133 marker letters, arbitrary metadata, a nullable completion-status overload, or a scoped command-region lease.
+The public surface retains T120's independent-call semantics and does not expose raw OSC 133 marker letters, arbitrary metadata, a nullable completion-status overload, or a scoped command-region lease.
 
 Record: `docs/T124-Public-OSC-133-Semantic-Prompt-API.md`.
 
@@ -223,20 +223,27 @@ Record: `docs/T124-Public-OSC-133-Semantic-Prompt-API.md`.
 
 ## 10. T125 — lifecycle, failure, and ordering hardening
 
-Prove the final public surface across lifecycle and failure edges:
+**Status:** Implemented; validation pending.  
+**Development version:** `0.12.0-alpha.6`.
+
+Hardening proves the final public surface across lifecycle and failure edges:
 
 - pre-commit cancellation emits nothing;
 - cancellation while queued for session output emits nothing;
+- cancellation after commitment cannot deliberately truncate a frame;
+- committed writes use `CancellationToken.None`;
 - failed committed marker writes propagate without compensating markers;
 - later independent marker calls remain truthful after a failed write;
 - session disposal emits no automatic finish or abort marker;
+- repeated disposal is idempotent with respect to OSC 133 output;
 - managed suspend emits no OSC 133 marker;
 - managed resume replays no OSC 133 marker;
-- repeated disposal remains idempotent without OSC 133 cleanup ownership;
-- noncanonical ordering remains accepted as frozen by T120;
-- lifecycle and output-state failure cannot fabricate semantic command history.
+- lifecycle re-entry failure cannot fabricate semantic command history;
+- noncanonical ordering remains accepted as frozen by T120.
 
-Expected development version: `0.12.0-alpha.6`.
+No production recovery state or lifecycle hook was added because the existing stateless event design already satisfies the frozen contract structurally.
+
+Record: `docs/T125-OSC-133-Lifecycle-Failure-and-Ordering-Hardening.md`.
 
 ---
 
@@ -304,10 +311,10 @@ Expected stable version: `0.12.0`.
 
 ```text
 VersionPrefix:   0.12.0
-VersionSuffix:   alpha.5
-Version:         0.12.0-alpha.5
-PackageVersion:  0.12.0-alpha.5
+VersionSuffix:   alpha.6
+Version:         0.12.0-alpha.6
+PackageVersion:  0.12.0-alpha.6
 AssemblyVersion: 0.12.0.0
 ```
 
-**T124 public OSC 133 API is implemented. Exact-head validation is required before T125 begins.**
+**T125 lifecycle/failure/order hardening is implemented. Exact-head validation is required before T126 begins.**
