@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.11.0`  
-**Development version:** `0.11.0-alpha.7`  
+**Development version:** `0.11.0`  
 **Predecessor:** `0.10.0` — OSC 9;4 terminal progress ownership  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** semantic OSC 22 terminal mouse-pointer shape control and ownership  
-**Status:** T110–T116 complete; T117 stable closure in progress
+**Status:** T110–T117 implementation complete; exact stable-head validation pending
 
 ---
 
@@ -67,7 +67,7 @@ No `Icod.TermInfo` database change is required for OSC 22 pointer shape.
 | T114 | `0.11.0-alpha.5` | Complete | Public setter/reset/lease APIs and explicit Kitty-compatible queries. |
 | T115 | `0.11.0-alpha.6` | Complete | Lifecycle, invalidation, failure recovery, retryable cleanup, and disposal hardening. |
 | T116 | `0.11.0-alpha.7` | Complete | Composition plus real `Icod.DCurses` pointer-shape refresh acceptance. |
-| T117 | `0.11.0` | In progress | Public API/package/docs/sample/stable closure. |
+| T117 | `0.11.0` | Stable candidate | Public API/package/docs/sample closure complete; exact stable validation pending. |
 
 Validation evidence:
 
@@ -76,7 +76,8 @@ Validation evidence:
 - T113 workflow #456 green;
 - T114 workflow #466 green;
 - T115 workflow #467 green;
-- T116 workflow #471 green.
+- T116 workflow #471 green;
+- cumulative T117 alpha.7 workflow #487 green, including the new 0.11 package/XML gate.
 
 ---
 
@@ -214,29 +215,28 @@ Record: `docs/T116-Pointer-Shape-Composition-and-DCurses-Acceptance.md`.
 
 ## 11. T117 — public API, docs, sample, package, stable closure
 
-Prepared on the alpha.7 line:
+Complete:
 
-- frozen `docs/Public-API-Baseline-0.11.md`;
+- frozen stable `docs/Public-API-Baseline-0.11.md`;
 - solution-owned `Icod.Terminal.PointerShape.Sample`;
-- root README 0.11 release-candidate documentation;
+- root README 0.11 documentation;
 - `samples/README.md` pointer-shape documentation;
 - 0.11 package release notes and tags;
 - publication-grade pointer query XML documentation;
 - fresh NuGet-only pointer-shape consumer on net8.0/net9.0/net10.0;
 - XML-documentation assertions for the complete 0.11 public delta including all 30 enum members;
 - retained 0.8, 0.9, and 0.10 package-contract gates;
-- new 0.11 pointer-shape package gate in PR/distribution/release validation.
+- new 0.11 pointer-shape package gate in PR/distribution/release validation;
+- stable `0.11.0` repository metadata.
 
-Stable closure remains gated on:
+Cumulative alpha.7 workflow #487 passed the complete matrix and justified the stable version bump.
 
-1. cumulative exact alpha.7 head green on Windows/Linux/macOS;
-2. all three DCurses acceptance gates green;
-3. fresh 0.11 package-only consumer/XML-doc gate green;
-4. empty `VersionSuffix` and stable README/status wording;
-5. exact stable PR head green;
-6. merge to `main`;
-7. Release distribution validation green on exact `main`;
-8. only then tag `v0.11.0`.
+Remaining release gates:
+
+1. exact stable PR head green;
+2. merge to `main`;
+3. Release distribution validation green on exact `main`;
+4. only then tag `v0.11.0`.
 
 Record: `docs/T117-0.11.0-Public-API-Package-and-Stable-Closure.md`.
 
@@ -261,10 +261,10 @@ Record: `docs/T117-0.11.0-Public-API-Package-and-Stable-Closure.md`.
 
 ```text
 VersionPrefix:   0.11.0
-VersionSuffix:   alpha.7
-Version:         0.11.0-alpha.7
-PackageVersion:  0.11.0-alpha.7
+VersionSuffix:
+Version:         0.11.0
+PackageVersion:  0.11.0
 AssemblyVersion: 0.11.0.0
 ```
 
-**T117 stable closure is the current tranche.**
+**T117 stable candidate is awaiting exact stable-head validation.**
