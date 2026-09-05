@@ -2,32 +2,31 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.13.0`  
-**Development version:** `0.13.0-alpha.4`  
+**Development version:** `0.13.0-alpha.5`  
 **Predecessor:** `0.12.0` — OSC 133 semantic prompt integration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** observable terminal palette and dynamic-color control  
-**Status:** T130–T132 complete/green; T133 implemented; T134 common dynamic colors next after validation
+**Status:** T130–T133 complete/green; T134 common dynamic colors implemented; T135 next after validation
 
 ---
 
 ## 1. Release objective
 
-`Icod.Terminal 0.13.0` SHALL add typed terminal-color mutation, reset, and observation for the indexed palette and the useful non-Tektronix xterm dynamic-color family.
+`Icod.Terminal 0.13.0` adds typed terminal-color mutation, reset, and observation for the indexed palette and the useful non-Tektronix xterm dynamic-color family.
 
-The release covers:
+Scope:
 
-- OSC 4 — indexed palette set/query;
-- OSC 104 — indexed palette reset;
-- OSC 10 / 110 — default foreground set/query/reset;
-- OSC 11 / 111 — default background set/query/reset;
-- OSC 12 / 112 — text-cursor color set/query/reset;
-- OSC 13 / 113 — mouse foreground set/query/reset;
-- OSC 14 / 114 — mouse background set/query/reset;
-- OSC 17 / 117 — highlight background set/query/reset;
-- OSC 19 / 119 — highlight foreground set/query/reset.
+- OSC 4 / 104 — indexed palette;
+- OSC 10 / 110 — default foreground;
+- OSC 11 / 111 — default background;
+- OSC 12 / 112 — text cursor;
+- OSC 13 / 113 — mouse foreground;
+- OSC 14 / 114 — mouse background;
+- OSC 17 / 117 — highlight background;
+- OSC 19 / 119 — highlight foreground.
 
-Observation is a first-class release requirement because future `Icod.DCurses` color policy will consume typed terminal observations.
+Observation remains a first-class requirement for future `Icod.DCurses` consumption.
 
 ---
 
@@ -36,26 +35,25 @@ Observation is a first-class release requirement because future `Icod.DCurses` c
 T130 froze:
 
 - immutable 16-bit RGB `TerminalColor`;
-- `byte` palette indices (`0..255`);
+- byte palette indices;
 - seven semantic dynamic-color identities;
-- canonical outbound `rgb:rrrr/gggg/bbbb`;
-- strict equal-width 1–4 digit `rgb:` and selected `#...` reply grammars;
-- full-range scaling for `rgb:` shorthand;
-- most-significant-bit/zero-fill semantics for hash shorthand;
-- reuse of the existing active-query transaction/router;
-- timeout/cancellation/format failure as distinct query outcomes;
-- no automatic support probing or authoritative color cache;
-- reset-to-terminal-policy kept distinct from exact observed restoration;
+- canonical `rgb:rrrr/gggg/bbbb` output;
+- strict bounded `rgb:` and selected hash reply parsing;
+- distinct shorthand normalization semantics;
+- existing active-query transaction/router reuse;
+- distinct timeout/cancellation/format failures;
+- no automatic probing or authoritative color cache;
+- reset-to-terminal-policy distinct from exact restoration;
 - no `System.Drawing` dependency;
-- direct future `Icod.DCurses` consumption of typed observations.
+- future `Icod.DCurses` typed observation consumption.
 
-Full record: `docs/T130-Terminal-Color-Contract-and-Reference-Freeze.md`.
+`TerminalDynamicColor` is now the frozen public enum name.
 
 ---
 
-## 3. Protocol scope and portability tiers
+## 3. Portability tiers
 
-### Common/core tier
+Common/core:
 
 ```text
 OSC 4 / 104
@@ -64,7 +62,7 @@ OSC 11 / 111
 OSC 12 / 112
 ```
 
-### Extended xterm tier
+Extended xterm:
 
 ```text
 OSC 13 / 113
@@ -73,7 +71,7 @@ OSC 17 / 117
 OSC 19 / 119
 ```
 
-### Deliberately excluded Tektronix colors
+Excluded Tektronix colors:
 
 ```text
 OSC 15 / 115
@@ -81,30 +79,9 @@ OSC 16 / 116
 OSC 18 / 118
 ```
 
-Portability tiers are documentation guidance only. They do not trigger emulator detection, hidden suppression, or cached support inference.
-
 ---
 
-## 4. Architectural rules retained from earlier releases
-
-0.13 preserves:
-
-- semantic public APIs;
-- specialized internal encoders/parsers;
-- complete-frame construction before output commitment;
-- validation before output;
-- caller cancellation before commitment;
-- committed control frames written non-cancellably;
-- session-owned output serialization;
-- interactive-output requirements;
-- explicit bounded active queries;
-- no generic OSC escape hatch;
-- no second input/output transport;
-- no implicit flush except where an established query transaction requires it.
-
----
-
-## 5. Tranche sequence
+## 4. Tranche sequence
 
 ### T130 — color contract/reference freeze
 
@@ -117,16 +94,9 @@ Record: `docs/T130-Terminal-Color-Contract-and-Reference-Freeze.md`.
 
 **Status:** Complete and green.  
 **Version:** `0.13.0-alpha.2`.  
-**Validation:** PR workflow #539.
+**Validation:** workflow #539.
 
-Delivered:
-
-- public immutable `TerminalColor`;
-- exact 8-bit expansion convenience;
-- canonical outbound color codec;
-- strict bounded reply parser;
-- all frozen precision/grammar normalization semantics;
-- malformed-input and round-trip tests independent of session logic.
+Delivered `TerminalColor`, canonical encoding, strict parsing, normalization, and codec tests.
 
 Record: `docs/T131-Terminal-Color-Codec-and-Parser-Foundation.md`.
 
@@ -134,57 +104,50 @@ Record: `docs/T131-Terminal-Color-Codec-and-Parser-Foundation.md`.
 
 **Status:** Complete and green.  
 **Version:** `0.13.0-alpha.3`.  
-**Validation:** PR workflow #546.
+**Validation:** workflow #546.
 
-Delivered:
-
-- `TerminalPaletteColor` typed index/color pair;
-- single indexed palette mutation;
-- bounded repeated-pair bulk mutation with duplicate rejection;
-- single-index typed observation;
-- exact requested-index response correlation;
-- ST/BEL/C1 response compatibility through the existing router;
-- malformed correlated reply failure;
-- no all-or-nothing bulk observation abstraction over per-entry terminal replies.
+Delivered typed single/bulk mutation and single-index observation on the shared query router.
 
 Record: `docs/T132-OSC-4-Indexed-Palette-Mutation-and-Observation.md`.
 
 ### T133 — OSC 104 indexed palette reset
 
-**Status:** Implemented; exact-head validation pending.  
-**Version:** `0.13.0-alpha.4`.
+**Status:** Complete and green.  
+**Version:** `0.13.0-alpha.4`.  
+**Validation:** workflow #553.
 
-Delivered:
-
-- `ResetPaletteColorAsync(byte, ...)`;
-- bounded `ResetPaletteColorsAsync(IReadOnlyList<byte>, ...)`;
-- `ResetPaletteAsync()` for whole-palette reset;
-- canonical ST framing with minimal decimal indices;
-- empty/duplicate/>256 validation before commitment;
-- one complete non-cancellable committed write;
-- no implicit flush;
-- explicit tests and documentation proving OSC 104 reset is terminal-policy reset, not exact restoration.
+Delivered single, bounded multiple, and whole-palette terminal-policy reset with explicit reset/restoration distinction.
 
 Record: `docs/T133-OSC-104-Indexed-Palette-Reset.md`.
 
 ### T134 — common dynamic colors
 
-**Status:** Next after T133 validation.  
-**Expected version:** `0.13.0-alpha.5`.
+**Status:** Implemented; exact-head validation pending.  
+**Version:** `0.13.0-alpha.5`.
 
-Implement typed mutation, observation, and reset for:
+Delivered:
 
-- OSC 10 / 110 — default foreground;
-- OSC 11 / 111 — default background;
-- OSC 12 / 112 — text cursor.
+- frozen public `TerminalDynamicColor` enum name and seven semantic identities;
+- `SetDynamicColorAsync(...)`;
+- `QueryDynamicColorAsync(...)`;
+- `ResetDynamicColorAsync(...)`;
+- T134 activation for default foreground, default background, and text cursor;
+- OSC 10/11/12 canonical set/query framing;
+- OSC 110/111/112 reset framing;
+- exact response-identity correlation on the existing active-query router;
+- typed `TerminalColor` observation through the T131 codec;
+- malformed correlated response failure;
+- terminal-policy reset semantics;
+- extended T135 identities rejected before output until their protocol mapping is activated.
 
-Use the T131 color codec and existing active-query router. Freeze the final public semantic enum name here before exposing it.
+Record: `docs/T134-Common-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 
 ### T135 — extended dynamic colors
 
+**Status:** Next after T134 validation.  
 **Expected version:** `0.13.0-alpha.6`.
 
-Implement typed mutation, observation, and reset for:
+Activate the existing typed dynamic-color API for:
 
 - OSC 13 / 113 — mouse foreground;
 - OSC 14 / 114 — mouse background;
@@ -195,85 +158,42 @@ Implement typed mutation, observation, and reset for:
 
 **Expected version:** `0.13.0-alpha.7`.
 
-Determine and, where contractually sound, implement query-before-mutate scoped restoration for indexed palette and/or dynamic colors.
-
-Any lease claiming exact restoration must successfully observe its baseline and restore by explicit color mutation. OSC 104/110–119 resets SHALL NOT masquerade as exact restoration.
+Determine and, where contractually sound, implement query-before-mutate scoped restoration for indexed palette and/or dynamic colors. Exact restoration requires a successful observed baseline and explicit color replay; reset controls do not substitute for restoration.
 
 ### T137 — lifecycle, composition, and downstream acceptance
 
 **Expected version:** `0.13.0-alpha.8`.
 
-Prove composition with ordinary text, presentation state, input-protocol leases, cursor style, synchronized output, progress, pointer shape, OSC 7, OSC 8, OSC 52, OSC 133, and active terminal queries.
-
-Add real downstream `Icod.DCurses` acceptance proving typed color observation consumption without raw OSC parsing or a second input path.
+Prove composition with existing output/query families and add real downstream `Icod.DCurses` acceptance consuming typed observations without raw OSC parsing or another input path.
 
 ### T138 — public API/docs/samples/package/stable closure
 
 **Expected stable version:** `0.13.0`.
 
-Deliver:
-
-- `docs/Public-API-Baseline-0.13.md`;
-- root README update;
-- focused palette/dynamic-color samples;
-- package release notes/tags;
-- XML documentation assertions for the full 0.13 public delta;
-- fresh NuGet-only consumer on net8/net9/net10;
-- retained historical package-contract gates;
-- retained and new downstream `Icod.DCurses` gates;
-- stable metadata and exact PR/main/tag release validation.
+Deliver the 0.13 public API baseline, README/sample updates, package release metadata, XML API assertions, fresh NuGet-only consumers, retained historical gates, new color gates, and exact stable PR/main/tag validation.
 
 ---
 
-## 6. Testing expectations
+## 5. Testing expectations
 
-0.13 testing includes:
-
-- byte-exact outbound frames;
-- all palette-index boundaries;
-- all selected dynamic-color identities;
-- channel boundaries and representative intermediate values;
-- every accepted reply precision/grammar;
-- explicit `rgb:` versus hash normalization distinction;
-- malformed/incomplete/overlong/unexpected replies;
-- query timeout and cancellation;
-- cancellation while queued for output;
-- committed-write non-cancellability;
-- query isolation and unrelated-input preservation;
-- redirected-output rejection;
-- no automatic queries during open/suspend/resume/disposal;
-- reset versus exact restoration distinction;
-- lifecycle recovery for any T136 ownership model;
-- composition with existing protocol families;
-- fresh-package consumers;
-- real `Icod.DCurses` typed observation consumption.
+0.13 testing includes byte-exact framing, all palette boundaries, all selected dynamic identities, channel/precision grammar coverage, malformed responses, timeout/cancellation, output serialization, committed-write non-cancellability, query isolation, redirected-output rejection, reset/restoration distinction, lifecycle recovery for any T136 ownership, composition, package consumers, and real `Icod.DCurses` typed observation consumption.
 
 ---
 
-## 7. Explicit non-goals
+## 6. Explicit non-goals
 
-0.13 does not add:
-
-- arbitrary OSC construction;
-- raw public color-specification strings;
-- X11 named-color injection;
-- Tektronix OSC 15/16/18 or 115/116/118;
-- emulator detection as a support oracle;
-- automatic palette probing during session open;
-- an authoritative long-lived color cache;
-- `System.Drawing` as a dependency/public authority;
-- downstream color-distance, approximation, contrast, accessibility, or theme policy.
+0.13 does not add arbitrary OSC construction, raw public color strings, X11 named-color injection, Tektronix dynamic colors, emulator detection as a support oracle, automatic palette probing, authoritative long-lived color caching, `System.Drawing` dependency, or downstream color-selection/contrast/theme policy.
 
 ---
 
-## 8. Current development state
+## 7. Current development state
 
 ```text
 VersionPrefix:   0.13.0
-VersionSuffix:   alpha.4
-Version:         0.13.0-alpha.4
-PackageVersion:  0.13.0-alpha.4
+VersionSuffix:   alpha.5
+Version:         0.13.0-alpha.5
+PackageVersion:  0.13.0-alpha.5
 AssemblyVersion: 0.13.0.0
 ```
 
-**Next after green validation:** T134 — common dynamic colors, OSC 10–12 / 110–112.
+**Next after green validation:** T135 — activate the extended dynamic-color identities on the existing typed API.
