@@ -4,6 +4,14 @@ namespace Icod.Terminal;
 /// Provides semantic DECSCUSR cursor-style operations for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
+	private TerminalCursorStyleManager? cursorStyleManager;
+
+	private TerminalCursorStyleManager CursorStyleManager {
+		get {
+			return this.cursorStyleManager ??= new TerminalCursorStyleManager( this );
+		}
+	}
+
 	/// <summary>
 	/// Sets the terminal text-cursor style using DECSCUSR.
 	/// </summary>
@@ -25,28 +33,21 @@ public sealed partial class TerminalSession {
 	/// support from terminal identity and does not substitute another style when a
 	/// terminal ignores an emitted request.
 	/// </para>
+	/// <para>
+	/// Unscoped mutation is unavailable while a cursor-style lease is active so the
+	/// lease stack can preserve exact restoration semantics.
+	/// </para>
 	/// </remarks>
-	public async ValueTask SetCursorStyleAsync(
+	public ValueTask SetCursorStyleAsync(
 		TerminalCursorStyle style,
 		CancellationToken cancellationToken = default
 	) {
-		int parameter = TerminalCursorStyleCodec.GetParameter( style );
+		_ = TerminalCursorStyleCodec.GetParameter( style );
 		cancellationToken.ThrowIfCancellationRequested();
-
-		if ( !this.OutputObservation.IsTerminal ) {
-			throw new InvalidOperationException(
-				"Cursor-style operations require an interactive terminal output endpoint."
-			);
-		}
-
-		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+		return this.CursorStyleManager.SetAsync(
+			style,
 			cancellationToken
-		).ConfigureAwait( false );
-		await CsiWriter.WriteCursorStyleAsync(
-			this.Output,
-			parameter,
-			cancellationToken
-		).ConfigureAwait( false );
+		);
 	}
 
 	/// <summary>
@@ -99,5 +100,52 @@ public sealed partial class TerminalSession {
 			isSupported: true,
 			style
 		);
+	}
+
+	/// <summary>
+	/// Acquires one reversible session-owned cursor-style request.
+	/// </summary>
+	/// <param name="style">The cursor style to own while the lease is active.</param>
+	/// <param name="timeout">
+	/// The caller-visible timeout used only when the outermost lease must observe the
+	/// terminal's current cursor style before mutation.
+	/// </param>
+	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
+	/// <returns>A value task containing the acquired cursor-style lease.</returns>
+	/// <exception cref="NotSupportedException">
+	/// The terminal explicitly reports that DECRQSS cursor-style observation is unsupported.
+	/// </exception>
+	/// <remarks>
+	/// The outermost acquisition first observes the real terminal cursor style and
+	/// performs no mutation unless that observation succeeds. Nested acquisitions are
+	/// strictly LIFO and restore the immediately preceding session-owned style. The
+	/// outermost release restores the observed pre-lease style exactly; it never uses
+	/// DECSCUSR parameter 0, parameter 1, or xterm parameter 7 as a guessed reset.
+	/// </remarks>
+	public ValueTask<TerminalCursorStyleLease> AcquireCursorStyleAsync(
+		TerminalCursorStyle style,
+		TimeSpan timeout,
+		CancellationToken cancellationToken = default
+	) {
+		_ = TerminalCursorStyleCodec.GetParameter( style );
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.CursorStyleManager.AcquireAsync(
+			style,
+			timeout,
+			cancellationToken
+		);
+	}
+
+	private async ValueTask<Exception?> CloseCursorStyleStateAsync() {
+		if ( this.cursorStyleManager is null ) {
+			return null;
+		}
+
+		try {
+			await this.cursorStyleManager.CloseAsync().ConfigureAwait( false );
+			return null;
+		} catch ( Exception exception ) {
+			return exception;
+		}
 	}
 }
