@@ -94,6 +94,10 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: ./packaging/VerifyPointerShapePackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify 0.12 semantic-prompt package contract
+        if: matrix.verify_packages
+        shell: pwsh
+        run: ./packaging/VerifySemanticPromptPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
       - name: Upload validated Staging package artifacts
         if: matrix.verify_packages
         uses: actions/upload-artifact@v4
