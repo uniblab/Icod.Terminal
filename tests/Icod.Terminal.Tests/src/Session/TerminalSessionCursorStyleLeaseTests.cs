@@ -233,6 +233,7 @@ public sealed class TerminalSessionCursorStyleLeaseTests {
 					return this.writes.Count;
 				}
 			}
+		}
 
 		internal byte[] GetWrite(
 			int index
