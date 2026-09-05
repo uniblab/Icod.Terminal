@@ -179,14 +179,11 @@ internal static class Program {
 			Version.TryParse(
 				versionPrefix,
 				out Version? parsedPrefix
-			)
-				&& 3 == parsedPrefix!.Build
-				? false
-				: true,
-			""
+			),
+			$"VersionPrefix '{versionPrefix}' is not a valid version prefix."
 		);
 
-		Version parsed = Version.Parse( versionPrefix! );
+		Version parsed = parsedPrefix!;
 		Require(
 			0 <= parsed.Build && 0 > parsed.Revision,
 			"VersionPrefix must contain exactly major, minor, and patch components."

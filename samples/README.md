@@ -1,112 +1,78 @@
 # Icod.Terminal Samples
 
 The sample projects are repository consumers built through project references.
-The release package itself is validated separately by `tools/package-smoke`,
-`tools/package-title-smoke`, `tools/package-location-smoke`,
-`tools/package-hyperlink-smoke`, and `tools/package-clipboard-smoke`. The focused
-package consumers use only the freshly produced NuGet artifact and run under
-`net8.0`, `net9.0`, and `net10.0`.
+The release package itself is validated separately by the package-verification
+harnesses under `tools/`. Focused package consumers use only the freshly produced
+NuGet artifact and run under `net8.0`, `net9.0`, and `net10.0`.
+
+## Icod.Terminal.CursorStyle.Sample
+
+`Icod.Terminal.CursorStyle.Sample` is the focused 0.8 DECSCUSR cursor-style demonstration.
+
+Run it in an interactive terminal. The optional argument is any `TerminalCursorStyle`
+name; the default is `SteadyBar`.
+
+```text
+dotnet run --project samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj -f net10.0 -- SteadyUnderline
+```
+
+The sample first demonstrates an explicit observation:
+
+```csharp
+TerminalCursorStyleObservation observation =
+	await session.QueryCursorStyleAsync(
+		TimeSpan.FromMilliseconds( 750 )
+	);
+```
+
+It then acquires a truthful scoped lease:
+
+```csharp
+await using TerminalCursorStyleLease lease =
+	await session.AcquireCursorStyleAsync(
+		TerminalCursorStyle.SteadyUnderline,
+		TimeSpan.FromMilliseconds( 750 )
+	);
+```
+
+These are deliberately two separate observations. The first query demonstrates the
+explicit observation API. `AcquireCursorStyleAsync(...)` independently re-observes
+the terminal's current semantic cursor style immediately before mutation and uses
+that second observation as its restoration baseline. The lease never assumes that
+an earlier caller query is still current.
+
+If either explicit observation reports DECRQSS cursor-style state as unsupported,
+the sample does not claim support. If lease acquisition cannot establish its own
+baseline, no leased style is retained. Query timeout is reported as timeout rather
+than being misinterpreted as proof of unsupported behavior.
+
+Cursor style and cursor visibility are separate concepts. This sample changes
+shape/blink policy only; it does not hide or show the cursor.
 
 ## Icod.Terminal.Clipboard.Sample
 
 `Icod.Terminal.Clipboard.Sample` is the focused 0.7 OSC 52 clipboard/selection demonstration.
 
-Run it in an interactive terminal with optional explicit text to write:
-
 ```text
 dotnet run --project samples/Icod.Terminal.Clipboard.Sample/Icod.Terminal.Clipboard.Sample.csproj -f net10.0 -- "copied text"
 ```
 
-The sample explicitly writes strict UTF-8 text to the ordinary terminal clipboard:
-
-```csharp
-await session.WriteClipboardAsync(
-	TerminalClipboardSelection.Clipboard,
-	text
-);
-```
-
-It then explicitly requests the same selection with a short timeout:
-
-```csharp
-byte[] payload = await session.ReadClipboardAsync(
-	TerminalClipboardSelection.Clipboard,
-	TimeSpan.FromMilliseconds( 750 )
-);
-```
-
-The sample deliberately demonstrates the security boundary rather than hiding it:
-
-- opening the session does not read clipboard data;
-- every read is an explicit API call with a caller-visible timeout;
-- the query returns bytes rather than assuming a text encoding;
-- the sample chooses UTF-8 only when displaying its own demonstration result;
-- write completion proves protocol emission, not terminal-side acceptance;
-- read timeout does not prove lack of OSC 52 support because terminal policy may disable clipboard queries;
-- no OS-native clipboard API, shell utility, automatic synchronization, or background monitoring is involved.
-
-The project targets `net8.0`, `net9.0`, and `net10.0`.
-
-## Icod.Terminal.Sample
-
-`Icod.Terminal.Sample` is the intentionally minimal live-session example. It
-opens the process terminal, requests cbreak/no-echo input policy, reports the
-selected terminal identity and current dimensions, writes through
-`TerminalSession`, and restores the captured session state on disposal.
-
-```text
-dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
-```
+It explicitly writes strict UTF-8 text and then requests the same terminal-managed
+selection with a caller-visible timeout. Opening the session does not read clipboard
+data, and read timeout does not prove lack of OSC 52 support.
 
 ## Icod.Terminal.Hyperlink.Sample
 
 `Icod.Terminal.Hyperlink.Sample` is the focused 0.6 OSC 8 hyperlink demonstration.
-It requires the target URI and visible link text to be supplied explicitly; an
-optional third argument supplies the OSC 8 `id` value.
+It requires the target URI and visible link text explicitly; an optional third
+argument supplies the OSC 8 `id` value.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Hyperlink.Sample/Icod.Terminal.Hyperlink.Sample.csproj -f net10.0 -- https://example.com/ "example link" example-1
 ```
 
-The sample demonstrates both bounded output and explicit scoped state:
-
-```csharp
-await session.WriteHyperlinkAsync(
-	"example link",
-	"https://example.com/",
-	"example-1"
-);
-
-await using TerminalHyperlinkLease hyperlink =
-	await session.AcquireHyperlinkAsync(
-		"https://example.com/",
-		"example-1"
-	);
-
-await session.WriteTextAsync( "linked text" );
-```
-
-It also demonstrates one nested scope so strict-LIFO restoration is visible.
-Active logical hyperlink scopes close physically before managed suspension and
-re-enter after successful terminal/session restoration.
-
-The project targets `net8.0`, `net9.0`, and `net10.0`.
-
-## Icod.Terminal.Title.Sample
-
-`Icod.Terminal.Title.Sample` is the focused 0.4 OSC title demonstration.
-
-```csharp
-await session.SetTitleAsync( "Icod.Terminal — OSC 0" );
-await session.SetIconNameAsync( "Icod.Terminal icon" );
-await session.SetWindowTitleAsync( "Icod.Terminal — OSC 2" );
-```
-
-Successful completion proves emission only; the sample does not query or restore a prior title.
-
-```text
-dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
-```
+The sample demonstrates both bounded hyperlink output and strict-LIFO scoped
+hyperlink restoration.
 
 ## Icod.Terminal.Location.Sample
 
@@ -122,20 +88,15 @@ dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Locatio
 dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- unc \\server\share\project
 ```
 
-An optional third argument supplies an explicit authority for POSIX or Windows-drive paths.
+## Icod.Terminal.Title.Sample
 
-## Icod.Terminal.RichInput.Sample
-
-`Icod.Terminal.RichInput.Sample` is the interactive 0.2 event inspector. It requests
-one reversible compound input-protocol lease for bracketed paste, focus reporting,
-and button mouse tracking when supported.
-
-All activity is consumed from `TerminalSession.ReadEventAsync`. Bracketed paste is
-shown as separate Begin, bounded Data, and End events.
+`Icod.Terminal.Title.Sample` is the focused 0.4 OSC title demonstration.
 
 ```text
-dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
+dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
 ```
+
+It demonstrates semantic OSC 0/1/2 operations without exposing raw OSC construction.
 
 ## Icod.Terminal.Query.Sample
 
@@ -147,3 +108,26 @@ caller-visible deadlines before returning to ordinary input/lifecycle consumptio
 ```text
 dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
 ```
+
+## Icod.Terminal.RichInput.Sample
+
+`Icod.Terminal.RichInput.Sample` is the interactive 0.2 event inspector. It requests
+one reversible compound input-protocol lease for bracketed paste, focus reporting,
+and button mouse tracking when supported.
+
+```text
+dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
+```
+
+## Icod.Terminal.Sample
+
+`Icod.Terminal.Sample` is the intentionally minimal live-session example. It opens
+the process terminal, requests cbreak/no-echo input policy, reports the selected
+terminal identity and current dimensions, writes through `TerminalSession`, and
+restores captured state on disposal.
+
+```text
+dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
+```
+
+All sample projects target `net8.0`, `net9.0`, and `net10.0`.

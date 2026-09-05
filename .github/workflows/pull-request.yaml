@@ -66,6 +66,10 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify 0.8 cursor-style package contract
+        if: matrix.verify_packages
+        shell: pwsh
+        run: ./packaging/VerifyCursorStylePackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
       - name: Upload validated Staging package artifacts
         if: matrix.verify_packages
         uses: actions/upload-artifact@v4

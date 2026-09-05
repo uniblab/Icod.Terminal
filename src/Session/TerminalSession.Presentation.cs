@@ -44,6 +44,12 @@ public sealed partial class TerminalSession {
 	private async ValueTask<Exception?> ClosePresentationStateAsync() {
 		List<Exception> exceptions = [];
 
+		Exception? cursorStyleException =
+			await this.CloseCursorStyleStateAsync().ConfigureAwait( false );
+		if ( cursorStyleException is not null ) {
+			exceptions.Add( cursorStyleException );
+		}
+
 		Exception? hyperlinkException =
 			await this.CloseHyperlinkStateAsync().ConfigureAwait( false );
 		if ( hyperlinkException is not null ) {
