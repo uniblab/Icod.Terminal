@@ -114,12 +114,12 @@ public sealed class TerminalProgressValueTests {
 	}
 
 	[Theory]
-	[InlineData( TerminalProgressState.Normal, Osc9ProgressState.Normal )]
-	[InlineData( TerminalProgressState.Error, Osc9ProgressState.Error )]
-	[InlineData( TerminalProgressState.Attention, Osc9ProgressState.Attention )]
+	[InlineData( TerminalProgressState.Normal, 1 )]
+	[InlineData( TerminalProgressState.Error, 2 )]
+	[InlineData( TerminalProgressState.Attention, 4 )]
 	public void MapsSemanticStatesToWireStates(
 		TerminalProgressState state,
-		Osc9ProgressState expectedWireState
+		int expectedWireState
 	) {
 		TerminalProgressValue value = TerminalProgressValue.CreateDeterminate(
 			state,
@@ -127,7 +127,10 @@ public sealed class TerminalProgressValueTests {
 			2
 		);
 
-		Assert.Equal( expectedWireState, value.GetWireState() );
+		Assert.Equal(
+			(Osc9ProgressState)expectedWireState,
+			value.GetWireState()
+		);
 	}
 
 	[Fact]
