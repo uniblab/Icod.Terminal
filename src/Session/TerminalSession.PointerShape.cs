@@ -102,6 +102,22 @@ public sealed partial class TerminalSession {
 	/// <summary>
 	/// Explicitly queries the current Kitty-compatible OSC 22 application pointer shape.
 	/// </summary>
+	/// <param name="timeout">The caller-visible query timeout.</param>
+	/// <param name="cancellationToken">Cancellation for the caller's wait.</param>
+	/// <returns>
+	/// A pointer-shape observation. <see cref="TerminalPointerShapeObservation.HasShape"/>
+	/// is false when the terminal explicitly reports that no application pointer shape is set.
+	/// </returns>
+	/// <exception cref="ArgumentOutOfRangeException">The timeout is outside the supported terminal-query range.</exception>
+	/// <exception cref="InvalidOperationException">The session endpoints cannot support an active terminal query.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels the query.</exception>
+	/// <exception cref="TimeoutException">The caller-visible response deadline expires.</exception>
+	/// <exception cref="FormatException">The terminal returns a correlated malformed or unknown OSC 22 response.</exception>
+	/// <remarks>
+	/// This query is explicit and performs no support inference. A timeout is not treated
+	/// as proof that OSC 22 is unsupported. An explicit no-shape result is distinct from
+	/// <see cref="TerminalPointerShape.Default"/>.
+	/// </remarks>
 	public ValueTask<TerminalPointerShapeObservation> QueryCurrentPointerShapeAsync(
 		TimeSpan timeout,
 		CancellationToken cancellationToken = default
@@ -116,6 +132,18 @@ public sealed partial class TerminalSession {
 	/// <summary>
 	/// Explicitly queries the terminal's Kitty-compatible OSC 22 default pointer shape.
 	/// </summary>
+	/// <param name="timeout">The caller-visible query timeout.</param>
+	/// <param name="cancellationToken">Cancellation for the caller's wait.</param>
+	/// <returns>A pointer-shape observation containing the terminal-reported default shape when present.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">The timeout is outside the supported terminal-query range.</exception>
+	/// <exception cref="InvalidOperationException">The session endpoints cannot support an active terminal query.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels the query.</exception>
+	/// <exception cref="TimeoutException">The caller-visible response deadline expires.</exception>
+	/// <exception cref="FormatException">The terminal returns a correlated malformed or unknown OSC 22 response.</exception>
+	/// <remarks>
+	/// This query is explicit and performs no support inference. Timeout remains an
+	/// unanswered query rather than being converted into an unsupported result.
+	/// </remarks>
 	public ValueTask<TerminalPointerShapeObservation> QueryDefaultPointerShapeAsync(
 		TimeSpan timeout,
 		CancellationToken cancellationToken = default
@@ -130,6 +158,18 @@ public sealed partial class TerminalSession {
 	/// <summary>
 	/// Explicitly queries the terminal's Kitty-compatible OSC 22 grabbed pointer shape.
 	/// </summary>
+	/// <param name="timeout">The caller-visible query timeout.</param>
+	/// <param name="cancellationToken">Cancellation for the caller's wait.</param>
+	/// <returns>A pointer-shape observation containing the terminal-reported grabbed shape when present.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">The timeout is outside the supported terminal-query range.</exception>
+	/// <exception cref="InvalidOperationException">The session endpoints cannot support an active terminal query.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels the query.</exception>
+	/// <exception cref="TimeoutException">The caller-visible response deadline expires.</exception>
+	/// <exception cref="FormatException">The terminal returns a correlated malformed or unknown OSC 22 response.</exception>
+	/// <remarks>
+	/// This query is explicit and performs no support inference. Timeout remains an
+	/// unanswered query rather than being converted into an unsupported result.
+	/// </remarks>
 	public ValueTask<TerminalPointerShapeObservation> QueryGrabbedPointerShapeAsync(
 		TimeSpan timeout,
 		CancellationToken cancellationToken = default
@@ -153,6 +193,10 @@ public sealed partial class TerminalSession {
 	/// <exception cref="OperationCanceledException">The caller cancels the query.</exception>
 	/// <exception cref="TimeoutException">The caller-visible response deadline expires.</exception>
 	/// <exception cref="FormatException">The terminal returns a correlated malformed OSC 22 response.</exception>
+	/// <remarks>
+	/// Only an explicit reply of 0 is treated as unsupported. Timeout is not proof that
+	/// OSC 22 or the requested semantic shape is unsupported.
+	/// </remarks>
 	public async ValueTask<bool> QueryPointerShapeSupportAsync(
 		TerminalPointerShape shape,
 		TimeSpan timeout,
