@@ -182,7 +182,7 @@ public sealed class TerminalSessionCursorStyleLeaseTests {
 
 			Assert.Equal(
 				Encoding.ASCII.GetBytes( "\u001b[2 q" ),
-				transport.GetWrite( ^1 )
+				transport.GetWrite( -1 )
 			);
 			int afterDispose = transport.WriteCount;
 			await lease.DisposeAsync();
@@ -233,7 +233,6 @@ public sealed class TerminalSessionCursorStyleLeaseTests {
 					return this.writes.Count;
 				}
 			}
-		}
 
 		internal byte[] GetWrite(
 			int index
