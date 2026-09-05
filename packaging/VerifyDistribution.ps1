@@ -44,6 +44,9 @@ try {
     & (Join-Path $PSScriptRoot 'VerifyDCursesPointerShape.ps1') `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyDCursesSemanticPrompt.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
