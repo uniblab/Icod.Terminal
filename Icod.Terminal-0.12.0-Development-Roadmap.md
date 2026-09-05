@@ -2,195 +2,34 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.12.0`  
-**Development version:** `0.12.0-alpha.7`  
+**Development version:** `0.12.0`  
 **Predecessor:** `0.11.0` — OSC 22 terminal mouse-pointer shape control  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** semantic OSC 133 shell-integration / semantic-prompt markers  
-**Status:** T126 composition and downstream acceptance implemented; validation pending
+**Status:** T127 stable metadata/package/docs closure complete; exact stable-head validation required
 
 ---
 
 ## 1. Release objective
 
-`Icod.Terminal 0.12.0` SHALL add semantic OSC 133 shell-integration markers without exposing arbitrary OSC construction or vendor-specific metadata as untyped strings.
+`Icod.Terminal 0.12.0` adds a portable typed OSC 133 semantic-prompt core without exposing arbitrary OSC construction, vendor-specific metadata, or retained shell-history state.
 
-The release SHALL provide a portable core for marking the lifecycle of an interactive command region:
-
-- prompt start;
-- command-line input start / prompt end;
-- command execution / output start;
-- command completion;
-- explicit command abort/cancellation;
-- command completion with exit status `0..255`;
-- deterministic ordering through the existing session output domain;
-- composition with text, presentation, synchronized output, progress, pointer shape, OSC 7 current-location publication, and active queries;
-- downstream `Icod.DCurses` acceptance where semantic command-region marking is useful.
-
-The release SHALL distinguish semantic shell-integration marks from ordinary text output. The marks annotate the terminal's scrollback/command model; they do not render application text themselves.
-
----
-
-## 2. Portable protocol core
-
-The portable 0.12 core SHALL be based on the broadly implemented FinalTerm/iTerm2-style OSC 133 markers:
+Portable semantics:
 
 ```text
-OSC 133 ; A ST
-OSC 133 ; B ST
-OSC 133 ; C ST
-OSC 133 ; D ST
-OSC 133 ; D ; exit-status ST
+OSC 133 ; A ST          prompt start
+OSC 133 ; B ST          command-input start / prompt end
+OSC 133 ; C ST          command-output start / command executed
+OSC 133 ; D ST          aborted/cancelled command region
+OSC 133 ; D ; n ST      completed command with byte exit status 0..255
 ```
 
-Semantic meaning:
-
-- `A` — prompt begins;
-- `B` — prompt ends and command-line input begins;
-- `C` — command line ends / command execution has begun / command output begins;
-- bare `D` — command region aborted/cancelled;
-- `D;0..255` — command completed with an explicit exit status.
-
-Canonical outbound OSC termination for 0.12 is ST (`ESC \\`).
+Canonical outbound termination is ST (`ESC \\`).
 
 ---
 
-## 3. Extension posture
-
-OSC 133 has accumulated terminal-specific extensions. 0.12 SHALL not treat them as portable merely because one terminal accepts them.
-
-Examples outside the portable core include:
-
-- Kitty `A` properties such as `k=s`, `redraw=0`, `special_key=1`, and `click_events=...`;
-- Kitty command-line metadata attached to `C`;
-- extended semantic-zone markers such as secondary-prompt or command-input variants used by some terminals;
-- arbitrary key/value properties;
-- VS Code's OSC 633 family;
-- iTerm2 OSC 1337 metadata which complements but is not the same protocol as OSC 133.
-
-Vendor-specific extensions MAY be added later as typed opt-in operations if they prove useful and can be kept orthogonal to the portable core.
-
-No public raw OSC 133 field list or arbitrary metadata dictionary is planned for the portable 0.12 API.
-
----
-
-## 4. Architectural rules
-
-0.12 reuses the established terminal-control architecture:
-
-- semantic public APIs;
-- specialized internal OSC encoders;
-- complete-frame construction before commit;
-- validation before output;
-- caller cancellation before commit;
-- committed control frames written non-cancellably;
-- session-owned output serialization;
-- interactive-output requirement;
-- truthful optimistic support semantics;
-- no automatic terminal-emulator inference;
-- no generic OSC escape hatch;
-- no second output transport.
-
-OSC 133 marks are transient output annotations, not long-lived terminal modes. T120 froze that they do not create a lifecycle participant, a command-region lease, or an in-memory shell-history state machine.
-
----
-
-## 5. T120 — OSC 133 contract and reference freeze
-
-**Status:** Complete.  
-**Development version:** `0.12.0-alpha.1`.
-
-Frozen decisions include:
-
-- portable FinalTerm/iTerm2 A/B/C/D core;
-- `A` = prompt start;
-- `B` = command-input start / prompt end;
-- `C` = command-output start / command executed;
-- `D;0..255` = completed command with exit status;
-- bare `D` = aborted/cancelled command region;
-- canonical outbound ST termination;
-- `byte` completion status;
-- no nullable status API conflating abort with completion;
-- independently callable semantic markers rather than a synthetic shell-history state machine;
-- no long-lived OSC 133 lease;
-- no automatic marker emission on suspend/resume/disposal;
-- no compensating markers after failed writes;
-- no automatic support detection;
-- no raw OSC 133 strings or arbitrary metadata dictionaries.
-
-Record: `docs/T120-OSC-133-Semantic-Prompt-Contract-and-Reference-Freeze.md`.
-
----
-
-## 6. T121 — byte-exact OSC 133 writer
-
-**Status:** Complete.  
-**Development version:** `0.12.0-alpha.2`.
-
-Implemented:
-
-- specialized internal A/B/C/D encoders;
-- bare D abort and `D;0..255` completion forms;
-- canonical ST termination;
-- minimal ASCII decimal status encoding;
-- complete-frame non-cancellable commit;
-- no implicit flush;
-- byte-exact tests and pre-cancellation no-emission tests.
-
-Record: `docs/T121-OSC-133-Byte-Exact-Writer.md`.
-
----
-
-## 7. T122 — semantic marker model
-
-**Status:** Complete.  
-**Development version:** `0.12.0-alpha.3`.
-
-Implemented:
-
-- internal typed semantic marker vocabulary;
-- typed `byte` command-completion status;
-- explicit distinction between abort and completed status `0`;
-- exhaustive semantic-to-wire mapping tests;
-- invalid default/uninitialized marker rejection;
-- no public raw marker strings.
-
-Record: `docs/T122-OSC-133-Semantic-Marker-Model.md`.
-
----
-
-## 8. T123 — session marker integration and ordering semantics
-
-**Status:** Complete.  
-**Development version:** `0.12.0-alpha.4`.
-
-T123 implements the frozen T120 ordering posture through `TerminalSession` without adding a synthetic command-region state machine.
-
-Implemented:
-
-- deterministic serialization through the existing session output gate;
-- ordering relative to application text and control output;
-- interactive-output validation;
-- caller cancellation while waiting for the output gate and immediately before commit;
-- no lifetime-held output gate;
-- no retained prompt/input/output/completion state;
-- no transition rejection merely because earlier markers were not observed through the same session;
-- failed committed marker writes propagate without compensating markers or fabricated history;
-- later independently callable markers remain available after a failed write;
-- session-output closure rejects new markers after disposal begins.
-
-No nested-region owner, lifecycle participant, cleanup state, or recovery marker is required because OSC 133 annotations are transient events rather than library-owned terminal modes.
-
-Record: `docs/T123-OSC-133-Session-Marker-Integration-and-Ordering-Semantics.md`.
-
----
-
-## 9. T124 — public OSC 133 API
-
-**Status:** Complete.  
-**Development version:** `0.12.0-alpha.5`.
-
-Exposed frozen semantic public surface:
+## 2. Frozen public surface
 
 ```csharp
 ValueTask BeginPromptAsync(
@@ -215,111 +54,171 @@ ValueTask AbortCommandAsync(
 );
 ```
 
-The public surface retains T120's independent-call semantics and does not expose raw OSC 133 marker letters, arbitrary metadata, a nullable completion-status overload, or a scoped command-region lease.
+The operations are independently callable. There is no public marker enum, generic OSC 133 payload API, nullable completion status, scoped command-region lease, or synthetic A -> B -> C -> D state machine.
+
+The stable public delta is frozen in `docs/Public-API-Baseline-0.12.md`.
+
+---
+
+## 3. Architectural rules
+
+0.12 reuses the established terminal-control architecture:
+
+- specialized byte-exact internal OSC writers;
+- complete-frame construction before commit;
+- caller cancellation before commit;
+- committed frames written with `CancellationToken.None`;
+- no implicit marker flush;
+- session-owned output serialization;
+- interactive-output requirement;
+- truthful emission-oriented support semantics;
+- no emulator/OS/`TERM` capability inference;
+- no second output transport.
+
+OSC 133 markers are transient annotations rather than library-owned terminal modes. Suspend, resume, and disposal therefore emit no automatic OSC 133 marker and no cleanup/recovery marker is fabricated after failure.
+
+---
+
+## 4. Tranche closure
+
+### T120 — contract/reference freeze
+
+**Status:** Complete.  
+**Version:** `0.12.0-alpha.1`.
+
+Frozen portable A/B/C/D semantics, ST termination, byte completion status, explicit abort, independent-call model, lifecycle/failure posture, extension exclusions, and no raw public OSC 133 API.
+
+Record: `docs/T120-OSC-133-Semantic-Prompt-Contract-and-Reference-Freeze.md`.
+
+### T121 — byte-exact writer
+
+**Status:** Complete.  
+**Version:** `0.12.0-alpha.2`.
+
+Implemented canonical A/B/C/bare-D/`D;0..255` framing, minimal decimal status encoding, non-cancellable commit, no implicit flush, and byte-exact tests.
+
+Record: `docs/T121-OSC-133-Byte-Exact-Writer.md`.
+
+### T122 — semantic marker model
+
+**Status:** Complete.  
+**Version:** `0.12.0-alpha.3`.
+
+Implemented internal typed marker vocabulary with explicit abort versus completion distinction and exhaustive mapping to T121.
+
+Record: `docs/T122-OSC-133-Semantic-Marker-Model.md`.
+
+### T123 — session integration/order semantics
+
+**Status:** Complete.  
+**Version:** `0.12.0-alpha.4`.
+
+Integrated markers with the existing `TerminalSession` output gate without adding retained shell-history state. Proved deterministic ordering, cancellation while queued, interactive-output rejection, failure propagation, and later independent calls.
+
+Record: `docs/T123-OSC-133-Session-Marker-Integration-and-Ordering-Semantics.md`.
+
+### T124 — public API
+
+**Status:** Complete.  
+**Version:** `0.12.0-alpha.5`.
+
+Exposed exactly the five frozen public operations.
 
 Record: `docs/T124-Public-OSC-133-Semantic-Prompt-API.md`.
 
----
-
-## 10. T125 — lifecycle, failure, and ordering hardening
+### T125 — lifecycle/failure/order hardening
 
 **Status:** Complete.  
-**Development version:** `0.12.0-alpha.6`.
+**Version:** `0.12.0-alpha.6`.
 
-Hardening proves the final public surface across lifecycle and failure edges:
-
-- pre-commit cancellation emits nothing;
-- cancellation while queued for session output emits nothing;
-- cancellation after commitment cannot deliberately truncate a frame;
-- committed writes use `CancellationToken.None`;
-- failed committed marker writes propagate without compensating markers;
-- later independent marker calls remain truthful after a failed write;
-- session disposal emits no automatic finish or abort marker;
-- repeated disposal is idempotent with respect to OSC 133 output;
-- managed suspend emits no OSC 133 marker;
-- managed resume replays no OSC 133 marker;
-- lifecycle re-entry failure cannot fabricate semantic command history;
-- noncanonical ordering remains accepted as frozen by T120.
-
-No production recovery state or lifecycle hook was added because the existing stateless event design already satisfies the frozen contract structurally.
+Proved queued cancellation, post-commit non-cancellability, no compensation after transport failure, no automatic lifecycle/disposal markers, idempotent disposal with respect to OSC 133, and no fabricated command history after lifecycle re-entry failure.
 
 Record: `docs/T125-OSC-133-Lifecycle-Failure-and-Ordering-Hardening.md`.
 
----
+### T126 — composition and downstream acceptance
 
-## 11. T126 — composition and downstream acceptance
+**Status:** Complete.  
+**Version:** `0.12.0-alpha.7`.
 
-**Status:** Implemented; validation pending.  
-**Development version:** `0.12.0-alpha.7`.
+Proved composition with text, OSC 0/7/8/9;4/22/52, DECSCUSR, presentation, rich-input leases, synchronized output, and active terminal queries. Added real `Icod.DCurses` refresh acceptance on net8/net9/net10 and wired it into PR/distribution validation.
 
-T126 proves OSC 133 composition with:
-
-- ordinary text writes;
-- OSC 0 title;
-- OSC 7 current-location publication;
-- OSC 8 hyperlinks;
-- OSC 9;4 progress;
-- OSC 22 pointer shape;
-- OSC 52 clipboard;
-- DECSCUSR cursor style;
-- presentation state;
-- input-protocol leases;
-- synchronized output;
-- active terminal queries.
-
-The composition suite asserts deterministic byte ordering through the existing session output domain and confirms OSC 133 does not acquire, release, restore, or reinterpret another subsystem's state.
-
-T126 also adds a downstream `Icod.DCurses` acceptance executable which places real `CursesSession.RefreshAsync()` output between public OSC 133 semantic markers without constructing raw OSC bytes. The acceptance is run on `net8.0`, `net9.0`, and `net10.0` and is wired into both pull-request validation and full distribution verification.
+Corrected cumulative alpha.7 head `4a2bf1e966ac26eb9ed05c192db3d1ddbbad0055` passed PR workflow #509.
 
 Record: `docs/T126-OSC-133-Composition-and-DCurses-Acceptance.md`.
 
----
+### T127 — public API, docs, sample, package, stable closure
 
-## 12. T127 — public API, docs, sample, package, stable closure
+**Status:** Stable closure implemented; exact stable-head validation required.  
+**Version:** `0.12.0`.
 
-Deliver:
+Delivered:
 
-- `docs/Public-API-Baseline-0.12.md`;
-- root README update;
-- focused OSC 133 sample;
-- package release notes/tags;
-- XML-documentation assertions for the complete 0.12 public delta;
-- fresh NuGet-only consumer on net8.0/net9.0/net10.0;
+- frozen `docs/Public-API-Baseline-0.12.md`;
+- root README stable 0.12 documentation;
+- solution-owned `Icod.Terminal.SemanticPrompt.Sample`;
+- `samples/README.md` semantic-prompt documentation;
+- final 0.12 package release notes/tags;
+- fresh NuGet-only `package-semantic-prompt-smoke` consumer;
+- `VerifySemanticPromptPackage.ps1` XML/public-package gate on net8/net9/net10;
 - retained 0.8/0.9/0.10/0.11 package-contract gates;
-- retained downstream DCurses acceptance gates;
-- new OSC 133 downstream/package gates;
-- stable `0.12.0` metadata;
-- exact PR/main/tag release gates.
+- retained DCurses synchronized-output/progress/pointer-shape acceptance;
+- retained T126 DCurses semantic-prompt acceptance;
+- PR/distribution/tagged-release wiring for the new 0.12 gates;
+- stable `VersionSuffix` empty metadata;
+- T127 stable closure record.
 
-Expected stable version: `0.12.0`.
+Record: `docs/T127-0.12.0-Public-API-Package-and-Stable-Closure.md`.
 
 ---
 
-## 13. Explicit non-goals
+## 5. Explicit non-goals
 
-0.12 SHALL NOT add, unless explicitly promoted by a later reviewed tranche:
+0.12 does not add:
 
 - public arbitrary OSC construction;
-- public arbitrary OSC 133 strings;
-- arbitrary key/value metadata dictionaries;
+- public raw OSC 133 strings/marker letters;
+- arbitrary key/value OSC 133 metadata;
 - automatic shell detection or shell-script installation;
-- automatic modification of PS1/PROMPT_COMMAND or shell startup files;
+- automatic PS1/PROMPT_COMMAND/startup-file modification;
 - VS Code OSC 633 as though it were OSC 133;
-- iTerm2 OSC 1337 metadata as though it were OSC 133;
+- iTerm2 OSC 1337 as though it were OSC 133;
+- Kitty-only metadata promoted into the portable core;
 - terminal-emulator detection as a capability oracle;
-- shell command parsing or execution;
-- retained scrollback model or command-history database inside `Icod.Terminal`.
+- shell command parsing/execution;
+- retained scrollback or shell-history database.
 
 ---
 
-## 14. Current development state
+## 6. Stable candidate gate — current
+
+Current metadata:
 
 ```text
 VersionPrefix:   0.12.0
-VersionSuffix:   alpha.7
-Version:         0.12.0-alpha.7
-PackageVersion:  0.12.0-alpha.7
+VersionSuffix:   <empty>
+Version:         0.12.0
+PackageVersion:  0.12.0
 AssemblyVersion: 0.12.0.0
 ```
 
-**T126 composition and downstream acceptance is implemented. Exact-head validation is required before T127 begins.**
+The exact stable PR head must pass:
+
+- Windows/Linux/macOS source restore/build/test;
+- solution-owned 0.12 semantic-prompt sample build;
+- all four downstream DCurses acceptance gates;
+- exact Staging package verification;
+- retained 0.8/0.9/0.10/0.11 package/XML gates;
+- new 0.12 package/XML + fresh-consumer gate.
+
+No feature/public-API/protocol expansion belongs between that green stable head and merge.
+
+---
+
+## 7. Post-merge release gate
+
+After merge:
+
+1. require exact `main` Release/distribution validation green;
+2. require all four downstream DCurses gates and all historical/new package gates green;
+3. only then create `v0.12.0`;
+4. the tagged workflow rebuilds/retests, reruns all downstream and package gates, selects the exact tagged package, then publishes to NuGet.org and GitHub Packages and creates the GitHub Release.
