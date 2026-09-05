@@ -93,6 +93,7 @@ public sealed class TerminalSynchronizedOutputPreMergeHardeningTests {
 			new EmptyInput(),
 			output,
 			new TerminalSessionOptions {
+				RequireInteractiveOutput = isTerminal,
 				TerminalOverride = terminal,
 				ConfigureOutput = false,
 				ObserveLifecycleEvents = false
