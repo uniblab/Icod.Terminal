@@ -31,6 +31,7 @@ public sealed partial class TerminalSession {
 
 	private void InvalidatePresentationState() {
 		this.presentationManager.Invalidate();
+		this.InvalidateProgressState();
 	}
 
 	private ValueTask SuspendPresentationStateAsync() {
@@ -60,6 +61,12 @@ public sealed partial class TerminalSession {
 			await this.presentationManager.CloseAsync().ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );
+		}
+
+		Exception? progressException =
+			await this.CloseProgressStateAsync().ConfigureAwait( false );
+		if ( progressException is not null ) {
+			exceptions.Add( progressException );
 		}
 
 		Exception? synchronizedOutputException =

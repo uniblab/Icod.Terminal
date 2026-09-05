@@ -78,6 +78,9 @@ jobs:
       - name: Verify DCurses synchronized-output acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesSynchronizedOutput.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses terminal-progress acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesProgress.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
         shell: pwsh
@@ -97,6 +100,9 @@ jobs:
       - name: Verify 0.9 synchronized-output release contract
         shell: pwsh
         run: ./packaging/VerifySynchronizedOutputPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.10 terminal-progress release contract
+        shell: pwsh
+        run: ./packaging/VerifyProgressPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:

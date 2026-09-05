@@ -19,7 +19,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.9.0 adds scoped synchronized-output ownership using DEC private mode 2026, first-owner/last-owner nesting, lifecycle-aware cleanup and recovery, composition with existing terminal operations and queries, and downstream Icod.DCurses refresh acceptance.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.10.0 adds scoped OSC 9;4 terminal progress ownership with completed/total stage reporting, indeterminate and attention/error states, nested restoration, lifecycle-safe cleanup and recovery, synchronized-output composition, and downstream Icod.DCurses refresh acceptance.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -30,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;tui</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;tui</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
