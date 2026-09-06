@@ -25,6 +25,15 @@ byte[] extendedOutputFrame = Encoding.ASCII.GetBytes(
 	"\u001b]133;C;cmdline_url=printf%20caf%C3%A9%20%F0%9F%98%80\u001b\\"
 );
 byte[] extendedFinishedFrame = Encoding.ASCII.GetBytes( "\u001b]133;D;23\u001b\\" );
+byte[] safeOsc9NotificationFrame = Encoding.ASCII.GetBytes(
+	"\u001b]9;DCurses safe OSC 9 acceptance\u001b\\"
+);
+byte[] safeOsc9CurrentDirectoryFrame = Encoding.ASCII.GetBytes(
+	"\u001b]9;9;C:\\work\\dcurses\u001b\\"
+);
+byte[] safeOsc9FinishedNotificationFrame = Encoding.ASCII.GetBytes(
+	"\u001b]9;DCurses safe OSC 9 acceptance complete\u001b\\"
+);
 RecordingOutput output = new();
 RecordingTerminalControlProvider provider = new();
 TerminalDescription terminal = new TerminalDescriptionBuilder(
@@ -111,6 +120,22 @@ await curses.RefreshAsync();
 
 await terminalSession.FinishCommandAsync( 23 );
 
+await terminalSession.SendNotificationAsync(
+	"DCurses safe OSC 9 acceptance"
+);
+curses.StandardScreen.Write( " notify" );
+await curses.RefreshAsync();
+
+await terminalSession.PublishWindowsCurrentDirectoryCompatibilityAsync(
+	"C:\\work\\dcurses"
+);
+curses.StandardScreen.Write( " cwd" );
+await curses.RefreshAsync();
+
+await terminalSession.SendNotificationAsync(
+	"DCurses safe OSC 9 acceptance complete"
+);
+
 int promptIndex = output.IndexOf(
 	promptFrame,
 	0
@@ -154,6 +179,18 @@ int extendedOutputIndex = output.IndexOf(
 int extendedFinishedIndex = output.IndexOf(
 	extendedFinishedFrame,
 	extendedOutputIndex + 1
+);
+int safeOsc9NotificationIndex = output.IndexOf(
+	safeOsc9NotificationFrame,
+	extendedFinishedIndex + 1
+);
+int safeOsc9CurrentDirectoryIndex = output.IndexOf(
+	safeOsc9CurrentDirectoryFrame,
+	safeOsc9NotificationIndex + 1
+);
+int safeOsc9FinishedNotificationIndex = output.IndexOf(
+	safeOsc9FinishedNotificationFrame,
+	safeOsc9CurrentDirectoryIndex + 1
 );
 
 Require( 0 <= promptIndex, "The initial OSC 133 prompt marker was not emitted." );
@@ -209,8 +246,29 @@ Require(
 	"No DCurses refresh payload was emitted between extended output start and command completion."
 );
 
+Require(
+	extendedFinishedIndex < safeOsc9NotificationIndex,
+	"The safe OSC 9 notification did not follow the completed OSC 133 acceptance sequence."
+);
+Require(
+	safeOsc9NotificationIndex < safeOsc9CurrentDirectoryIndex,
+	"The OSC 9;9 current-directory compatibility frame did not follow the safe notification."
+);
+Require(
+	1 < safeOsc9CurrentDirectoryIndex - safeOsc9NotificationIndex,
+	"No DCurses refresh payload was emitted between the safe OSC 9 notification and OSC 9;9 compatibility frame."
+);
+Require(
+	safeOsc9CurrentDirectoryIndex < safeOsc9FinishedNotificationIndex,
+	"The closing safe OSC 9 notification did not follow OSC 9;9 compatibility publication."
+);
+Require(
+	1 < safeOsc9FinishedNotificationIndex - safeOsc9CurrentDirectoryIndex,
+	"No DCurses refresh payload was emitted between OSC 9;9 compatibility publication and the closing notification."
+);
+
 Console.WriteLine(
-	"Icod.DCurses RefreshAsync OSC 133 portable and extended semantic-metadata acceptance passed."
+	"Icod.DCurses RefreshAsync OSC 133 and safe OSC 9 acceptance passed."
 );
 
 internal sealed class EmptyInput : ITerminalInput {
