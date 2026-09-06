@@ -63,7 +63,6 @@ await using TerminalSession terminalSession = await TerminalSession.OpenAsync(
 	}
 );
 
-TerminalColor foregroundBaseline = new( 0x1234, 0x5678, 0x9abc );
 TerminalColor foregroundOwned = new( 0xabcd, 0x4567, 0x89ef );
 Task<TerminalPaletteColorLease> foregroundAcquisition = terminalSession.AcquirePaletteColorAsync(
 	2,
@@ -89,7 +88,6 @@ Require(
 	"Scoped foreground ownership did not apply the requested OSC 4 color."
 );
 
-TerminalColor backgroundBaseline = new( 0xfedc, 0xba98, 0x7654 );
 TerminalColor backgroundOwned = new( 0x2468, 0xace0, 0x1357 );
 Task<TerminalDynamicColorLease> backgroundAcquisition = terminalSession.AcquireDynamicColorAsync(
 	TerminalDynamicColor.DefaultBackground,
@@ -218,7 +216,7 @@ internal sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
 			lock ( this.sync ) {
 				return this.writes.Count;
 			}
-		}
+	}
 
 	internal byte[] GetWrite(
 		int index
