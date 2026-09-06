@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.15.0`  
-**Development version:** `0.15.0-alpha.5`  
+**Development version:** `0.15.0-alpha.6`  
 **Predecessor:** `0.14.0` — lifecycle-safe color ownership and exact restoration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** OSC 133 extended semantic metadata without weakening the portable core  
-**Status:** T150–T153 green; T154 implemented, exact-head validation pending
+**Status:** T150–T154 green; T155 implemented, exact-head validation pending
 
 ---
 
@@ -200,6 +200,8 @@ The maximum OSC 133 payload is **65,536 encoded bytes**, measured after `ESC ]` 
 - encoded payload overflow -> argument-family exception before output;
 - pre-commit cancellation -> cancellation with no output;
 - committed marker emission -> one non-cancellable output write, no implicit flush;
+- failed committed marker writes propagate without compensating OSC traffic and do not poison later marker calls;
+- concurrent extended-marker calls serialize as whole frames through the existing session output gate;
 - no raw caller-supplied OSC 133 keys/values;
 - no shell `%q` encoder;
 - no terminal-brand support oracle;
@@ -257,28 +259,31 @@ Record: `docs/T153-Typed-OSC-133-Command-Output-Metadata.md`.
 ### T154 — session integration and compatibility
 
 **Version:** `0.15.0-alpha.5`  
-**Status:** Implemented; exact-head validation pending.
+**Status:** Complete and green at workflow #693.
 
-No production API or protocol changes were required. Existing composition tests retain byte-exact bare OSC 133 coverage and now additionally prove extended metadata with:
-
-- ordinary application text;
-- OSC 7 current-location publication;
-- OSC 8 hyperlinks;
-- OSC 52 clipboard output;
-- OSC 22 pointer shape;
-- synchronized output;
-- terminal progress;
-- an outstanding `QueryDeviceStatusAsync(...)` transaction and its correlated response.
-
-The tests prove extended OSC 133 uses the established session output gate without disturbing the single active-query/response router.
+No production API or protocol changes were required. Existing composition tests retain byte-exact bare OSC 133 coverage and additionally prove extended metadata with ordinary application text, OSC 7, OSC 8, OSC 52, OSC 22, synchronized output, terminal progress, and an outstanding `QueryDeviceStatusAsync(...)` transaction plus correlated response.
 
 Record: `docs/T154-OSC-133-Session-Integration-and-Compatibility.md`.
 
 ### T155 — lifecycle, failure, ordering, and security hardening
 
-**Expected version:** `0.15.0-alpha.6`.
+**Version:** `0.15.0-alpha.6`  
+**Status:** Implemented; exact-head validation pending.
 
-Cover output failure, concurrent marker calls, lifecycle suspension while queued, invalidation/disposal, no replay/synthesis, injection/oversize/malformed inputs, and lock-order/deadlock resistance.
+No production change was required. T155 adds dedicated extended-metadata hardening coverage for:
+
+- cancellation while queued for the session output lease;
+- committed transport failure and subsequent call recovery;
+- concurrent extended prompt/command-output whole-frame serialization;
+- non-cancellable committed frame writes;
+- `InvalidateState()` non-replay;
+- suspend/resume non-replay;
+- explicit post-resume marker availability;
+- disposal/repeated-disposal non-synthesis.
+
+T151/T153 remain the authoritative injection, malformed-Unicode, payload-boundary, and pre-cancellation coverage.
+
+Record: `docs/T155-OSC-133-Lifecycle-Failure-Ordering-and-Security-Hardening.md`.
 
 ### T156 — downstream acceptance
 
@@ -312,11 +317,11 @@ Tests validate emitted bytes directly and do not depend on the CI host terminal 
 
 ```text
 VersionPrefix:    0.15.0
-VersionSuffix:    alpha.5
-Version:          0.15.0-alpha.5
-PackageVersion:   0.15.0-alpha.5
+VersionSuffix:    alpha.6
+Version:          0.15.0-alpha.6
+PackageVersion:   0.15.0-alpha.6
 AssemblyVersion:  0.15.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T154 validation:** T155 — lifecycle, failure, ordering, and security hardening.
+**Next after exact-head T155 validation:** T156 — downstream acceptance.
