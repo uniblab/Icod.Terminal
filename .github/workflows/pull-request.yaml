@@ -113,6 +113,10 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: ./packaging/VerifySemanticMetadataPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify 0.16 safe OSC 9 package contract
+        if: matrix.verify_packages
+        shell: pwsh
+        run: ./packaging/VerifySafeOsc9Package.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
       - name: Upload validated Staging package artifacts
         if: matrix.verify_packages
         uses: actions/upload-artifact@v4
