@@ -7,7 +7,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** bounded, safe OSC 9 extensions without exposing hazardous terminal control  
-**Status:** roadmap/reference audit started; T160 contract freeze next
+**Status:** T160 contract/reference freeze complete; T161 next after exact-head validation
 
 ---
 
@@ -23,135 +23,19 @@
 
 `net8.0`, `net9.0`, and `net10.0` remain first-class supported targets. Vendor end-of-support alone is not grounds to remove net8/net9; reconsideration requires a concrete security alert, security-fix incompatibility, or equivalent security-maintenance constraint.
 
-0.16 is deliberately narrower than “support every command called OSC 9 by every terminal.” OSC 9 is a vendor-extension namespace with incompatible sub-protocols. The release exposes semantic operations only where the operation is bounded, non-interactive, non-executing, and appropriate for a terminal library.
+0.16 deliberately does not mean “support every vendor command numbered OSC 9.” OSC 9 is fragmented. The release exposes only bounded, non-interactive, non-executing semantic operations appropriate for a terminal library.
 
 ---
 
-## 2. Existing OSC 9 support retained
+## 2. T160 frozen inclusion set
 
-`Icod.Terminal 0.10` already owns the Windows Terminal / ConEmu-style OSC `9;4` taskbar progress family through the semantic progress API and `TerminalProgressLease`.
+### Existing progress retained unchanged
 
-That contract remains unchanged in 0.16. The release does not redesign progress merely because other OSC 9 forms are being added.
+OSC `9;4` taskbar progress remains exactly the 0.10 semantic progress API/lease. No new progress API is added.
 
-The existing progress states remain:
+### Legacy OSC 9 notification — included
 
-```text
-clear
-normal
-indeterminate
-error
-paused
-```
-
-with bounded percentage semantics and lifecycle-aware ownership/restoration behavior already established by 0.10.
-
----
-
-## 3. Reference families under consideration
-
-OSC 9 is not one universal standard. T160 will freeze explicit interoperability tiers rather than pretending all forms are equivalent.
-
-### A. Desktop notification
-
-A simple OSC 9 notification form is widely associated with iTerm2-style terminal notifications:
-
-```text
-OSC 9 ; message ST/BEL
-```
-
-0.16 intends to expose this as a semantic notification operation with bounded text and injection-safe framing.
-
-This is an advisory request to the terminal. Successful emission does not prove that a desktop notification was displayed; terminal/user policy may ignore or suppress it.
-
-### B. Current-directory compatibility hint
-
-ConEmu-family documentation defines:
-
-```text
-OSC 9 ; 9 ; path ST/BEL
-```
-
-for reporting the shell/current working directory.
-
-This overlaps semantically with the existing portable/preferred OSC 7 `PublishCurrentLocationAsync(...)` API. 0.16 may expose OSC 9;9 only as an explicitly named compatibility operation or compatibility option; it SHALL NOT silently replace OSC 7 or make OSC 9;9 the default current-location protocol.
-
-T160 must decide whether this is public API, an internal compatibility emission paired with OSC 7, or excluded if the interoperability/security benefit is insufficient.
-
-### C. Existing taskbar progress
-
-```text
-OSC 9 ; 4 ; state ; value BEL
-```
-
-Already implemented and retained unchanged.
-
----
-
-## 4. Explicitly hazardous OSC 9 commands
-
-0.16 SHALL NOT expose vendor commands whose semantics can block the process, execute code, reveal environment state, alter emulator configuration, or launch external programs.
-
-The exclusion set includes ConEmu-family commands for concepts such as:
-
-- sleep/delay;
-- modal message boxes;
-- waiting for a key press;
-- GUI macro execution;
-- process/shell launch;
-- environment-variable or emulator-state disclosure;
-- terminal-emulation mode toggles;
-- arbitrary vendor command passthrough.
-
-There will be no public `WriteOsc9Async(string)` or raw OSC 9 command-number/value API.
-
-This is the central meaning of **Safe Extensions** in 0.16.
-
----
-
-## 5. Design principles
-
-### Semantic APIs, not vendor command APIs
-
-Public names describe intent such as “notification” or “current-location compatibility,” not numeric OSC 9 command slots.
-
-### No generic raw escape hatch
-
-Callers cannot provide arbitrary OSC 9 subcommands or pre-framed payloads.
-
-### Bounded text
-
-All text-bearing operations receive explicit encoded-byte ceilings. Oversize content is rejected before output commitment and is never truncated silently unless T160 freezes an operation-specific truncation contract (default position: reject, do not truncate).
-
-### Injection-safe construction
-
-BEL, ESC, ST, C0/C1 controls, and protocol separators cannot escape a semantic payload. T160 will freeze whether each operation uses rejection, escaping, percent encoding, or another protocol-compatible representation based on the actual wire contract.
-
-### No automatic secret capture
-
-The library does not inspect process arguments, shell history, environment variables, current commands, or application state to manufacture notifications or directory hints.
-
-### Explicit caller intent
-
-No OSC 9 notification/directory emission occurs automatically at session open, suspend, resume, invalidation, or disposal.
-
-### Existing portable APIs remain preferred
-
-- OSC 7 remains the preferred semantic current-location protocol.
-- OSC 0/1/2 remain the title APIs.
-- OSC 133 remains the semantic shell/prompt contract.
-- OSC 9;4 remains the progress API.
-
-0.16 does not create duplicate “OSC 9 versions” of those APIs merely because a vendor namespace contains overlapping commands.
-
----
-
-## 6. Candidate public surface
-
-T160 must freeze names and exact signatures before implementation. The current direction is intentionally small.
-
-### Notification
-
-Candidate:
+New semantic operation:
 
 ```csharp
 ValueTask SendNotificationAsync(
@@ -160,192 +44,205 @@ ValueTask SendNotificationAsync(
 );
 ```
 
-Possible typed options are allowed only if the reference audit finds a cross-terminal semantic need. Arbitrary vendor fields are not.
+Wire form:
 
-Questions T160 must settle:
+```text
+OSC 9;<message> ST
+```
 
-- canonical wire terminator;
-- accepted Unicode model;
-- control-character handling;
-- encoded payload ceiling;
-- null/empty semantics;
-- whether a title/subtitle concept belongs here or is actually a different OSC family and should stay excluded;
-- terminal interoperability tier and documentation language.
+This is the legacy iTerm2 notification form, also documented as compatible by Kitty and WezTerm. Successful emission does not prove a desktop notification was displayed.
 
-### Current-directory compatibility
+### OSC 9;9 Windows current-directory compatibility — included, explicitly secondary
 
-No public signature is frozen yet.
+New semantic compatibility operation:
 
-T160 must choose among:
+```csharp
+ValueTask PublishWindowsCurrentDirectoryCompatibilityAsync(
+	string windowsPath,
+	CancellationToken cancellationToken = default
+);
+```
 
-1. exclude OSC 9;9 and retain OSC 7 only;
-2. add an explicitly named compatibility method;
-3. add an opt-in compatibility mode to the existing semantic location publication path while keeping OSC 7 primary.
+Wire form:
 
-The decision must preserve the existing `PublishCurrentLocationAsync(...)` contract and avoid duplicate emission by default.
+```text
+OSC 9;9;<windowsPath> ST
+```
+
+Windows Terminal and ConEmu document this form. The caller supplies a Windows filesystem path.
+
+Existing OSC 7 `PublishCurrentLocationAsync(...)` remains preferred/default and byte-for-byte unchanged. OSC 9;9 is never substituted for OSC 7 and never emitted alongside it automatically. Callers that intentionally need both must call both methods.
+
+The library performs no `wslpath`/`cygpath` conversion, filesystem resolution, current-directory discovery, terminal-brand detection, or environment-variable inspection.
+
+Record: `docs/T160-OSC-9-Safe-Extensions-Contract-and-Reference-Freeze.md`.
 
 ---
 
-## 7. Tranche sequence
+## 3. Frozen text safety model
 
-### T160 — OSC 9 safe-extension contract and reference freeze
+Legacy OSC 9 notification and OSC 9;9 have no interoperable payload escaping layer. Encoding printable text as percent/Base64 would alter its visible/semantic value.
 
-**Version:** `0.16.0-alpha.1`.
+Therefore 0.16 uses **strict validation, not transformation**.
 
-Freeze:
+For both new operations:
 
-- authoritative references and interoperability tiers;
-- exact safe inclusion/exclusion set;
-- notification semantic model and wire framing;
-- text encoding/control policy and payload ceiling;
-- OSC 9;9 current-directory decision;
-- relationship to OSC 7 and OSC 9;4;
-- public names/signatures;
-- lifecycle, failure, privacy, and security invariants.
+- input must be well-formed UTF-16;
+- wire text is strict UTF-8;
+- C0 U+0000–U+001F is rejected;
+- DEL U+007F is rejected;
+- C1 U+0080–U+009F is rejected;
+- BEL and ESC are therefore explicitly impossible in payload data;
+- printable Unicode, including non-ASCII/non-BMP, is preserved;
+- canonical terminator is ST (`ESC \\`);
+- validation/size rejection occurs before output commitment;
+- payloads are never silently truncated.
 
-No implementation before this contract is explicit.
+Notification-specific semantics:
 
-### T161 — bounded OSC 9 text encoder/writer foundation
+- `null` -> `ArgumentNullException`;
+- empty string is valid;
+- whitespace is preserved;
+- maximum OSC payload is **4,096 bytes**, including `9;`.
+
+OSC 9;9-specific semantics:
+
+- `null` -> `ArgumentNullException`;
+- empty string -> `ArgumentException`;
+- path text is preserved without added quotes/normalization;
+- maximum OSC payload is **32,768 bytes**, including `9;9;`.
+
+---
+
+## 4. Explicit hazardous/extraneous exclusion set
+
+0.16 SHALL NOT expose ConEmu-family commands for:
+
+- `9;1` sleep/delay;
+- `9;2` GUI message box;
+- `9;5` wait-for-key;
+- `9;6` GUI macro execution;
+- `9;7` process launch;
+- `9;8` environment-variable disclosure;
+- `9;10` xterm emulation mutation.
+
+Also excluded:
+
+- `9;3` tab-title mutation — existing OSC 0/1/2 title APIs already own this semantic;
+- `9;11` comments — no useful public semantic operation;
+- `9;12` prompt-start — OSC 133 already owns prompt semantics;
+- arbitrary OSC 9 command numbers/payloads;
+- raw `WriteOsc9Async(...)`;
+- generic public OSC builders.
+
+Notification protocols with materially different semantics are separate scope and are not hidden behind `SendNotificationAsync(...)`: Kitty OSC 99, OSC 777, notification IDs/update/close actions, buttons, urgency, sounds, activation reports, and notification support queries are excluded from 0.16.
+
+---
+
+## 5. Output, lifecycle, privacy, and security invariants
+
+Both new operations use the existing `TerminalSession` output serialization domain.
+
+- cancellation before commitment emits nothing;
+- committed output is one complete non-cancellable write;
+- no implicit flush;
+- transport failure propagates without compensating traffic;
+- later independent calls remain usable;
+- concurrent calls serialize as complete frames;
+- no session-open automatic emission;
+- no suspend/reset/restore;
+- no resume replay;
+- no `InvalidateState()` output;
+- no disposal synthesis;
+- no background OSC 9 reader/probe/cache.
+
+Notifications can expose content to desktop notification history, lock screens, screen sharing, or other observers. Directory hints expose filesystem paths to terminal metadata/history. `Icod.Terminal` does not automatically capture or redact either payload.
+
+---
+
+## 6. Tranche sequence
+
+### T160 — safe-extension contract/reference freeze
+
+**Version:** `0.16.0-alpha.1`  
+**Status:** Complete; exact-head validation pending.
+
+Frozen the reference tiers, safe inclusion/exclusion set, public signatures, UTF-8/control policy, ST framing, payload limits, OSC 9;9 relationship to OSC 7, and lifecycle/privacy/security semantics.
+
+### T161 — bounded OSC 9 encoder/writer foundation
 
 **Expected version:** `0.16.0-alpha.2`.
 
-Implement specialized internal encoding/writing only for the T160-approved safe forms.
+Implement specialized internal encoders/writers only for:
 
-Prove:
+- legacy notification;
+- OSC 9;9 Windows-current-directory compatibility.
 
-- byte-exact framing;
-- Unicode behavior;
-- control/injection resistance;
-- exact payload boundaries;
-- pre-commit cancellation;
-- one committed non-cancellable write;
-- no generic OSC 9 builder.
+Prove byte-exact ST framing, Unicode/non-BMP, every rejected control range, exact payload limits, malformed Unicode, cancellation, committed write semantics, and absence of a generic OSC 9 builder.
 
 ### T162 — semantic notification API
 
 **Expected version:** `0.16.0-alpha.3`.
 
-Implement the frozen notification surface.
+Implement `SendNotificationAsync(...)` through the existing session output gate. Prove null/empty/Unicode/control/boundary behavior, no implicit flush, serialization, failure semantics, and unchanged OSC 9;4 progress/title APIs.
 
-Prove null/empty/Unicode/control/boundary behavior, no implicit flush, output serialization, and unchanged existing title/progress APIs.
-
-### T163 — current-directory compatibility decision/implementation
+### T163 — Windows current-directory compatibility API
 
 **Expected version:** `0.16.0-alpha.4`.
 
-If T160 approves OSC 9;9, implement it according to the frozen compatibility model and prove OSC 7 remains primary/default and byte-for-byte unchanged.
-
-If T160 excludes OSC 9;9, this tranche closes as a documented no-addition decision rather than inventing scope.
+Implement `PublishWindowsCurrentDirectoryCompatibilityAsync(...)`. Prove OSC 7 remains primary/default and byte-for-byte unchanged; no automatic dual emission, path translation, OS restriction, or environment detection occurs.
 
 ### T164 — composition and compatibility
 
 **Expected version:** `0.16.0-alpha.5`.
 
-Prove safe OSC 9 operations compose with:
+Prove safe OSC 9 operations compose with OSC 9;4 progress, OSC 133 semantic metadata, OSC 7, OSC 0/1/2, synchronized output, hyperlinks/clipboard/pointer/color managers, and active terminal-query/input routing through the shared output serialization domain.
 
-- OSC 9;4 progress ownership;
-- OSC 133 semantic metadata;
-- OSC 7 location publication;
-- OSC 0/1/2 title operations;
-- synchronized output;
-- hyperlinks/clipboard/pointer/color managers;
-- active terminal-query/input routing.
-
-No manager may bypass the shared `TerminalSession` output serialization domain.
-
-### T165 — lifecycle, failure, ordering, and security hardening
+### T165 — lifecycle/failure/ordering/security hardening
 
 **Expected version:** `0.16.0-alpha.6`.
 
-Cover:
-
-- queued/pre-commit cancellation;
-- committed transport failure;
-- concurrent notification/location/progress output;
-- invalidation;
-- suspend/resume;
-- disposal;
-- no replay/synthesis;
-- injection attempts;
-- malformed/oversize text;
-- lock-order/deadlock resistance;
-- explicit proof that hazardous OSC 9 commands are not publicly reachable.
+Cover queued cancellation, committed transport failure, concurrent safe OSC 9/progress output, invalidation, suspend/resume, disposal, no replay/synthesis, injection attempts, malformed/oversize text, lock-order/deadlock resistance, and explicit proof that excluded hazardous subcommands are not publicly reachable.
 
 ### T166 — downstream acceptance
 
 **Expected version:** `0.16.0-alpha.7`.
 
-Extend real `Icod.DCurses` acceptance so a higher-level full-screen consumer can coexist with the approved safe OSC 9 operations through public `TerminalSession` APIs.
-
-Do not require the CI terminal emulator to display a real desktop notification; acceptance validates emitted bytes/order through the existing deterministic transport harness.
+Extend real `Icod.DCurses` acceptance so a full-screen consumer coexists with notification and OSC 9;9 publication through public `TerminalSession` APIs. Validate bytes/order deterministically; do not require CI to display a desktop notification.
 
 ### T167 — public API/package/stable closure
 
 **Stable version:** `0.16.0`.
 
-Deliver:
-
-- `docs/Public-API-Baseline-0.16.md`;
-- README and focused sample updates;
-- security/interoperability documentation;
-- XML documentation assertions for all new public members;
-- fresh NuGet-only net8/net9/net10 consumer;
-- retained 0.8–0.15 package gates;
-- retained downstream acceptance;
-- new 0.16 package contract in PR/main/tag validation;
-- stable release metadata;
-- exact-head PR/main/tag validation.
+Deliver public API baseline, README/sample/security documentation, XML assertions, fresh NuGet-only net8/net9/net10 consumer, retained 0.8–0.15 package gates/downstream acceptance, new 0.16 package contract in PR/main/tag validation, stable metadata, and exact-head release validation.
 
 ---
 
-## 8. Required testing matrix
+## 7. Required testing matrix
 
-0.16 SHALL include deterministic tests for:
+0.16 SHALL prove:
 
-- retained OSC 9;4 progress byte compatibility;
-- safe notification byte framing;
-- ASCII, Unicode, and non-BMP notification text;
-- every framing-sensitive/control case frozen by T160;
-- exact payload-bound behavior;
-- cancellation and transport failure;
-- concurrent whole-frame serialization;
-- no lifecycle replay/synthesis;
-- composition with progress and other session managers;
-- OSC 7 compatibility if OSC 9;9 is included;
-- no public path to hazardous vendor OSC 9 commands;
+- retained OSC 9;4 byte compatibility;
+- exact notification and OSC 9;9 ST frames;
+- ASCII/Unicode/non-BMP text;
+- malformed UTF-16 rejection;
+- every C0/C1/DEL code point rejected before output;
+- exact 4,096-byte notification boundary and one-byte-over rejection;
+- exact 32,768-byte OSC 9;9 boundary and one-byte-over rejection;
+- empty notification allowed;
+- empty OSC 9;9 path rejected;
+- spaces/punctuation preserved in paths;
+- OSC 7 remains unchanged and independent;
+- cancellation/failure/concurrency/lifecycle behavior;
+- no public hazardous vendor command path;
 - Windows/Linux/macOS CI;
 - net8/net9/net10 package-only consumers.
 
-Tests validate bytes directly and do not depend on a runner terminal understanding OSC 9 notifications.
+Tests validate bytes directly and do not depend on the runner terminal understanding the protocols.
 
 ---
 
-## 9. Explicit non-goals
-
-0.16 SHALL NOT add:
-
-- arbitrary OSC 9 command numbers or raw payloads;
-- sleep/delay terminal commands;
-- modal terminal message boxes;
-- wait-for-key terminal commands;
-- GUI macro execution;
-- process/shell launch;
-- environment-variable/emulator-state disclosure;
-- terminal-emulation toggles;
-- generic public OSC/CSI/DCS builders;
-- notification support probing/caching;
-- automatic notifications from progress or command completion;
-- automatic current-directory discovery;
-- automatic secret redaction;
-- modern keyboard negotiation;
-- OSC 3008;
-- PTY/ConPTY hosting;
-- terminal emulation;
-- graphics protocols.
-
----
-
-## 10. Current development state
+## 8. Current development state
 
 ```text
 VersionPrefix:    0.16.0
@@ -356,4 +253,4 @@ AssemblyVersion:  0.16.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** T160 — contract/reference freeze before any OSC 9 safe-extension implementation.
+**Next after exact-head T160 validation:** T161 — specialized bounded OSC 9 encoder/writer foundation.
