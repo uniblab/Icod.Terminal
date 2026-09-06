@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.13.0`  
-**Development version:** `0.13.0-alpha.8`  
+**Development version:** `0.13.0`  
 **Predecessor:** `0.12.0` — OSC 133 semantic prompt integration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** observable terminal palette and dynamic-color control  
-**Status:** T130–T136 complete/green; T137 composition/downstream acceptance implemented; T138 stable closure next after validation
+**Status:** T130–T137 complete/green; T138 stable metadata/package/docs closure complete; exact stable-head validation required
 
 ---
 
@@ -119,8 +119,6 @@ Record: `docs/T133-OSC-104-Indexed-Palette-Reset.md`.
 **Version:** `0.13.0-alpha.5`.  
 **Validation:** workflow #560.
 
-Delivered the unified public dynamic-color API and activated OSC 10/11/12 with resets 110/111/112.
-
 Record: `docs/T134-Common-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 
 ### T135 — extended dynamic colors
@@ -128,8 +126,6 @@ Record: `docs/T134-Common-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 **Status:** Complete and green.  
 **Version:** `0.13.0-alpha.6`.  
 **Validation:** workflow #566.
-
-Activated the same public API for mouse foreground/background and highlight background/foreground.
 
 Record: `docs/T135-Extended-Dynamic-Color-Mutation-Observation-and-Reset.md`.
 
@@ -151,47 +147,48 @@ Record: `docs/T136-Scoped-Color-Ownership-Feasibility-and-Lifecycle-Decision.md`
 
 ### T137 — lifecycle, composition, and downstream acceptance
 
-**Status:** Implemented; exact-head validation pending.  
-**Version:** `0.13.0-alpha.8`.
+**Status:** Complete and green.  
+**Version:** `0.13.0-alpha.8`.  
+**Validation:** workflow #582.
 
 Delivered:
 
 - color mutation/reset composition with ordinary text and OSC 133 output in exact serialized order;
-- active color observation coexisting with independently serialized control output while awaiting a correlated reply;
-- exact palette-versus-dynamic query correlation tests;
-- standalone `tools/dcurses-color-observation-acceptance` project;
-- real `Icod.DCurses 0.1.0` package consumption;
-- scripted OSC 4 and OSC 11 observations returning typed 16-bit `TerminalColor` values;
-- explicit downstream adaptation to the current 8-bit `CursesColor.Rgb` model;
-- `CursesStyle` rendering through `setrgbf`/`setrgbb` capabilities;
-- no raw OSC parsing in the downstream layer;
-- acceptance verifier on net8.0/net9.0/net10.0;
-- PR, distribution, and tagged-release wiring for the new downstream gate.
+- active color observation alongside independently serialized control output;
+- exact palette-versus-dynamic response correlation tests;
+- real `Icod.DCurses 0.1.0` typed-observation acceptance;
+- explicit 16-bit-to-8-bit downstream adaptation;
+- `CursesStyle` rendering through `setrgbf`/`setrgbb`;
+- PR, distribution, and tagged-release downstream gates.
 
 Record: `docs/T137-Color-Composition-and-DCurses-Observation-Acceptance.md`.
 
 ### T138 — public API/docs/samples/package/stable closure
 
-**Status:** Next after T137 validation.  
-**Expected stable version:** `0.13.0`.
+**Status:** Stable candidate; exact-head validation required.  
+**Version:** `0.13.0`.
 
-Deliver:
+Delivered:
 
 - `docs/Public-API-Baseline-0.13.md`;
-- root README update;
-- focused palette/dynamic-color sample(s);
+- stable `0.13.0` repository/package metadata;
+- root README updated for observable terminal color control;
+- focused `Icod.Terminal.Color.Sample` with observation-first behavior and opt-in mutation;
 - package release notes/tags;
-- XML documentation assertions for the full 0.13 public delta;
-- fresh NuGet-only consumer on net8/net9/net10;
-- retained historical package-contract gates;
-- retained and new downstream `Icod.DCurses` gates;
-- stable metadata and exact PR/main/tag release validation.
+- `tools/package-color-smoke` fresh NuGet-only compile-time consumer;
+- `packaging/VerifyColorPackage.ps1` XML documentation and package-only verification on net8/net9/net10;
+- PR, distribution, and tagged-release wiring for the 0.13 package contract;
+- retained 0.8–0.12 package contracts;
+- retained five downstream `Icod.DCurses` acceptance gates;
+- exact stable PR/main/tag release sequence.
+
+Record: `docs/T138-0.13.0-Public-API-Package-and-Stable-Closure.md`.
 
 ---
 
 ## 5. Testing expectations
 
-0.13 testing includes byte-exact framing, palette boundaries, all selected dynamic identities, channel/precision grammar coverage, malformed responses, timeout/cancellation, output serialization, committed-write non-cancellability, query isolation, redirected-output rejection, reset/restoration distinction, explicit unscoped lifecycle semantics, composition, package consumers, and real `Icod.DCurses` typed observation consumption.
+0.13 testing includes byte-exact framing, palette boundaries, all selected dynamic identities, channel/precision grammar coverage, malformed responses, timeout/cancellation, output serialization, committed-write non-cancellability, query isolation, redirected-output rejection, reset/restoration distinction, explicit unscoped lifecycle semantics, composition, package-only consumers, XML API coverage, and real `Icod.DCurses` typed observation consumption.
 
 ---
 
@@ -201,14 +198,16 @@ Deliver:
 
 ---
 
-## 7. Current development state
+## 7. Current stable-candidate state
 
 ```text
 VersionPrefix:   0.13.0
-VersionSuffix:   alpha.8
-Version:         0.13.0-alpha.8
-PackageVersion:  0.13.0-alpha.8
+VersionSuffix:   <empty>
+Version:         0.13.0
+PackageVersion:  0.13.0
 AssemblyVersion: 0.13.0.0
 ```
 
-**Next after green validation:** T138 — public API/docs/samples/package/stable closure.
+**Remaining PR gate:** exact stable-head workflow green on Windows/Linux/macOS, including Staging package validation, 0.8–0.13 package contracts, and all five downstream `Icod.DCurses` acceptance gates.
+
+After merge, require Release/distribution validation on the exact resulting `main` commit before creating `v0.13.0`.
