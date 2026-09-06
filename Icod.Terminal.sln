@@ -34,6 +34,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.PointerShape.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.SemanticPrompt.Sample", "samples\Icod.Terminal.SemanticPrompt.Sample\Icod.Terminal.SemanticPrompt.Sample.csproj", "{F3D40A5B-9C76-4A8F-BE11-247A6E5C933D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Color.Sample", "samples\Icod.Terminal.Color.Sample\Icod.Terminal.Color.Sample.csproj", "{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,12 @@ Global
 		{F3D40A5B-9C76-4A8F-BE11-247A6E5C933D}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{F3D40A5B-9C76-4A8F-BE11-247A6E5C933D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3D40A5B-9C76-4A8F-BE11-247A6E5C933D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -143,5 +151,6 @@ Global
 		{C64C1C53-926A-4C4B-A2D7-3CA5B5841F10} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{E1A8C5D2-7B3F-4C62-93A5-0F7D9E2146B8} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{F3D40A5B-9C76-4A8F-BE11-247A6E5C933D} = {4C994810-850E-4753-82E5-4BD346EF574C}
+		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713} = {4C994810-850E-4753-82E5-4BD346EF574C}
 	EndGlobalSection
 EndGlobal
