@@ -33,15 +33,34 @@ _ = TerminalDynamicColor.MouseBackground;
 _ = TerminalDynamicColor.HighlightBackground;
 _ = TerminalDynamicColor.HighlightForeground;
 
-_ = BindSetPalette;
-_ = BindSetPalettes;
-_ = BindQueryPalette;
-_ = BindResetPalette;
-_ = BindResetPalettes;
-_ = BindResetAllPalette;
-_ = BindSetDynamic;
-_ = BindQueryDynamic;
-_ = BindResetDynamic;
+Func<TerminalSession, byte, TerminalColor, CancellationToken, ValueTask> setPalette =
+	BindSetPalette;
+Func<TerminalSession, IReadOnlyList<TerminalPaletteColor>, CancellationToken, ValueTask> setPalettes =
+	BindSetPalettes;
+Func<TerminalSession, byte, TimeSpan, CancellationToken, ValueTask<TerminalColor>> queryPalette =
+	BindQueryPalette;
+Func<TerminalSession, byte, CancellationToken, ValueTask> resetPalette =
+	BindResetPalette;
+Func<TerminalSession, IReadOnlyList<byte>, CancellationToken, ValueTask> resetPalettes =
+	BindResetPalettes;
+Func<TerminalSession, CancellationToken, ValueTask> resetAllPalette =
+	BindResetAllPalette;
+Func<TerminalSession, TerminalDynamicColor, TerminalColor, CancellationToken, ValueTask> setDynamic =
+	BindSetDynamic;
+Func<TerminalSession, TerminalDynamicColor, TimeSpan, CancellationToken, ValueTask<TerminalColor>> queryDynamic =
+	BindQueryDynamic;
+Func<TerminalSession, TerminalDynamicColor, CancellationToken, ValueTask> resetDynamic =
+	BindResetDynamic;
+
+_ = setPalette;
+_ = setPalettes;
+_ = queryPalette;
+_ = resetPalette;
+_ = resetPalettes;
+_ = resetAllPalette;
+_ = setDynamic;
+_ = queryDynamic;
+_ = resetDynamic;
 
 Console.WriteLine( "Icod.Terminal 0.13 color package API smoke passed." );
 
