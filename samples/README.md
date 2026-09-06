@@ -4,7 +4,7 @@ The sample projects are repository consumers built through project references. R
 
 ## Icod.Terminal.Color.Sample
 
-`Icod.Terminal.Color.Sample` is the focused 0.13 observable terminal-color demonstration.
+`Icod.Terminal.Color.Sample` is the focused 0.13 observable terminal-color demonstration and is included in the root solution so the normal repository build matrix compiles it on every supported configuration.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0
@@ -24,7 +24,7 @@ TerminalColor foreground = await session.QueryDynamicColorAsync(
 );
 ```
 
-The returned values preserve 16-bit RGB channel precision.
+The returned values preserve 16-bit RGB channel precision. Timeout, malformed correlated replies, and unavailable active-query conditions are reported as sample output rather than terminating with an unhandled exception.
 
 Mutation is deliberately opt-in:
 
@@ -33,6 +33,8 @@ dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Samp
 ```
 
 That mode demonstrates OSC 4 palette mutation, OSC 12 text-cursor mutation, OSC 104 palette reset, and OSC 112 text-cursor reset. The sample describes these as terminal-policy reset operations rather than exact restoration of a previously observed color.
+
+All terminal input and output in the sample goes through `TerminalSession`; it does not mix `Console.ReadLine()` with the session-owned input/query path.
 
 ## Icod.Terminal.SemanticPrompt.Sample
 
