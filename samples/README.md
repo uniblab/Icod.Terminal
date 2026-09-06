@@ -2,6 +2,28 @@
 
 The sample projects are repository consumers built through project references. Release packages are validated separately by the package-verification harnesses under `tools/`; those consumers restore only the freshly produced NuGet artifact and run on `net8.0`, `net9.0`, and `net10.0`.
 
+## Icod.Terminal.Notification.Sample
+
+`Icod.Terminal.Notification.Sample` is the focused 0.16 legacy OSC 9 desktop-notification demonstration.
+
+```text
+dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- "Build complete"
+```
+
+The sample publishes only the notification text supplied explicitly on the command line:
+
+```csharp
+await session.SendNotificationAsync( message );
+```
+
+Successful completion means the complete OSC 9 request was emitted; it does not prove the desktop displayed a notification.
+
+Notification text can appear in desktop notification history, lock screens, screen sharing, remote/multiplexed sessions, or terminal logs. Do not pass credentials, bearer tokens, customer data, private paths, or other sensitive values unless that disclosure is appropriate.
+
+The 0.16 implementation rejects malformed Unicode and every C0/DEL/C1 control character, uses strict UTF-8 and ST termination, and rejects payloads larger than 4,096 OSC bytes before waiting for terminal output.
+
+The focused sample is built separately by `packaging/VerifyNotificationSample.ps1` on `net8.0`, `net9.0`, and `net10.0` as part of PR, distribution, and tagged-release validation.
+
 ## Icod.Terminal.Color.Sample
 
 `Icod.Terminal.Color.Sample` is the focused 0.14 terminal-color demonstration. It covers the 0.13 observation API and the new lifecycle-safe scoped ownership contract, and is included in the root solution so the normal repository build matrix compiles it on every supported configuration.
@@ -56,13 +78,13 @@ All terminal input and output in the sample goes through `TerminalSession`; it d
 
 ## Icod.Terminal.SemanticPrompt.Sample
 
-`Icod.Terminal.SemanticPrompt.Sample` is the focused 0.12 OSC 133 semantic-prompt demonstration.
+`Icod.Terminal.SemanticPrompt.Sample` is the focused 0.12/0.15 OSC 133 semantic-prompt demonstration.
 
 ```text
 dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.SemanticPrompt.Sample.csproj -f net10.0
 ```
 
-It demonstrates prompt, command-input, command-output, explicit completion, and abort markers with ordinary application text.
+It demonstrates prompt, command-input, command-output, explicit completion, abort markers, typed extended prompt metadata, and explicit command-line metadata with ordinary application text.
 
 ## Icod.Terminal.PointerShape.Sample
 
@@ -114,11 +136,21 @@ dotnet run --project samples/Icod.Terminal.Hyperlink.Sample/Icod.Terminal.Hyperl
 
 ## Icod.Terminal.Location.Sample
 
-Focused 0.5 OSC 7 current-location demonstration.
+`Icod.Terminal.Location.Sample` demonstrates both the preferred portable OSC 7 location publication and the explicit 0.16 OSC 9;9 Windows-current-directory compatibility form.
+
+Preferred OSC 7 example:
 
 ```text
 dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /usr/local/src
 ```
+
+Explicit Windows Terminal/ConEmu compatibility example:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- windows-osc9 C:\work\repo
+```
+
+OSC 7 remains the preferred/default current-location protocol. The sample does not detect terminal brand, translate WSL/Cygwin paths, inspect the process current directory, or emit both protocols automatically. Applications that deliberately need both protocols must call both public APIs themselves.
 
 ## Icod.Terminal.Title.Sample
 

@@ -75,6 +75,9 @@ jobs:
       - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
       - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
+      - name: Verify focused notification sample builds
+        shell: pwsh
+        run: ./packaging/VerifyNotificationSample.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - name: Verify DCurses synchronized-output acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesSynchronizedOutput.ps1 -Configuration '${{ env.CONFIGURATION }}'
@@ -127,6 +130,9 @@ jobs:
       - name: Verify 0.15 OSC 133 extended semantic metadata release contract
         shell: pwsh
         run: ./packaging/VerifySemanticMetadataPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.16 safe OSC 9 release contract
+        shell: pwsh
+        run: ./packaging/VerifySafeOsc9Package.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:

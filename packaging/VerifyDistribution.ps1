@@ -35,6 +35,9 @@ try {
         '--logger', 'trx'
     )
 
+    & (Join-Path $PSScriptRoot 'VerifyNotificationSample.ps1') `
+        -Configuration $Configuration
+
     & (Join-Path $PSScriptRoot 'VerifyDCursesSynchronizedOutput.ps1') `
         -Configuration $Configuration
 
@@ -92,6 +95,10 @@ try {
         -Configuration $Configuration
 
     & (Join-Path $PSScriptRoot 'VerifySemanticMetadataPackage.ps1') `
+        -ArtifactDirectory $packageDirectory `
+        -Configuration $Configuration
+
+    & (Join-Path $PSScriptRoot 'VerifySafeOsc9Package.ps1') `
         -ArtifactDirectory $packageDirectory `
         -Configuration $Configuration
 
