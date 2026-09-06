@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.14.0`  
-**Development version:** `0.14.0-alpha.1`  
+**Development version:** `0.14.0-alpha.2`  
 **Predecessor:** `0.13.0` — observable terminal palette and dynamic-color control  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** lifecycle-safe color ownership/restoration and terminal protocol completion work  
-**Status:** T140 contract/lifecycle-order freeze complete; T141 reusable internal observation foundation next
+**Status:** T140 complete/green; T141 internal observation foundation implemented; T142 next after validation
 
 ---
 
@@ -123,7 +123,16 @@ T140 froze a narrower design than simply moving ordinary query availability earl
 
 Public queries remain suspended throughout lifecycle re-entry and during ordinary `ITerminalSessionLifecycleParticipant` resume callbacks. Observation-dependent **session-owned** managers instead receive a distinct internal post-resume observation phase which reuses the existing one-reader query transaction/router infrastructure without widening the public concurrency contract.
 
-The frozen resume phases are:
+T141 implements that seam with:
+
+- an internal lifecycle observation query window;
+- temporary transaction-manager availability while the public query gate remains suspended;
+- an internal `ITerminalObservedLifecycleParticipant` contract;
+- observation refresh before ordinary participant resume;
+- guaranteed query-window closure in `finally`;
+- shared ambiguity/late-response ownership with normal queries.
+
+The effective resume phases are:
 
 ```text
 1. reacquire native/output host state and input mode
@@ -146,9 +155,10 @@ Required properties remain:
 - no automatic general terminal probing during ordinary session open;
 - no public query access while a lifecycle participant resume callback runs.
 
-T140 added a regression test for the last point.
+Records:
 
-The complete contract is recorded in `docs/T140-Lifecycle-Safe-Color-Ownership-and-Resume-Observation-Contract.md`.
+- `docs/T140-Lifecycle-Safe-Color-Ownership-and-Resume-Observation-Contract.md`;
+- `docs/T141-Internal-Post-Resume-Observation-Query-Foundation.md`.
 
 ---
 
@@ -214,7 +224,8 @@ T145 SHALL require an explicit contract note before adding any extra protocol. �
 ### T140 — lifecycle-safe color ownership contract and lifecycle-order freeze
 
 **Version:** `0.14.0-alpha.1`  
-**Status:** Complete; exact-head validation pending.
+**Status:** Complete and green.  
+**Validation:** workflow #611.
 
 Frozen:
 
@@ -233,20 +244,22 @@ Record: `docs/T140-Lifecycle-Safe-Color-Ownership-and-Resume-Observation-Contrac
 
 ### T141 — reusable observed-state ownership foundation
 
-**Expected version:** `0.14.0-alpha.2`.
+**Version:** `0.14.0-alpha.2`.  
+**Status:** Implemented; exact-head validation pending.
 
-Implement the internal machinery required for lifecycle participants that must observe terminal state before mutation/re-entry:
+Delivered:
 
-- lifecycle post-resume observation phase;
-- internal query authorization during that phase while public queries remain suspended;
-- baseline lifecycle epochs;
-- bounded failure propagation;
-- deterministic participant ordering;
-- rollback hooks;
-- tests proving existing lifecycle participants remain unchanged where observation is unnecessary;
-- tests proving public queries remain unavailable through ordinary participant resume.
+- internal post-resume lifecycle observation query window;
+- internal query authorization while the public query gate stays suspended;
+- `ITerminalObservedLifecycleParticipant` internal contract;
+- observation refresh before ordinary participant resume;
+- guaranteed observation-window closure on failure;
+- reuse of the existing query transaction manager, input coordinator, matcher routing, ambiguity gate, timeout and late-response ownership;
+- tests proving public queries remain rejected during both observation and ordinary resume phases;
+- tests proving internal observation queries are admitted before ordinary resume;
+- no behavior change when no observation-dependent participant exists.
 
-Keep generic machinery internal unless concrete evidence justifies a public abstraction.
+Record: `docs/T141-Internal-Post-Resume-Observation-Query-Foundation.md`.
 
 ### T142 — indexed palette scoped ownership
 
@@ -375,7 +388,8 @@ At minimum 0.14 SHALL test:
 - malformed correlated replies;
 - late response ownership;
 - unrelated application input preservation;
-- public query rejection during ordinary lifecycle participant resume;
+- public query rejection during internal observation and ordinary lifecycle participant resume;
+- internal observation query admission;
 - output/query/lifecycle lock ordering;
 - existing presentation/input/cursor/synchronized-output/pointer lifecycle regression suite;
 - Windows, Linux, and macOS CI;
@@ -422,11 +436,11 @@ CI and package validation SHALL continue treating all three TFMs as first-class 
 
 ```text
 VersionPrefix:   0.14.0
-VersionSuffix:   alpha.1
-Version:         0.14.0-alpha.1
-PackageVersion:  0.14.0-alpha.1
+VersionSuffix:   alpha.2
+Version:         0.14.0-alpha.2
+PackageVersion:  0.14.0-alpha.2
 AssemblyVersion: 0.14.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after green validation:** T141 — implement the reusable internal post-resume observation/query authorization foundation.
+**Next after green validation:** T142 — indexed-palette scoped ownership.
