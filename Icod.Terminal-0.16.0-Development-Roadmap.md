@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.16.0`  
-**Development version:** `0.16.0-alpha.7`  
+**Development version:** `0.16.0`  
 **Predecessor:** `0.15.0` — OSC 133 extended semantic metadata  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** bounded, safe OSC 9 extensions without exposing hazardous terminal control  
-**Status:** T160–T165 green; T166 downstream acceptance implemented, exact-head validation pending
+**Status:** T160–T166 green; T167 stable closure implemented, exact-head validation pending
 
 ---
 
@@ -29,7 +29,7 @@
 
 Existing OSC `9;4` progress remains unchanged.
 
-0.16 adds only:
+0.16 adds exactly:
 
 ```csharp
 ValueTask SendNotificationAsync(
@@ -48,6 +48,8 @@ Notification emits legacy `OSC 9;<message> ST`. OSC `9;9;<windowsPath> ST` is ex
 Both new operations use strict UTF-8, reject C0/DEL/C1 controls, use ST termination, validate before output, and never truncate. Notification is bounded to 4,096 OSC payload bytes; OSC 9;9 is bounded to 32,768 payload bytes.
 
 The library performs no path translation, CWD discovery, terminal-brand detection, environment inspection, or automatic secret redaction.
+
+Stable public contract: `docs/Public-API-Baseline-0.16.md`.
 
 ---
 
@@ -105,28 +107,50 @@ Hardening coverage proves queued cancellation, committed failure recovery, notif
 Record: `docs/T165-OSC-9-Safe-Extension-Lifecycle-Failure-Ordering-and-Security-Hardening.md`.
 
 ### T166 — downstream acceptance — `0.16.0-alpha.7`
-Implemented; exact-head validation pending.
+Complete and green at workflow #743.
 
-The existing real `Icod.DCurses 0.1.0` semantic-prompt acceptance project now retains the portable/extended OSC 133 sequences and appends notification → real `RefreshAsync()` → OSC 9;9 → real `RefreshAsync()` → notification, using only public `TerminalSession` APIs and the same shared session. The retained verifier already runs this project on net8/net9/net10.  
+The existing real `Icod.DCurses 0.1.0` acceptance project retains the portable/extended OSC 133 sequences and appends notification → real `RefreshAsync()` → OSC 9;9 → real `RefreshAsync()` → notification, using only public `TerminalSession` APIs and the same shared session on net8/net9/net10.  
 Record: `docs/T166-DCurses-Safe-OSC-9-Downstream-Acceptance.md`.
 
 ### T167 — public API/package/stable closure — `0.16.0`
+Implemented; exact stable-head validation pending.
 
-Next after green T166 validation.
+Delivered:
 
-Deliver the 0.16 public API baseline, README/sample/security docs, XML assertions, fresh NuGet-only net8/net9/net10 consumer, retained 0.8–0.15 gates/downstream acceptance, a new 0.16 package contract in PR/main/tag validation, stable metadata, and exact-head release validation.
+- `docs/Public-API-Baseline-0.16.md`;
+- README 0.16 API/safety/privacy/lifecycle documentation;
+- `Icod.Terminal.Location.Sample` explicit `windows-osc9` compatibility mode;
+- fresh NuGet-only net8/net9/net10 safe-OSC-9 consumer;
+- XML documentation verifier for both new 0.16 public methods;
+- new 0.16 package gate in PR, distribution/main, and tagged release validation;
+- retained 0.8–0.15 package contracts;
+- retained/extended real downstream DCurses acceptance;
+- stable package release notes/tags;
+- prerelease suffix removed.
+
+Record: `docs/T167-0.16.0-Public-API-Package-and-Stable-Closure.md`.
 
 ---
 
-## 6. Current development state
+## 6. Stable release gate
+
+Before merge, the exact stable PR head must be green on Windows, Linux, and macOS, including Staging package validation, historical 0.8–0.15 package contracts, the new 0.16 safe OSC 9 package contract, and downstream acceptance.
+
+After merge, the exact resulting `main` commit must pass Release/distribution validation before tag `v0.16.0` is created.
+
+The tagged workflow then reruns build/tests, downstream acceptance, exact package selection, historical package contracts, and the 0.16 safe OSC 9 package contract before publication.
+
+---
+
+## 7. Current stable state
 
 ```text
 VersionPrefix:    0.16.0
-VersionSuffix:    alpha.7
-Version:          0.16.0-alpha.7
-PackageVersion:   0.16.0-alpha.7
+VersionSuffix:
+Version:          0.16.0
+PackageVersion:   0.16.0
 AssemblyVersion:  0.16.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T166 validation:** T167 — public API/package/documentation/stable closure.
+**Next:** exact stable-head PR validation. After green validation, merge to `main`, require exact-main Release validation, then tag `v0.16.0`.
