@@ -21,6 +21,7 @@ public sealed partial class TerminalSession {
 	/// Successful completion proves only that the complete OSC 9 request was written. It does not prove
 	/// that a desktop notification was displayed. Terminal/user policy may suppress the request. This
 	/// operation does not flush and does not perform terminal-brand detection or notification capability probing.
+	/// The complete frame is validated and encoded before waiting for the shared session output gate.
 	/// </remarks>
 	public ValueTask SendNotificationAsync(
 		string message,
@@ -28,17 +29,19 @@ public sealed partial class TerminalSession {
 	) {
 		ArgumentNullException.ThrowIfNull( message );
 		cancellationToken.ThrowIfCancellationRequested();
+		byte[] frame = OscWriter.EncodeOsc9NotificationFrame( message );
+		cancellationToken.ThrowIfCancellationRequested();
 		return this.WriteNotificationAsync(
-			message,
+			frame,
 			cancellationToken
 		);
 	}
 
 	private async ValueTask WriteNotificationAsync(
-		string message,
+		byte[] frame,
 		CancellationToken cancellationToken
 	) {
-		ArgumentNullException.ThrowIfNull( message );
+		ArgumentNullException.ThrowIfNull( frame );
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( !this.OutputObservation.IsTerminal ) {
 			throw new InvalidOperationException(
@@ -51,10 +54,9 @@ public sealed partial class TerminalSession {
 		).ConfigureAwait( false );
 		cancellationToken.ThrowIfCancellationRequested();
 
-		await OscWriter.WriteOsc9NotificationAsync(
-			this.Output,
-			message,
-			cancellationToken
+		await this.Output.WriteAsync(
+			frame,
+			CancellationToken.None
 		).ConfigureAwait( false );
 	}
 }
