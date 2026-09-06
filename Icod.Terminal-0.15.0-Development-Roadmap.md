@@ -2,16 +2,16 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.15.0`  
-**Development version:** `0.15.0-alpha.2`  
+**Development version:** `0.15.0-alpha.4`  
 **Predecessor:** `0.14.0` — lifecycle-safe color ownership and exact restoration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** OSC 133 extended semantic metadata without weakening the portable core  
-**Status:** T150 green at workflow #668; T151 implemented, exact-head validation pending
+**Status:** T150–T152 green; T153 implemented, exact-head validation pending
 
 ---
 
-## 1. Position on the road to 1.0
+## 1. Road to 1.0
 
 ```text
 0.15.0       OSC 133 Extended Metadata
@@ -24,13 +24,13 @@
 
 `net8.0`, `net9.0`, and `net10.0` remain first-class supported targets. Vendor end-of-support alone is not grounds to remove net8/net9; reconsideration requires a concrete security alert, security-fix incompatibility, or equivalent security-maintenance constraint.
 
-0.15 remains focused on OSC 133. It does not pull OSC 9 safe extensions, modern keyboard negotiation, OSC 3008, PTY hosting, graphics protocols, generic public OSC construction, or broad 0.18 hardening into this release.
+0.15 remains focused on OSC 133. It does not include OSC 9 extensions, modern keyboard negotiation, OSC 3008, PTY/ConPTY hosting, graphics protocols, terminal emulation, or generic public OSC/CSI/DCS builders.
 
 ---
 
 ## 2. Portable OSC 133 core retained from 0.12
 
-The existing public semantic API remains unchanged:
+These existing methods remain byte-for-byte unchanged:
 
 ```csharp
 ValueTask BeginPromptAsync(
@@ -55,31 +55,31 @@ ValueTask AbortCommandAsync(
 );
 ```
 
-These continue to emit exactly:
+Wire forms:
 
 ```text
-OSC 133 ; A ST
-OSC 133 ; B ST
-OSC 133 ; C ST
-OSC 133 ; D ; status ST
-OSC 133 ; D ST
+OSC 133;A ST
+OSC 133;B ST
+OSC 133;C ST
+OSC 133;D;status ST
+OSC 133;D ST
 ```
 
-0.15 SHALL NOT alter the bytes or semantics of these methods.
-
-The marker API remains intentionally stateless: markers are independently callable; the session does not impose a shell command-region state machine; successful completion proves emission rather than terminal support; and output ordering remains protected by the session output serialization domain.
+Markers remain independently callable. `TerminalSession` does not impose a shell command-region state machine, support cache, or lifecycle replay model.
 
 ---
 
-## 3. T150 frozen reference tiers
+## 3. T150 frozen extended-metadata contract
 
-Reference material:
+Reference sources:
 
-- FinalTerm/iTerm2 core OSC 133 semantics: https://iterm2.com/documentation-one-page.html
-- Kitty shell integration: https://sw.kovidgoyal.net/kitty/shell-integration/
-- Contour OSC 133 shell integration: https://contour-terminal.org/vt-extensions/osc-133-shell-integration/
+- FinalTerm/iTerm2 OSC 133 core semantics;
+- Kitty shell integration;
+- Contour OSC 133 shell integration.
 
-### Portable core
+Interoperability tiers:
+
+**Portable core**
 
 ```text
 A
@@ -89,16 +89,14 @@ D;status
 D
 ```
 
-### Cross-terminal extended metadata
-
-Documented independently by Kitty and Contour:
+**Cross-terminal extended metadata**
 
 ```text
 A;click_events=1
 C;cmdline_url=...
 ```
 
-### Kitty-documented extended metadata
+**Kitty-documented extended metadata**
 
 ```text
 A;redraw=0
@@ -107,17 +105,9 @@ A;k=s
 A;click_events=2
 ```
 
-### Excluded from 0.15
+Shell `%q` `C;cmdline=...` is excluded entirely from 0.15.
 
-Kitty also documents:
-
-```text
-C;cmdline=<shell-%q-encoded-text>
-```
-
-T150 excludes `%q` `cmdline=` from 0.15 entirely. Shell-family escaping policy does not belong in the core terminal-semantic library when the same semantic information is available through cross-terminal `cmdline_url`.
-
-The library does not infer support from a terminal brand. Extended emission is explicit caller intent.
+The library does not infer support from terminal brand. Emission is explicit caller intent.
 
 Record: `docs/T150-OSC-133-Extended-Metadata-Contract-and-Reference-Freeze.md`.
 
@@ -125,52 +115,33 @@ Record: `docs/T150-OSC-133-Extended-Metadata-Contract-and-Reference-Freeze.md`.
 
 ## 4. Frozen public semantic model
 
-### Prompt kind
+### Prompt metadata
 
 ```csharp
 public enum TerminalSemanticPromptKind {
 	Primary = 0,
 	Secondary = 1
 }
-```
 
-- `Primary` -> no `k` parameter;
-- `Secondary` -> `k=s`.
-
-### Resize behavior
-
-```csharp
 public enum TerminalSemanticPromptResizeBehavior {
 	Unspecified = 0,
 	ShellDoesNotRedrawPrompt = 1
 }
-```
 
-- `Unspecified` -> no `redraw` parameter;
-- `ShellDoesNotRedrawPrompt` -> `redraw=0`.
-
-There is no invented `redraw=1` form and no `ShellRedrawsPrompt` enum value in 0.15.
-
-### Click mode
-
-```csharp
 public enum TerminalSemanticPromptClickMode {
 	None = 0,
 	Absolute = 1,
 	Relative = 2
 }
-```
 
-- `None` -> no `click_events` parameter;
-- `Absolute` -> `click_events=1`;
-- `Relative` -> `click_events=2`.
-
-`Absolute` is the broader cross-terminal tier. `Relative` is the narrower Kitty-documented tier.
-
-### Prompt options
-
-```csharp
 public readonly struct TerminalSemanticPromptOptions {
+	public TerminalSemanticPromptOptions(
+		TerminalSemanticPromptKind kind = TerminalSemanticPromptKind.Primary,
+		TerminalSemanticPromptResizeBehavior resizeBehavior = TerminalSemanticPromptResizeBehavior.Unspecified,
+		bool useSpecialCursorKey = false,
+		TerminalSemanticPromptClickMode clickMode = TerminalSemanticPromptClickMode.None
+	);
+
 	public TerminalSemanticPromptKind Kind { get; }
 	public TerminalSemanticPromptResizeBehavior ResizeBehavior { get; }
 	public bool UseSpecialCursorKey { get; }
@@ -178,49 +149,63 @@ public readonly struct TerminalSemanticPromptOptions {
 }
 ```
 
-`default(TerminalSemanticPromptOptions)` is valid and equivalent to bare primary `A` semantics.
+Mapping:
 
-`UseSpecialCursorKey == true` emits `special_key=1`; `false` emits no parameter. No `special_key=0` form is generated.
-
-No cross-field dependency is imposed between special-key declaration and click mode. The API publishes caller-declared shell capability metadata; it does not configure shell key bindings or a terminal mouse protocol.
-
-### Command-output options
-
-```csharp
-public readonly struct TerminalSemanticCommandOutputOptions {
-	public string? CommandLine { get; }
-}
+```text
+Secondary                    -> k=s
+ShellDoesNotRedrawPrompt     -> redraw=0
+UseSpecialCursorKey == true  -> special_key=1
+Absolute                     -> click_events=1
+Relative                     -> click_events=2
 ```
 
-- `null` -> bare `C`;
-- empty string -> `C;cmdline_url=`;
-- non-empty string -> `C;cmdline_url=<encoded-value>`.
+`default(TerminalSemanticPromptOptions)` is valid and equivalent to bare `A`.
 
-The null/empty distinction is intentional: no metadata versus explicitly known empty command line.
-
-`default(TerminalSemanticCommandOutputOptions)` is valid and equivalent to bare `C` semantics.
-
-### New overloads
+New overload:
 
 ```csharp
 ValueTask BeginPromptAsync(
 	TerminalSemanticPromptOptions options,
 	CancellationToken cancellationToken = default
 );
+```
 
+### Command-output metadata
+
+```csharp
+public readonly struct TerminalSemanticCommandOutputOptions {
+	public TerminalSemanticCommandOutputOptions(
+		string? commandLine = null
+	);
+
+	public string? CommandLine { get; }
+}
+```
+
+Mapping:
+
+```text
+CommandLine == null  -> bare C
+CommandLine == ""    -> C;cmdline_url=
+otherwise            -> C;cmdline_url=<encoded-value>
+```
+
+`default(TerminalSemanticCommandOutputOptions)` is valid and equivalent to bare `C`.
+
+New overload:
+
+```csharp
 ValueTask BeginCommandOutputAsync(
 	TerminalSemanticCommandOutputOptions options,
 	CancellationToken cancellationToken = default
 );
 ```
 
-The old overloads remain the simplest portable path.
-
 ---
 
-## 5. Frozen prompt parameter ordering
+## 5. Frozen wire encoding
 
-When multiple `A` parameters are present, 0.15 emits one canonical order:
+Prompt parameter order is canonical:
 
 ```text
 redraw=0
@@ -235,18 +220,10 @@ Example:
 OSC 133;A;redraw=0;special_key=1;k=s;click_events=2 ST
 ```
 
-Only represented options are emitted. T151 implements and byte-tests this order.
+`cmdline_url` encoding:
 
----
-
-## 6. Frozen `cmdline_url` encoding
-
-Callers provide ordinary .NET strings, never pre-escaped metadata.
-
-Encoding is:
-
-1. validate the input as well-formed UTF-16;
-2. encode with strict UTF-8;
+1. reject ill-formed UTF-16;
+2. encode to strict UTF-8;
 3. emit only RFC 3986 unreserved ASCII bytes literally:
 
 ```text
@@ -264,130 +241,135 @@ space -> %20
 =     -> %3D
 ```
 
-BEL, ESC, ST bytes, CR, LF, NUL, tabs, quotes, backslashes, shell metacharacters, and all non-ASCII UTF-8 bytes are percent encoded.
-
-The encoder operates on UTF-8 bytes, not UTF-16 code units.
-
-Ill-formed UTF-16 containing an unpaired surrogate is rejected before output commitment instead of silently becoming U+FFFD.
-
-Percent encoding provides framing safety, not confidentiality or secret redaction.
+The maximum OSC 133 payload is **65,536 encoded bytes**, measured after `ESC ]` and before final ST. Oversize metadata is rejected before output and is never truncated.
 
 ---
 
-## 7. Frozen payload bound and validation
+## 6. Validation and security invariants
 
-The maximum OSC 133 payload is **65,536 bytes**.
+- undefined prompt enum -> `ArgumentOutOfRangeException`;
+- malformed command-line Unicode -> `ArgumentException`;
+- encoded payload overflow -> argument-family exception before output;
+- pre-commit cancellation -> cancellation with no output;
+- committed marker emission -> one non-cancellable output write, no implicit flush;
+- no raw caller-supplied OSC 133 keys/values;
+- no shell `%q` encoder;
+- no terminal-brand support oracle;
+- no automatic command capture;
+- no secret detection/redaction;
+- no command parsing or normalization.
 
-"Payload" means bytes after `ESC ]` and before final ST, so the count includes `133;A...` or `133;C;cmdline_url=...` but excludes the OSC introducer and ST terminator.
-
-The complete frame is encoded and measured before output commitment. Oversize input produces an argument-family exception and emits no bytes; metadata is never truncated.
-
-The bound applies to encoded wire bytes, not .NET character count, and is an `Icod.Terminal` API safety limit rather than a claim about every terminal emulator's maximum OSC size.
-
-Validation contract:
-
-- undefined enum -> `ArgumentOutOfRangeException`;
-- ill-formed command-line Unicode -> `ArgumentException`;
-- encoded payload overflow -> argument-family exception before output commitment;
-- pre-commit cancellation -> cancellation, no output;
-- transport/session failures remain distinct.
-
-No raw caller-supplied parameter keys or values exist in the public model.
+Command-line metadata can contain credentials, API keys, bearer tokens, private paths, host names, or other sensitive material. Percent encoding protects framing only; it does not provide confidentiality.
 
 ---
 
-## 8. Lifecycle, ordering, and privacy invariants
+## 7. Lifecycle and ordering invariants
 
 Extended OSC 133 metadata is ephemeral output metadata, not restorable terminal state.
 
 0.15 retains:
 
-- no session-open automatic OSC 133 emission;
+- no session-open auto-emission;
 - no background OSC 133 listener;
-- no terminal support cache/probe;
-- no marker replay on resume;
-- no suspend-time marker reset/restore;
-- no marker lifecycle lease;
-- no synthesized missing `D` marker during disposal;
-- no implicit command-region state machine;
+- no support cache/probe;
+- no replay on resume;
+- no suspend-time reset/restore;
+- no lifecycle ownership lease;
+- no synthetic `D` on disposal;
 - no OSC 133 traffic from `InvalidateState()`;
-- one existing session output serialization path.
-
-Command-line publication is explicit caller intent only. `Icod.Terminal` does not inspect shell history/process command lines, parse shell syntax, normalize quoting, automatically capture commands, detect secrets, or redact credentials.
-
-Public documentation must warn that command lines can contain credentials, bearer tokens, private paths, host names, or other sensitive material and that terminal shell-integration/history features may retain or expose the published metadata.
+- one shared `TerminalSession` output serialization domain.
 
 ---
 
-## 9. Tranche sequence
+## 8. Tranches
 
-### T150 — OSC 133 extended-metadata contract and reference freeze
+### T150 — contract and reference freeze
 
 **Version:** `0.15.0-alpha.1`  
 **Status:** Complete and green at workflow #668.
 
-Frozen:
-
-- reference/interoperability tiers;
-- supported `A` and `C` parameters;
-- `%q` exclusion;
-- public semantic types and overloads;
-- deterministic `A` parameter order;
-- strict UTF-8 / percent-encoding rules;
-- 65,536-byte OSC payload ceiling;
-- validation/error behavior;
-- lifecycle and privacy/security invariants.
+Frozen the supported forms, interoperability tiers, public model, encoding rules, payload ceiling, error semantics, lifecycle rules, privacy/security contract, and explicit non-goals.
 
 Record: `docs/T150-OSC-133-Extended-Metadata-Contract-and-Reference-Freeze.md`.
 
-### T151 — parameter encoder and byte-exact writer foundation
+### T151 — bounded encoder and byte-exact writer foundation
 
 **Version:** `0.15.0-alpha.2`  
-**Status:** Implemented; exact-head validation pending.
+**Status:** Complete and green at workflow #678.
 
 Delivered:
 
 - `TerminalOsc133ExtendedMetadataEncoder`;
-- strict UTF-8 conversion and malformed-Unicode rejection;
-- canonical RFC 3986-style byte percent encoding;
-- deterministic prompt parameter serialization;
-- 65,536-byte encoded payload enforcement;
-- specialized internal extended `A`/`C` `OscWriter` overloads;
-- byte-exact tests for supported fields/combinations, injection characters, Unicode/non-BMP, payload boundaries, committed writes, and pre-cancellation.
-
-No public API was added in T151.
+- strict UTF-8 and canonical byte percent encoding;
+- deterministic prompt parameter ordering;
+- 65,536-byte payload enforcement;
+- specialized internal extended `A`/`C` writers;
+- byte-exact tests for supported fields, Unicode, injection characters, payload bounds, cancellation, and committed-write behavior.
 
 Record: `docs/T151-OSC-133-Extended-Metadata-Encoder-and-Writer-Foundation.md`.
 
-### T152 — prompt-start extended metadata
+### T152 — typed prompt-start metadata
 
-**Expected version:** `0.15.0-alpha.3`.
+**Version:** `0.15.0-alpha.3`  
+**Status:** Complete and green at workflow #683.
 
-Implement the frozen prompt enums/options and `BeginPromptAsync(options, ...)`.
+Delivered the three public prompt enums, `TerminalSemanticPromptOptions`, and `BeginPromptAsync(options, ...)` while preserving the original bare `A` API byte-for-byte.
 
-Prove each field independently, legal combinations, default-options equivalence to bare `A`, canonical ordering, common/narrower interoperability documentation, and byte-for-byte compatibility of the existing parameterless API.
+Record: `docs/T152-Typed-OSC-133-Prompt-Start-Metadata.md`.
 
-### T153 — command-line metadata
+### T153 — typed command-output metadata
 
-**Expected version:** `0.15.0-alpha.4`.
+**Version:** `0.15.0-alpha.4`  
+**Status:** Implemented; exact-head validation pending.
 
-Implement `TerminalSemanticCommandOutputOptions` and `BeginCommandOutputAsync(options, ...)` using only `cmdline_url`.
+Delivered `TerminalSemanticCommandOutputOptions` and `BeginCommandOutputAsync(options, ...)` using only `cmdline_url`.
 
-Prove null/empty/non-empty distinctions, ASCII/Unicode/non-BMP text, controls and shell metacharacters, exact payload boundary, strict malformed-Unicode rejection, no automatic capture, and no mutation of caller text.
+Tests cover:
+
+- default/bare `C` byte identity;
+- null/empty/non-empty distinctions;
+- strict UTF-8 Unicode/non-BMP encoding;
+- preservation of caller text;
+- malformed UTF-16 rejection before output;
+- exact 65,536-byte boundary;
+- one-byte-over rejection;
+- cancellation and committed-write behavior.
+
+Record: `docs/T153-Typed-OSC-133-Command-Output-Metadata.md`.
 
 ### T154 — session integration and compatibility
 
 **Expected version:** `0.15.0-alpha.5`.
 
-Prove old/new OSC 133 APIs compose with ordinary output, synchronized output, progress, pointer shape, scoped colors, hyperlinks, current-location publication, clipboard operations, and active query/input routing.
+Prove old/new OSC 133 APIs compose correctly with:
 
-The complete 0.12 OSC 133 public surface remains byte-for-byte unchanged.
+- ordinary text output;
+- synchronized output;
+- progress;
+- pointer shape;
+- scoped colors;
+- hyperlinks;
+- current-location publication;
+- clipboard operations;
+- active queries/input routing.
+
+The full 0.12 OSC 133 public surface must remain byte-for-byte unchanged.
 
 ### T155 — lifecycle, failure, ordering, and security hardening
 
 **Expected version:** `0.15.0-alpha.6`.
 
-Cover cancellation, output failure, concurrent marker calls, lifecycle suspension while queued, invalidation, disposal, no replay/synthesis, injection attempts, oversized metadata, malformed enum/Unicode input, and lock-order/deadlock resistance.
+Cover:
+
+- output failure;
+- concurrent marker calls;
+- lifecycle suspension while a marker is queued;
+- invalidation and disposal;
+- no replay/synthesis;
+- injection attempts;
+- oversized metadata;
+- malformed enum/Unicode input;
+- lock-order/deadlock resistance.
 
 ### T156 — downstream acceptance
 
@@ -414,20 +396,16 @@ Deliver:
 
 ---
 
-## 10. Required testing matrix
+## 9. Required testing matrix
 
-0.15 SHALL add deterministic tests for:
+0.15 SHALL include deterministic tests for:
 
 - unchanged bare `A/B/C/D` compatibility;
 - default options equivalence to bare `A` and `C`;
-- every supported `A` field;
-- legal combinations and canonical ordering;
-- secondary `k=s`;
-- click modes 1 and 2;
-- non-redraw declaration;
-- special-key declaration;
-- `cmdline_url` ASCII/Unicode/non-BMP percent encoding;
-- `%`, semicolon, equals, BEL, ESC/ST, CR/LF, NUL, tab, quotes, backslash, and shell metacharacters;
+- every supported prompt field;
+- legal prompt combinations and canonical ordering;
+- strict `cmdline_url` encoding of ASCII/Unicode/non-BMP text;
+- percent, semicolon, equals, BEL, ESC/ST, CR/LF, NUL, tab, quotes, backslash, and shell metacharacters;
 - malformed UTF-16;
 - empty command-line semantics;
 - exact 65,536-byte payload and one-byte-over rejection;
@@ -440,7 +418,7 @@ Tests validate emitted bytes directly and do not depend on the CI host terminal 
 
 ---
 
-## 11. Explicit non-goals
+## 10. Explicit non-goals
 
 0.15 SHALL NOT add:
 
@@ -463,15 +441,15 @@ Tests validate emitted bytes directly and do not depend on the CI host terminal 
 
 ---
 
-## 12. Current development state
+## 11. Current development state
 
 ```text
 VersionPrefix:    0.15.0
-VersionSuffix:    alpha.2
-Version:          0.15.0-alpha.2
-PackageVersion:   0.15.0-alpha.2
+VersionSuffix:    alpha.4
+Version:          0.15.0-alpha.4
+PackageVersion:   0.15.0-alpha.4
 AssemblyVersion:  0.15.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T151 validation:** T152 — typed prompt-start extended metadata.
+**Next after exact-head T153 validation:** T154 — session integration and compatibility.
