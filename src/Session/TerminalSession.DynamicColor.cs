@@ -1,25 +1,22 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Selected xterm dynamic-color mutation, observation, and reset for <see cref="TerminalSession"/>.
+/// Selected xterm dynamic-color mutation, observation, reset, and scoped ownership
+/// for <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
+	private TerminalDynamicColorManager? dynamicColorManager;
+
+	internal TerminalDynamicColorManager DynamicColorManager {
+		get {
+			return this.dynamicColorManager ??=
+				new TerminalDynamicColorManager( this );
+		}
+	}
+
 	/// <summary>
-	/// Sets one selected dynamic terminal color.
+	/// Sets one selected dynamic terminal color without creating a scoped owner.
 	/// </summary>
-	/// <param name="kind">The semantic dynamic-color identity.</param>
-	/// <param name="color">The normalized color to request.</param>
-	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
-	/// <returns>A value task representing the mutation.</returns>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="kind"/> is not part of the selected 0.13 contract.</exception>
-	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
-	/// <remarks>
-	/// Successful completion proves complete emission only and does not update an authoritative
-	/// terminal-color cache. OSC 10–12 are the common/core tier; OSC 13/14/17/19 are the
-	/// extended xterm tier and may have lower interoperability across terminal implementations.
-	/// This is an unscoped mutation: the session does not capture, own, or automatically
-	/// restore the prior value during invalidation, suspend/resume, or disposal.
-	/// </remarks>
 	public ValueTask SetDynamicColorAsync(
 		TerminalDynamicColor kind,
 		TerminalColor color,
@@ -29,8 +26,46 @@ public sealed partial class TerminalSession {
 			kind,
 			color
 		);
-		return this.WriteDynamicColorFrameAsync(
+		return this.DynamicColorManager.WriteUnscopedAsync(
 			frame,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Acquires lifecycle-safe ownership of one selected dynamic terminal color.
+	/// </summary>
+	/// <param name="kind">The semantic dynamic-color identity.</param>
+	/// <param name="color">The normalized color to own while the lease is active.</param>
+	/// <param name="queryTimeout">The finite timeout used to observe the exact external baseline.</param>
+	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
+	/// <returns>The acquired dynamic-color lease.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">The color identity or timeout is outside the supported contract.</exception>
+	/// <exception cref="InvalidOperationException">The session cannot perform the required query or is suspended.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels acquisition.</exception>
+	/// <exception cref="TimeoutException">The baseline observation times out.</exception>
+	/// <exception cref="FormatException">The correlated baseline response is malformed.</exception>
+	/// <remarks>
+	/// The first owner for an identity queries and stores the exact current terminal color before
+	/// mutation. Nested owners are identity-aware and may be disposed out of order. Releasing the
+	/// final owner explicitly replays the observed baseline; OSC 110-114/117/119 reset controls are
+	/// never used as a substitute for exact restoration. Managed suspend restores the external
+	/// baseline, and resume re-observes a fresh lifecycle-epoch baseline before retained ownership
+	/// is reapplied.
+	/// </remarks>
+	public ValueTask<TerminalDynamicColorLease> AcquireDynamicColorAsync(
+		TerminalDynamicColor kind,
+		TerminalColor color,
+		TimeSpan queryTimeout,
+		CancellationToken cancellationToken = default
+	) {
+		_ = TerminalDynamicColorProtocol.CreateSetRequest( kind, color );
+		ValidateDynamicColorQueryTimeout( queryTimeout );
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.DynamicColorManager.AcquireAsync(
+			kind,
+			color,
+			queryTimeout,
 			cancellationToken
 		);
 	}
@@ -38,19 +73,6 @@ public sealed partial class TerminalSession {
 	/// <summary>
 	/// Explicitly queries one selected dynamic terminal color.
 	/// </summary>
-	/// <param name="kind">The semantic dynamic-color identity.</param>
-	/// <param name="timeout">The caller-visible finite query timeout.</param>
-	/// <param name="cancellationToken">Cancellation for the caller's query.</param>
-	/// <returns>The normalized color explicitly reported for the requested identity.</returns>
-	/// <exception cref="ArgumentOutOfRangeException">The color identity or timeout is outside the supported contract.</exception>
-	/// <exception cref="InvalidOperationException">The session endpoints cannot support an active terminal query.</exception>
-	/// <exception cref="TimeoutException">No correlated reply arrives before the deadline.</exception>
-	/// <exception cref="FormatException">The terminal returns a correlated malformed dynamic-color response.</exception>
-	/// <remarks>
-	/// A successful query is an observation for this transaction only. Timeout is not interpreted
-	/// as permanent lack of support and the result is not cached as authoritative state. Extended
-	/// xterm-tier identities may be unsupported by terminals that implement only OSC 10–12.
-	/// </remarks>
 	public async ValueTask<TerminalColor> QueryDynamicColorAsync(
 		TerminalDynamicColor kind,
 		TimeSpan timeout,
@@ -72,46 +94,35 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
-	/// Resets one selected dynamic terminal color to terminal policy/default.
+	/// Resets one selected dynamic terminal color to terminal policy/default without creating
+	/// a scoped owner.
 	/// </summary>
-	/// <param name="kind">The semantic dynamic-color identity.</param>
-	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
-	/// <returns>A value task representing the reset request.</returns>
-	/// <exception cref="ArgumentOutOfRangeException"><paramref name="kind"/> is not part of the selected 0.13 contract.</exception>
-	/// <remarks>
-	/// Reset is not exact restoration of a previously observed value. This operation performs no query.
-	/// </remarks>
 	public ValueTask ResetDynamicColorAsync(
 		TerminalDynamicColor kind,
 		CancellationToken cancellationToken = default
 	) {
 		byte[] frame = TerminalDynamicColorProtocol.CreateResetRequest( kind );
-		return this.WriteDynamicColorFrameAsync(
+		return this.DynamicColorManager.WriteUnscopedAsync(
 			frame,
 			cancellationToken
 		);
 	}
 
-	private async ValueTask WriteDynamicColorFrameAsync(
-		byte[] frame,
-		CancellationToken cancellationToken
-	) {
-		ArgumentNullException.ThrowIfNull( frame );
-		cancellationToken.ThrowIfCancellationRequested();
-		if ( !this.OutputObservation.IsTerminal ) {
-			throw new InvalidOperationException(
-				"Dynamic-color mutation/reset requires an interactive terminal output endpoint."
-			);
+	private void InvalidateDynamicColorState() {
+		this.dynamicColorManager?.Invalidate();
+	}
+
+	private async ValueTask<Exception?> CloseDynamicColorStateAsync() {
+		if ( this.dynamicColorManager is null ) {
+			return null;
 		}
 
-		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
-			cancellationToken
-		).ConfigureAwait( false );
-		cancellationToken.ThrowIfCancellationRequested();
-		await this.Output.WriteAsync(
-			frame,
-			CancellationToken.None
-		).ConfigureAwait( false );
+		try {
+			await this.dynamicColorManager.CloseAsync().ConfigureAwait( false );
+			return null;
+		} catch ( Exception exception ) {
+			return exception;
+		}
 	}
 
 	private static void ValidateDynamicColorQueryTimeout(
