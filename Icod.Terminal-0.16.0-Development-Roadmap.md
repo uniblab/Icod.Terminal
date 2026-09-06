@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.16.0`  
-**Development version:** `0.16.0-alpha.6`  
+**Development version:** `0.16.0-alpha.7`  
 **Predecessor:** `0.15.0` — OSC 133 extended semantic metadata  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** bounded, safe OSC 9 extensions without exposing hazardous terminal control  
-**Status:** T160–T164 green; T165 hardening implemented, exact-head validation pending
+**Status:** T160–T165 green; T166 downstream acceptance implemented, exact-head validation pending
 
 ---
 
@@ -99,17 +99,20 @@ Dedicated integration tests prove composition with titles, OSC 7, OSC 133, hyper
 Record: `docs/T164-OSC-9-Safe-Extension-Composition-and-Compatibility.md`.
 
 ### T165 — lifecycle/failure/ordering/security hardening — `0.16.0-alpha.6`
-Implemented; exact-head validation pending.
+Complete and green at workflow #739.
 
 Hardening coverage proves queued cancellation, committed failure recovery, notification/progress whole-frame serialization, invalidation/suspend/resume/disposal non-replay, and a public-surface audit excluding hazardous/generic OSC 9 entry points. Existing T161–T163 tests retain malformed/oversize/control/injection boundary coverage.  
 Record: `docs/T165-OSC-9-Safe-Extension-Lifecycle-Failure-Ordering-and-Security-Hardening.md`.
 
 ### T166 — downstream acceptance — `0.16.0-alpha.7`
-Next after green T165 validation.
+Implemented; exact-head validation pending.
 
-Extend real `Icod.DCurses` acceptance so full-screen refresh output coexists with notification and OSC 9;9 through public `TerminalSession` APIs. CI validates bytes/order and does not require a desktop notification to appear.
+The existing real `Icod.DCurses 0.1.0` semantic-prompt acceptance project now retains the portable/extended OSC 133 sequences and appends notification → real `RefreshAsync()` → OSC 9;9 → real `RefreshAsync()` → notification, using only public `TerminalSession` APIs and the same shared session. The retained verifier already runs this project on net8/net9/net10.  
+Record: `docs/T166-DCurses-Safe-OSC-9-Downstream-Acceptance.md`.
 
 ### T167 — public API/package/stable closure — `0.16.0`
+
+Next after green T166 validation.
 
 Deliver the 0.16 public API baseline, README/sample/security docs, XML assertions, fresh NuGet-only net8/net9/net10 consumer, retained 0.8–0.15 gates/downstream acceptance, a new 0.16 package contract in PR/main/tag validation, stable metadata, and exact-head release validation.
 
@@ -119,11 +122,11 @@ Deliver the 0.16 public API baseline, README/sample/security docs, XML assertion
 
 ```text
 VersionPrefix:    0.16.0
-VersionSuffix:    alpha.6
-Version:          0.16.0-alpha.6
-PackageVersion:   0.16.0-alpha.6
+VersionSuffix:    alpha.7
+Version:          0.16.0-alpha.7
+PackageVersion:   0.16.0-alpha.7
 AssemblyVersion:  0.16.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T165 validation:** T166 — real downstream `Icod.DCurses` acceptance.
+**Next after exact-head T166 validation:** T167 — public API/package/documentation/stable closure.
