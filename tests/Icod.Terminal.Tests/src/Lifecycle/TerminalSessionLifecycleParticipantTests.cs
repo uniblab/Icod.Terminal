@@ -98,6 +98,40 @@ public sealed class TerminalSessionLifecycleParticipantTests {
 		await session.DisposeAsync();
 	}
 
+	/// <summary>
+	/// Verifies that ordinary higher-layer lifecycle participants cannot issue public
+	/// terminal queries while the session is still inside resume re-entry.
+	/// </summary>
+	[Fact]
+	public async Task PublicQueriesRemainUnavailableDuringParticipantResume() {
+		List<string> events = [];
+		TestTerminalLifecycleSource lifecycle = new() {
+			AutoResume = true
+		};
+		TerminalSession session = await OpenSessionAsync( lifecycle );
+		using IDisposable registration = session.RegisterLifecycleParticipant(
+			new QueryAttemptParticipant(
+				session,
+				events
+			)
+		);
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+
+		lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
+		_ = await session.ReadLifecycleEventAsync( timeout.Token );
+		_ = await session.ReadLifecycleEventAsync( timeout.Token );
+
+		Assert.Equal(
+			new[] {
+				"prepare",
+				"resume-query-rejected"
+			},
+			events
+		);
+
+		await session.DisposeAsync();
+	}
+
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		TestTerminalLifecycleSource lifecycle
 	) {
@@ -150,6 +184,46 @@ public sealed class TerminalSessionLifecycleParticipantTests {
 			cancellationToken.ThrowIfCancellationRequested();
 			this.events.Add( "resume:" + this.name );
 			return ValueTask.CompletedTask;
+		}
+	}
+
+	private sealed class QueryAttemptParticipant : ITerminalSessionLifecycleParticipant {
+		private readonly TerminalSession session;
+		private readonly IList<string> events;
+
+		internal QueryAttemptParticipant(
+			TerminalSession session,
+			IList<string> events
+		) {
+			ArgumentNullException.ThrowIfNull( session );
+			ArgumentNullException.ThrowIfNull( events );
+
+			this.session = session;
+			this.events = events;
+		}
+
+		public ValueTask PrepareForTerminalSuspendAsync(
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			this.events.Add( "prepare" );
+			return ValueTask.CompletedTask;
+		}
+
+		public async ValueTask ResumeAfterTerminalSuspendAsync(
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			try {
+				_ = await this.session.QueryPaletteColorAsync(
+					0,
+					TimeSpan.FromMilliseconds( 100 ),
+					cancellationToken
+				);
+				this.events.Add( "resume-query-unexpectedly-succeeded" );
+			} catch ( InvalidOperationException ) {
+				this.events.Add( "resume-query-rejected" );
+			}
 		}
 	}
 
