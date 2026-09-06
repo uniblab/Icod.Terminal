@@ -1,9 +1,18 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// OSC 4/104 indexed-palette mutation, observation, and reset for <see cref="TerminalSession"/>.
+/// OSC 4/104 indexed-palette mutation, observation, reset, and scoped ownership for <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
+	private TerminalPaletteColorManager? paletteColorManager;
+
+	internal TerminalPaletteColorManager PaletteColorManager {
+		get {
+			return this.paletteColorManager ??=
+				new TerminalPaletteColorManager( this );
+		}
+	}
+
 	/// <summary>
 	/// Sets one indexed terminal-palette color using OSC 4.
 	/// </summary>
@@ -11,27 +20,25 @@ public sealed partial class TerminalSession {
 	/// <param name="color">The normalized color to request.</param>
 	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
 	/// <returns>A value task representing palette mutation.</returns>
-	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
+	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal, session state is suspended, or scoped palette ownership is active.</exception>
 	/// <exception cref="ObjectDisposedException">The terminal session is closing or disposed.</exception>
 	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
 	/// <remarks>
 	/// Successful completion proves complete OSC 4 emission only. It does not prove
 	/// terminal support or visual application and does not update an authoritative cache.
-	/// This is an unscoped mutation: the session does not capture, own, or automatically
-	/// restore the prior palette value during invalidation, suspend/resume, or disposal.
-	/// This operation does not flush.
+	/// This remains an unscoped mutation. It is rejected while scoped palette ownership is
+	/// active so it cannot invalidate an exact restoration contract. This operation does not flush.
 	/// </remarks>
 	public ValueTask SetPaletteColorAsync(
 		byte index,
 		TerminalColor color,
 		CancellationToken cancellationToken = default
 	) {
-		byte[] frame = TerminalOsc4Protocol.CreateSetRequest(
-			index,
-			color
-		);
-		return this.WritePaletteFrameAsync(
-			frame,
+		return this.PaletteColorManager.WriteUnscopedAsync(
+			TerminalOsc4Protocol.CreateSetRequest(
+				index,
+				color
+			),
 			cancellationToken
 		);
 	}
@@ -44,22 +51,21 @@ public sealed partial class TerminalSession {
 	/// <returns>A value task representing palette mutation.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="entries"/> is null.</exception>
 	/// <exception cref="ArgumentException">The collection is empty, too large, or contains a duplicate index.</exception>
-	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
+	/// <exception cref="InvalidOperationException">The output endpoint is not interactive, session state is suspended, or scoped palette ownership is active.</exception>
 	/// <exception cref="ObjectDisposedException">The terminal session is closing or disposed.</exception>
 	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
 	/// <remarks>
 	/// The complete collection is validated and one complete OSC 4 frame is constructed
-	/// before output commitment. This is unscoped mutation and does not create restoration
-	/// ownership for any entry. This operation does not flush.
+	/// before output commitment. This remains unscoped mutation and is rejected while any
+	/// scoped palette-color lease is active. This operation does not flush.
 	/// </remarks>
 	public ValueTask SetPaletteColorsAsync(
 		IReadOnlyList<TerminalPaletteColor> entries,
 		CancellationToken cancellationToken = default
 	) {
 		ArgumentNullException.ThrowIfNull( entries );
-		byte[] frame = TerminalOsc4Protocol.CreateSetRequest( entries );
-		return this.WritePaletteFrameAsync(
-			frame,
+		return this.PaletteColorManager.WriteUnscopedAsync(
+			TerminalOsc4Protocol.CreateSetRequest( entries ),
 			cancellationToken
 		);
 	}
@@ -101,6 +107,45 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
+	/// Acquires lifecycle-safe scoped ownership of one indexed terminal-palette color.
+	/// </summary>
+	/// <param name="index">The palette index to own.</param>
+	/// <param name="color">The normalized color requested while this lease is effective.</param>
+	/// <param name="queryTimeout">The finite timeout used to establish or refresh the external baseline.</param>
+	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
+	/// <returns>The acquired palette-color lease.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">The query timeout is outside the supported terminal-query range.</exception>
+	/// <exception cref="InvalidOperationException">The session endpoints cannot support the required query/output operation or session state is suspended.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels acquisition.</exception>
+	/// <exception cref="TimeoutException">The first-owner baseline query receives no correlated reply before the deadline.</exception>
+	/// <exception cref="FormatException">The terminal returns a correlated malformed OSC 4 response.</exception>
+	/// <remarks>
+	/// The first owner for an index observes the real external color before any mutation.
+	/// Later owners for that same index nest without re-querying. Owners are identity-aware
+	/// and may be released out of order. Releasing the final owner explicitly replays the
+	/// observed 16-bit baseline; OSC 104 is never used as a restoration substitute.
+	///
+	/// During managed suspend the external baseline is restored. After resume a fresh baseline
+	/// is observed during the internal lifecycle observation window before retained ownership is
+	/// reapplied. Timeout is not converted into a permanent unsupported result.
+	/// </remarks>
+	public ValueTask<TerminalPaletteColorLease> AcquirePaletteColorAsync(
+		byte index,
+		TerminalColor color,
+		TimeSpan queryTimeout,
+		CancellationToken cancellationToken = default
+	) {
+		ValidatePaletteQueryTimeout( queryTimeout );
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.PaletteColorManager.AcquireAsync(
+			index,
+			color,
+			queryTimeout,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
 	/// Resets one indexed palette entry to terminal policy using OSC 104.
 	/// </summary>
 	/// <param name="index">The palette index to reset.</param>
@@ -108,13 +153,13 @@ public sealed partial class TerminalSession {
 	/// <returns>A value task representing reset emission.</returns>
 	/// <remarks>
 	/// This is a terminal-policy reset. It does not restore a color previously observed
-	/// by this library and does not create or update a restoration baseline.
+	/// by this library and is rejected while scoped palette ownership is active.
 	/// </remarks>
 	public ValueTask ResetPaletteColorAsync(
 		byte index,
 		CancellationToken cancellationToken = default
 	) {
-		return this.WritePaletteFrameAsync(
+		return this.PaletteColorManager.WriteUnscopedAsync(
 			TerminalOsc104Protocol.CreateResetFrame( index ),
 			cancellationToken
 		);
@@ -130,14 +175,15 @@ public sealed partial class TerminalSession {
 	/// <exception cref="ArgumentException">The collection is empty, too large, or contains a duplicate index.</exception>
 	/// <remarks>
 	/// All indices are validated before output commitment. This operation requests
-	/// terminal-policy reset only; it is not exact restoration of prior observed colors.
+	/// terminal-policy reset only, is not exact restoration, and is rejected while scoped
+	/// palette ownership is active.
 	/// </remarks>
 	public ValueTask ResetPaletteColorsAsync(
 		IReadOnlyList<byte> indices,
 		CancellationToken cancellationToken = default
 	) {
 		ArgumentNullException.ThrowIfNull( indices );
-		return this.WritePaletteFrameAsync(
+		return this.PaletteColorManager.WriteUnscopedAsync(
 			TerminalOsc104Protocol.CreateResetFrame( indices ),
 			cancellationToken
 		);
@@ -150,37 +196,33 @@ public sealed partial class TerminalSession {
 	/// <returns>A value task representing reset emission.</returns>
 	/// <remarks>
 	/// This emits bare OSC 104 and therefore requests the terminal's configured/default
-	/// palette. It does not restore a library-observed palette snapshot.
+	/// palette. It does not restore a library-observed palette snapshot and is rejected
+	/// while scoped palette ownership is active.
 	/// </remarks>
 	public ValueTask ResetPaletteAsync(
 		CancellationToken cancellationToken = default
 	) {
-		return this.WritePaletteFrameAsync(
+		return this.PaletteColorManager.WriteUnscopedAsync(
 			TerminalOsc104Protocol.CreateResetAllFrame(),
 			cancellationToken
 		);
 	}
 
-	private async ValueTask WritePaletteFrameAsync(
-		byte[] frame,
-		CancellationToken cancellationToken
-	) {
-		ArgumentNullException.ThrowIfNull( frame );
-		cancellationToken.ThrowIfCancellationRequested();
-		if ( !this.OutputObservation.IsTerminal ) {
-			throw new InvalidOperationException(
-				"OSC palette mutation/reset requires an interactive terminal output endpoint."
-			);
+	private void InvalidatePaletteColorState() {
+		this.paletteColorManager?.Invalidate();
+	}
+
+	private async ValueTask<Exception?> ClosePaletteColorStateAsync() {
+		if ( this.paletteColorManager is null ) {
+			return null;
 		}
 
-		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
-			cancellationToken
-		).ConfigureAwait( false );
-		cancellationToken.ThrowIfCancellationRequested();
-		await this.Output.WriteAsync(
-			frame,
-			CancellationToken.None
-		).ConfigureAwait( false );
+		try {
+			await this.paletteColorManager.CloseAsync().ConfigureAwait( false );
+			return null;
+		} catch ( Exception exception ) {
+			return exception;
+		}
 	}
 
 	private static void ValidatePaletteQueryTimeout(

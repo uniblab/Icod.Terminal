@@ -53,34 +53,45 @@ await ReportColorAsync(
 if ( !mutate ) {
 	await WriteLineAsync(
 		session,
-		"Pass --mutate to demonstrate explicit palette/dynamic-color mutation and terminal-policy reset."
+		"Pass --mutate to demonstrate lifecycle-safe scoped palette and dynamic-color ownership."
 	);
 	return 0;
 }
 
 await WriteLineAsync(
 	session,
-	"Mutation mode is opt-in. Reset requests terminal policy/defaults; it is not exact restoration of an observed baseline."
+	"Scoped mutation queries the exact baseline before changing color and replays that baseline on final release."
+);
+await WriteLineAsync(
+	session,
+	"OSC 104/112 reset APIs remain terminal-policy resets and are not used by this demonstration."
 );
 
-bool paletteMutated = false;
-bool cursorMutated = false;
 try {
-	await session.SetPaletteColorAsync(
-		1,
-		TerminalColor.FromRgb8( 255, 64, 64 )
-	);
-	paletteMutated = true;
-
-	await session.SetDynamicColorAsync(
-		TerminalDynamicColor.TextCursor,
-		TerminalColor.FromRgb8( 64, 255, 64 )
-	);
-	cursorMutated = true;
+	await using TerminalPaletteColorLease paletteLease =
+		await session.AcquirePaletteColorAsync(
+			1,
+			TerminalColor.FromRgb8( 255, 64, 64 ),
+			timeout
+		);
+	await using TerminalDynamicColorLease cursorLease =
+		await session.AcquireDynamicColorAsync(
+			TerminalDynamicColor.TextCursor,
+			TerminalColor.FromRgb8( 64, 255, 64 ),
+			timeout
+		);
 
 	await WriteLineAsync(
 		session,
-		"Applied demo palette[1] and text-cursor colors. Generate one terminal input event, or wait 30 seconds, before reset."
+		$"Scoped palette[{paletteLease.Index}] = {Format( paletteLease.Color )}."
+	);
+	await WriteLineAsync(
+		session,
+		$"Scoped {cursorLease.Kind} = {Format( cursorLease.Color )}."
+	);
+	await WriteLineAsync(
+		session,
+		"Generate one terminal input event, or wait 30 seconds. Leaving this scope restores both observed baselines exactly."
 	);
 
 	TerminalEvent terminalEvent = await session.ReadEventAsync(
@@ -89,26 +100,29 @@ try {
 	if ( TerminalEventKind.Timeout == terminalEvent.Kind ) {
 		await WriteLineAsync(
 			session,
-			"No input event arrived before the timeout; requesting terminal-policy reset now."
+			"No input event arrived before the timeout; releasing scoped color ownership now."
 		);
 	} else {
 		await WriteLineAsync(
 			session,
-			$"Observed {terminalEvent.Kind}; requesting terminal-policy reset now."
+			$"Observed {terminalEvent.Kind}; releasing scoped color ownership now."
 		);
 	}
-} finally {
-	try {
-		if ( cursorMutated ) {
-			await session.ResetDynamicColorAsync(
-				TerminalDynamicColor.TextCursor
-			);
-		}
-	} finally {
-		if ( paletteMutated ) {
-			await session.ResetPaletteColorAsync( 1 );
-		}
-	}
+} catch ( TimeoutException ) {
+	await WriteLineAsync(
+		session,
+		"Scoped acquisition timed out while observing a required external baseline; no lease was retained."
+	);
+} catch ( FormatException exception ) {
+	await WriteLineAsync(
+		session,
+		$"Scoped acquisition received a malformed correlated baseline: {exception.Message}"
+	);
+} catch ( InvalidOperationException exception ) {
+	await WriteLineAsync(
+		session,
+		$"Scoped color ownership is unavailable: {exception.Message}"
+	);
 }
 
 return 0;

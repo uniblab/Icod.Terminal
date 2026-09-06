@@ -79,8 +79,12 @@ public sealed partial class TerminalSession {
 		IReadOnlyList<ITerminalSessionLifecycleParticipant> participants =
 			this.suspendedLifecycleParticipants
 			?? this.SnapshotLifecycleParticipants();
-		this.suspendedLifecycleParticipants = null;
 
+		await this.RefreshObservedLifecycleParticipantsAsync(
+			participants
+		).ConfigureAwait( false );
+
+		this.suspendedLifecycleParticipants = null;
 		List<Exception> exceptions = [];
 		foreach ( ITerminalSessionLifecycleParticipant participant in participants ) {
 			try {
@@ -95,6 +99,44 @@ public sealed partial class TerminalSession {
 		Exception? exception = BuildRestorationException( exceptions );
 		if ( exception is not null ) {
 			throw exception;
+		}
+	}
+
+	private async ValueTask RefreshObservedLifecycleParticipantsAsync(
+		IReadOnlyList<ITerminalSessionLifecycleParticipant> participants
+	) {
+		ArgumentNullException.ThrowIfNull( participants );
+
+		bool hasObservedParticipant = participants.Any(
+			static participant => participant is ITerminalObservedLifecycleParticipant
+		);
+		if ( !hasObservedParticipant ) {
+			return;
+		}
+
+		this.BeginLifecycleObservationQueryWindow();
+		try {
+			List<Exception> exceptions = [];
+			foreach ( ITerminalSessionLifecycleParticipant participant in participants ) {
+				if ( participant is not ITerminalObservedLifecycleParticipant observed ) {
+					continue;
+				}
+
+				try {
+					await observed.RefreshAfterTerminalResumeAsync(
+						CancellationToken.None
+					).ConfigureAwait( false );
+				} catch ( Exception e ) {
+					exceptions.Add( e );
+				}
+			}
+
+			Exception? exception = BuildRestorationException( exceptions );
+			if ( exception is not null ) {
+				throw exception;
+			}
+		} finally {
+			this.EndLifecycleObservationQueryWindow();
 		}
 	}
 

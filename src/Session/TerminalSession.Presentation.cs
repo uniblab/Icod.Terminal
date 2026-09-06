@@ -33,6 +33,8 @@ public sealed partial class TerminalSession {
 		this.presentationManager.Invalidate();
 		this.InvalidateProgressState();
 		this.InvalidatePointerShapeState();
+		this.InvalidatePaletteColorState();
+		this.InvalidateDynamicColorState();
 	}
 
 	private ValueTask SuspendPresentationStateAsync() {
@@ -56,6 +58,18 @@ public sealed partial class TerminalSession {
 			await this.CloseHyperlinkStateAsync().ConfigureAwait( false );
 		if ( hyperlinkException is not null ) {
 			exceptions.Add( hyperlinkException );
+		}
+
+		Exception? paletteColorException =
+			await this.ClosePaletteColorStateAsync().ConfigureAwait( false );
+		if ( paletteColorException is not null ) {
+			exceptions.Add( paletteColorException );
+		}
+
+		Exception? dynamicColorException =
+			await this.CloseDynamicColorStateAsync().ConfigureAwait( false );
+		if ( dynamicColorException is not null ) {
+			exceptions.Add( dynamicColorException );
 		}
 
 		try {

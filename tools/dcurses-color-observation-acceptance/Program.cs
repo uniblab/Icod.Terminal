@@ -47,7 +47,7 @@ TerminalDescription terminal = new TerminalDescriptionBuilder(
 	)
 	.Build();
 
-await using TerminalSession terminalSession = await TerminalSession.OpenAsync(
+TerminalSession terminalSession = await TerminalSession.OpenAsync(
 	provider,
 	TerminalEndpoint.StandardInput,
 	TerminalEndpoint.StandardOutput,
@@ -63,8 +63,10 @@ await using TerminalSession terminalSession = await TerminalSession.OpenAsync(
 	}
 );
 
-Task<TerminalColor> foregroundQuery = terminalSession.QueryPaletteColorAsync(
+TerminalColor foregroundOwned = new( 0xabcd, 0x4567, 0x89ef );
+Task<TerminalPaletteColorLease> foregroundAcquisition = terminalSession.AcquirePaletteColorAsync(
 	2,
+	foregroundOwned,
 	TimeSpan.FromSeconds( 30 )
 ).AsTask();
 await transport.WaitForWriteCountAsync( 1 );
@@ -72,54 +74,78 @@ Require(
 	transport.GetWrite( 0 ).AsSpan().SequenceEqual(
 		Encoding.ASCII.GetBytes( "\u001b]4;2;?\u001b\\" )
 	),
-	"The expected OSC 4 palette observation query was not emitted."
+	"Scoped foreground ownership did not query the external OSC 4 baseline before mutation."
 );
 transport.Publish(
 	Encoding.ASCII.GetBytes( "\u001b]4;2;rgb:1234/5678/9abc\u001b\\" )
 );
-TerminalColor observedForeground = await foregroundQuery;
-
-Task<TerminalColor> backgroundQuery = terminalSession.QueryDynamicColorAsync(
-	TerminalDynamicColor.DefaultBackground,
-	TimeSpan.FromSeconds( 30 )
-).AsTask();
+TerminalPaletteColorLease foregroundLease = await foregroundAcquisition;
 await transport.WaitForWriteCountAsync( 2 );
 Require(
 	transport.GetWrite( 1 ).AsSpan().SequenceEqual(
+		Encoding.ASCII.GetBytes( "\u001b]4;2;rgb:abcd/4567/89ef\u001b\\" )
+	),
+	"Scoped foreground ownership did not apply the requested OSC 4 color."
+);
+
+TerminalColor backgroundOwned = new( 0x2468, 0xace0, 0x1357 );
+Task<TerminalDynamicColorLease> backgroundAcquisition = terminalSession.AcquireDynamicColorAsync(
+	TerminalDynamicColor.DefaultBackground,
+	backgroundOwned,
+	TimeSpan.FromSeconds( 30 )
+).AsTask();
+await transport.WaitForWriteCountAsync( 3 );
+Require(
+	transport.GetWrite( 2 ).AsSpan().SequenceEqual(
 		Encoding.ASCII.GetBytes( "\u001b]11;?\u001b\\" )
 	),
-	"The expected OSC 11 dynamic-color observation query was not emitted."
+	"Scoped background ownership did not query the external OSC 11 baseline before mutation."
 );
 transport.Publish(
 	Encoding.ASCII.GetBytes( "\u001b]11;rgb:fedc/ba98/7654\u001b\\" )
 );
-TerminalColor observedBackground = await backgroundQuery;
+TerminalDynamicColorLease backgroundLease = await backgroundAcquisition;
+await transport.WaitForWriteCountAsync( 4 );
+Require(
+	transport.GetWrite( 3 ).AsSpan().SequenceEqual(
+		Encoding.ASCII.GetBytes( "\u001b]11;rgb:2468/ace0/1357\u001b\\" )
+	),
+	"Scoped background ownership did not apply the requested OSC 11 color."
+);
 
 Require(
-	new TerminalColor( 0x1234, 0x5678, 0x9abc ) == observedForeground,
-	"The typed foreground observation did not preserve the expected 16-bit channels."
+	2 == foregroundLease.Index,
+	"The scoped foreground lease did not preserve its palette identity."
 );
 Require(
-	new TerminalColor( 0xfedc, 0xba98, 0x7654 ) == observedBackground,
-	"The typed background observation did not preserve the expected 16-bit channels."
+	foregroundOwned == foregroundLease.Color,
+	"The scoped foreground lease did not preserve its requested 16-bit color."
+);
+Require(
+	TerminalDynamicColor.DefaultBackground == backgroundLease.Kind,
+	"The scoped background lease did not preserve its dynamic-color identity."
+);
+Require(
+	backgroundOwned == backgroundLease.Color,
+	"The scoped background lease did not preserve its requested 16-bit color."
 );
 
 CursesColor foreground = CursesColor.Rgb(
-	ToByte( observedForeground.Red ),
-	ToByte( observedForeground.Green ),
-	ToByte( observedForeground.Blue )
+	ToByte( foregroundLease.Color.Red ),
+	ToByte( foregroundLease.Color.Green ),
+	ToByte( foregroundLease.Color.Blue )
 );
 CursesColor background = CursesColor.Rgb(
-	ToByte( observedBackground.Red ),
-	ToByte( observedBackground.Green ),
-	ToByte( observedBackground.Blue )
+	ToByte( backgroundLease.Color.Red ),
+	ToByte( backgroundLease.Color.Green ),
+	ToByte( backgroundLease.Color.Blue )
 );
-CursesStyle observedStyle = new(
+CursesStyle ownedStyle = new(
 	foreground,
 	background
 );
 
-await using CursesSession curses = await CursesSession.OpenAsync(
+CursesSession curses = await CursesSession.OpenAsync(
 	terminalSession,
 	new CursesSessionOptions {
 		UseAlternateScreen = false,
@@ -127,27 +153,68 @@ await using CursesSession curses = await CursesSession.OpenAsync(
 		HideCursor = false
 	}
 );
+
 curses.StandardScreen.Write(
-	"observed",
-	observedStyle
+	"owned",
+	ownedStyle
 );
 await curses.RefreshAsync();
 
 Require(
-	transport.ContainsWrite( Encoding.Latin1.GetBytes( "<rgbf:18,86,154>" ) ),
-	"Icod.DCurses did not consume the observed foreground through its RGB style path."
+	transport.ContainsWrite( Encoding.Latin1.GetBytes( "<rgbf:171,69,137>" ) ),
+	"Icod.DCurses did not consume the scoped foreground through its RGB style path."
 );
 Require(
-	transport.ContainsWrite( Encoding.Latin1.GetBytes( "<rgbb:254,186,118>" ) ),
-	"Icod.DCurses did not consume the observed background through its RGB style path."
+	transport.ContainsWrite( Encoding.Latin1.GetBytes( "<rgbb:36,172,19>" ) ),
+	"Icod.DCurses did not consume the scoped background through its RGB style path."
 );
 Require(
-	transport.ContainsWrite( Encoding.UTF8.GetBytes( "observed" ) ),
-	"Icod.DCurses did not render the styled downstream payload."
+	transport.ContainsWrite( Encoding.UTF8.GetBytes( "owned" ) ),
+	"Icod.DCurses did not render the scoped-color downstream payload."
+);
+
+int writesBeforeCursesDispose = transport.WriteCount;
+await curses.DisposeAsync();
+
+Require(
+	transport.ContainsWriteSince(
+		writesBeforeCursesDispose,
+		Encoding.ASCII.GetBytes( "\u001b]11;rgb:fedc/ba98/7654\u001b\\" )
+	),
+	"Curses-owned TerminalSession disposal did not replay the exact observed OSC 11 baseline."
+);
+Require(
+	transport.ContainsWriteSince(
+		writesBeforeCursesDispose,
+		Encoding.ASCII.GetBytes( "\u001b]4;2;rgb:1234/5678/9abc\u001b\\" )
+	),
+	"Curses-owned TerminalSession disposal did not replay the exact observed OSC 4 baseline."
+);
+Require(
+	!transport.ContainsWrite( Encoding.ASCII.GetBytes( "\u001b]111\u001b\\" ) ),
+	"Scoped dynamic-color restoration incorrectly used OSC 111 reset."
+);
+Require(
+	!transport.ContainsWrite( Encoding.ASCII.GetBytes( "\u001b]104;2\u001b\\" ) ),
+	"Scoped palette restoration incorrectly used OSC 104 reset."
+);
+
+int writesAfterCursesDispose = transport.WriteCount;
+await backgroundLease.DisposeAsync();
+await foregroundLease.DisposeAsync();
+Require(
+	writesAfterCursesDispose == transport.WriteCount,
+	"Late scoped-color lease disposal emitted output after CursesSession had disposed its owned TerminalSession."
+);
+
+await terminalSession.DisposeAsync();
+Require(
+	writesAfterCursesDispose == transport.WriteCount,
+	"Repeated TerminalSession disposal emitted output after CursesSession ownership cleanup completed."
 );
 
 Console.WriteLine(
-	"Icod.DCurses typed terminal-color observation acceptance passed."
+	"Icod.DCurses lifecycle-safe scoped terminal-color acceptance passed."
 );
 
 internal sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
@@ -157,6 +224,14 @@ internal sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
 	private readonly List<byte[]> writes = [];
 	private byte[]? pending;
 	private int pendingOffset;
+
+	internal int WriteCount {
+		get {
+			lock ( this.sync ) {
+				return this.writes.Count;
+			}
+		}
+	}
 
 	internal byte[] GetWrite(
 		int index
@@ -174,6 +249,22 @@ internal sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
 			return this.writes.Any(
 				write => write.AsSpan().SequenceEqual( expected )
 			);
+		}
+	}
+
+	internal bool ContainsWriteSince(
+		int startIndex,
+		byte[] expected
+	) {
+		if ( 0 > startIndex ) {
+			throw new ArgumentOutOfRangeException( nameof( startIndex ) );
+		}
+		ArgumentNullException.ThrowIfNull( expected );
+
+		lock ( this.sync ) {
+			return this.writes
+				.Skip( startIndex )
+				.Any( write => write.AsSpan().SequenceEqual( expected ) );
 		}
 	}
 
