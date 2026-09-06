@@ -7,7 +7,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** lifecycle-safe color ownership/restoration and terminal protocol completion work  
-**Status:** roadmap established; T140 contract/lifecycle redesign next
+**Status:** T140 contract/lifecycle-order freeze complete; T141 reusable internal observation foundation next
 
 ---
 
@@ -77,7 +77,7 @@ OSC 104 and OSC 110–119 remain terminal-policy reset APIs and SHALL NOT be use
 
 Nested ownership SHALL be deterministic.
 
-The roadmap preference is identity-aware ordered ownership:
+The frozen model is identity-aware ordered ownership:
 
 - first owner establishes the external baseline;
 - later owners may supersede the effective requested color;
@@ -85,7 +85,7 @@ The roadmap preference is identity-aware ordered ownership:
 - releasing the final owner restores the external baseline;
 - out-of-order disposal cannot restore over a still-active owner.
 
-T140/T141 SHALL freeze whether this is implemented by one shared color-state manager or coordinated palette/dynamic managers.
+Palette and dynamic colors may use separate managers over a shared internal observed-state helper.
 
 ### 3.4 Failure ownership
 
@@ -119,7 +119,20 @@ Late disposal of a lease after successful session cleanup SHALL be a no-op.
 
 ## 4. Lifecycle/query redesign boundary
 
-0.14 may change internal lifecycle ordering, but SHALL NOT weaken the public query contract established in 0.3.
+T140 froze a narrower design than simply moving ordinary query availability earlier.
+
+Public queries remain suspended throughout lifecycle re-entry and during ordinary `ITerminalSessionLifecycleParticipant` resume callbacks. Observation-dependent **session-owned** managers instead receive a distinct internal post-resume observation phase which reuses the existing one-reader query transaction/router infrastructure without widening the public concurrency contract.
+
+The frozen resume phases are:
+
+```text
+1. reacquire native/output host state and input mode
+2. resume non-observational Terminal-owned presentation/input-protocol state
+3. internal observation window for session-owned observation-dependent managers
+4. resume ordinary lifecycle participants
+5. resume public query transactions
+6. mark state valid and publish Resumed
+```
 
 Required properties remain:
 
@@ -130,37 +143,30 @@ Required properties remain:
 - caller cancellation distinct from timeout;
 - unrelated application input preserved;
 - no second color response reader;
-- no automatic general terminal probing during ordinary session open.
+- no automatic general terminal probing during ordinary session open;
+- no public query access while a lifecycle participant resume callback runs.
 
-The preferred redesign is a distinct post-resume phase:
+T140 added a regression test for the last point.
 
-```text
-reacquire native/output host state
-re-enable the active-query path
-allow lifecycle participants that require observation to refresh baselines
-reapply retained logical terminal ownership
-publish Resumed
-```
-
-T140 SHALL audit all existing lifecycle participants before freezing this ordering. Presentation, input-protocol, cursor-style, synchronized-output, pointer-shape, progress, and other managers must not regress merely to make color leases possible.
+The complete contract is recorded in `docs/T140-Lifecycle-Safe-Color-Ownership-and-Resume-Observation-Contract.md`.
 
 ---
 
 ## 5. Public API direction
 
-Exact names remain subject to T140/T141 review, but 0.14 is expected to add scoped acquisition operations analogous in spirit to existing reversible terminal ownership APIs.
+T140 freezes direct lease acquisition rather than `TerminalControlResult<T>` wrapping active-query nonresponse.
 
-Candidate semantic surface:
+Provisional public surface for T142/T143:
 
 ```csharp
-ValueTask<TerminalControlResult<TerminalPaletteColorLease>> AcquirePaletteColorAsync(
+ValueTask<TerminalPaletteColorLease> AcquirePaletteColorAsync(
 	byte index,
 	TerminalColor color,
 	TimeSpan queryTimeout,
 	CancellationToken cancellationToken = default
 );
 
-ValueTask<TerminalControlResult<TerminalDynamicColorLease>> AcquireDynamicColorAsync(
+ValueTask<TerminalDynamicColorLease> AcquireDynamicColorAsync(
 	TerminalDynamicColor kind,
 	TerminalColor color,
 	TimeSpan queryTimeout,
@@ -168,16 +174,15 @@ ValueTask<TerminalControlResult<TerminalDynamicColorLease>> AcquireDynamicColorA
 );
 ```
 
-This shape is provisional. T140 SHALL decide:
+Failure semantics remain the existing active-query semantics:
 
-- whether `TerminalControlResult<T>` is the correct unsupported/unavailable carrier when color-query support is discovered only by timeout;
-- whether acquisition should surface query timeout directly rather than translating it;
-- whether palette and dynamic ownership need separate public lease types;
-- whether one generalized color-lease type would lose useful semantic identity;
-- whether lease objects expose their requested color/index/kind;
-- disposal/retry semantics after failed restoration.
+- query timeout -> `TimeoutException`;
+- caller cancellation -> cancellation;
+- malformed correlated reply -> `FormatException`;
+- transport/session failure remains distinct;
+- no response is not cached or translated into permanent unsupported state.
 
-No public API is frozen until that review is complete.
+Separate palette and dynamic lease types remain preferred. Both are expected to implement `IAsyncDisposable` because restoration is asynchronous serialized output.
 
 ---
 
@@ -209,22 +214,22 @@ T145 SHALL require an explicit contract note before adding any extra protocol. �
 ### T140 — lifecycle-safe color ownership contract and lifecycle-order freeze
 
 **Version:** `0.14.0-alpha.1`  
-**Status:** Next.
+**Status:** Complete; exact-head validation pending.
 
-Audit and freeze:
+Frozen:
 
-- T136 constraints;
-- current lifecycle participant ordering;
-- post-resume active-query availability;
-- baseline epoch semantics;
-- invalidation semantics;
-- exact restoration versus reset;
-- nested ownership ordering;
-- cleanup/retry behavior;
-- public acquisition/result/lease shape;
-- interaction with existing presentation/input/cursor/synchronized-output/pointer managers.
+- exact query-before-mutate ownership;
+- explicit replay restoration rather than reset;
+- lifecycle baseline epochs;
+- identity-aware ordered nesting and out-of-order release;
+- invalidation versus suspend/resume semantics;
+- direct lease acquisition failure model;
+- public lifecycle participant query boundary;
+- distinct internal post-resume observation phase;
+- compatibility requirements for existing lifecycle managers;
+- lock/order constraints for T141–T144.
 
-No color lease implementation should precede this freeze.
+Record: `docs/T140-Lifecycle-Safe-Color-Ownership-and-Resume-Observation-Contract.md`.
 
 ### T141 — reusable observed-state ownership foundation
 
@@ -233,11 +238,13 @@ No color lease implementation should precede this freeze.
 Implement the internal machinery required for lifecycle participants that must observe terminal state before mutation/re-entry:
 
 - lifecycle post-resume observation phase;
-- query availability during that phase;
+- internal query authorization during that phase while public queries remain suspended;
 - baseline lifecycle epochs;
 - bounded failure propagation;
 - deterministic participant ordering;
-- tests proving existing lifecycle participants remain unchanged where observation is unnecessary.
+- rollback hooks;
+- tests proving existing lifecycle participants remain unchanged where observation is unnecessary;
+- tests proving public queries remain unavailable through ordinary participant resume.
 
 Keep generic machinery internal unless concrete evidence justifies a public abstraction.
 
@@ -294,7 +301,7 @@ Exercise:
 - concurrent palette and dynamic-color ownership;
 - session disposal with outstanding leases;
 - aggregate cleanup failures;
-- no deadlock between output serialization, lifecycle gate, and query transaction manager.
+- no deadlock between output serialization, lifecycle gate, manager gates, and query transaction manager.
 
 ### T145 — bounded terminal protocol closure
 
@@ -368,6 +375,7 @@ At minimum 0.14 SHALL test:
 - malformed correlated replies;
 - late response ownership;
 - unrelated application input preservation;
+- public query rejection during ordinary lifecycle participant resume;
 - output/query/lifecycle lock ordering;
 - existing presentation/input/cursor/synchronized-output/pointer lifecycle regression suite;
 - Windows, Linux, and macOS CI;
@@ -421,4 +429,4 @@ AssemblyVersion: 0.14.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** T140 — freeze the lifecycle/query ordering and truthful color-ownership contract before implementing leases.
+**Next after green validation:** T141 — implement the reusable internal post-resume observation/query authorization foundation.
