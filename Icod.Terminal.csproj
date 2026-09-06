@@ -19,7 +19,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.13.0 adds observable terminal color control: 16-bit TerminalColor values; OSC 4 indexed-palette mutation/query and OSC 104 reset; semantic OSC 10-14/17/19 dynamic-color mutation/query with resets 110-114/117/119; strict color response parsing; explicit unscoped lifecycle semantics; and downstream Icod.DCurses typed color-observation acceptance.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.14.0 adds lifecycle-safe terminal color ownership: query-before-mutate palette and dynamic-color leases; exact observed 16-bit baseline replay; identity-aware nested and out-of-order ownership; invalidation recovery; suspend baseline restoration and post-resume re-observation before retained-state reapply; restoration retry semantics; session-disposal cleanup; concurrency/failure hardening; and downstream Icod.DCurses scoped-color acceptance. OSC 104 and OSC 110-119 remain terminal-policy resets and are never substituted for exact lease restoration.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -30,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;osc133;semantic-prompt;shell-integration;prompt;command-region;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;tui</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;osc133;semantic-prompt;shell-integration;prompt;command-region;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;color-ownership;scoped-color;lifecycle;restoration;tui</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
