@@ -265,7 +265,7 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 			}
 
 			List<Exception> exceptions = [];
-			foreach ( PaletteState state in this.states.Values.OrderBy( static value => value.Index ) ) {
+			foreach ( PaletteState state in this.OrderedStates() ) {
 				try {
 					await this.WriteColorAsync(
 						state.Index,
@@ -304,7 +304,7 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 				);
 			}
 
-			foreach ( PaletteState state in this.states.Values.OrderBy( static value => value.Index ) ) {
+			foreach ( PaletteState state in this.OrderedStates() ) {
 				TerminalResponseFrame frame = await this.session.ExecuteLifecycleObservationQueryAsync(
 					TerminalOsc4Protocol.CreateQueryRequest( state.Index ),
 					TerminalOsc4Protocol.CreateResponseMatcher( state.Index ),
@@ -328,8 +328,8 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 				return;
 			}
 
-			List<Exception> exceptions = [];
-			foreach ( PaletteState state in this.states.Values.OrderBy( static value => value.Index ) ) {
+			List<Exception> reentryExceptions = [];
+			foreach ( PaletteState state in this.OrderedStates() ) {
 				if ( 0 == state.Owners.Count ) {
 					continue;
 				}
@@ -341,15 +341,41 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 						CancellationToken.None
 					).ConfigureAwait( false );
 				} catch ( Exception exception ) {
-					exceptions.Add( exception );
+					reentryExceptions.Add( exception );
 				}
 			}
 
-			if ( 0 != exceptions.Count ) {
+			if ( 0 != reentryExceptions.Count ) {
+				List<Exception> rollbackExceptions = [];
+				foreach ( PaletteState state in this.OrderedStates() ) {
+					try {
+						await this.WriteColorAsync(
+							state.Index,
+							state.Baseline,
+							cleanup: true,
+							CancellationToken.None
+						).ConfigureAwait( false );
+					} catch ( Exception exception ) {
+						rollbackExceptions.Add( exception );
+					}
+				}
+
+				this.suspended = true;
 				Volatile.Write( ref this.invalidated, 1 );
-				throw BuildException(
+				Exception reentryFailure = BuildException(
 					"One or more indexed palette colors could not be reapplied after resume.",
-					exceptions
+					reentryExceptions
+				);
+				if ( 0 == rollbackExceptions.Count ) {
+					throw reentryFailure;
+				}
+				throw new AggregateException(
+					"Indexed palette re-entry failed and restoring the refreshed external baselines also reported an error.",
+					reentryFailure,
+					BuildException(
+						"One or more refreshed indexed palette baselines could not be restored.",
+						rollbackExceptions
+					)
 				);
 			}
 
@@ -368,7 +394,7 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 			}
 
 			List<Exception> exceptions = [];
-			foreach ( PaletteState state in this.states.Values.OrderBy( static value => value.Index ) ) {
+			foreach ( PaletteState state in this.OrderedStates() ) {
 				try {
 					await this.WriteColorAsync(
 						state.Index,
@@ -409,7 +435,7 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 	}
 
 	private async ValueTask ReapplyOwnedColorsAsync() {
-		foreach ( PaletteState state in this.states.Values.OrderBy( static value => value.Index ) ) {
+		foreach ( PaletteState state in this.OrderedStates() ) {
 			if ( 0 == state.Owners.Count ) {
 				continue;
 			}
@@ -460,9 +486,15 @@ internal sealed class TerminalPaletteColorManager : ITerminalObservedLifecyclePa
 			}
 			await this.session.Output.WriteAsync(
 				frame,
-				cleanup ? CancellationToken.None : CancellationToken.None
+				CancellationToken.None
 			).ConfigureAwait( false );
 		}
+	}
+
+	private IReadOnlyList<PaletteState> OrderedStates() {
+		return this.states.Values
+			.OrderBy( static state => state.Index )
+			.ToArray();
 	}
 
 	private bool TryFindOwner(
