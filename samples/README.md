@@ -4,7 +4,7 @@ The sample projects are repository consumers built through project references. R
 
 ## Icod.Terminal.Color.Sample
 
-`Icod.Terminal.Color.Sample` is the focused 0.13 observable terminal-color demonstration and is included in the root solution so the normal repository build matrix compiles it on every supported configuration.
+`Icod.Terminal.Color.Sample` is the focused 0.14 terminal-color demonstration. It covers the 0.13 observation API and the new lifecycle-safe scoped ownership contract, and is included in the root solution so the normal repository build matrix compiles it on every supported configuration.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0
@@ -26,13 +26,31 @@ TerminalColor foreground = await session.QueryDynamicColorAsync(
 
 The returned values preserve 16-bit RGB channel precision. Timeout, malformed correlated replies, and unavailable active-query conditions are reported as sample output rather than terminating with an unhandled exception.
 
-Mutation is deliberately opt-in:
+Scoped mutation is deliberately opt-in:
 
 ```text
 dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0 -- --mutate
 ```
 
-That mode demonstrates OSC 4 palette mutation, OSC 12 text-cursor mutation, OSC 104 palette reset, and OSC 112 text-cursor reset. The sample describes these as terminal-policy reset operations rather than exact restoration of a previously observed color.
+That mode acquires a palette-color lease and a text-cursor dynamic-color lease:
+
+```csharp
+await using TerminalPaletteColorLease paletteLease =
+	await session.AcquirePaletteColorAsync(
+		1,
+		TerminalColor.FromRgb8( 255, 64, 64 ),
+		timeout
+	);
+
+await using TerminalDynamicColorLease cursorLease =
+	await session.AcquireDynamicColorAsync(
+		TerminalDynamicColor.TextCursor,
+		TerminalColor.FromRgb8( 64, 255, 64 ),
+		timeout
+	);
+```
+
+The first owner observes the exact external baseline before mutation. Leaving the scope restores those observed baselines explicitly. OSC 104 and OSC 112 remain terminal-policy reset APIs and are intentionally not used as restoration.
 
 All terminal input and output in the sample goes through `TerminalSession`; it does not mix `Console.ReadLine()` with the session-owned input/query path.
 
