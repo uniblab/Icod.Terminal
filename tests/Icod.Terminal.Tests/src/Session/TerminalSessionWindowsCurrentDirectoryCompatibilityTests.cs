@@ -152,6 +152,35 @@ public sealed class TerminalSessionWindowsCurrentDirectoryCompatibilityTests {
 	}
 
 	[Fact]
+	public async Task InvalidCompatibilityPathFailsBeforeWaitingForOutputGate() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		IDisposable controlOutput = await session.AcquireControlOutputAsync(
+			CancellationToken.None
+		);
+
+		try {
+			Assert.Throws<ArgumentException>(
+				() => session.PublishWindowsCurrentDirectoryCompatibilityAsync(
+					"C:\\bad\u001bpath"
+				)
+			);
+			string oversize = "C:\\" + new string(
+				'a',
+				TerminalOsc9SafeTextEncoder.MaximumWindowsCurrentDirectoryPayloadLength - 6
+			);
+			Assert.Throws<ArgumentException>(
+				() => session.PublishWindowsCurrentDirectoryCompatibilityAsync(
+					oversize
+				)
+			);
+			Assert.Empty( output.Writes );
+		} finally {
+			controlOutput.Dispose();
+		}
+	}
+
+	[Fact]
 	public async Task PreCancelledCompatibilityPublicationEmitsNothing() {
 		RecordingTerminalOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync( output );
