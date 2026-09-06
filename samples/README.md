@@ -2,6 +2,40 @@
 
 The sample projects are repository consumers built through project references. Release packages are validated separately by the package-verification harnesses under `tools/`; those consumers restore only the freshly produced NuGet artifact and run on `net8.0`, `net9.0`, and `net10.0`.
 
+## Icod.Terminal.Color.Sample
+
+`Icod.Terminal.Color.Sample` is the focused 0.13 observable terminal-color demonstration and is included in the root solution so the normal repository build matrix compiles it on every supported configuration.
+
+```text
+dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0
+```
+
+By default it performs observation only:
+
+```csharp
+TerminalColor palette = await session.QueryPaletteColorAsync(
+	1,
+	timeout
+);
+
+TerminalColor foreground = await session.QueryDynamicColorAsync(
+	TerminalDynamicColor.DefaultForeground,
+	timeout
+);
+```
+
+The returned values preserve 16-bit RGB channel precision. Timeout, malformed correlated replies, and unavailable active-query conditions are reported as sample output rather than terminating with an unhandled exception.
+
+Mutation is deliberately opt-in:
+
+```text
+dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0 -- --mutate
+```
+
+That mode demonstrates OSC 4 palette mutation, OSC 12 text-cursor mutation, OSC 104 palette reset, and OSC 112 text-cursor reset. The sample describes these as terminal-policy reset operations rather than exact restoration of a previously observed color.
+
+All terminal input and output in the sample goes through `TerminalSession`; it does not mix `Console.ReadLine()` with the session-owned input/query path.
+
 ## Icod.Terminal.SemanticPrompt.Sample
 
 `Icod.Terminal.SemanticPrompt.Sample` is the focused 0.12 OSC 133 semantic-prompt demonstration.
@@ -10,22 +44,7 @@ The sample projects are repository consumers built through project references. R
 dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.SemanticPrompt.Sample.csproj -f net10.0
 ```
 
-It demonstrates the stable public surface:
-
-```csharp
-await session.BeginPromptAsync();
-await session.BeginCommandInputAsync();
-await session.BeginCommandOutputAsync();
-await session.FinishCommandAsync( 0 );
-
-await session.BeginPromptAsync();
-await session.BeginCommandInputAsync();
-await session.AbortCommandAsync();
-```
-
-`FinishCommandAsync( 0 )` emits explicit successful completion and is distinct from `AbortCommandAsync()`, which emits bare OSC 133 `D` with no status.
-
-The sample interleaves normal `WriteTextAsync(...)` output with markers. It deliberately performs no shell or terminal-emulator detection and does not claim OSC 133 support merely because the write succeeds.
+It demonstrates prompt, command-input, command-output, explicit completion, and abort markers with ordinary application text.
 
 ## Icod.Terminal.PointerShape.Sample
 

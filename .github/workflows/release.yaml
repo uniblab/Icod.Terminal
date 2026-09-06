@@ -87,6 +87,9 @@ jobs:
       - name: Verify DCurses semantic-prompt acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesSemanticPrompt.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses color-observation acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesColorObservation.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
         shell: pwsh
@@ -115,6 +118,9 @@ jobs:
       - name: Verify 0.12 semantic-prompt release contract
         shell: pwsh
         run: ./packaging/VerifySemanticPromptPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.13 terminal-color release contract
+        shell: pwsh
+        run: ./packaging/VerifyColorPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:

@@ -6,14 +6,26 @@
 
 ## Status
 
-`0.12.0` is the current stable release. It adds semantic OSC 133 shell-integration / semantic-prompt markers with explicit prompt, command-input, command-output, successful-completion, and abort operations.
+`0.13.0` is the current stable release. It adds typed, observable terminal-color control for the indexed palette and the useful non-Tektronix xterm dynamic-color family.
 
-The release preserves the existing live-session, rich-input, active-query, OSC 0/1/2 title, OSC 7 current-location, OSC 8 hyperlink, OSC 9;4 progress, OSC 22 pointer-shape, OSC 52 clipboard, cursor-style, presentation, and synchronized-output contracts.
+The release covers:
+
+- OSC 4 indexed palette mutation/query;
+- OSC 104 indexed palette reset;
+- OSC 10 / 110 default foreground;
+- OSC 11 / 111 default background;
+- OSC 12 / 112 text cursor;
+- OSC 13 / 113 mouse foreground;
+- OSC 14 / 114 mouse background;
+- OSC 17 / 117 highlight background;
+- OSC 19 / 119 highlight foreground.
+
+OSC 15/16/18 and resets 115/116/118 remain deliberately excluded as Tektronix-specific dynamic colors.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 0.12.0
+dotnet add package Icod.Terminal --version 0.13.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
@@ -33,11 +45,9 @@ Icod.DCurses
 watch / slabtop / top
 ```
 
-`Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, reversible presentation state, active terminal-query routing, and semantic terminal-output operations. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy.
+`Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, active terminal-query routing, and semantic terminal-output operations. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy.
 
-`Icod.Timing` supplies monotonic elapsed-time and cancellable-delay primitives used by input ambiguity windows and active query transactions.
-
-## Quick start
+## Quick start — observable terminal colors
 
 ```csharp
 using Icod.Terminal;
@@ -49,243 +59,184 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-await session.BeginPromptAsync();
-await session.WriteTextAsync( "demo> " );
-await session.BeginCommandInputAsync();
-await session.WriteTextAsync( "echo hello\r\n" );
-await session.BeginCommandOutputAsync();
-await session.WriteTextAsync( "hello\r\n" );
-await session.FinishCommandAsync( 0 );
-```
-
-The session borrows process-standard endpoints, owns only terminal state transitions it applies, and restores or resets captured/session-owned state during `DisposeAsync()`.
-
-## 0.12 OSC 133 semantic prompt integration
-
-### Public semantic operations
-
-The stable 0.12 public delta is exactly five methods on `TerminalSession`:
-
-```csharp
-await session.BeginPromptAsync();
-await session.BeginCommandInputAsync();
-await session.BeginCommandOutputAsync();
-await session.FinishCommandAsync( 0 );
-await session.AbortCommandAsync();
-```
-
-The portable wire mapping is:
-
-```text
-BeginPromptAsync()        -> ESC ] 133 ; A ESC \
-BeginCommandInputAsync()  -> ESC ] 133 ; B ESC \
-BeginCommandOutputAsync() -> ESC ] 133 ; C ESC \
-FinishCommandAsync(n)     -> ESC ] 133 ; D ; n ESC \
-AbortCommandAsync()       -> ESC ] 133 ; D ESC \
-```
-
-Outbound OSC 133 uses canonical ST termination (`ESC \\`).
-
-### Completion versus abort
-
-`FinishCommandAsync(...)` accepts `byte`, so the portable completion-status domain is exactly `0..255`.
-
-```csharp
-await session.FinishCommandAsync( 0 );
-```
-
-means a completed command with explicit status zero.
-
-```csharp
-await session.AbortCommandAsync();
-```
-
-emits bare `D` and carries no status. The two forms are intentionally distinct; there is no nullable status API that conflates them.
-
-### Independent-call semantics
-
-The five OSC 133 operations are independently callable. `Icod.Terminal` does not keep an in-memory A -> B -> C -> D shell-history state machine and therefore does not reject a marker merely because earlier markers were not observed through the same session.
-
-Applications that own a normal prompt/command lifecycle will usually emit A, B, C, then either `D;status` or bare D. That ordering remains application policy rather than retained session state.
-
-This posture supports prompt redraws, interruption recovery, starting integration in the middle of an interaction, multiplexers, subshells, and nested REPLs without inventing false shell history inside the library.
-
-### Serialization, cancellation, and failure
-
-OSC 133 marker writes participate in the same session-owned output serialization domain as application text and existing terminal-control output.
-
-- known redirected output is rejected;
-- caller cancellation is observed before commit;
-- cancellation while queued for output emits nothing;
-- each complete frame is constructed before commit;
-- committed marker writes use `CancellationToken.None`;
-- marker methods do not implicitly flush;
-- successful completion proves emission only, not terminal recognition.
-
-A failed committed marker write propagates to the caller. The library does not emit a compensating finish/abort marker, does not fabricate command history, and does not poison a synthetic command-region state because no such state exists.
-
-### Lifecycle posture
-
-OSC 133 markers are transient annotations rather than library-owned terminal modes.
-
-Managed suspend, resume, and session disposal therefore emit no automatic OSC 133 marker. There is no OSC 133 lease to restore, invalidate, or clean up.
-
-### Composition
-
-The 0.12 suite proves deterministic composition with:
-
-- ordinary application text;
-- OSC 0/1/2 title operations;
-- OSC 7 current-location publication;
-- OSC 8 hyperlinks;
-- OSC 9;4 progress;
-- OSC 22 pointer shape;
-- OSC 52 clipboard operations;
-- DECSCUSR cursor style;
-- reversible presentation state;
-- reversible input-protocol leases;
-- DEC private mode 2026 synchronized output;
-- active terminal queries;
-- real downstream `Icod.DCurses` refresh output.
-
-The public contract is frozen in [`docs/Public-API-Baseline-0.12.md`](docs/Public-API-Baseline-0.12.md). Composition and downstream acceptance are recorded in [`docs/T126-OSC-133-Composition-and-DCurses-Acceptance.md`](docs/T126-OSC-133-Composition-and-DCurses-Acceptance.md).
-
-## 0.11 terminal mouse-pointer shape
-
-0.11 added semantic OSC 22 pointer control with 30 CSS-compatible shapes, explicit set/reset, identity-aware scoped ownership, and bounded Kitty-compatible pointer queries.
-
-```csharp
-await session.SetPointerShapeAsync(
-	TerminalPointerShape.Crosshair
-);
-await session.ResetPointerShapeAsync();
-
-await using TerminalPointerShapeLease pointer =
-	await session.AcquirePointerShapeAsync(
-		TerminalPointerShape.Pointer
-	);
-```
-
-See [`docs/Public-API-Baseline-0.11.md`](docs/Public-API-Baseline-0.11.md).
-
-## 0.10 terminal progress
-
-0.10 added scoped semantic OSC 9;4 progress ownership.
-
-```csharp
-await using TerminalProgressLease progress =
-	await session.AcquireProgressAsync();
-
-await progress.ReportAsync( 1, 3 );
-await progress.SetIndeterminateAsync();
-```
-
-See [`docs/Public-API-Baseline-0.10.md`](docs/Public-API-Baseline-0.10.md).
-
-## 0.9 synchronized output
-
-0.9 added scoped DEC private mode 2026 synchronized output.
-
-```csharp
-await using TerminalSynchronizedOutputLease synchronized =
-	await session.AcquireSynchronizedOutputAsync();
-```
-
-See [`docs/Public-API-Baseline-0.9.md`](docs/Public-API-Baseline-0.9.md).
-
-## 0.8 cursor style
-
-0.8 added DECSCUSR cursor-style mutation, explicit observation, and truthful scoped restoration.
-
-```csharp
-await session.SetCursorStyleAsync(
-	TerminalCursorStyle.SteadyUnderline
-);
-```
-
-See [`docs/Public-API-Baseline-0.8.md`](docs/Public-API-Baseline-0.8.md).
-
-## Earlier semantic terminal operations
-
-### 0.7 OSC 52 clipboard and selections
-
-```csharp
-await session.WriteClipboardAsync(
-	TerminalClipboardSelection.Clipboard,
-	"copied text"
-);
-```
-
-See [`docs/Public-API-Baseline-0.7.md`](docs/Public-API-Baseline-0.7.md).
-
-### 0.6 OSC 8 hyperlinks
-
-```csharp
-await session.WriteHyperlinkAsync(
-	"example",
-	"https://example.com/"
-);
-```
-
-See [`docs/Public-API-Baseline-0.6.md`](docs/Public-API-Baseline-0.6.md).
-
-### 0.5 OSC 7 current-location publication
-
-```csharp
-await session.PublishCurrentLocationAsync(
-	"/usr/local/src",
-	TerminalLocationPathStyle.Posix
-);
-```
-
-See [`docs/Public-API-Baseline-0.5.md`](docs/Public-API-Baseline-0.5.md).
-
-### 0.4 OSC title operations
-
-```csharp
-await session.SetTitleAsync( "both" );
-await session.SetIconNameAsync( "icon" );
-await session.SetWindowTitleAsync( "window" );
-```
-
-See [`docs/Public-API-Baseline-0.4.md`](docs/Public-API-Baseline-0.4.md).
-
-## Active terminal queries
-
-Opening a session does not interrogate the terminal. Queries are explicit and bounded:
-
-```csharp
 TimeSpan timeout = TimeSpan.FromMilliseconds( 750 );
 
-TerminalPrimaryDeviceAttributes primary =
-	await session.QueryPrimaryDeviceAttributesAsync( timeout );
+TerminalColor paletteRed = await session.QueryPaletteColorAsync(
+	1,
+	timeout
+);
 
-TerminalCursorPosition cursor =
-	await session.QueryCursorPositionAsync( timeout );
+TerminalColor foreground = await session.QueryDynamicColorAsync(
+	TerminalDynamicColor.DefaultForeground,
+	timeout
+);
 ```
 
-Responses are routed through the same session-owned input path used by ordinary text, keys, mouse, focus, paste, and lifecycle events. There is no second public response reader.
+`TerminalColor` preserves normalized 16-bit RGB channels:
 
-## Rich input and reversible presentation
+```csharp
+TerminalColor color = new(
+	0x1234,
+	0x5678,
+	0x9abc
+);
 
-Rich input remains on `TerminalSession.ReadEventAsync`. Reporting protocols are enabled only through reversible session-owned leases. Presentation state such as alternate screen, keypad mode, and cursor visibility is separately owned by `TerminalPresentationLease`.
+TerminalColor fromBytes = TerminalColor.FromRgb8(
+	0x12,
+	0x34,
+	0x56
+);
+```
+
+`FromRgb8(...)` expands bytes by multiplication by 257, so `0x12` becomes `0x1212`.
+
+## Indexed palette — OSC 4 / 104
+
+Single mutation:
+
+```csharp
+await session.SetPaletteColorAsync(
+	1,
+	TerminalColor.FromRgb8( 255, 64, 64 )
+);
+```
+
+Bounded multi-entry mutation:
+
+```csharp
+await session.SetPaletteColorsAsync(
+	[
+		new TerminalPaletteColor( 1, TerminalColor.FromRgb8( 255, 0, 0 ) ),
+		new TerminalPaletteColor( 2, TerminalColor.FromRgb8( 0, 255, 0 ) )
+	]
+);
+```
+
+Observation:
+
+```csharp
+TerminalColor color = await session.QueryPaletteColorAsync(
+	1,
+	TimeSpan.FromMilliseconds( 750 )
+);
+```
+
+Terminal-policy reset:
+
+```csharp
+await session.ResetPaletteColorAsync( 1 );
+await session.ResetPaletteColorsAsync( [ 1, 2, 3 ] );
+await session.ResetPaletteAsync();
+```
+
+Bulk OSC 4 mutation is bounded to 256 distinct entries, rejects duplicates and empty collections, validates before commitment, and emits one complete frame.
+
+## Dynamic colors — OSC 10–14, 17, 19
+
+The semantic identities are:
+
+```csharp
+TerminalDynamicColor.DefaultForeground
+TerminalDynamicColor.DefaultBackground
+TerminalDynamicColor.TextCursor
+TerminalDynamicColor.MouseForeground
+TerminalDynamicColor.MouseBackground
+TerminalDynamicColor.HighlightBackground
+TerminalDynamicColor.HighlightForeground
+```
+
+Set, observe, and reset all use one semantic API family:
+
+```csharp
+await session.SetDynamicColorAsync(
+	TerminalDynamicColor.TextCursor,
+	TerminalColor.FromRgb8( 64, 255, 64 )
+);
+
+TerminalColor cursor = await session.QueryDynamicColorAsync(
+	TerminalDynamicColor.TextCursor,
+	TimeSpan.FromMilliseconds( 750 )
+);
+
+await session.ResetDynamicColorAsync(
+	TerminalDynamicColor.TextCursor
+);
+```
+
+The common/core interoperability tier is OSC 10/11/12. OSC 13/14/17/19 are documented as the extended xterm tier and may have lower support across terminal implementations.
+
+## Color encoding and observation
+
+Canonical outbound colors use exactly:
+
+```text
+rgb:rrrr/gggg/bbbb
+```
+
+with four lowercase hexadecimal digits per channel and ST (`ESC \\`) OSC termination.
+
+Inbound color observations accept strict equal-width 1–4 digit `rgb:` components plus `#RGB`, `#RRGGBB`, `#RRRGGGBBB`, and `#RRRRGGGGBBBB`.
+
+The two shorthand grammars intentionally normalize differently:
+
+- `rgb:` components scale to the complete 16-bit range;
+- hash components supply the most-significant bits and zero-fill the remaining low bits.
+
+Named colors, `rgbi:`, CSS color syntax, alpha forms, mixed-width `rgb:` components, surrounding whitespace, and trailing junk are rejected.
+
+## Query semantics
+
+Color observation uses the existing session-owned active-query transaction/router.
+
+- opening a session performs no automatic color probing;
+- no second response reader is introduced;
+- each query has an explicit finite timeout;
+- caller cancellation remains distinct from timeout;
+- correlated malformed color replies fail with `FormatException`;
+- successful observations are not cached as authoritative terminal state;
+- a timeout is not converted into a permanent “unsupported” capability result.
+
+## Reset is not restoration
+
+OSC 104 and OSC 110–119 request the terminal's configured/default policy. They are not exact restoration of a color previously observed by this library.
+
+0.13 therefore deliberately exposes no palette-color or dynamic-color lease. Color mutation is unscoped: `InvalidateState()`, managed suspend/resume, and `DisposeAsync()` do not automatically query, reset, or replay color values.
+
+A future lifecycle-safe color lease would need a truthful baseline and post-resume re-observation before reapplying owned state. 0.13 does not alter the core lifecycle/query ordering merely to simulate that guarantee.
+
+## Downstream Icod.DCurses observation
+
+The T137 downstream acceptance proves that `Icod.DCurses 0.1.0` can consume typed 16-bit `TerminalColor` observations without parsing raw OSC or opening another input path.
+
+Current `Icod.DCurses` uses 8-bit `CursesColor.Rgb`, so the acceptance performs an explicit downstream precision adaptation and then renders observed colors through `setrgbf` / `setrgbb` capabilities. `Icod.Terminal` itself does not discard the observed 16-bit precision.
+
+Color-distance metrics, nearest-palette selection, contrast/accessibility policy, and theme inference remain higher-level responsibilities.
+
+The stable public contract is recorded in [`docs/Public-API-Baseline-0.13.md`](docs/Public-API-Baseline-0.13.md). Composition/downstream acceptance is recorded in [`docs/T137-Color-Composition-and-DCurses-Observation-Acceptance.md`](docs/T137-Color-Composition-and-DCurses-Observation-Acceptance.md).
+
+## Previous release highlights
+
+- **0.12** — OSC 133 semantic prompt/command-region markers. See [`docs/Public-API-Baseline-0.12.md`](docs/Public-API-Baseline-0.12.md).
+- **0.11** — OSC 22 pointer shape. See [`docs/Public-API-Baseline-0.11.md`](docs/Public-API-Baseline-0.11.md).
+- **0.10** — OSC 9;4 progress. See [`docs/Public-API-Baseline-0.10.md`](docs/Public-API-Baseline-0.10.md).
+- **0.9** — DEC private mode 2026 synchronized output. See [`docs/Public-API-Baseline-0.9.md`](docs/Public-API-Baseline-0.9.md).
+- **0.8** — DECSCUSR cursor style with observation/scoped restoration. See [`docs/Public-API-Baseline-0.8.md`](docs/Public-API-Baseline-0.8.md).
+- **0.7** — OSC 52 clipboard/selections.
+- **0.6** — OSC 8 hyperlinks.
+- **0.5** — OSC 7 current location.
+- **0.4** — OSC 0/1/2 title operations.
 
 ## Samples
 
 Focused samples include:
 
-- [`Icod.Terminal.SemanticPrompt.Sample`](samples/Icod.Terminal.SemanticPrompt.Sample/) — 0.12 OSC 133 semantic prompt/command markers;
-- [`Icod.Terminal.PointerShape.Sample`](samples/Icod.Terminal.PointerShape.Sample/) — 0.11 OSC 22 pointer shape;
-- [`Icod.Terminal.Progress.Sample`](samples/Icod.Terminal.Progress.Sample/) — 0.10 OSC 9;4 progress;
-- [`Icod.Terminal.SynchronizedOutput.Sample`](samples/Icod.Terminal.SynchronizedOutput.Sample/) — 0.9 synchronized output;
-- [`Icod.Terminal.CursorStyle.Sample`](samples/Icod.Terminal.CursorStyle.Sample/) — 0.8 cursor style;
-- [`Icod.Terminal.Clipboard.Sample`](samples/Icod.Terminal.Clipboard.Sample/) — OSC 52 clipboard;
-- [`Icod.Terminal.Hyperlink.Sample`](samples/Icod.Terminal.Hyperlink.Sample/) — OSC 8 hyperlinks;
-- [`Icod.Terminal.Location.Sample`](samples/Icod.Terminal.Location.Sample/) — OSC 7 location;
-- [`Icod.Terminal.Title.Sample`](samples/Icod.Terminal.Title.Sample/) — OSC title operations;
-- [`Icod.Terminal.Query.Sample`](samples/Icod.Terminal.Query.Sample/) — active queries;
-- [`Icod.Terminal.RichInput.Sample`](samples/Icod.Terminal.RichInput.Sample/) — rich input;
-- [`Icod.Terminal.Sample`](samples/Icod.Terminal.Sample/) — minimal live session.
+- [`Icod.Terminal.Color.Sample`](samples/Icod.Terminal.Color.Sample/) — 0.13 observable palette/dynamic colors;
+- [`Icod.Terminal.SemanticPrompt.Sample`](samples/Icod.Terminal.SemanticPrompt.Sample/) — 0.12 OSC 133;
+- [`Icod.Terminal.PointerShape.Sample`](samples/Icod.Terminal.PointerShape.Sample/) — 0.11 OSC 22;
+- [`Icod.Terminal.Progress.Sample`](samples/Icod.Terminal.Progress.Sample/) — 0.10 OSC 9;4;
+- [`Icod.Terminal.SynchronizedOutput.Sample`](samples/Icod.Terminal.SynchronizedOutput.Sample/) — 0.9;
+- [`Icod.Terminal.CursorStyle.Sample`](samples/Icod.Terminal.CursorStyle.Sample/) — 0.8;
+- clipboard, hyperlink, location, title, active-query, rich-input, and minimal live-session samples.
 
 See [`samples/README.md`](samples/README.md) for run instructions.
 
@@ -303,33 +254,27 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Both scripts support `clean`, `restore`, `build`, `test`, `pack`, and `validate`.
+Distribution validation builds/tests the solution, runs real downstream `Icod.DCurses` synchronized-output, progress, pointer-shape, semantic-prompt, and color-observation acceptance, packs the NuGet artifact, verifies package structure/XML documentation, and runs fresh package-only consumers.
 
-Distribution validation builds/tests the complete solution, runs real downstream `Icod.DCurses` synchronized-output, terminal-progress, pointer-shape, and semantic-prompt acceptance, packs the NuGet artifacts, verifies package structure/XML documentation, and runs fresh package-only consumers.
-
-The 0.8 cursor-style, 0.9 synchronized-output, 0.10 terminal-progress, 0.11 pointer-shape, and 0.12 semantic-prompt package consumers are required to restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
+The 0.8 through 0.13 package contracts restore and run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
 
 ## Release process
 
-Publishing 0.12.0 requires:
+Publishing 0.13.0 requires:
 
 1. exact stable PR-head validation green on Windows, Linux, and macOS;
 2. exact Staging package verification green;
-3. all four real downstream `Icod.DCurses` acceptance gates green;
-4. retained 0.8/0.9/0.10/0.11 and new 0.12 XML documentation/package-only smoke gates green on all supported TFMs;
+3. all five real downstream `Icod.DCurses` acceptance gates green;
+4. retained 0.8–0.12 plus new 0.13 XML/package-only smoke gates green on all supported TFMs;
 5. merge to `main`;
 6. Release distribution validation green on the resulting exact `main` commit;
-7. only then create tag `v0.12.0`.
+7. only then create tag `v0.13.0`.
 
-The tag workflow rebuilds and retests the tagged solution, reruns all four downstream DCurses acceptance gates, selects the exact package matching the tag, reruns historical and 0.12 package verification, and only then publishes to NuGet.org and GitHub Packages.
+The tagged workflow reruns build/tests, downstream acceptance, exact package selection, historical package contracts, and the 0.13 color package contract before publication to NuGet.org and GitHub Packages.
 
 ## Development roadmap
 
-The 0.12 milestone is documented in [`Icod.Terminal-0.12.0-Development-Roadmap.md`](Icod.Terminal-0.12.0-Development-Roadmap.md), with tranche records T120–T127 under `docs/`.
-
-The completed 0.11 pointer-shape milestone is documented in [`Icod.Terminal-0.11.0-Development-Roadmap.md`](Icod.Terminal-0.11.0-Development-Roadmap.md).
-
-The completed protocol-closure sequence through 0.9 is documented in [`Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md`](Icod.Terminal-0.4.0-to-0.9.0-Protocol-Closure-Roadmap.md).
+The 0.13 milestone is documented in [`Icod.Terminal-0.13.0-Development-Roadmap.md`](Icod.Terminal-0.13.0-Development-Roadmap.md), with tranche records T130–T138 under `docs/`.
 
 ## License
 

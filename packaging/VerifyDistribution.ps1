@@ -47,6 +47,9 @@ try {
     & (Join-Path $PSScriptRoot 'VerifyDCursesSemanticPrompt.ps1') `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyDCursesColorObservation.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
@@ -77,6 +80,10 @@ try {
         -Configuration $Configuration
 
     & (Join-Path $PSScriptRoot 'VerifySemanticPromptPackage.ps1') `
+        -ArtifactDirectory $packageDirectory `
+        -Configuration $Configuration
+
+    & (Join-Path $PSScriptRoot 'VerifyColorPackage.ps1') `
         -ArtifactDirectory $packageDirectory `
         -Configuration $Configuration
 
