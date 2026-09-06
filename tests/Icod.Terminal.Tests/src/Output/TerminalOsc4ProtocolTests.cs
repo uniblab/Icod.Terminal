@@ -1,5 +1,6 @@
 namespace Icod.Terminal.Tests.Output;
 
+using System.Globalization;
 using System.Text;
 using Icod.Terminal;
 using Xunit;
@@ -76,6 +77,24 @@ public sealed class TerminalOsc4ProtocolTests {
 			Encoding.ASCII.GetBytes( expected ),
 			TerminalOsc4Protocol.CreateQueryRequest( (byte)index )
 		);
+	}
+
+	[Fact]
+	public void QuerySerializationCoversAllTwoHundredFiftySixPaletteIndices() {
+		for ( int index = byte.MinValue; index <= byte.MaxValue; ++index ) {
+			byte[] expected = Encoding.ASCII.GetBytes(
+				string.Concat(
+					"\u001b]4;",
+					index.ToString( CultureInfo.InvariantCulture ),
+					";?\u001b\\"
+				)
+			);
+
+			Assert.Equal(
+				expected,
+				TerminalOsc4Protocol.CreateQueryRequest( (byte)index )
+			);
+		}
 	}
 
 	[Theory]
