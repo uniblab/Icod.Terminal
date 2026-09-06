@@ -34,6 +34,7 @@ public sealed partial class TerminalSession {
 		this.InvalidateProgressState();
 		this.InvalidatePointerShapeState();
 		this.InvalidatePaletteColorState();
+		this.InvalidateDynamicColorState();
 	}
 
 	private ValueTask SuspendPresentationStateAsync() {
@@ -63,6 +64,12 @@ public sealed partial class TerminalSession {
 			await this.ClosePaletteColorStateAsync().ConfigureAwait( false );
 		if ( paletteColorException is not null ) {
 			exceptions.Add( paletteColorException );
+		}
+
+		Exception? dynamicColorException =
+			await this.CloseDynamicColorStateAsync().ConfigureAwait( false );
+		if ( dynamicColorException is not null ) {
+			exceptions.Add( dynamicColorException );
 		}
 
 		try {
