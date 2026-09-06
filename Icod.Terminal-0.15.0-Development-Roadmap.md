@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.15.0`  
-**Development version:** `0.15.0-alpha.6`  
+**Development version:** `0.15.0-alpha.7`  
 **Predecessor:** `0.14.0` — lifecycle-safe color ownership and exact restoration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** OSC 133 extended semantic metadata without weakening the portable core  
-**Status:** T150–T154 green; T155 implemented, exact-head validation pending
+**Status:** T150–T155 green; T156 implemented, exact-head validation pending
 
 ---
 
@@ -69,7 +69,7 @@ Markers remain independently callable. `TerminalSession` does not impose a shell
 
 ---
 
-## 3. T150 frozen extended-metadata contract
+## 3. Frozen extended-metadata contract
 
 Cross-terminal extended metadata:
 
@@ -88,6 +88,19 @@ A;click_events=2
 ```
 
 Shell `%q` `C;cmdline=...` is excluded entirely from 0.15. The library does not infer support from terminal brand; emission is explicit caller intent.
+
+Prompt parameter order is canonical:
+
+```text
+redraw=0
+special_key=1
+k=s
+click_events=<1|2>
+```
+
+`cmdline_url` rejects ill-formed UTF-16, uses strict UTF-8, leaves only RFC 3986 unreserved ASCII literal, and percent-encodes every other byte as uppercase `%HH`.
+
+The maximum OSC 133 payload is **65,536 encoded bytes**, measured after `ESC ]` and before final ST. Oversize metadata is rejected before output and is never truncated.
 
 Record: `docs/T150-OSC-133-Extended-Metadata-Contract-and-Reference-Freeze.md`.
 
@@ -171,29 +184,7 @@ Default option values remain equivalent to the portable bare `A` and `C` methods
 
 ---
 
-## 5. Frozen wire encoding
-
-Prompt parameter order is canonical:
-
-```text
-redraw=0
-special_key=1
-k=s
-click_events=<1|2>
-```
-
-`cmdline_url`:
-
-1. rejects ill-formed UTF-16;
-2. encodes strict UTF-8;
-3. emits only RFC 3986 unreserved ASCII literally (`A-Z a-z 0-9 - . _ ~`);
-4. encodes every other UTF-8 byte as uppercase `%HH`.
-
-The maximum OSC 133 payload is **65,536 encoded bytes**, measured after `ESC ]` and before final ST. Oversize metadata is rejected before output and is never truncated.
-
----
-
-## 6. Validation, security, lifecycle, and ordering invariants
+## 5. Validation, security, lifecycle, and ordering invariants
 
 - undefined prompt enum -> `ArgumentOutOfRangeException`;
 - malformed command-line Unicode -> `ArgumentException`;
@@ -220,7 +211,7 @@ Command-line metadata may contain credentials, tokens, private paths, host names
 
 ---
 
-## 7. Tranches
+## 6. Tranches
 
 ### T150 — contract and reference freeze
 
@@ -261,35 +252,36 @@ Record: `docs/T153-Typed-OSC-133-Command-Output-Metadata.md`.
 **Version:** `0.15.0-alpha.5`  
 **Status:** Complete and green at workflow #693.
 
-No production API or protocol changes were required. Existing composition tests retain byte-exact bare OSC 133 coverage and additionally prove extended metadata with ordinary application text, OSC 7, OSC 8, OSC 52, OSC 22, synchronized output, terminal progress, and an outstanding `QueryDeviceStatusAsync(...)` transaction plus correlated response.
+No production API or protocol changes were required. Composition coverage proves extended metadata alongside ordinary application text, OSC 7/8/52/22, synchronized output, terminal progress, and an outstanding `QueryDeviceStatusAsync(...)` transaction plus correlated response.
 
 Record: `docs/T154-OSC-133-Session-Integration-and-Compatibility.md`.
 
 ### T155 — lifecycle, failure, ordering, and security hardening
 
 **Version:** `0.15.0-alpha.6`  
-**Status:** Implemented; exact-head validation pending.
+**Status:** Complete and green at workflow #697.
 
-No production change was required. T155 adds dedicated extended-metadata hardening coverage for:
-
-- cancellation while queued for the session output lease;
-- committed transport failure and subsequent call recovery;
-- concurrent extended prompt/command-output whole-frame serialization;
-- non-cancellable committed frame writes;
-- `InvalidateState()` non-replay;
-- suspend/resume non-replay;
-- explicit post-resume marker availability;
-- disposal/repeated-disposal non-synthesis.
-
-T151/T153 remain the authoritative injection, malformed-Unicode, payload-boundary, and pre-cancellation coverage.
+No production change was required. Dedicated hardening coverage proves queued cancellation, committed transport failure/recovery, concurrent whole-frame serialization, non-cancellable committed writes, invalidation non-replay, suspend/resume non-replay, explicit post-resume availability, and disposal non-synthesis.
 
 Record: `docs/T155-OSC-133-Lifecycle-Failure-Ordering-and-Security-Hardening.md`.
 
 ### T156 — downstream acceptance
 
-**Expected version:** `0.15.0-alpha.7`.
+**Version:** `0.15.0-alpha.7`  
+**Status:** Implemented; exact-head validation pending.
 
-Extend real `Icod.DCurses` acceptance to prove extended OSC 133 metadata coexists with a higher-level full-screen consumer using only public semantic APIs and the shared output path.
+The existing real `Icod.DCurses` semantic-prompt acceptance executable now retains the complete portable OSC 133 sequence and adds a second public 0.15 typed sequence:
+
+```text
+A;redraw=0;special_key=1;k=s;click_events=2
+B
+C;cmdline_url=printf%20caf%C3%A9%20%F0%9F%98%80
+D;23
+```
+
+DCurses `RefreshAsync()` payloads are required between each semantic boundary. The acceptance runs on net8/net9/net10 through the existing `VerifyDCursesSemanticPrompt.ps1` gate and uses only the shared `TerminalSession` output path—no raw OSC builder or side-channel writer.
+
+Record: `docs/T156-DCurses-Extended-OSC-133-Downstream-Acceptance.md`.
 
 ### T157 — public API/package/stable closure
 
@@ -299,29 +291,29 @@ Deliver public API baseline, README/sample updates, XML documentation assertions
 
 ---
 
-## 8. Required testing matrix
+## 7. Required testing matrix
 
-0.15 SHALL include deterministic tests for unchanged bare `A/B/C/D`, default-option equivalence, every supported prompt field/combination, strict ASCII/Unicode/non-BMP command encoding, framing-sensitive characters, malformed UTF-16, empty command lines, exact payload limits, cancellation/output failure/concurrency/lifecycle ordering, composition with session managers/query routing, Windows/Linux/macOS CI, and net8/net9/net10 package-only consumers.
+0.15 SHALL include deterministic tests for unchanged bare `A/B/C/D`, default-option equivalence, every supported prompt field/combination, strict ASCII/Unicode/non-BMP command encoding, framing-sensitive characters, malformed UTF-16, empty command lines, exact payload limits, cancellation/output failure/concurrency/lifecycle ordering, composition with session managers/query routing, downstream DCurses composition, Windows/Linux/macOS CI, and net8/net9/net10 package-only consumers.
 
 Tests validate emitted bytes directly and do not depend on the CI host terminal understanding extended OSC 133 metadata.
 
 ---
 
-## 9. Explicit non-goals
+## 8. Explicit non-goals
 
 0.15 SHALL NOT add `%q` `cmdline=`, arbitrary OSC 133 key/value parameters, OSC 3008, OSC 9 extensions, modern keyboard negotiation, terminal-brand auto-detection, shell auto-install/configuration, shell-history/process-command inspection, command parsing/execution, automatic secret redaction, generic public OSC/CSI/DCS builders, marker lifecycle leases/resume replay, inbound OSC 133 listeners/queries, PTY/ConPTY hosting, terminal emulation, or graphics protocols.
 
 ---
 
-## 10. Current development state
+## 9. Current development state
 
 ```text
 VersionPrefix:    0.15.0
-VersionSuffix:    alpha.6
-Version:          0.15.0-alpha.6
-PackageVersion:   0.15.0-alpha.6
+VersionSuffix:    alpha.7
+Version:          0.15.0-alpha.7
+PackageVersion:   0.15.0-alpha.7
 AssemblyVersion:  0.15.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T155 validation:** T156 — downstream acceptance.
+**Next after exact-head T156 validation:** T157 — public API/package/documentation/stable closure.
