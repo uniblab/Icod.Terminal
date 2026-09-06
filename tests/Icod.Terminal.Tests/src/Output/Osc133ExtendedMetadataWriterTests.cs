@@ -199,7 +199,7 @@ public sealed class Osc133ExtendedMetadataWriterTests {
 				useSpecialCursorKey: true,
 				secondaryPrompt: true,
 				clickEvents: 2,
-				cancellation.Token
+				cancellationToken: cancellation.Token
 			).AsTask()
 		);
 
