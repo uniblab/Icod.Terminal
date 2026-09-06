@@ -89,6 +89,19 @@ public interface ITerminalSessionLifecycleParticipant {
 }
 
 /// <summary>
+/// Marks a session-owned lifecycle participant which must refresh live terminal observations
+/// before ordinary lifecycle participants are resumed.
+/// </summary>
+internal interface ITerminalObservedLifecycleParticipant : ITerminalSessionLifecycleParticipant {
+	/// <summary>
+	/// Refreshes observation-dependent state during the internal post-resume query window.
+	/// </summary>
+	ValueTask RefreshAfterTerminalResumeAsync(
+		CancellationToken cancellationToken = default
+	);
+}
+
+/// <summary>
 /// Identifies one host lifecycle signal before session-level policy is applied.
 /// </summary>
 internal enum TerminalLifecycleSignalKind {
