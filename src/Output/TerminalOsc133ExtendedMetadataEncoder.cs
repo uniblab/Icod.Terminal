@@ -45,14 +45,11 @@ internal static class TerminalOsc133ExtendedMetadataEncoder {
 		if ( secondaryPrompt ) {
 			payloadLength += SecondaryPromptParameter.Length;
 		}
-		payloadLength += clickEvents switch {
-			0 => 0,
-			1 => AbsoluteClickEventsParameter.Length,
-			2 => RelativeClickEventsParameter.Length,
-			_ => throw new InvalidOperationException(
-				"The validated OSC 133 click-event value is not supported."
-			)
-		};
+		if ( 1 == clickEvents ) {
+			payloadLength += AbsoluteClickEventsParameter.Length;
+		} else if ( 2 == clickEvents ) {
+			payloadLength += RelativeClickEventsParameter.Length;
+		}
 
 		byte[] frame = CreateFrame( payloadLength );
 		Span<byte> payload = frame.AsSpan( 2, payloadLength );
@@ -140,10 +137,11 @@ internal static class TerminalOsc133ExtendedMetadataEncoder {
 
 		int encodedLength = 0;
 		foreach ( byte value in utf8 ) {
-			encodedLength += IsUnreserved( value )
-				? 1
-				: 3
-			;
+			if ( IsUnreserved( value ) ) {
+				++encodedLength;
+			} else {
+				encodedLength += 3;
+			}
 			if ( maximumEncodedCommandLength < encodedLength ) {
 				throw CreatePayloadTooLargeException( nameof( commandLine ) );
 			}
@@ -222,10 +220,10 @@ internal static class TerminalOsc133ExtendedMetadataEncoder {
 			throw new ArgumentOutOfRangeException( nameof( value ) );
 		}
 
-		return (byte)( 10 > value
-			? '0' + value
-			: 'A' + value - 10
-		);
+		if ( 10 > value ) {
+			return (byte)( '0' + value );
+		}
+		return (byte)( 'A' + value - 10 );
 	}
 
 	private static ArgumentException CreatePayloadTooLargeException(
