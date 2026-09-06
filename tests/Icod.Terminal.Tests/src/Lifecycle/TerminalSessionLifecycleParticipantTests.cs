@@ -132,6 +132,47 @@ public sealed class TerminalSessionLifecycleParticipantTests {
 		await session.DisposeAsync();
 	}
 
+	/// <summary>
+	/// Verifies that session-owned observed participants receive an internal query window
+	/// before ordinary participant resume while public queries remain unavailable.
+	/// </summary>
+	[Fact]
+	public async Task ObservedParticipantRefreshRunsBeforeOrdinaryResumeWithOnlyInternalQueryAccess() {
+		List<string> events = [];
+		TestTerminalLifecycleSource lifecycle = new() {
+			AutoResume = true
+		};
+		TerminalSession session = await OpenSessionAsync( lifecycle );
+		using IDisposable observed = session.RegisterCoreLifecycleParticipant(
+			new ObservedParticipant(
+				session,
+				events
+			)
+		);
+		using IDisposable ordinary = session.RegisterLifecycleParticipant(
+			new RecordingParticipant( "ordinary", events )
+		);
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+
+		lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
+		_ = await session.ReadLifecycleEventAsync( timeout.Token );
+		_ = await session.ReadLifecycleEventAsync( timeout.Token );
+
+		Assert.Equal(
+			new[] {
+				"prepare:ordinary",
+				"prepare:observed",
+				"observe:public-query-rejected",
+				"observe:internal-query-ran",
+				"resume:observed",
+				"resume:ordinary"
+			},
+			events
+		);
+
+		await session.DisposeAsync();
+	}
+
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		TestTerminalLifecycleSource lifecycle
 	) {
@@ -227,6 +268,67 @@ public sealed class TerminalSessionLifecycleParticipantTests {
 		}
 	}
 
+	private sealed class ObservedParticipant : ITerminalObservedLifecycleParticipant {
+		private readonly TerminalSession session;
+		private readonly IList<string> events;
+
+		internal ObservedParticipant(
+			TerminalSession session,
+			IList<string> events
+		) {
+			ArgumentNullException.ThrowIfNull( session );
+			ArgumentNullException.ThrowIfNull( events );
+
+			this.session = session;
+			this.events = events;
+		}
+
+		public ValueTask PrepareForTerminalSuspendAsync(
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			this.events.Add( "prepare:observed" );
+			return ValueTask.CompletedTask;
+		}
+
+		public async ValueTask RefreshAfterTerminalResumeAsync(
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+
+			try {
+				_ = await this.session.QueryPaletteColorAsync(
+					0,
+					TimeSpan.Zero,
+					cancellationToken
+				);
+				this.events.Add( "observe:public-query-unexpectedly-succeeded" );
+			} catch ( InvalidOperationException ) {
+				this.events.Add( "observe:public-query-rejected" );
+			}
+
+			try {
+				_ = await this.session.ExecuteLifecycleObservationQueryAsync(
+					TerminalOsc4Protocol.CreateQueryRequest( 0 ),
+					TerminalOsc4Protocol.CreateResponseMatcher( 0 ),
+					TimeSpan.Zero,
+					cancellationToken
+				);
+			} catch ( TimeoutException ) {
+			} finally {
+				this.events.Add( "observe:internal-query-ran" );
+			}
+		}
+
+		public ValueTask ResumeAfterTerminalSuspendAsync(
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			this.events.Add( "resume:observed" );
+			return ValueTask.CompletedTask;
+		}
+	}
+
 	private sealed class TestTerminalLifecycleSource
 		: ITerminalLifecycleSource,
 		  ITerminalSuspendController {
@@ -265,12 +367,16 @@ public sealed class TerminalSessionLifecycleParticipantTests {
 	}
 
 	private sealed class TestTerminalInput : ITerminalInput {
-		public ValueTask<int> ReadAsync(
+		public async ValueTask<int> ReadAsync(
 			Memory<byte> buffer,
 			CancellationToken cancellationToken = default
 		) {
-			cancellationToken.ThrowIfCancellationRequested();
-			return ValueTask.FromResult( 0 );
+			_ = buffer;
+			await Task.Delay(
+				Timeout.InfiniteTimeSpan,
+				cancellationToken
+			).ConfigureAwait( false );
+			return 0;
 		}
 	}
 
