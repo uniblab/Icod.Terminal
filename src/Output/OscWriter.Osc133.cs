@@ -18,12 +18,35 @@ internal static partial class OscWriter {
 		return Osc133PromptStartFrame.ToArray();
 	}
 
+	internal static byte[] EncodeOsc133PromptStartFrame(
+		bool shellDoesNotRedrawPrompt,
+		bool useSpecialCursorKey,
+		bool secondaryPrompt,
+		byte clickEvents
+	) {
+		return TerminalOsc133ExtendedMetadataEncoder.EncodePromptStart(
+			shellDoesNotRedrawPrompt,
+			useSpecialCursorKey,
+			secondaryPrompt,
+			clickEvents
+		);
+	}
+
 	internal static byte[] EncodeOsc133CommandInputStartFrame() {
 		return Osc133CommandInputStartFrame.ToArray();
 	}
 
 	internal static byte[] EncodeOsc133CommandOutputStartFrame() {
 		return Osc133CommandOutputStartFrame.ToArray();
+	}
+
+	internal static byte[] EncodeOsc133CommandOutputStartFrame(
+		string commandLine
+	) {
+		ArgumentNullException.ThrowIfNull( commandLine );
+		return TerminalOsc133ExtendedMetadataEncoder.EncodeCommandOutput(
+			commandLine
+		);
 	}
 
 	internal static byte[] EncodeOsc133CommandFinishedFrame(
@@ -66,6 +89,26 @@ internal static partial class OscWriter {
 		);
 	}
 
+	internal static ValueTask WriteOsc133PromptStartAsync(
+		ITerminalOutput output,
+		bool shellDoesNotRedrawPrompt,
+		bool useSpecialCursorKey,
+		bool secondaryPrompt,
+		byte clickEvents,
+		CancellationToken cancellationToken = default
+	) {
+		return WriteOsc133FrameAsync(
+			output,
+			EncodeOsc133PromptStartFrame(
+				shellDoesNotRedrawPrompt,
+				useSpecialCursorKey,
+				secondaryPrompt,
+				clickEvents
+			),
+			cancellationToken
+		);
+	}
+
 	internal static ValueTask WriteOsc133CommandInputStartAsync(
 		ITerminalOutput output,
 		CancellationToken cancellationToken = default
@@ -84,6 +127,19 @@ internal static partial class OscWriter {
 		return WriteOsc133FrameAsync(
 			output,
 			Osc133CommandOutputStartFrame,
+			cancellationToken
+		);
+	}
+
+	internal static ValueTask WriteOsc133CommandOutputStartAsync(
+		ITerminalOutput output,
+		string commandLine,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( commandLine );
+		return WriteOsc133FrameAsync(
+			output,
+			EncodeOsc133CommandOutputStartFrame( commandLine ),
 			cancellationToken
 		);
 	}
