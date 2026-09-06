@@ -17,7 +17,7 @@ internal static class TerminalOsc133ExtendedMetadataEncoder {
 	private const string RelativeClickEventsParameter = ";click_events=2";
 
 	private static readonly UTF8Encoding StrictUtf8 = new(
-		emitUTF8Identifier: false,
+		encoderShouldEmitUTF8Identifier: false,
 		throwOnInvalidBytes: true
 	);
 
