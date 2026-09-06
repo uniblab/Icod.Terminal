@@ -216,6 +216,7 @@ internal sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
 			lock ( this.sync ) {
 				return this.writes.Count;
 			}
+		}
 	}
 
 	internal byte[] GetWrite(
