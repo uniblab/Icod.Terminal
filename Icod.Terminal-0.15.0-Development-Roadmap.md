@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.15.0`  
-**Development version:** `0.15.0-alpha.1`  
+**Development version:** `0.15.0-alpha.2`  
 **Predecessor:** `0.14.0` — lifecycle-safe color ownership and exact restoration  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** OSC 133 extended semantic metadata without weakening the portable core  
-**Status:** T150 contract/reference freeze complete; T151 next after exact-head validation
+**Status:** T150 green at workflow #668; T151 implemented, exact-head validation pending
 
 ---
 
@@ -235,7 +235,7 @@ Example:
 OSC 133;A;redraw=0;special_key=1;k=s;click_events=2 ST
 ```
 
-Only represented options are emitted. T151 shall test byte-exact deterministic order.
+Only represented options are emitted. T151 implements and byte-tests this order.
 
 ---
 
@@ -278,19 +278,7 @@ Percent encoding provides framing safety, not confidentiality or secret redactio
 
 The maximum OSC 133 payload is **65,536 bytes**.
 
-"Payload" means bytes after `ESC ]` and before final ST, so the count includes:
-
-```text
-133;A;...
-```
-
-or
-
-```text
-133;C;cmdline_url=...
-```
-
-but excludes the OSC introducer and ST terminator.
+"Payload" means bytes after `ESC ]` and before final ST, so the count includes `133;A...` or `133;C;cmdline_url=...` but excludes the OSC introducer and ST terminator.
 
 The complete frame is encoded and measured before output commitment. Oversize input produces an argument-family exception and emits no bytes; metadata is never truncated.
 
@@ -336,7 +324,7 @@ Public documentation must warn that command lines can contain credentials, beare
 ### T150 — OSC 133 extended-metadata contract and reference freeze
 
 **Version:** `0.15.0-alpha.1`  
-**Status:** Complete; exact-head validation pending.
+**Status:** Complete and green at workflow #668.
 
 Frozen:
 
@@ -354,17 +342,22 @@ Record: `docs/T150-OSC-133-Extended-Metadata-Contract-and-Reference-Freeze.md`.
 
 ### T151 — parameter encoder and byte-exact writer foundation
 
-**Expected version:** `0.15.0-alpha.2`.
+**Version:** `0.15.0-alpha.2`  
+**Status:** Implemented; exact-head validation pending.
 
-Implement internal primitives only:
+Delivered:
 
-- strict UTF-8 conversion;
-- canonical byte percent encoding;
-- frozen prompt parameter serialization;
-- bounded OSC 133 payload construction;
-- specialized `A`/`C` frame encoding/writing.
+- `TerminalOsc133ExtendedMetadataEncoder`;
+- strict UTF-8 conversion and malformed-Unicode rejection;
+- canonical RFC 3986-style byte percent encoding;
+- deterministic prompt parameter serialization;
+- 65,536-byte encoded payload enforcement;
+- specialized internal extended `A`/`C` `OscWriter` overloads;
+- byte-exact tests for supported fields/combinations, injection characters, Unicode/non-BMP, payload boundaries, committed writes, and pre-cancellation.
 
-Prove exact bytes, Unicode/non-BMP input, injection resistance, payload-bound edges, and cancellation-before-commit behavior. Do not expose a raw metadata API.
+No public API was added in T151.
+
+Record: `docs/T151-OSC-133-Extended-Metadata-Encoder-and-Writer-Foundation.md`.
 
 ### T152 — prompt-start extended metadata
 
@@ -474,11 +467,11 @@ Tests validate emitted bytes directly and do not depend on the CI host terminal 
 
 ```text
 VersionPrefix:    0.15.0
-VersionSuffix:    alpha.1
-Version:          0.15.0-alpha.1
-PackageVersion:   0.15.0-alpha.1
+VersionSuffix:    alpha.2
+Version:          0.15.0-alpha.2
+PackageVersion:   0.15.0-alpha.2
 AssemblyVersion:  0.15.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T150 validation:** T151 — bounded parameter encoder and byte-exact writer foundation.
+**Next after exact-head T151 validation:** T152 — typed prompt-start extended metadata.
