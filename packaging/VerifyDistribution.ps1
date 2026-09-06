@@ -35,6 +35,9 @@ try {
         '--logger', 'trx'
     )
 
+    & (Join-Path $PSScriptRoot 'VerifyNotificationSample.ps1') `
+        -Configuration $Configuration
+
     & (Join-Path $PSScriptRoot 'VerifyDCursesSynchronizedOutput.ps1') `
         -Configuration $Configuration
 
