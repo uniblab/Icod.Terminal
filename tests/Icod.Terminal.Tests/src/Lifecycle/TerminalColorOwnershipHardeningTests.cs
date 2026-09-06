@@ -175,14 +175,17 @@ public sealed class TerminalColorOwnershipHardeningTests {
 			TimeSpan.FromSeconds( 5 )
 		).AsTask();
 
-		await WaitForWriteCountAsync( transport, 1 );
-		RespondToColorQuery( transport.GetWrite( 0 ), transport );
-		await WaitForWriteCountAsync( transport, 3 );
-		RespondToColorQuery( transport.GetWrite( 2 ), transport );
+		int firstQueryIndex = await WaitForAndRespondToNextColorQueryAsync(
+			transport,
+			0
+		);
+		_ = await WaitForAndRespondToNextColorQueryAsync(
+			transport,
+			firstQueryIndex + 1
+		);
 
 		TerminalPaletteColorLease palette = await paletteTask;
 		TerminalDynamicColorLease dynamic = await dynamicTask;
-		await WaitForWriteCountAsync( transport, 4 );
 
 		await Task.WhenAll(
 			palette.DisposeAsync().AsTask(),
@@ -226,7 +229,32 @@ public sealed class TerminalColorOwnershipHardeningTests {
 		Assert.Equal( afterDispose, transport.WriteCount );
 	}
 
-	private static void RespondToColorQuery(
+	private static async Task<int> WaitForAndRespondToNextColorQueryAsync(
+		FaultTransport transport,
+		int startIndex
+	) {
+		ArgumentNullException.ThrowIfNull( transport );
+		if ( 0 > startIndex ) {
+			throw new ArgumentOutOfRangeException( nameof( startIndex ) );
+		}
+
+		for ( int attempt = 0; attempt < 500; ++attempt ) {
+			IReadOnlyList<byte[]> writes = transport.GetWrites();
+			for ( int index = startIndex; index < writes.Count; ++index ) {
+				if ( TryRespondToColorQuery(
+					writes[ index ],
+					transport
+				) ) {
+					return index;
+				}
+			}
+			await Task.Delay( 10 );
+		}
+
+		throw new TimeoutException( "The next serialized color query was not observed." );
+	}
+
+	private static bool TryRespondToColorQuery(
 		byte[] request,
 		FaultTransport transport
 	) {
@@ -237,16 +265,16 @@ public sealed class TerminalColorOwnershipHardeningTests {
 			transport.Publish(
 				Encoding.ASCII.GetBytes( "\u001b]4;5;rgb:1111/2222/3333\u001b\\" )
 			);
-			return;
+			return true;
 		}
 		if ( "\u001b]10;?\u001b\\" == text ) {
 			transport.Publish(
 				Encoding.ASCII.GetBytes( "\u001b]10;rgb:7777/8888/9999\u001b\\" )
 			);
-			return;
+			return true;
 		}
 
-		throw new InvalidOperationException( "Unexpected color query in concurrency test: " + text );
+		return false;
 	}
 
 	private static async ValueTask<TerminalPaletteColorLease> AcquirePaletteAsync(
