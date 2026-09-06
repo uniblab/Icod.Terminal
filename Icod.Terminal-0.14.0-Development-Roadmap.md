@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.14.0`  
-**Development version:** `0.14.0-alpha.2`  
+**Development version:** `0.14.0-alpha.3`  
 **Predecessor:** `0.13.0` — observable terminal palette and dynamic-color control  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** lifecycle-safe color ownership/restoration and terminal protocol completion work  
-**Status:** T140 complete/green; T141 internal observation foundation implemented; T142 next after validation
+**Status:** T140 and T141 complete/green; T142 implemented with exact-head validation pending
 
 ---
 
@@ -41,7 +41,7 @@ The planned release sequence is:
 - a truthful owner must be able to re-observe after resume before reapplying owned state;
 - the 0.13 lifecycle pipeline resumes registered participants before active queries are re-enabled.
 
-0.14 SHALL solve that architectural problem rather than weaken the restoration claim.
+T140 froze the ownership/lifecycle contract, T141 implemented the internal post-resume observation window, and T142 applies that foundation to indexed-palette ownership.
 
 The release SHALL support lifecycle-safe ownership/restoration for:
 
@@ -54,11 +54,9 @@ A successful scoped acquisition SHALL mean that `Icod.Terminal` has a real obser
 
 ## 3. Restoration invariants
 
-The following are release-level invariants.
-
 ### 3.1 Query before first mutation
 
-A color lease SHALL NOT mutate terminal color state until the relevant baseline has been observed successfully.
+A first color owner SHALL NOT mutate terminal state until the relevant baseline has been observed successfully.
 
 If observation times out, is cancelled, is malformed, or otherwise fails, acquisition fails without retaining a mutation or restoration owner.
 
@@ -75,8 +73,6 @@ OSC 104 and OSC 110–119 remain terminal-policy reset APIs and SHALL NOT be use
 
 ### 3.3 Nested ownership
 
-Nested ownership SHALL be deterministic.
-
 The frozen model is identity-aware ordered ownership:
 
 - first owner establishes the external baseline;
@@ -85,52 +81,46 @@ The frozen model is identity-aware ordered ownership:
 - releasing the final owner restores the external baseline;
 - out-of-order disposal cannot restore over a still-active owner.
 
-Palette and dynamic colors may use separate managers over a shared internal observed-state helper.
+T142 proves this per indexed-palette identity. T143 will apply the same model to dynamic-color identities.
 
 ### 3.4 Failure ownership
 
-If a release/restoration write fails and rollback cannot prove restoration, the lease SHALL remain logically responsible for cleanup when retry is meaningful. A failed cleanup SHALL NOT be silently converted into success or into terminal-policy reset.
+If release/restoration fails, the lease remains logically responsible for cleanup when retry is meaningful. A failed cleanup SHALL NOT be silently converted into success or into terminal-policy reset.
 
 ### 3.5 Invalidation
 
-`TerminalSession.InvalidateState()` SHALL mark physical color state untrusted without erasing the logical ownership stack or the external baseline already established for the current lifecycle epoch.
+`TerminalSession.InvalidateState()` marks physical color state untrusted without erasing the logical ownership stack or the external baseline established for the current lifecycle epoch.
 
-The next safe transition SHALL re-establish effective owned state from logical ownership rather than assuming the terminal still reflects the last successful write.
+The next safe ownership transition re-establishes effective owned state before relying on the physical terminal state.
 
 ### 3.6 Suspend/resume truthfulness
 
-Before managed suspend, active scoped color ownership SHALL restore the externally observed baseline where the lifecycle contract requires giving the terminal back to the host/shell.
+Before managed suspend, active scoped color ownership restores the externally observed baseline.
 
-After resume, the library SHALL NOT blindly reuse a pre-suspend baseline as though no external actor could have changed terminal colors while the process was stopped.
-
-The lifecycle/query architecture SHALL provide a defined post-resume observation phase in which scoped color managers can establish a new external baseline before reapplying active owned colors.
-
-This redesign must preserve the existing one-reader and active-query ownership invariants.
+After resume, the pre-suspend baseline is not assumed authoritative. Observation-dependent managers use the T141 internal query window to establish a fresh lifecycle-epoch baseline before retained ownership is reapplied.
 
 ### 3.7 Disposal
 
 Session disposal remains the final cleanup owner. Active color leases need not be disposed before the session itself.
 
-Disposal SHALL make a best-effort exact restoration from the latest truthful baseline available for the current lifecycle epoch and combine cleanup failures with the existing session restoration failure path.
-
-Late disposal of a lease after successful session cleanup SHALL be a no-op.
+Disposal makes a best-effort exact restoration from the latest truthful baseline and combines cleanup failures with the existing session restoration failure path. Late disposal after successful session cleanup is a no-op.
 
 ---
 
 ## 4. Lifecycle/query redesign boundary
 
-T140 froze a narrower design than simply moving ordinary query availability earlier.
+Public queries remain suspended throughout lifecycle re-entry and ordinary `ITerminalSessionLifecycleParticipant` resume callbacks.
 
-Public queries remain suspended throughout lifecycle re-entry and during ordinary `ITerminalSessionLifecycleParticipant` resume callbacks. Observation-dependent **session-owned** managers instead receive a distinct internal post-resume observation phase which reuses the existing one-reader query transaction/router infrastructure without widening the public concurrency contract.
+Observation-dependent session-owned managers receive a distinct internal post-resume observation phase which reuses the existing one-reader query transaction/router infrastructure without widening the public concurrency contract.
 
-T141 implements that seam with:
+T141 implements:
 
 - an internal lifecycle observation query window;
 - temporary transaction-manager availability while the public query gate remains suspended;
-- an internal `ITerminalObservedLifecycleParticipant` contract;
+- internal `ITerminalObservedLifecycleParticipant`;
 - observation refresh before ordinary participant resume;
 - guaranteed query-window closure in `finally`;
-- shared ambiguity/late-response ownership with normal queries.
+- shared ambiguity and late-response ownership with normal queries.
 
 The effective resume phases are:
 
@@ -164,9 +154,7 @@ Records:
 
 ## 5. Public API direction
 
-T140 freezes direct lease acquisition rather than `TerminalControlResult<T>` wrapping active-query nonresponse.
-
-Provisional public surface for T142/T143:
+T142 freezes the indexed-palette public ownership shape:
 
 ```csharp
 ValueTask<TerminalPaletteColorLease> AcquirePaletteColorAsync(
@@ -175,7 +163,21 @@ ValueTask<TerminalPaletteColorLease> AcquirePaletteColorAsync(
 	TimeSpan queryTimeout,
 	CancellationToken cancellationToken = default
 );
+```
 
+`TerminalPaletteColorLease` implements `IAsyncDisposable` and exposes its `Index` and requested `Color`.
+
+Failure semantics remain active-query semantics:
+
+- query timeout -> `TimeoutException`;
+- caller cancellation -> cancellation;
+- malformed correlated reply -> `FormatException`;
+- transport/session failure remains distinct;
+- no response is not translated into permanent unsupported state.
+
+The planned T143 counterpart remains:
+
+```csharp
 ValueTask<TerminalDynamicColorLease> AcquireDynamicColorAsync(
 	TerminalDynamicColor kind,
 	TerminalColor color,
@@ -184,30 +186,15 @@ ValueTask<TerminalDynamicColorLease> AcquireDynamicColorAsync(
 );
 ```
 
-Failure semantics remain the existing active-query semantics:
-
-- query timeout -> `TimeoutException`;
-- caller cancellation -> cancellation;
-- malformed correlated reply -> `FormatException`;
-- transport/session failure remains distinct;
-- no response is not cached or translated into permanent unsupported state.
-
-Separate palette and dynamic lease types remain preferred. Both are expected to implement `IAsyncDisposable` because restoration is asynchronous serialized output.
-
 ---
 
 ## 6. Other terminal protocol work in 0.14
 
-0.14 may close **small, bounded protocol gaps that materially improve the existing live-terminal foundation**, provided they do not belong to a later dedicated release.
+0.14 may close small, bounded protocol gaps that materially improve the existing live-terminal foundation, provided they do not belong to a later dedicated release.
 
-Candidates SHALL be selected during T145 from evidence gathered while implementing lifecycle-safe ownership. Suitable examples include:
+Candidates SHALL be selected during T145 from evidence gathered while implementing lifecycle-safe ownership.
 
-- protocol response-framing interoperability needed by color re-observation;
-- lifecycle ordering hooks useful to multiple existing reversible managers;
-- small missing standardized/private-mode query or restoration forms required to make existing ownership contracts more truthful;
-- bounded parser compatibility corrections exposed by real terminal fixtures.
-
-Explicitly reserved for later releases and therefore out of scope for 0.14:
+Explicitly reserved for later releases:
 
 - OSC 133 extended prompt/command metadata — 0.15;
 - OSC 9 notification/CWD safe extensions — 0.16;
@@ -215,7 +202,7 @@ Explicitly reserved for later releases and therefore out of scope for 0.14:
 - broad fuzz/stress/real-terminal compatibility campaign and ecosystem convergence — 0.18;
 - 1.x API freeze and permanent documentation set — 1.0.0-rc1.
 
-T145 SHALL require an explicit contract note before adding any extra protocol. “While we are here” is not sufficient justification.
+T145 SHALL require explicit evidence before adding any extra protocol. “While we are here” is not sufficient justification.
 
 ---
 
@@ -227,25 +214,13 @@ T145 SHALL require an explicit contract note before adding any extra protocol. �
 **Status:** Complete and green.  
 **Validation:** workflow #611.
 
-Frozen:
-
-- exact query-before-mutate ownership;
-- explicit replay restoration rather than reset;
-- lifecycle baseline epochs;
-- identity-aware ordered nesting and out-of-order release;
-- invalidation versus suspend/resume semantics;
-- direct lease acquisition failure model;
-- public lifecycle participant query boundary;
-- distinct internal post-resume observation phase;
-- compatibility requirements for existing lifecycle managers;
-- lock/order constraints for T141–T144.
-
 Record: `docs/T140-Lifecycle-Safe-Color-Ownership-and-Resume-Observation-Contract.md`.
 
 ### T141 — reusable observed-state ownership foundation
 
-**Version:** `0.14.0-alpha.2`.  
-**Status:** Implemented; exact-head validation pending.
+**Version:** `0.14.0-alpha.2`  
+**Status:** Complete and green.  
+**Validation:** workflow #618.
 
 Delivered:
 
@@ -256,28 +231,37 @@ Delivered:
 - guaranteed observation-window closure on failure;
 - reuse of the existing query transaction manager, input coordinator, matcher routing, ambiguity gate, timeout and late-response ownership;
 - tests proving public queries remain rejected during both observation and ordinary resume phases;
-- tests proving internal observation queries are admitted before ordinary resume;
-- no behavior change when no observation-dependent participant exists.
+- tests proving internal observation queries are admitted before ordinary resume.
 
 Record: `docs/T141-Internal-Post-Resume-Observation-Query-Foundation.md`.
 
 ### T142 — indexed palette scoped ownership
 
-**Expected version:** `0.14.0-alpha.3`.
+**Version:** `0.14.0-alpha.3`  
+**Status:** Implemented; exact-head validation pending.
 
-Implement:
+Delivered:
 
-- query-before-mutate palette acquisition;
-- exact external-baseline capture;
-- nested same-index ownership;
-- independent ownership of different palette indices;
-- out-of-order disposal;
+- public `TerminalPaletteColorLease : IAsyncDisposable`;
+- public `AcquirePaletteColorAsync(...)`;
+- first-owner OSC 4 observation before mutation;
+- exact 16-bit baseline capture;
+- identity-aware nested same-index ownership;
+- independent state for different palette indices;
+- out-of-order release;
 - explicit baseline replay on final release;
-- failed acquisition with no mutation;
-- failed release/retry semantics;
+- no OSC 104 reset in scoped restoration;
+- malformed baseline/no-mutation coverage;
+- rejection of unscoped palette mutation/reset while any scoped palette ownership exists;
+- explicit query compatibility during scoped ownership;
 - invalidation re-establishment;
-- suspend baseline restoration and post-resume re-observation/reapply;
-- session-disposal cleanup.
+- suspend baseline restoration;
+- post-resume fresh baseline observation through T141;
+- retained-owner reapply only after refresh;
+- transactional multi-index resume rollback to refreshed baselines on partial failure;
+- session-disposal baseline cleanup and late-lease no-op behavior.
+
+Record: `docs/T142-Lifecycle-Safe-Indexed-Palette-Ownership.md`.
 
 ### T143 — dynamic-color scoped ownership
 
@@ -334,20 +318,7 @@ If no qualifying gap exists, T145 SHALL document that result and add no feature 
 
 **Expected version:** `0.14.0-alpha.7`.
 
-Prove color ownership composes with:
-
-- ordinary application text;
-- presentation leases;
-- focus/paste/mouse protocol leases;
-- cursor style;
-- synchronized output;
-- progress;
-- pointer shape;
-- OSC 7 location;
-- OSC 8 hyperlinks;
-- OSC 52 clipboard;
-- OSC 133 core semantic markers;
-- active terminal queries.
+Prove color ownership composes with ordinary output, presentation/input leases, cursor style, synchronized output, progress, pointer shape, OSC 7/8/52/133, and active terminal queries.
 
 Extend downstream `Icod.DCurses` acceptance so a real consumer can acquire/release color ownership through public APIs without raw OSC parsing or private lifecycle handling.
 
@@ -382,6 +353,7 @@ At minimum 0.14 SHALL test:
 - 16-bit color preservation through baseline capture/replay;
 - invalidation and physical-state uncertainty;
 - suspend restore → external change → resume re-observe → owned-state reapply;
+- partial resume rollback to refreshed baselines;
 - session disposal with active leases;
 - late lease disposal;
 - cancellation/timeout distinction;
@@ -435,12 +407,12 @@ CI and package validation SHALL continue treating all three TFMs as first-class 
 ## 11. Current development state
 
 ```text
-VersionPrefix:   0.14.0
-VersionSuffix:   alpha.2
-Version:         0.14.0-alpha.2
-PackageVersion:  0.14.0-alpha.2
-AssemblyVersion: 0.14.0.0
+VersionPrefix:    0.14.0
+VersionSuffix:    alpha.3
+Version:          0.14.0-alpha.3
+PackageVersion:   0.14.0-alpha.3
+AssemblyVersion:  0.14.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after green validation:** T142 — indexed-palette scoped ownership.
+**Next after green validation:** T143 — lifecycle-safe dynamic-color scoped ownership.
