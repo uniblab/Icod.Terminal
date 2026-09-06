@@ -71,7 +71,7 @@ jobs:
       - name: Verify DCurses semantic-prompt acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesSemanticPrompt.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses color-observation acceptance
+      - name: Verify DCurses lifecycle-safe color acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesColorObservation.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - name: Pack Staging artifacts
@@ -105,6 +105,10 @@ jobs:
         if: matrix.verify_packages
         shell: pwsh
         run: ./packaging/VerifyColorPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify 0.14 lifecycle-safe color ownership package contract
+        if: matrix.verify_packages
+        shell: pwsh
+        run: ./packaging/VerifyColorOwnershipPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
       - name: Upload validated Staging package artifacts
         if: matrix.verify_packages
         uses: actions/upload-artifact@v4
