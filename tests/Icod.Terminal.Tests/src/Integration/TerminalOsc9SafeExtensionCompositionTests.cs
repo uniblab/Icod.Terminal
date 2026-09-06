@@ -99,13 +99,15 @@ public sealed class TerminalOsc9SafeExtensionCompositionTests {
 			OscWriter.EncodeOsc22PointerShapeFrame( "pointer" ),
 			transport.GetWrite( 10 )
 		);
-		Assert.StartsWith(
-			Encoding.ASCII.GetBytes( "\u001b]4;2;" ),
-			transport.GetWrite( 11 )
+		Assert.True(
+			transport.GetWrite( 11 ).AsSpan().StartsWith(
+				Encoding.ASCII.GetBytes( "\u001b]4;2;" )
+			)
 		);
-		Assert.StartsWith(
-			Encoding.ASCII.GetBytes( "\u001b]10;" ),
-			transport.GetWrite( 12 )
+		Assert.True(
+			transport.GetWrite( 12 ).AsSpan().StartsWith(
+				Encoding.ASCII.GetBytes( "\u001b]10;" )
+			)
 		);
 		Assert.Equal(
 			Encoding.ASCII.GetBytes( "\u001b]133;C\u001b\\" ),
