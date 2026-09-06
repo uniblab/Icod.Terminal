@@ -22,6 +22,7 @@ public sealed partial class TerminalSession {
 	/// <see cref="PublishCurrentLocationAsync(string, TerminalLocationPathStyle, string?, CancellationToken)"/>
 	/// OSC 7 API remains the preferred current-location protocol. This method never translates a POSIX path,
 	/// inspects the process current directory, probes terminal identity, or emits OSC 7 automatically.
+	/// The complete frame is validated and encoded before waiting for the shared session output gate.
 	/// </remarks>
 	public ValueTask PublishWindowsCurrentDirectoryCompatibilityAsync(
 		string windowsPath,
@@ -29,17 +30,21 @@ public sealed partial class TerminalSession {
 	) {
 		ArgumentNullException.ThrowIfNull( windowsPath );
 		cancellationToken.ThrowIfCancellationRequested();
+		byte[] frame = OscWriter.EncodeOsc9WindowsCurrentDirectoryFrame(
+			windowsPath
+		);
+		cancellationToken.ThrowIfCancellationRequested();
 		return this.WriteWindowsCurrentDirectoryCompatibilityAsync(
-			windowsPath,
+			frame,
 			cancellationToken
 		);
 	}
 
 	private async ValueTask WriteWindowsCurrentDirectoryCompatibilityAsync(
-		string windowsPath,
+		byte[] frame,
 		CancellationToken cancellationToken
 	) {
-		ArgumentNullException.ThrowIfNull( windowsPath );
+		ArgumentNullException.ThrowIfNull( frame );
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( !this.OutputObservation.IsTerminal ) {
 			throw new InvalidOperationException(
@@ -52,10 +57,9 @@ public sealed partial class TerminalSession {
 		).ConfigureAwait( false );
 		cancellationToken.ThrowIfCancellationRequested();
 
-		await OscWriter.WriteOsc9WindowsCurrentDirectoryAsync(
-			this.Output,
-			windowsPath,
-			cancellationToken
+		await this.Output.WriteAsync(
+			frame,
+			CancellationToken.None
 		).ConfigureAwait( false );
 	}
 }
