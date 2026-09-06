@@ -127,6 +127,9 @@ jobs:
       - name: Verify 0.15 OSC 133 extended semantic metadata release contract
         shell: pwsh
         run: ./packaging/VerifySemanticMetadataPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.16 safe OSC 9 release contract
+        shell: pwsh
+        run: ./packaging/VerifySafeOsc9Package.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:
