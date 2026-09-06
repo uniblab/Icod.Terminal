@@ -137,6 +137,31 @@ public sealed class TerminalSessionNotificationTests {
 	}
 
 	[Fact]
+	public async Task InvalidNotificationFailsBeforeWaitingForOutputGate() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		IDisposable controlOutput = await session.AcquireControlOutputAsync(
+			CancellationToken.None
+		);
+
+		try {
+			Assert.Throws<ArgumentException>(
+				() => session.SendNotificationAsync( "bad\u001bmessage" )
+			);
+			string oversize = new(
+				'a',
+				TerminalOsc9SafeTextEncoder.MaximumNotificationPayloadLength - 1
+			);
+			Assert.Throws<ArgumentException>(
+				() => session.SendNotificationAsync( oversize )
+			);
+			Assert.Empty( output.Writes );
+		} finally {
+			controlOutput.Dispose();
+		}
+	}
+
+	[Fact]
 	public async Task PreCancelledNotificationEmitsNothing() {
 		RecordingTerminalOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync( output );
