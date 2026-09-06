@@ -7,7 +7,7 @@ using Icod.TermInfo;
 using Xunit;
 
 /// <summary>
-/// Verifies T126 OSC 133 composition with existing terminal output, leases,
+/// Verifies OSC 133 composition with existing terminal output, leases,
 /// presentation, rich input, synchronized output, progress, and active queries.
 /// </summary>
 public sealed class TerminalSemanticPromptCompositionTests {
@@ -126,6 +126,90 @@ public sealed class TerminalSemanticPromptCompositionTests {
 	}
 
 	[Fact]
+	public async Task ExtendedSemanticMetadataComposesWithExistingSemanticOutputInOrder() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			CreateCompositionTerminal(),
+			transport
+		);
+		TerminalSemanticPromptOptions prompt = new(
+			TerminalSemanticPromptKind.Secondary,
+			TerminalSemanticPromptResizeBehavior.ShellDoesNotRedrawPrompt,
+			true,
+			TerminalSemanticPromptClickMode.Relative
+		);
+		TerminalSemanticCommandOutputOptions command = new(
+			"echo café"
+		);
+		byte[] clipboardPayload = [ 0x03, 0x04 ];
+
+		await session.BeginPromptAsync( prompt );
+		await session.WriteTextAsync( "P" );
+		await session.PublishCurrentLocationAsync(
+			"/work",
+			TerminalLocationPathStyle.Posix
+		);
+		await session.WriteHyperlinkAsync(
+			"H",
+			"https://example.com/extended"
+		);
+		await session.WriteClipboardAsync(
+			TerminalClipboardSelection.Clipboard,
+			clipboardPayload
+		);
+		await session.SetPointerShapeAsync(
+			TerminalPointerShape.Pointer
+		);
+		await session.BeginCommandOutputAsync( command );
+		await session.FinishCommandAsync( 0 );
+
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b]133;A;redraw=0;special_key=1;k=s;click_events=2\u001b\\"
+			),
+			transport.GetWrite( 0 )
+		);
+		Assert.Equal( Encoding.UTF8.GetBytes( "P" ), transport.GetWrite( 1 ) );
+		Assert.Equal(
+			OscWriter.EncodeLocationFrame(
+				"/work",
+				TerminalLocationPathKind.Posix
+			),
+			transport.GetWrite( 2 )
+		);
+		Assert.Equal(
+			OscWriter.EncodeHyperlinkBeginFrame( "https://example.com/extended" ),
+			transport.GetWrite( 3 )
+		);
+		Assert.Equal( Encoding.UTF8.GetBytes( "H" ), transport.GetWrite( 4 ) );
+		Assert.Equal(
+			OscWriter.EncodeHyperlinkEndFrame(),
+			transport.GetWrite( 5 )
+		);
+		Assert.Equal(
+			OscWriter.EncodeOsc52WriteFrame(
+				TerminalOsc52Selection.Clipboard,
+				clipboardPayload
+			),
+			transport.GetWrite( 6 )
+		);
+		Assert.Equal(
+			OscWriter.EncodeOsc22PointerShapeFrame( "pointer" ),
+			transport.GetWrite( 7 )
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b]133;C;cmdline_url=echo%20caf%C3%A9\u001b\\"
+			),
+			transport.GetWrite( 8 )
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b]133;D;0\u001b\\" ),
+			transport.GetWrite( 9 )
+		);
+	}
+
+	[Fact]
 	public async Task SemanticPromptComposesWithProgressAndSynchronizedOutput() {
 		RecordingTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync(
@@ -180,6 +264,63 @@ public sealed class TerminalSemanticPromptCompositionTests {
 	}
 
 	[Fact]
+	public async Task ExtendedMetadataComposesWithProgressAndSynchronizedOutput() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			TerminalProfiles.Dumb,
+			transport
+		);
+		TerminalSemanticPromptOptions prompt = new(
+			clickMode: TerminalSemanticPromptClickMode.Absolute
+		);
+		TerminalSemanticCommandOutputOptions command = new(
+			"printf done"
+		);
+
+		await session.BeginPromptAsync( prompt );
+		TerminalSynchronizedOutputLease synchronized =
+			await session.AcquireSynchronizedOutputAsync();
+		TerminalProgressLease progress = await session.AcquireProgressAsync();
+		await progress.ReportAsync( 1, 2 );
+		await session.BeginCommandOutputAsync( command );
+		await session.FinishCommandAsync( 9 );
+		await progress.DisposeAsync();
+		await synchronized.DisposeAsync();
+
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b]133;A;click_events=1\u001b\\" ),
+			transport.GetWrite( 0 )
+		);
+		Assert.Equal(
+			CsiWriter.EncodeSynchronizedOutputBeginFrame(),
+			transport.GetWrite( 1 )
+		);
+		Assert.Equal(
+			OscWriter.EncodeOsc9ProgressFrame( Osc9ProgressState.Normal, 50 ),
+			transport.GetWrite( 2 )
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b]133;C;cmdline_url=printf%20done\u001b\\"
+			),
+			transport.GetWrite( 3 )
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b]133;D;9\u001b\\" ),
+			transport.GetWrite( 4 )
+		);
+		Assert.Equal(
+			OscWriter.EncodeOsc9ProgressFrame( Osc9ProgressState.Clear, 0 ),
+			transport.GetWrite( 5 )
+		);
+		Assert.Equal(
+			CsiWriter.EncodeSynchronizedOutputEndFrame(),
+			transport.GetWrite( 6 )
+		);
+		Assert.Equal( 1, transport.FlushCount );
+	}
+
+	[Fact]
 	public async Task SemanticPromptComposesWithActiveQuery() {
 		RecordingTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync(
@@ -221,6 +362,54 @@ public sealed class TerminalSemanticPromptCompositionTests {
 		Assert.Equal(
 			Encoding.ASCII.GetBytes( "\u001b]133;D;0\u001b\\" ),
 			transport.GetWrite( 4 )
+		);
+	}
+
+	[Fact]
+	public async Task ExtendedMetadataComposesWithActiveQuery() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			TerminalProfiles.Dumb,
+			transport
+		);
+		TerminalSemanticPromptOptions prompt = new(
+			TerminalSemanticPromptKind.Secondary
+		);
+		TerminalSemanticCommandOutputOptions command = new(
+			"status --json"
+		);
+
+		await session.BeginPromptAsync( prompt );
+		Task<TerminalDeviceStatus> query = session.QueryDeviceStatusAsync(
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		Assert.False( query.IsCompleted );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b[5n" ),
+			transport.GetWrite( 1 )
+		);
+
+		await session.BeginCommandOutputAsync( command );
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b[0n" )
+		);
+		Assert.Equal( TerminalDeviceStatus.Ready, await query );
+		await session.FinishCommandAsync( 0 );
+
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b]133;A;k=s\u001b\\" ),
+			transport.GetWrite( 0 )
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b]133;C;cmdline_url=status%20--json\u001b\\"
+			),
+			transport.GetWrite( 2 )
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b]133;D;0\u001b\\" ),
+			transport.GetWrite( 3 )
 		);
 	}
 

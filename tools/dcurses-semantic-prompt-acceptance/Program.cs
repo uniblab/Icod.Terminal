@@ -18,6 +18,13 @@ byte[] inputFrame = Encoding.ASCII.GetBytes( "\u001b]133;B\u001b\\" );
 byte[] outputFrame = Encoding.ASCII.GetBytes( "\u001b]133;C\u001b\\" );
 byte[] finishedFrame = Encoding.ASCII.GetBytes( "\u001b]133;D;0\u001b\\" );
 byte[] abortedFrame = Encoding.ASCII.GetBytes( "\u001b]133;D\u001b\\" );
+byte[] extendedPromptFrame = Encoding.ASCII.GetBytes(
+	"\u001b]133;A;redraw=0;special_key=1;k=s;click_events=2\u001b\\"
+);
+byte[] extendedOutputFrame = Encoding.ASCII.GetBytes(
+	"\u001b]133;C;cmdline_url=printf%20caf%C3%A9%20%F0%9F%98%80\u001b\\"
+);
+byte[] extendedFinishedFrame = Encoding.ASCII.GetBytes( "\u001b]133;D;23\u001b\\" );
 RecordingOutput output = new();
 RecordingTerminalControlProvider provider = new();
 TerminalDescription terminal = new TerminalDescriptionBuilder(
@@ -80,6 +87,30 @@ await curses.RefreshAsync();
 await terminalSession.BeginCommandInputAsync();
 await terminalSession.AbortCommandAsync();
 
+TerminalSemanticPromptOptions extendedPrompt = new(
+	TerminalSemanticPromptKind.Secondary,
+	TerminalSemanticPromptResizeBehavior.ShellDoesNotRedrawPrompt,
+	true,
+	TerminalSemanticPromptClickMode.Relative
+);
+TerminalSemanticCommandOutputOptions extendedCommand = new(
+	"printf café 😀"
+);
+
+await terminalSession.BeginPromptAsync( extendedPrompt );
+curses.StandardScreen.Write( " extended" );
+await curses.RefreshAsync();
+
+await terminalSession.BeginCommandInputAsync();
+curses.StandardScreen.Write( " command" );
+await curses.RefreshAsync();
+
+await terminalSession.BeginCommandOutputAsync( extendedCommand );
+curses.StandardScreen.Write( " result" );
+await curses.RefreshAsync();
+
+await terminalSession.FinishCommandAsync( 23 );
+
 int promptIndex = output.IndexOf(
 	promptFrame,
 	0
@@ -108,6 +139,22 @@ int abortedIndex = output.IndexOf(
 	abortedFrame,
 	nextInputIndex + 1
 );
+int extendedPromptIndex = output.IndexOf(
+	extendedPromptFrame,
+	abortedIndex + 1
+);
+int extendedInputIndex = output.IndexOf(
+	inputFrame,
+	extendedPromptIndex + 1
+);
+int extendedOutputIndex = output.IndexOf(
+	extendedOutputFrame,
+	extendedInputIndex + 1
+);
+int extendedFinishedIndex = output.IndexOf(
+	extendedFinishedFrame,
+	extendedOutputIndex + 1
+);
 
 Require( 0 <= promptIndex, "The initial OSC 133 prompt marker was not emitted." );
 Require( promptIndex < inputIndex, "The command-input marker did not follow the prompt marker." );
@@ -133,8 +180,37 @@ Require(
 );
 Require( nextInputIndex < abortedIndex, "The abort marker did not follow the second command-input marker." );
 
+Require(
+	abortedIndex < extendedPromptIndex,
+	"The typed extended prompt marker did not follow the portable abort sequence."
+);
+Require(
+	extendedPromptIndex < extendedInputIndex,
+	"The command-input marker did not follow the typed extended prompt marker."
+);
+Require(
+	1 < extendedInputIndex - extendedPromptIndex,
+	"No DCurses refresh payload was emitted between the extended prompt and command-input markers."
+);
+Require(
+	extendedInputIndex < extendedOutputIndex,
+	"The typed cmdline_url command-output marker did not follow command input."
+);
+Require(
+	1 < extendedOutputIndex - extendedInputIndex,
+	"No DCurses refresh payload was emitted between extended command input and output markers."
+);
+Require(
+	extendedOutputIndex < extendedFinishedIndex,
+	"The extended command completion marker did not follow cmdline_url publication."
+);
+Require(
+	1 < extendedFinishedIndex - extendedOutputIndex,
+	"No DCurses refresh payload was emitted between extended output start and command completion."
+);
+
 Console.WriteLine(
-	"Icod.DCurses RefreshAsync OSC 133 semantic-prompt acceptance passed."
+	"Icod.DCurses RefreshAsync OSC 133 portable and extended semantic-metadata acceptance passed."
 );
 
 internal sealed class EmptyInput : ITerminalInput {

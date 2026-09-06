@@ -6,27 +6,23 @@
 
 ## Status
 
-`0.14.0` adds lifecycle-safe scoped ownership and exact restoration for the terminal colors introduced in 0.13.
+`0.15.0` adds typed OSC 133 extended semantic metadata while preserving the portable OSC 133 marker API introduced in 0.12 byte-for-byte.
 
-The stable color surface includes:
+The new surface supports:
 
-- OSC 4 indexed-palette set/query and lifecycle-safe scoped ownership;
-- OSC 104 indexed-palette terminal-policy reset;
-- OSC 10 / 110 default foreground;
-- OSC 11 / 111 default background;
-- OSC 12 / 112 text cursor;
-- OSC 13 / 113 mouse foreground;
-- OSC 14 / 114 mouse background;
-- OSC 17 / 117 highlight background;
-- OSC 19 / 119 highlight foreground;
-- lifecycle-safe scoped ownership for all seven selected dynamic-color identities.
+- typed primary/secondary prompt metadata;
+- shell no-redraw declaration (`redraw=0`);
+- special cursor-key declaration (`special_key=1`);
+- absolute/relative prompt click metadata (`click_events=1|2`);
+- typed command-line publication through `C;cmdline_url=...`;
+- strict UTF-8 byte percent encoding and bounded payload construction.
 
-OSC 15/16/18 and resets 115/116/118 remain deliberately excluded as Tektronix-specific dynamic colors.
+The 0.14 lifecycle-safe color ownership/restoration surface remains unchanged.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 0.14.0
+dotnet add package Icod.Terminal --version 0.15.0
 ```
 
 The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
@@ -48,18 +44,95 @@ watch / slabtop / top
 
 `Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, active terminal-query routing, and semantic terminal-output operations. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy.
 
-## Quick start — lifecycle-safe colors
+## OSC 133 semantic prompt markers
+
+The portable API remains the simplest and broadest path:
 
 ```csharp
-using Icod.Terminal;
+await session.BeginPromptAsync();
+await session.BeginCommandInputAsync();
+await session.BeginCommandOutputAsync();
+await session.FinishCommandAsync( 0 );
 
-await using TerminalSession session = await TerminalSession.OpenAsync(
-	new TerminalSessionOptions {
-		InputMode = TerminalInputMode.CBreak,
-		EchoInput = false
-	}
+// A cancelled/aborted region is a bare D marker, not status zero.
+await session.AbortCommandAsync();
+```
+
+These continue to emit bare `A`, `B`, `C`, `D;status`, and bare `D` forms exactly as in 0.12.
+
+### Extended prompt metadata
+
+0.15 adds typed prompt options:
+
+```csharp
+TerminalSemanticPromptOptions prompt = new(
+	TerminalSemanticPromptKind.Secondary,
+	TerminalSemanticPromptResizeBehavior.ShellDoesNotRedrawPrompt,
+	true,
+	TerminalSemanticPromptClickMode.Relative
 );
 
+await session.BeginPromptAsync( prompt );
+```
+
+That example emits parameters in canonical order:
+
+```text
+OSC 133;A;redraw=0;special_key=1;k=s;click_events=2 ST
+```
+
+`default(TerminalSemanticPromptOptions)` is valid and equivalent to the portable bare `A` method.
+
+`click_events=1` is the broader cross-terminal tier documented by Kitty and Contour. `redraw=0`, `special_key=1`, `k=s`, and `click_events=2` are narrower Kitty-documented extensions. `Icod.Terminal` does not infer support from terminal brand.
+
+### Command-line metadata
+
+Command-line publication is explicit caller intent:
+
+```csharp
+TerminalSemanticCommandOutputOptions command = new(
+	"printf 'café 😀'"
+);
+
+await session.BeginCommandOutputAsync( command );
+```
+
+0.15 publishes command text only as `cmdline_url`. Shell-specific `%q` `cmdline=` is deliberately not exposed.
+
+The semantic distinction is:
+
+```text
+CommandLine == null  -> bare C
+CommandLine == ""    -> C;cmdline_url=
+otherwise            -> C;cmdline_url=<encoded-value>
+```
+
+The encoder validates well-formed Unicode, converts with strict UTF-8, emits only RFC 3986 unreserved bytes literally (`A-Z a-z 0-9 - . _ ~`), and percent-encodes every other UTF-8 byte as uppercase `%HH`. The maximum encoded OSC 133 payload is 65,536 bytes; oversize input is rejected before output and is never truncated.
+
+### Command-line privacy
+
+Command lines can contain passwords, bearer tokens, private paths, host names, environment values, or other sensitive information. Terminal emulators and shell-integration/history features may retain or expose published metadata.
+
+Percent encoding protects OSC framing; it does **not** provide confidentiality. `Icod.Terminal` does not inspect shell history/process command lines, infer sensitivity, or automatically redact secrets. Applications should publish command-line metadata only when that disclosure is appropriate.
+
+### OSC 133 lifecycle and ordering
+
+Semantic markers remain ephemeral output metadata:
+
+- no session-open automatic OSC 133 emission;
+- no background OSC 133 listener/support cache;
+- no lifecycle lease or resume replay;
+- no synthetic completion/abort on disposal;
+- no OSC 133 traffic from `InvalidateState()`;
+- no implicit shell command-region state machine.
+
+All marker calls use the existing `TerminalSession` output serialization domain. Pre-commit cancellation emits nothing; committed frames are written as one non-cancellable transport write and are not implicitly flushed.
+
+## Lifecycle-safe colors
+
+0.14 introduced query-before-mutate scoped ownership for indexed palette colors and seven selected dynamic-color identities. That contract remains stable in 0.15.
+
+```csharp
 TimeSpan timeout = TimeSpan.FromMilliseconds( 750 );
 
 await using TerminalPaletteColorLease palette =
@@ -77,147 +150,26 @@ await using TerminalDynamicColorLease cursor =
 	);
 ```
 
-The first owner queries the real external color before mutation. Final release explicitly replays that observed value. Reset sequences are not used as restoration.
+The first owner queries the real external color before mutation. Final release explicitly replays that observed value. OSC 104 and OSC 110–119 remain terminal-policy resets and are not used as restoration.
 
-`TerminalColor` preserves normalized 16-bit RGB channels:
-
-```csharp
-TerminalColor color = new(
-	0x1234,
-	0x5678,
-	0x9abc
-);
-
-TerminalColor fromBytes = TerminalColor.FromRgb8(
-	0x12,
-	0x34,
-	0x56
-);
-```
-
-`FromRgb8(...)` expands bytes by multiplication by 257, so `0x12` becomes `0x1212`.
-
-## Scoped ownership contract
-
-Both ownership APIs are query-before-mutate:
-
-```csharp
-ValueTask<TerminalPaletteColorLease> AcquirePaletteColorAsync(
-	byte index,
-	TerminalColor color,
-	TimeSpan queryTimeout,
-	CancellationToken cancellationToken = default
-);
-
-ValueTask<TerminalDynamicColorLease> AcquireDynamicColorAsync(
-	TerminalDynamicColor kind,
-	TerminalColor color,
-	TimeSpan queryTimeout,
-	CancellationToken cancellationToken = default
-);
-```
-
-The ownership model is identity-aware and ordered:
-
-- the first owner captures the exact external baseline;
-- later owners for the same identity nest without re-querying merely because of nesting;
-- owners may be disposed out of order;
-- releasing the controlling owner reapplies the next active owner;
-- releasing the final owner restores the external baseline explicitly;
-- different palette indices and dynamic-color identities remain independent;
-- failed restoration retains logical cleanup responsibility so disposal can be retried.
-
-`TerminalSession.InvalidateState()` marks physical color state uncertain without discarding logical ownership or the current lifecycle-epoch baseline.
-
-Before managed suspend, active scoped colors restore their external baselines. After resume, old observations are no longer treated as authoritative: retained owners use the session's internal observation phase to establish fresh external baselines before owned colors are reapplied.
-
-Session disposal is the final cleanup owner. Active color leases do not need to be disposed first, and late lease disposal after successful session cleanup is a no-op.
-
-## Indexed palette — OSC 4 / 104
-
-Unscoped set and observation remain available:
-
-```csharp
-await session.SetPaletteColorAsync(
-	1,
-	TerminalColor.FromRgb8( 255, 64, 64 )
-);
-
-TerminalColor color = await session.QueryPaletteColorAsync(
-	1,
-	TimeSpan.FromMilliseconds( 750 )
-);
-```
-
-Bounded multi-entry mutation remains available through `SetPaletteColorsAsync(...)`.
-
-Terminal-policy reset remains explicit:
-
-```csharp
-await session.ResetPaletteColorAsync( 1 );
-await session.ResetPaletteColorsAsync( [ 1, 2, 3 ] );
-await session.ResetPaletteAsync();
-```
-
-The scoped-ownership exclusion is manager-family-wide: while any palette-color lease is active, every unscoped palette set/reset operation is rejected, including operations targeting other indices and reset-all. This prevents an unscoped writer from silently invalidating the exact-restoration contract. Explicit palette observation remains allowed.
-
-## Dynamic colors — OSC 10–14, 17, 19
-
-The semantic identities are:
-
-```csharp
-TerminalDynamicColor.DefaultForeground
-TerminalDynamicColor.DefaultBackground
-TerminalDynamicColor.TextCursor
-TerminalDynamicColor.MouseForeground
-TerminalDynamicColor.MouseBackground
-TerminalDynamicColor.HighlightBackground
-TerminalDynamicColor.HighlightForeground
-```
-
-The common/core interoperability tier is OSC 10/11/12. OSC 13/14/17/19 are the extended xterm tier and may have lower support across terminal implementations.
-
-The scoped-ownership exclusion is also manager-family-wide for dynamic colors: while any dynamic-color lease is active, every unscoped dynamic set/reset operation is rejected, including operations targeting another dynamic-color identity. Explicit dynamic-color observation remains allowed.
-
-## Reset is not restoration
-
-OSC 104 and OSC 110–119 request terminal policy/defaults. They do not mean “restore the value that existed before this application changed it.”
-
-0.14 scoped leases restore by explicit set-form replay:
-
-```text
-palette: OSC 4 ; index ; observed-color ST
-dynamic: OSC Ps ; observed-color ST
-```
-
-This distinction is part of the stable 0.14 contract.
-
-## Query semantics
-
-Color observation and baseline acquisition reuse the existing session-owned active-query transaction/router.
-
-- opening a session performs no automatic global color probing;
-- no second response reader is introduced;
-- each query has an explicit finite timeout;
-- caller cancellation remains distinct from timeout;
-- correlated malformed color replies fail with `FormatException`;
-- timeout is not converted into permanent unsupported state;
-- unrelated application input remains on the normal session path.
-
-Canonical outbound colors use `rgb:rrrr/gggg/bbbb` with four lowercase hexadecimal digits per channel. Inbound observations accept the documented strict `rgb:` and hash forms while rejecting unrelated color syntaxes.
+The ownership exclusion remains manager-family-wide: any active palette lease blocks unscoped palette set/reset operations; any active dynamic-color lease blocks unscoped dynamic set/reset operations. Explicit observation remains allowed.
 
 ## Downstream Icod.DCurses acceptance
 
-The T146 downstream acceptance proves that `Icod.DCurses 0.1.0` can operate over a `TerminalSession` with active scoped palette/dynamic-color ownership, consume those owned colors through its normal RGB style path, render normally, and trigger exact baseline restoration when it disposes the `TerminalSession` it owns.
+The real `Icod.DCurses 0.1.0` acceptance suite runs on net8/net9/net10.
 
-Current `Icod.DCurses` uses 8-bit `CursesColor.Rgb`, so downstream precision adaptation is explicit. `Icod.Terminal` itself preserves 16-bit channels.
+For 0.15, the semantic-prompt acceptance retains the portable OSC 133 sequence and additionally runs a typed extended sequence through an owned `TerminalSession`, requiring real `CursesSession.RefreshAsync()` output between semantic boundaries. No raw OSC shortcut or side-channel writer is used.
 
-The stable public contract is recorded in [`docs/Public-API-Baseline-0.14.md`](docs/Public-API-Baseline-0.14.md). T146 composition/downstream acceptance is recorded in [`docs/T146-Composition-and-DCurses-Scoped-Color-Acceptance.md`](docs/T146-Composition-and-DCurses-Scoped-Color-Acceptance.md).
+The stable public contracts are recorded in:
+
+- [`docs/Public-API-Baseline-0.15.md`](docs/Public-API-Baseline-0.15.md) — OSC 133 extended semantic metadata;
+- [`docs/Public-API-Baseline-0.14.md`](docs/Public-API-Baseline-0.14.md) — lifecycle-safe color ownership/restoration.
 
 ## Previous release highlights
 
-- **0.13** — observable OSC 4/104 and selected OSC 10–19 terminal colors. See [`docs/Public-API-Baseline-0.13.md`](docs/Public-API-Baseline-0.13.md).
-- **0.12** — OSC 133 semantic prompt/command-region markers.
+- **0.14** — lifecycle-safe scoped color ownership and exact restoration.
+- **0.13** — observable OSC 4/104 and selected OSC 10–19 terminal colors.
+- **0.12** — portable OSC 133 semantic prompt/command-region markers.
 - **0.11** — OSC 22 pointer shape.
 - **0.10** — OSC 9;4 progress.
 - **0.9** — DEC private mode 2026 synchronized output.
@@ -231,8 +183,9 @@ The stable public contract is recorded in [`docs/Public-API-Baseline-0.14.md`](d
 
 Focused samples include:
 
+- [`Icod.Terminal.SemanticPrompt.Sample`](samples/Icod.Terminal.SemanticPrompt.Sample/) — portable and typed extended OSC 133 metadata, including command-line privacy guidance;
 - [`Icod.Terminal.Color.Sample`](samples/Icod.Terminal.Color.Sample/) — observable colors plus lifecycle-safe scoped ownership;
-- semantic prompt, pointer shape, progress, synchronized output, cursor style, clipboard, hyperlink, location, title, active-query, rich-input, and minimal live-session samples.
+- pointer shape, progress, synchronized output, cursor style, clipboard, hyperlink, location, title, active-query, rich-input, and minimal live-session samples.
 
 See [`samples/README.md`](samples/README.md) for run instructions.
 
@@ -252,25 +205,25 @@ sh build.sh
 
 Distribution validation builds/tests the solution, runs real downstream `Icod.DCurses` acceptance, packs the NuGet artifact, verifies package structure/XML documentation, and runs fresh package-only consumers.
 
-The retained 0.8–0.13 package contracts and the new 0.14 lifecycle-safe color ownership contract run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
+The retained 0.8–0.14 package contracts and the new 0.15 OSC 133 extended semantic-metadata contract run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
 
 ## Release process
 
-Publishing 0.14.0 requires:
+Publishing 0.15.0 requires:
 
 1. exact stable PR-head validation green on Windows, Linux, and macOS;
 2. exact Staging package verification green;
 3. all real downstream `Icod.DCurses` acceptance gates green;
-4. retained 0.8–0.13 plus new 0.14 XML/package-only smoke gates green on all supported TFMs;
+4. retained 0.8–0.14 plus new 0.15 XML/package-only smoke gates green on all supported TFMs;
 5. merge to `main`;
 6. Release validation green on the resulting exact `main` commit;
-7. only then create tag `v0.14.0`.
+7. only then create tag `v0.15.0`.
 
-The tagged workflow reruns build/tests, downstream acceptance, exact package selection, historical package contracts, and the 0.14 ownership package contract before publication to NuGet.org and GitHub Packages.
+The tagged workflow reruns build/tests, downstream acceptance, exact package selection, historical package contracts, and the 0.15 semantic-metadata package contract before publication to NuGet.org and GitHub Packages.
 
 ## Development roadmap
 
-The 0.14 milestone is documented in [`Icod.Terminal-0.14.0-Development-Roadmap.md`](Icod.Terminal-0.14.0-Development-Roadmap.md), with tranche records T140–T147 under `docs/`.
+The 0.15 milestone is documented in [`Icod.Terminal-0.15.0-Development-Roadmap.md`](Icod.Terminal-0.15.0-Development-Roadmap.md), with tranche records T150–T157 under `docs/`.
 
 ## License
 

@@ -19,7 +19,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.14.0 adds lifecycle-safe terminal color ownership: query-before-mutate palette and dynamic-color leases; exact observed 16-bit baseline replay; identity-aware nested and out-of-order ownership; invalidation recovery; suspend baseline restoration and post-resume re-observation before retained-state reapply; restoration retry semantics; session-disposal cleanup; concurrency/failure hardening; and downstream Icod.DCurses scoped-color acceptance. OSC 104 and OSC 110-119 remain terminal-policy resets and are never substituted for exact lease restoration.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.15.0 adds typed OSC 133 extended semantic metadata while preserving the portable 0.12 A/B/C/D marker contract byte-for-byte. New prompt metadata covers secondary prompts, shell no-redraw declaration, special cursor-key declaration, and absolute/relative click events. New command-output metadata publishes explicit caller-supplied command lines through cross-terminal cmdline_url using strict UTF-8 byte percent encoding, uppercase percent escapes, malformed-Unicode rejection, and a 65,536-byte encoded payload bound. The release adds lifecycle/failure/concurrency hardening, real Icod.DCurses downstream acceptance, and a fresh net8/net9/net10 NuGet-only package contract. Shell-specific percent-q cmdline metadata, automatic command capture, and secret redaction remain deliberately excluded.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -30,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;osc133;semantic-prompt;shell-integration;prompt;command-region;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;color-ownership;scoped-color;lifecycle;restoration;tui</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;contour;osc133;semantic-prompt;shell-integration;prompt;command-region;cmdline-url;prompt-click;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;color-ownership;scoped-color;lifecycle;restoration;tui</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>

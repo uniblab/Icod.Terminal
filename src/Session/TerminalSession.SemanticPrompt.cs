@@ -28,6 +28,32 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
+	/// Emits an OSC 133 prompt-start marker with typed extended semantic metadata.
+	/// </summary>
+	/// <param name="options">Validated prompt metadata. The default value is equivalent to the portable bare prompt marker.</param>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing marker emission.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">One of the option enum values is undefined.</exception>
+	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
+	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
+	/// <remarks>
+	/// The operation emits only explicitly represented metadata in the canonical 0.15 parameter order.
+	/// It does not probe terminal support, configure shell bindings, or enable a mouse protocol.
+	/// </remarks>
+	public ValueTask BeginPromptAsync(
+		TerminalSemanticPromptOptions options,
+		CancellationToken cancellationToken = default
+	) {
+		options.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.WriteExtendedSemanticPromptAsync(
+			options,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
 	/// Emits the portable OSC 133 semantic marker indicating that command input begins.
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
@@ -67,6 +93,44 @@ public sealed partial class TerminalSession {
 		cancellationToken.ThrowIfCancellationRequested();
 		return this.WriteSemanticPromptMarkerAsync(
 			TerminalSemanticPromptMarker.CreateCommandOutputStart(),
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Emits an OSC 133 command-output marker with optional typed command-line metadata.
+	/// </summary>
+	/// <param name="options">
+	/// Command-output metadata. The default value is equivalent to the portable bare command-output marker.
+	/// A non-null command line is encoded as <c>cmdline_url</c>.
+	/// </param>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing marker emission.</returns>
+	/// <exception cref="ArgumentException">
+	/// The supplied command line is ill-formed Unicode or its encoded OSC 133 payload exceeds the 0.15 safety bound.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
+	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
+	/// <remarks>
+	/// Command-line publication is explicit caller intent. The library does not inspect shell history,
+	/// capture process command lines, parse shell syntax, infer sensitivity, or redact secrets. Percent
+	/// encoding protects OSC framing only and does not provide confidentiality.
+	/// </remarks>
+	public ValueTask BeginCommandOutputAsync(
+		TerminalSemanticCommandOutputOptions options,
+		CancellationToken cancellationToken = default
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( options.CommandLine is null ) {
+			return this.WriteSemanticPromptMarkerAsync(
+				TerminalSemanticPromptMarker.CreateCommandOutputStart(),
+				cancellationToken
+			);
+		}
+
+		return this.WriteExtendedSemanticCommandOutputAsync(
+			options.CommandLine,
 			cancellationToken
 		);
 	}
@@ -134,6 +198,49 @@ public sealed partial class TerminalSession {
 		await TerminalSemanticPromptMarkerCodec.WriteAsync(
 			this.Output,
 			marker,
+			cancellationToken
+		).ConfigureAwait( false );
+	}
+
+	private async ValueTask WriteExtendedSemanticPromptAsync(
+		TerminalSemanticPromptOptions options,
+		CancellationToken cancellationToken
+	) {
+		options.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateSemanticPromptOutputEndpoint();
+
+		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		await OscWriter.WriteOsc133PromptStartAsync(
+			this.Output,
+			TerminalSemanticPromptResizeBehavior.ShellDoesNotRedrawPrompt == options.ResizeBehavior,
+			options.UseSpecialCursorKey,
+			TerminalSemanticPromptKind.Secondary == options.Kind,
+			(byte)options.ClickMode,
+			cancellationToken
+		).ConfigureAwait( false );
+	}
+
+	private async ValueTask WriteExtendedSemanticCommandOutputAsync(
+		string commandLine,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( commandLine );
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateSemanticPromptOutputEndpoint();
+
+		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		await OscWriter.WriteOsc133CommandOutputStartAsync(
+			this.Output,
+			commandLine,
 			cancellationToken
 		).ConfigureAwait( false );
 	}
