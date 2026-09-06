@@ -26,12 +26,28 @@ public readonly struct TerminalColor : IEquatable<TerminalColor> {
 		byte green,
 		byte blue
 	);
+
+	public bool Equals( TerminalColor other );
+	public override bool Equals( object? obj );
+	public override int GetHashCode();
+
+	public static bool operator ==(
+		TerminalColor left,
+		TerminalColor right
+	);
+
+	public static bool operator !=(
+		TerminalColor left,
+		TerminalColor right
+	);
 }
 ```
 
 `TerminalColor` is normalized 16-bit RGB. It carries no alpha channel, color-space tag, raw wire spelling, terminal identity, or `System.Drawing` dependency.
 
 `FromRgb8(...)` expands each byte by multiplying by 257 so both endpoints and repeated-byte precision are preserved.
+
+Equality, `GetHashCode()`, `==`, and `!=` are defined over the three normalized 16-bit channel values.
 
 ### `TerminalPaletteColor`
 
