@@ -59,7 +59,14 @@ public sealed class TerminalLifecycleEvent {
 /// <remarks>
 /// Participants run from the session lifecycle pump, never from a native signal callback.
 /// Preparation runs in reverse registration order before Terminal releases its own presentation
-/// and host mode state. Resume runs in registration order after Terminal has re-entered that state.
+/// and host mode state. Resume runs in registration order after Terminal has re-entered the
+/// ordinary host/presentation/input-protocol state needed by participants.
+///
+/// Public terminal queries remain unavailable while participant resume callbacks execute. A
+/// participant must not use <see cref="TerminalSession"/> query APIs from
+/// <see cref="ResumeAfterTerminalSuspendAsync(CancellationToken)"/>. The session publishes
+/// <see cref="TerminalLifecycleEventKind.Resumed"/> only after participant resume and the normal
+/// public query path have both returned to their live state.
 /// </remarks>
 public interface ITerminalSessionLifecycleParticipant {
 	/// <summary>Prepares higher-layer terminal state before the process is suspended.</summary>
@@ -69,9 +76,13 @@ public interface ITerminalSessionLifecycleParticipant {
 		CancellationToken cancellationToken = default
 	);
 
-	/// <summary>Re-establishes higher-layer state after Terminal has completed resume re-entry.</summary>
+	/// <summary>Re-establishes higher-layer state after Terminal has completed ordinary resume re-entry.</summary>
 	/// <param name="cancellationToken">Cancellation for participant re-entry.</param>
 	/// <returns>A value task representing asynchronous re-entry.</returns>
+	/// <remarks>
+	/// Public terminal queries are deliberately unavailable during this callback. Observation-dependent
+	/// session-owned state uses a separate internal lifecycle phase and does not widen this public contract.
+	/// </remarks>
 	ValueTask ResumeAfterTerminalSuspendAsync(
 		CancellationToken cancellationToken = default
 	);
