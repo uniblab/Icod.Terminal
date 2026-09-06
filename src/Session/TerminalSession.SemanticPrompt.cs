@@ -98,6 +98,44 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
+	/// Emits an OSC 133 command-output marker with optional typed command-line metadata.
+	/// </summary>
+	/// <param name="options">
+	/// Command-output metadata. The default value is equivalent to the portable bare command-output marker.
+	/// A non-null command line is encoded as <c>cmdline_url</c>.
+	/// </param>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing marker emission.</returns>
+	/// <exception cref="ArgumentException">
+	/// The supplied command line is ill-formed Unicode or its encoded OSC 133 payload exceeds the 0.15 safety bound.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
+	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
+	/// <remarks>
+	/// Command-line publication is explicit caller intent. The library does not inspect shell history,
+	/// capture process command lines, parse shell syntax, infer sensitivity, or redact secrets. Percent
+	/// encoding protects OSC framing only and does not provide confidentiality.
+	/// </remarks>
+	public ValueTask BeginCommandOutputAsync(
+		TerminalSemanticCommandOutputOptions options,
+		CancellationToken cancellationToken = default
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		if ( options.CommandLine is null ) {
+			return this.WriteSemanticPromptMarkerAsync(
+				TerminalSemanticPromptMarker.CreateCommandOutputStart(),
+				cancellationToken
+			);
+		}
+
+		return this.WriteExtendedSemanticCommandOutputAsync(
+			options.CommandLine,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
 	/// Emits the portable OSC 133 semantic marker indicating that a command finished with an exit status.
 	/// </summary>
 	/// <param name="exitStatus">The command exit status in the portable OSC 133 range 0 through 255.</param>
@@ -183,6 +221,26 @@ public sealed partial class TerminalSession {
 			options.UseSpecialCursorKey,
 			TerminalSemanticPromptKind.Secondary == options.Kind,
 			(byte)options.ClickMode,
+			cancellationToken
+		).ConfigureAwait( false );
+	}
+
+	private async ValueTask WriteExtendedSemanticCommandOutputAsync(
+		string commandLine,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( commandLine );
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateSemanticPromptOutputEndpoint();
+
+		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		await OscWriter.WriteOsc133CommandOutputStartAsync(
+			this.Output,
+			commandLine,
 			cancellationToken
 		).ConfigureAwait( false );
 	}
