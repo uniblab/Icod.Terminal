@@ -19,7 +19,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>0.12.0 adds semantic OSC 133 prompt/command-region markers with typed prompt, command-input, command-output, explicit byte exit-status completion, and abort operations; deterministic session serialization; truthful stateless lifecycle/failure behavior; broad composition coverage; and downstream Icod.DCurses refresh acceptance.</PackageReleaseNotes>
+		<PackageReleaseNotes>0.13.0 adds observable terminal color control: 16-bit TerminalColor values; OSC 4 indexed-palette mutation/query and OSC 104 reset; semantic OSC 10-14/17/19 dynamic-color mutation/query with resets 110-114/117/119; strict color response parsing; explicit unscoped lifecycle semantics; and downstream Icod.DCurses typed color-observation acceptance.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -30,7 +30,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;osc133;semantic-prompt;shell-integration;prompt;command-region;tui</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;osc133;semantic-prompt;shell-integration;prompt;command-region;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;tui</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
