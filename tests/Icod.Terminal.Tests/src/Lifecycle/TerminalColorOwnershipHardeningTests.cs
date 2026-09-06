@@ -348,6 +348,7 @@ public sealed class TerminalColorOwnershipHardeningTests {
 				lock ( this.writes ) {
 					return this.writes.Count;
 				}
+			}
 		}
 
 		internal void FailNextWrite() {
