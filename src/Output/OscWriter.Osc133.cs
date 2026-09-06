@@ -97,6 +97,8 @@ internal static partial class OscWriter {
 		byte clickEvents,
 		CancellationToken cancellationToken = default
 	) {
+		ArgumentNullException.ThrowIfNull( output );
+		cancellationToken.ThrowIfCancellationRequested();
 		return WriteOsc133FrameAsync(
 			output,
 			EncodeOsc133PromptStartFrame(
@@ -136,7 +138,9 @@ internal static partial class OscWriter {
 		string commandLine,
 		CancellationToken cancellationToken = default
 	) {
+		ArgumentNullException.ThrowIfNull( output );
 		ArgumentNullException.ThrowIfNull( commandLine );
+		cancellationToken.ThrowIfCancellationRequested();
 		return WriteOsc133FrameAsync(
 			output,
 			EncodeOsc133CommandOutputStartFrame( commandLine ),
