@@ -159,7 +159,7 @@ await session.ResetPaletteColorsAsync( [ 1, 2, 3 ] );
 await session.ResetPaletteAsync();
 ```
 
-Unscoped palette mutation/reset is rejected while scoped palette ownership is active so it cannot silently invalidate the exact-restoration contract. Explicit observation remains allowed.
+The scoped-ownership exclusion is manager-family-wide: while any palette-color lease is active, every unscoped palette set/reset operation is rejected, including operations targeting other indices and reset-all. This prevents an unscoped writer from silently invalidating the exact-restoration contract. Explicit palette observation remains allowed.
 
 ## Dynamic colors — OSC 10–14, 17, 19
 
@@ -177,7 +177,7 @@ TerminalDynamicColor.HighlightForeground
 
 The common/core interoperability tier is OSC 10/11/12. OSC 13/14/17/19 are the extended xterm tier and may have lower support across terminal implementations.
 
-Unscoped set/query/reset remain available, but set/reset are rejected while scoped dynamic-color ownership is active.
+The scoped-ownership exclusion is also manager-family-wide for dynamic colors: while any dynamic-color lease is active, every unscoped dynamic set/reset operation is rejected, including operations targeting another dynamic-color identity. Explicit dynamic-color observation remains allowed.
 
 ## Reset is not restoration
 
