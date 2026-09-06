@@ -38,26 +38,15 @@ public sealed class Osc9SafeTextWriterTests {
 		);
 	}
 
-	[Theory]
-	[InlineData( "\u0000" )]
-	[InlineData( "\u0007" )]
-	[InlineData( "\u0009" )]
-	[InlineData( "\u000a" )]
-	[InlineData( "\u001b" )]
-	[InlineData( "\u001f" )]
-	[InlineData( "\u007f" )]
-	[InlineData( "\u0080" )]
-	[InlineData( "\u009b" )]
-	[InlineData( "\u009c" )]
-	[InlineData( "\u009f" )]
-	public void NotificationRejectsControls(
-		string control
-	) {
-		Assert.Throws<ArgumentException>(
-			() => OscWriter.EncodeOsc9NotificationFrame(
-				"before" + control + "after"
-			)
-		);
+	[Fact]
+	public void NotificationRejectsEveryC0DelAndC1Control() {
+		foreach ( char control in EnumerateForbiddenControls() ) {
+			Assert.Throws<ArgumentException>(
+				() => OscWriter.EncodeOsc9NotificationFrame(
+					"before" + control + "after"
+				)
+			);
+		}
 	}
 
 	[Fact]
@@ -90,6 +79,23 @@ public sealed class Osc9SafeTextWriterTests {
 
 		Assert.Throws<ArgumentException>(
 			() => OscWriter.EncodeOsc9NotificationFrame( message )
+		);
+	}
+
+	[Fact]
+	public void NotificationPayloadLimitCountsUtf8Bytes() {
+		string exact = new(
+			'é',
+			( TerminalOsc9SafeTextEncoder.MaximumNotificationPayloadLength - 2 ) / 2
+		);
+		byte[] frame = OscWriter.EncodeOsc9NotificationFrame( exact );
+
+		Assert.Equal(
+			TerminalOsc9SafeTextEncoder.MaximumNotificationPayloadLength + 4,
+			frame.Length
+		);
+		Assert.Throws<ArgumentException>(
+			() => OscWriter.EncodeOsc9NotificationFrame( exact + "a" )
 		);
 	}
 
@@ -129,19 +135,15 @@ public sealed class Osc9SafeTextWriterTests {
 		);
 	}
 
-	[Theory]
-	[InlineData( "\u0007" )]
-	[InlineData( "\u001b" )]
-	[InlineData( "\u007f" )]
-	[InlineData( "\u009c" )]
-	public void WindowsCurrentDirectoryRejectsControls(
-		string control
-	) {
-		Assert.Throws<ArgumentException>(
-			() => OscWriter.EncodeOsc9WindowsCurrentDirectoryFrame(
-				"C:\\before" + control + "after"
-			)
-		);
+	[Fact]
+	public void WindowsCurrentDirectoryRejectsEveryC0DelAndC1Control() {
+		foreach ( char control in EnumerateForbiddenControls() ) {
+			Assert.Throws<ArgumentException>(
+				() => OscWriter.EncodeOsc9WindowsCurrentDirectoryFrame(
+					"C:\\before" + control + "after"
+				)
+			);
+		}
 	}
 
 	[Fact]
@@ -176,6 +178,30 @@ public sealed class Osc9SafeTextWriterTests {
 
 		Assert.Throws<ArgumentException>(
 			() => OscWriter.EncodeOsc9WindowsCurrentDirectoryFrame( path )
+		);
+	}
+
+	[Fact]
+	public void WindowsCurrentDirectoryPayloadLimitCountsUtf8Bytes() {
+		const string prefix = "C:\\";
+		int valueByteBudget = TerminalOsc9SafeTextEncoder.MaximumWindowsCurrentDirectoryPayloadLength
+			- 4
+			- prefix.Length;
+		string exact = string.Concat(
+			prefix,
+			new string( 'é', valueByteBudget / 2 ),
+			0 == valueByteBudget % 2
+				? string.Empty
+				: "a"
+		);
+		byte[] frame = OscWriter.EncodeOsc9WindowsCurrentDirectoryFrame( exact );
+
+		Assert.Equal(
+			TerminalOsc9SafeTextEncoder.MaximumWindowsCurrentDirectoryPayloadLength + 4,
+			frame.Length
+		);
+		Assert.Throws<ArgumentException>(
+			() => OscWriter.EncodeOsc9WindowsCurrentDirectoryFrame( exact + "a" )
 		);
 	}
 
@@ -246,6 +272,16 @@ public sealed class Osc9SafeTextWriterTests {
 
 		Assert.Empty( output.Writes );
 		Assert.Equal( 0, output.FlushCount );
+	}
+
+	private static IEnumerable<char> EnumerateForbiddenControls() {
+		for ( int value = 0x0000; value <= 0x001f; ++value ) {
+			yield return (char)value;
+		}
+		yield return '\u007f';
+		for ( int value = 0x0080; value <= 0x009f; ++value ) {
+			yield return (char)value;
+		}
 	}
 
 	private sealed class RecordingTerminalOutput : ITerminalOutput {
