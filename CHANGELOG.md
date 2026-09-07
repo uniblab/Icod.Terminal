@@ -1,0 +1,60 @@
+# Changelog
+
+Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, T-series records, and public-API baseline documents.
+
+## Unreleased
+
+No unreleased 1.x changes are currently recorded.
+
+## 1.0.0-rc1
+
+### Contract freeze
+
+- Freezes the intended `Icod.Terminal` 1.x public contract across `net8.0`, `net9.0`, and `net10.0`.
+- Machine-freezes the exported public API and every public enum numeric value.
+- Establishes permanent architecture, ownership, lifecycle, input/query, presentation/output, security, compatibility, and migration documentation.
+- Defines conservative SemVer expectations for the 1.x line.
+
+### Breaking change
+
+- Removes public `TerminalSession.Input` from a live session so the session retains one authoritative input decoder/query router.
+- Retains public `ITerminalInput` for custom transport injection.
+- Retains `TerminalSession.Output` as an explicitly advanced borrowed output transport outside normal session serialization.
+
+### Validation and packaging
+
+- Adds fresh NuGet-only 1.0 package validation on all supported TFMs.
+- Retains package-only compatibility gates for 0.8 through 0.18.
+- Adds a frozen API fingerprint gate to PR and Release distribution validation.
+- Adds current `Icod.DCurses 0.1.0` project-reference and package-boundary compatibility/ownership acceptance.
+- Qualifies the merged rc1 candidate under Release on Windows x64/ARM64, Linux x64/ARM64, and macOS x64/ARM64.
+
+### Documentation
+
+- Replaces release-number-oriented documentation as the primary consumer authority with permanent 1.x documents.
+- Adds a dedicated migration guide from `0.18.0`.
+- Reorganizes samples by task rather than historical release number.
+- Preserves the original long-form development roadmap under `docs/history/`.
+
+See `docs/releases/1.0.0-rc1.md` for the full curated release notes.
+
+## Pre-1.0 highlights
+
+- **0.18.0 — Hardening and invariant closure:** parser/query, lifecycle/composition, rollback/cancellation, platform restoration, package hardening, and downstream soak.
+- **0.17.0 — Modern keyboard:** negotiated Kitty keyboard reporting, traditional fallback, full-screen choreography, and decode-only xterm `modifyOtherKeys` compatibility.
+- **0.16.0 — Safe OSC 9:** bounded desktop notifications, terminal progress, and Windows/ConEmu current-directory compatibility; hazardous OSC 9 vendor commands remain excluded.
+- **0.15.0 — Extended semantic metadata:** bounded OSC 133 command/prompt metadata.
+- **0.14.0 — Lifecycle-safe color ownership:** scoped exact restoration for observable terminal color state.
+- **0.13.0 — Terminal colors:** indexed palette and selected dynamic color query/set/reset support.
+- **0.12.0 — Semantic prompts:** OSC 133 prompt/command-region semantics.
+- **0.11.0 — Pointer shape:** semantic OSC 22 mouse-pointer shape support.
+- **0.10.0 — Terminal progress:** semantic OSC 9;4 progress state.
+- **0.9.0 — Synchronized output:** DEC private mode 2026 ownership and acceptance.
+- **0.8.0 — Cursor style:** semantic DECSCUSR/DECRQSS cursor-style observation and ownership.
+- **0.7.0 — Clipboard:** bounded OSC 52 read/write support.
+- **0.6.0 — Hyperlinks:** validated OSC 8 hyperlink semantics.
+- **0.5.0 — Current location:** canonical OSC 7 `file:` URI publication.
+- **0.4.0 — Titles:** semantic OSC 0/1/2 title operations.
+- **0.3.x — Queries:** typed live terminal query/correlation foundation.
+- **0.2.x — Rich input:** focus, bracketed paste, mouse/input framing, and bounded decoding.
+- **0.1.x — Foundation:** live terminal session/control abstractions, platform mode handling, lifecycle, and custom transport/provider seams.

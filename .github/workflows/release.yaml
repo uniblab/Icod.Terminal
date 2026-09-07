@@ -60,6 +60,14 @@ jobs:
           $version = $Matches.version
           "version=$version" >> $env:GITHUB_OUTPUT
           "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+      - name: Require curated release notes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $notesPath = Join-Path $PWD "docs/releases/$version.md"
+          if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+              throw "Tagged release '$version' requires curated release notes at '$notesPath'."
+          }
 
   package:
     needs: metadata
@@ -75,6 +83,9 @@ jobs:
       - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
       - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
+      - name: Verify frozen 1.0 public API baseline
+        shell: pwsh
+        run: ./packaging/VerifyPublicApiBaseline.ps1 -Configuration '${{ env.CONFIGURATION }}' -OutputDirectory artifacts/release-public-api
       - name: Verify focused notification sample builds
         shell: pwsh
         run: ./packaging/VerifyNotificationSample.ps1 -Configuration '${{ env.CONFIGURATION }}'
@@ -96,6 +107,9 @@ jobs:
       - name: Verify DCurses modern-keyboard acceptance
         shell: pwsh
         run: ./packaging/VerifyDCursesModernKeyboard.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify DCurses hardening soak
+        shell: pwsh
+        run: ./packaging/VerifyDCursesHardeningSoak.ps1 -Configuration '${{ env.CONFIGURATION }}'
       - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
       - id: select
         shell: pwsh
@@ -139,6 +153,15 @@ jobs:
       - name: Verify 0.17 modern-keyboard release contract
         shell: pwsh
         run: ./packaging/VerifyModernKeyboardPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 0.18 hardening release contract
+        shell: pwsh
+        run: ./packaging/VerifyHardeningPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify 1.0 release-candidate package contract
+        shell: pwsh
+        run: ./packaging/VerifyRc1Package.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+      - name: Verify packaged Icod.DCurses release-candidate acceptance
+        shell: pwsh
+        run: ./packaging/VerifyDCursesRc1Package.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
       - name: Upload release packages
         uses: actions/upload-artifact@v4
         with:
@@ -216,6 +239,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: ${{ env.PACKAGE_ARTIFACT }}
@@ -237,8 +261,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
+          $version = '${{ needs.metadata.outputs.version }}'
+          $notesPath = Join-Path $PWD "docs/releases/$version.md"
+          if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+              throw "Curated release notes are missing for $version at '$notesPath'."
+          }
+
           $assets = @(Get-ChildItem -LiteralPath 'artifacts/release-assets' -File | Sort-Object Name | ForEach-Object { $_.FullName })
-          $arguments = @('release', 'create', $env:GITHUB_REF_NAME, '--verify-tag', '--title', "Icod.Terminal ${{ needs.metadata.outputs.version }}", '--generate-notes')
+          $arguments = @(
+              'release',
+              'create',
+              $env:GITHUB_REF_NAME,
+              '--verify-tag',
+              '--title',
+              "Icod.Terminal $version",
+              '--notes-file',
+              $notesPath
+          )
           if ('true' -eq '${{ needs.metadata.outputs.prerelease }}') {
               $arguments += '--prerelease'
               $arguments += '--latest=false'
