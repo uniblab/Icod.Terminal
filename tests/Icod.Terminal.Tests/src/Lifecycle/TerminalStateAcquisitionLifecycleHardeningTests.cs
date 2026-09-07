@@ -7,7 +7,7 @@ using Icod.TermInfo;
 using Xunit;
 
 /// <summary>
-/// Verifies that new public state ownership cannot enter while lifecycle state is released.
+/// Verifies that new public state ownership cannot enter while lifecycle or teardown owns the session.
 /// </summary>
 public sealed class TerminalStateAcquisitionLifecycleHardeningTests {
 	private const string EnablePaste = "<P+>";
@@ -101,6 +101,36 @@ public sealed class TerminalStateAcquisitionLifecycleHardeningTests {
 			},
 			transport.Writes
 		);
+	}
+
+	[Fact]
+	public async Task PublicStateAcquisitionIsRejectedAfterDisposalStarts() {
+		TestTerminalLifecycleSource lifecycle = new();
+		RecordingTransport transport = new();
+		TerminalSession session = await OpenSessionAsync(
+			lifecycle,
+			transport
+		);
+
+		Task disposal = session.DisposeAsync().AsTask();
+
+		await Assert.ThrowsAsync<ObjectDisposedException>(
+			() => session.AcquireInputProtocolsAsync(
+				new TerminalInputProtocolOptions {
+					BracketedPaste = true
+				}
+			).AsTask()
+		);
+		await Assert.ThrowsAsync<ObjectDisposedException>(
+			() => session.AcquirePresentationAsync(
+				new TerminalPresentationOptions {
+					AlternateScreen = true
+				}
+			).AsTask()
+		);
+
+		await disposal;
+		Assert.Empty( transport.Writes );
 	}
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
