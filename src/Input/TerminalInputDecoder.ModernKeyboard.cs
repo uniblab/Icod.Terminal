@@ -38,8 +38,18 @@ internal sealed partial class TerminalInputDecoder {
 					out IReadOnlyList<TerminalInputEvent>? additionalEvents
 				) ) {
 					if ( additionalEvents is not null ) {
+						List<byte> pendingTextBytes = [];
 						foreach ( TerminalInputEvent additional in additionalEvents ) {
-							this.pendingModernKeyboardEvents.Enqueue( additional );
+							Rune character = additional.Character
+								?? throw new InvalidOperationException(
+									"A pending Kitty pure-text event must contain one Unicode scalar."
+								);
+							pendingTextBytes.AddRange(
+								Encoding.UTF8.GetBytes( character.ToString() )
+							);
+						}
+						if ( 0 < pendingTextBytes.Count ) {
+							this.bufferedBytes.InsertRange( 0, pendingTextBytes );
 						}
 					}
 					return inputEvent;
@@ -182,16 +192,17 @@ internal sealed partial class TerminalInputDecoder {
 			return true;
 		}
 
+		if ( IsKittyPrivateUseCode( keyCode ) ) {
+			inputEvent = TerminalInputEvent.FromKey(
+				TerminalKey.Unrecognized,
+				modifiers,
+				keyPhase: phase,
+				associatedText: associatedText
+			);
+			return true;
+		}
+
 		if ( !TryCreateRune( keyCode, out Rune character ) ) {
-			if ( IsKittyPrivateUseCode( keyCode ) ) {
-				inputEvent = TerminalInputEvent.FromKey(
-					TerminalKey.Unrecognized,
-					modifiers,
-					keyPhase: phase,
-					associatedText: associatedText
-				);
-				return true;
-			}
 			return false;
 		}
 
