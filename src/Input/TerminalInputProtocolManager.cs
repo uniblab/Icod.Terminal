@@ -172,6 +172,82 @@ internal sealed class TerminalInputProtocolManager {
 		this.MarkInvalidated();
 	}
 
+	internal async ValueTask SuspendKeyboardForScreenSwitchAsync(
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			if ( this.closed || this.suspended ) {
+				return;
+			}
+			if ( !this.appliedKnown || this.IsInvalidated ) {
+				throw new InvalidOperationException(
+					"Keyboard reporting state is not trustworthy before a managed screen transition."
+				);
+			}
+			if ( !this.appliedState.KeyboardReportingMode.HasValue ) {
+				return;
+			}
+
+			InputProtocolState target = this.appliedState with {
+				KeyboardReportingMode = null
+			};
+			try {
+				await this.TransitionTransactionalAsync(
+					this.appliedState,
+					target,
+					cancellationToken
+				).ConfigureAwait( false );
+				this.appliedState = target;
+			} catch {
+				this.appliedKnown = false;
+				this.MarkInvalidated();
+				throw;
+			}
+		} finally {
+			this.gate.Release();
+		}
+	}
+
+	internal async ValueTask ResumeKeyboardAfterScreenSwitchAsync() {
+		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
+		try {
+			if ( this.closed || this.suspended ) {
+				return;
+			}
+			if ( !this.appliedKnown || this.IsInvalidated ) {
+				throw new InvalidOperationException(
+					"Keyboard reporting state is not trustworthy after a managed screen transition."
+				);
+			}
+
+			TerminalKeyboardReportingMode? desiredMode =
+				this.GetDesiredState().KeyboardReportingMode;
+			if ( this.appliedState.KeyboardReportingMode == desiredMode ) {
+				return;
+			}
+
+			InputProtocolState target = this.appliedState with {
+				KeyboardReportingMode = desiredMode
+			};
+			try {
+				await this.TransitionTransactionalAsync(
+					this.appliedState,
+					target,
+					CancellationToken.None
+				).ConfigureAwait( false );
+				this.appliedState = target;
+			} catch {
+				this.appliedKnown = false;
+				this.MarkInvalidated();
+				throw;
+			}
+		} finally {
+			this.gate.Release();
+		}
+	}
+
 	internal async ValueTask SuspendAsync() {
 		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
 		try {
@@ -217,6 +293,21 @@ internal sealed class TerminalInputProtocolManager {
 				this.appliedKnown = true;
 				this.ClearInvalidated();
 				return;
+			}
+
+			if ( desired.KeyboardReportingMode.HasValue ) {
+				bool kittySupported = await this.session.ProbeKittyKeyboardSupportAsync(
+					lifecycleObservation: true,
+					CancellationToken.None
+				).ConfigureAwait( false );
+				if ( !kittySupported ) {
+					this.suspended = true;
+					this.appliedKnown = false;
+					this.MarkInvalidated();
+					throw new InvalidOperationException(
+						"Kitty progressive keyboard protocol support could not be re-established after lifecycle re-entry."
+					);
+				}
 			}
 
 			InputProtocolState from = !this.suspended
