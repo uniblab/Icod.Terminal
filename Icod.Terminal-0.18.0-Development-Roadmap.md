@@ -7,7 +7,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** hardening, invariants, failure semantics, parser bounds, lifecycle/concurrency correctness, and downstream/package closure  
-**Status:** T180–T186 complete; exact stable PR-head validation pending
+**Status:** T180–T186 complete; stable head #902 green; post-audit regression validation pending
 
 ---
 
@@ -72,9 +72,7 @@ Record: `docs/T182-Lifecycle-Composition-and-Concurrency-Hardening.md`.
 
 ### T183 — failure injection, cancellation, and rollback hardening — `0.18.0-alpha.4`
 
-Complete and green at workflow #879.
-
-T183 proves severe transition+rollback and lifecycle-reentry+rollback double-failure paths preserve all errors, do not retain ghost ownership, and leave state invalid/unknown rather than falsely advanced.
+Complete and green at workflow #879. The final T186 audit added a presentation transition+rollback double-failure regression to match the already-proven rich-input path.
 
 Record: `docs/T183-Failure-Injection-Cancellation-and-Rollback-Hardening.md`.
 
@@ -102,7 +100,7 @@ Record: `docs/T185-Downstream-Soak-and-Integration-Hardening.md`.
 
 ### T186 — compatibility, documentation, package, and stable closure — `0.18.0`
 
-Implementation complete. The package-contract candidate is green at workflow #898; exact stable PR-head validation remains the final PR gate.
+Implementation complete. Package-only hardening validation is green at workflow #898. The exact stable candidate head before the final audit additions passed workflow #902.
 
 T186 freezes:
 
@@ -111,7 +109,8 @@ T186 freezes:
 - a fresh-package 0.18 hardening consumer on net8/net9/net10;
 - the 0.18 package gate in both PR and Release distribution validation;
 - all retained 0.8–0.17 package contracts;
-- the real DCurses hardening soak in PR and Release validation.
+- the real DCurses hardening soak in PR and Release validation;
+- direct double-failure regression coverage for both rich-input and presentation transactional rollback.
 
 Record: `docs/T186-Compatibility-Package-and-Stable-Closure.md`.
 
@@ -156,4 +155,4 @@ AssemblyVersion:  0.18.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** validate the exact stable PR head. If green, review PR #31 for merge readiness. After merge, validate the exact resulting `main` commit under Release. Tag `v0.18.0` only with explicit authorization because tagging triggers publication.
+Workflow #902 proved the exact stable candidate before the final audit additions. The post-audit exact head must now pass the same PR matrix. If green, PR #31 is merge-ready. After merge, validate the exact resulting `main` commit under Release. Tag `v0.18.0` only with explicit authorization because tagging triggers publication.
