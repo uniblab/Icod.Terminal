@@ -2,7 +2,7 @@
 
 **Release:** `Icod.Terminal 0.18.0-alpha.4`  
 **PR:** #31  
-**Validation:** workflow #879
+**Validation:** workflow #879; presentation rollback audit regression added during T186
 
 ## Scope
 
@@ -41,6 +41,22 @@ The required behavior is:
 
 Workflow #877 proved this path on Windows, Linux, and macOS.
 
+## Presentation transition rollback
+
+The final T186 audit added the corresponding presentation-manager double-failure regression.
+
+The deterministic sequence is:
+
+1. alternate-screen entry succeeds;
+2. keypad entry fails;
+3. transactional rollback attempts alternate-screen exit;
+4. rollback exit fails too;
+5. the caller receives an `AggregateException` containing transition and rollback failures;
+6. the failed acquisition retains no ghost presentation lease;
+7. a later clean alternate-screen acquisition/release succeeds through the invalidated-state recovery path.
+
+This closes the direct regression gap between rich-input and presentation transactional rollback semantics without changing production behavior or public surface.
+
 ## Lifecycle re-entry plus rollback failure
 
 T183 also covers lifecycle failure at the native mode layer.
@@ -74,7 +90,7 @@ T183 found no additional production cancellation defect requiring API or wire ch
 
 ## Closure
 
-T183 is complete at `0.18.0-alpha.4`.
+T183 is complete at `0.18.0-alpha.4`; the final T186 audit extended direct regression symmetry to presentation rollback failure.
 
 No public API or terminal protocol surface was added.
 
