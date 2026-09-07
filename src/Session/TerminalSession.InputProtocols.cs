@@ -23,6 +23,10 @@ public sealed partial class TerminalSession {
 		options.Validate();
 		cancellationToken.ThrowIfCancellationRequested();
 
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+
 		if ( options.KeyboardReportingMode.HasValue ) {
 			bool kittySupported = await this.ProbeKittyKeyboardSupportAsync(
 				lifecycleObservation: false,
@@ -35,9 +39,6 @@ public sealed partial class TerminalSession {
 			}
 		}
 
-		using IDisposable composition = await this.AcquireStateCompositionAsync(
-			cancellationToken
-		).ConfigureAwait( false );
 		return await this.inputProtocolManager.AcquireAsync(
 			options,
 			cancellationToken
