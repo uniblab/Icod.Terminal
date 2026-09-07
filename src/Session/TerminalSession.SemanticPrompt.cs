@@ -38,7 +38,7 @@ public sealed partial class TerminalSession {
 	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>
 	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
 	/// <remarks>
-	/// The operation emits only explicitly represented metadata in the canonical 0.15 parameter order.
+	/// The operation emits only explicitly represented metadata in the canonical Icod.Terminal parameter order.
 	/// It does not probe terminal support, configure shell bindings, or enable a mouse protocol.
 	/// </remarks>
 	public ValueTask BeginPromptAsync(
@@ -107,7 +107,7 @@ public sealed partial class TerminalSession {
 	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
 	/// <returns>A value task representing marker emission.</returns>
 	/// <exception cref="ArgumentException">
-	/// The supplied command line is ill-formed Unicode or its encoded OSC 133 payload exceeds the 0.15 safety bound.
+	/// The supplied command line is ill-formed Unicode or its encoded OSC 133 payload exceeds the 65,536-byte safety bound.
 	/// </exception>
 	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
 	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>
