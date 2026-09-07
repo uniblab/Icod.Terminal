@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.17.0`  
-**Development version:** `0.17.0-alpha.3`  
+**Development version:** `0.17.0-alpha.5`  
 **Predecessor:** `0.16.0` — OSC 9 Safe Extensions  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** modern keyboard contracts and negotiated keyboard protocols  
-**Status:** T170–T171 green; T172 Kitty decoder implemented, exact-head validation pending
+**Status:** T170–T173 complete and green; T174 xterm decode compatibility implemented, exact-head validation pending
 
 ---
 
@@ -83,7 +83,7 @@ public string? AssociatedText { get; }
 
 `TerminalKey` retains every existing value through `Function` and appends semantic identities for the frozen Kitty functional-key table plus `Unrecognized`; raw Kitty private-use integers are not public API.
 
-`TerminalInputProtocolOptions.KeyboardReportingMode` remains deferred until T173 so no request can be accepted before negotiated ownership is implemented.
+`TerminalInputProtocolOptions` and `TerminalInputProtocolLease` now expose nullable `KeyboardReportingMode` as part of the existing compound rich-input ownership surface.
 
 ---
 
@@ -91,7 +91,7 @@ public string? AssociatedText { get; }
 
 Modern keyboard reporting joins the existing `TerminalInputProtocolManager` lease domain.
 
-Frozen rules include:
+Frozen release rules include:
 
 - explicit acquisition only;
 - strongest-request reconciliation: `none < Disambiguated < EventTypes < AllKeys`;
@@ -102,6 +102,8 @@ Frozen rules include:
 - committed transitions are complete serialized writes;
 - suspend/resume/invalidation/disposal keep believed state truthful;
 - managed main/alternate-screen transitions use pop/switch/push choreography so a library-owned stack entry is never stranded on the inactive screen.
+
+The first six ownership primitives are implemented in T173. Cross-manager managed-screen handoff and post-resume re-establishment remain mandatory T175 hardening gates so they can be validated with lock-order and rollback fault injection.
 
 ---
 
@@ -117,47 +119,47 @@ Frozen rules include:
 
 Complete and green at workflow #771.
 
-Frozen: semantic event/modifier/reporting/key contracts, Kitty flags `5/7/31`, Kitty-only lease ownership, xterm decode-only compatibility, support detection/query routing, managed screen-stack choreography, malformed recovery, lifecycle/security rules.
-
 Record: `docs/T170-Modern-Keyboard-Contract-and-Reference-Freeze.md`.
 
 ### T171 — semantic key-event model — `0.17.0-alpha.2`
 
 Complete and green at workflow #779.
 
-Delivered `TerminalKeyEventPhase`, expanded modifiers/named keys, alternate-key/associated-text metadata, `TerminalKeyboardReportingMode`, traditional `Press` normalization, exact numeric compatibility tests, and retained function-key `0..63` internal compatibility.
+Delivered explicit phase, expanded modifiers/named keys, alternate-key/associated-text metadata, reporting modes, traditional `Press` normalization, and compatibility tests.
 
 Record: `docs/T171-Modern-Keyboard-Semantic-Key-Event-Model.md`.
 
 ### T172 — Kitty keyboard decoder foundation — `0.17.0-alpha.3`
 
-Implemented; exact-head validation pending.
+Complete and green at workflow #786.
 
-Canonical Kitty CSI-u frames are now decoded inside the existing incremental input path after active response correlation and before mouse/terminfo/traditional fallback. Coverage includes character/named keys, all modern modifiers, press/repeat/release, shifted/base-layout identities, associated text, pure-text frames, current Kitty functional keys, unknown-PUA `Unrecognized`, fragmentation/coalescing, bounded malformed recovery, and retained traditional CSI behavior.
-
-Internal bounds:
-
-```text
-modern CSI-u frame:       4,096 bytes
-semicolon parameters:    64
-associated-text scalars: 32
-```
+Canonical Kitty CSI-u is decoded inside the existing incremental input path after active response correlation. Coverage includes character/named keys, modern modifiers, phases, alternate identities, associated text, pure text, current Kitty functional keys, unknown-PUA `Unrecognized`, fragmentation/coalescing, and bounded malformed recovery.
 
 Record: `docs/T172-Kitty-Keyboard-Decoder-Foundation.md`.
 
 ### T173 — negotiated Kitty keyboard ownership — `0.17.0-alpha.4`
 
-Next after green T172 validation.
+Complete and green at workflow #799.
 
-Add `TerminalKeyboardReportingMode? KeyboardReportingMode` to `TerminalInputProtocolOptions` and `TerminalInputProtocolLease`; implement Kitty support query/detection, flags `5/7/31`, push/pop ownership, nested strongest-mode reconciliation, lifecycle re-entry, and managed main/alternate-screen transition choreography.
+Delivered nullable keyboard reporting requests on the existing compound input-protocol lease, timing-independent Kitty support detection using `CSI ? u` + Primary DA delimiter, exact flag pushes `5/7/31`, one-entry pop, strongest-mode nesting/downgrade, and composition with bracketed paste/focus/mouse.
+
+Cross-manager alternate-screen handoff and post-resume state re-establishment remain mandatory T175 hardening gates.
+
+Record: `docs/T173-Negotiated-Kitty-Keyboard-Ownership.md`.
 
 ### T174 — xterm `modifyOtherKeys` decoder compatibility — `0.17.0-alpha.5`
 
-Decode frozen conventional level-2 and unambiguous CSI-u xterm forms when received. Normalize to `Press` with only semantics actually present. No lease-owned xterm activation.
+Implemented; exact-head validation pending.
+
+Decode-only compatibility now accepts conventional level-2 `CSI 27;modifier;key~` and the unambiguous xterm/fixterms-style CSI-u shape. xterm events normalize to `Press`, preserve only Shift/Alt/Control semantics actually present, and never gain Kitty-only alternate-key, associated-text, release/repeat, or modern-modifier semantics. No xterm activation is emitted.
+
+Record: `docs/T174-Xterm-ModifyOtherKeys-Decoder-Compatibility.md`.
 
 ### T175 — composition and hardening — `0.17.0-alpha.6`
 
-Exercise modern keyboard input with traditional keys/text, paste/focus/mouse, active queries, fragmented/coalesced reads, malformed recovery, concurrent leases, presentation screen transitions, suspend/resume/invalidation/disposal, transition output failures, bounded parser behavior, and lock/deadlock resistance.
+Next after green T174 validation.
+
+Exercise modern keyboard input with traditional keys/text, paste/focus/mouse, active queries, fragmented/coalesced reads, malformed recovery, concurrent leases, managed presentation screen transitions, suspend/resume/invalidation/disposal, Kitty post-resume re-detection/re-establishment, transition output failures, bounded parser behavior, and lock/deadlock resistance.
 
 ### T176 — downstream `Icod.DCurses` acceptance — `0.17.0-alpha.7`
 
@@ -187,7 +189,7 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 - Kitty acquisition/release is exact, bounded, and reversible;
 - overlapping leases reconcile deterministically;
 - managed screen transitions do not strand Kitty stack entries;
-- lifecycle suspend/resume does not leak/double-pop modes;
+- lifecycle suspend/resume re-establishes negotiated keyboard state truthfully;
 - active-query routing remains correct while modern keyboard input flows;
 - no raw/generic keyboard-control API enters the package;
 - Windows/Linux/macOS CI and net8/net9/net10 package-only consumers.
@@ -198,11 +200,11 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 
 ```text
 VersionPrefix:    0.17.0
-VersionSuffix:    alpha.3
-Version:          0.17.0-alpha.3
-PackageVersion:   0.17.0-alpha.3
+VersionSuffix:    alpha.5
+Version:          0.17.0-alpha.5
+PackageVersion:   0.17.0-alpha.5
 AssemblyVersion:  0.17.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T172 validation:** T173 — negotiated Kitty keyboard ownership.
+**Next after exact-head T174 validation:** T175 — composition and hardening.
