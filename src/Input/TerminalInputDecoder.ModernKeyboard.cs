@@ -34,22 +34,28 @@ internal sealed partial class TerminalInputDecoder {
 
 				TerminalInputEvent? inputEvent;
 				IReadOnlyList<TerminalInputEvent>? additionalEvents = null;
-				bool decoded = (byte)'u' == finalByte
-					? TryDecodeKittyCsiUFrame(
+				bool decoded;
+				if ( (byte)'u' == finalByte ) {
+					decoded = TryDecodeKittyCsiUFrame(
 						frame,
 						out inputEvent,
 						out additionalEvents
-					)
-					: TryDecodeXtermModifyOtherKeysFrame(
+					);
+					this.Consume( frame.Length );
+					if ( !decoded ) {
+						return null;
+					}
+				} else {
+					decoded = TryDecodeXtermModifyOtherKeysFrame(
 						frame,
 						out inputEvent
-					)
-				;
-				if ( !decoded ) {
-					return null;
+					);
+					if ( !decoded ) {
+						return null;
+					}
+					this.Consume( frame.Length );
 				}
 
-				this.Consume( frame.Length );
 				if ( additionalEvents is not null ) {
 					List<byte> pendingTextBytes = [];
 					foreach ( TerminalInputEvent additional in additionalEvents ) {
@@ -181,7 +187,6 @@ internal sealed partial class TerminalInputDecoder {
 					|| !TryMapKittyEventPhase( eventType, out phase ) ) {
 					return false;
 				}
-			}
 		}
 
 		string? associatedText = null;
@@ -208,7 +213,6 @@ internal sealed partial class TerminalInputDecoder {
 				if ( 0 < parameters[ index ].Length ) {
 					return false;
 				}
-			}
 		}
 
 		if ( 0 == keyCode ) {
