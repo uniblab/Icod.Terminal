@@ -50,6 +50,7 @@ public sealed partial class TerminalSession {
 	}
 
 	private async ValueTask SuspendInputProtocolStateAsync() {
+		Interlocked.Exchange( ref this.inputProtocolsReenteredBeforePresentation, 0 );
 		using IDisposable composition = await this.AcquireStateCompositionAsync(
 			CancellationToken.None
 		).ConfigureAwait( false );
@@ -57,6 +58,13 @@ public sealed partial class TerminalSession {
 	}
 
 	private async ValueTask ResumeInputProtocolStateAsync() {
+		if ( 0 != Interlocked.Exchange(
+			ref this.inputProtocolsReenteredBeforePresentation,
+			0
+		) ) {
+			return;
+		}
+
 		using IDisposable composition = await this.AcquireStateCompositionAsync(
 			CancellationToken.None
 		).ConfigureAwait( false );
@@ -64,6 +72,7 @@ public sealed partial class TerminalSession {
 	}
 
 	private async ValueTask<Exception?> CloseInputProtocolStateAsync() {
+		Interlocked.Exchange( ref this.inputProtocolsReenteredBeforePresentation, 0 );
 		try {
 			using IDisposable composition = await this.AcquireStateCompositionAsync(
 				CancellationToken.None
