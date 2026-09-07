@@ -26,6 +26,7 @@ public sealed partial class TerminalSession {
 		using IDisposable composition = await this.AcquireStateCompositionAsync(
 			cancellationToken
 		).ConfigureAwait( false );
+		this.ThrowIfStateAcquisitionUnavailableForLifecycle();
 		return await this.presentationManager.AcquireAsync(
 			options,
 			cancellationToken
