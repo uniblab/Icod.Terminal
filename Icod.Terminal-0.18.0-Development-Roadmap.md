@@ -2,22 +2,20 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.18.0`  
-**Development version:** `0.18.0-alpha.3`  
+**Development version:** `0.18.0`  
 **Predecessor:** `0.17.0` — Modern Keyboard Contracts and Protocols  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** hardening, invariants, failure semantics, parser bounds, lifecycle/concurrency correctness, and downstream/package closure  
-**Status:** T180–T182 complete and green; T183 in progress
+**Status:** T180–T186 complete; exact stable PR-head validation pending
 
 ---
 
 ## 1. Release intent
 
-`0.18.0` is a hardening release. It SHALL NOT intentionally expand the public feature surface unless a narrowly scoped API correction is required to repair a proven correctness or safety defect.
+`0.18.0` is a hardening release. It does not intentionally expand the public feature surface. The release strengthens accumulated 0.4–0.17 terminal-control, observation, lifecycle, input, presentation, query, color, semantic-output, and modern-keyboard contracts against hostile timing, malformed input, partial failures, cancellation, concurrency, lifecycle interruption, and platform variation.
 
-The objective is to make the accumulated 0.4–0.17 terminal-control, observation, lifecycle, input, presentation, query, color, semantic-output, and modern-keyboard contracts withstand hostile timing, malformed input, partial failures, cancellation, concurrency, lifecycle interruption, and platform variation.
-
-Traditional behavior remains the compatibility floor. Existing public enum numeric values, package contracts, and previously frozen wire semantics remain intact unless a defect is demonstrated and documented.
+Traditional behavior remains the compatibility floor. Existing public enum numeric values, package contracts, and previously frozen wire semantics remain intact.
 
 ---
 
@@ -31,11 +29,11 @@ Traditional behavior remains the compatibility floor. Existing public enum numer
 - bound parser buffering and malformed-sequence recovery;
 - prove lock ordering and deadlock resistance under adversarial concurrency;
 - treat lifecycle suspend/resume/disposal as first-class state transitions;
-- exercise failure injection at every transport/output/query boundary where practical;
+- exercise failure injection at transport/output/query boundaries;
 - preserve exact restoration where the library claims ownership;
 - avoid blind activation of terminal state that cannot be observed/restored;
 - retain package-only validation for every release contract from 0.8 onward;
-- validate real `Icod.DCurses` integration throughout, not only at release closure.
+- validate real `Icod.DCurses` integration throughout.
 
 ---
 
@@ -45,15 +43,13 @@ Traditional behavior remains the compatibility floor. Existing public enum numer
 
 Complete and green at workflow #859.
 
-The tranche froze the release as hardening-only and established the risk matrix across parser/query bounds, cancellation, lifecycle/composition, failure semantics, platform restoration, compatibility, and downstream integration.
-
 Record: `docs/T180-Hardening-Contract-and-Audit-Freeze.md`.
 
 ### T181 — parser and query-router hardening — `0.18.0-alpha.2`
 
 Complete and green at workflow #860.
 
-New adversarial tests froze the suspend/resume generation and ambiguity invariants. Parser audit confirmed bounded framing and deterministic oversized-response recovery without requiring a production semantic change.
+T181 froze bounded parser/query behavior, stale-response ownership, suspend/resume generation invalidation, and lifecycle observation ordering without changing public query semantics.
 
 Record: `docs/T181-Parser-and-Query-Router-Hardening.md`.
 
@@ -61,9 +57,9 @@ Record: `docs/T181-Parser-and-Query-Router-Hardening.md`.
 
 Complete and green at workflow #874.
 
-T182 found and corrected a public-acquisition race: new input-protocol or presentation ownership could begin after lifecycle teardown had already released session state, and similarly after disposal had begun. Public state acquisition now re-checks lifecycle/teardown availability inside the state-composition gate before entering either manager.
+T182 found and corrected a real public-acquisition race. New input-protocol or presentation ownership now re-checks lifecycle and teardown availability inside the shared state-composition gate before either manager can mutate state.
 
-The authoritative order is:
+Authoritative order:
 
 ```text
 state composition
@@ -72,79 +68,92 @@ state composition
             -> control output
 ```
 
-Cleanup paths intentionally remain permitted while state is released so lease disposal, lifecycle rollback/reentry, and final manager close cannot deadlock.
-
-Deterministic tests prove acquisition is rejected with zero control output during suspend preparation, succeeds again after completed reentry, and is rejected with `ObjectDisposedException` after teardown begins.
-
 Record: `docs/T182-Lifecycle-Composition-and-Concurrency-Hardening.md`.
 
 ### T183 — failure injection, cancellation, and rollback hardening — `0.18.0-alpha.4`
 
-In progress.
+Complete and green at workflow #879.
 
-Add systematic injected failures around transport writes/reads, query delimiters, multi-step restoration, screen/keyboard choreography, colors, rich-input leases, and semantic output.
+T183 proves severe transition+rollback and lifecycle-reentry+rollback double-failure paths preserve all errors, do not retain ghost ownership, and leave state invalid/unknown rather than falsely advanced.
 
-Every multi-step transition must either restore the prior truthful state or surface a failure that makes uncertainty explicit. Pre-commit cancellation must emit nothing; post-commit cancellation must not synthesize partial compensating traffic unless the owning contract explicitly requires rollback.
+Record: `docs/T183-Failure-Injection-Cancellation-and-Rollback-Hardening.md`.
 
 ### T184 — platform and terminal-mode hardening — `0.18.0-alpha.5`
 
-Exercise Windows console/terminal and POSIX termios paths for open/close, CBreak/raw-like modes, echo, resize/lifecycle behavior, redirected/non-interactive endpoints, unsupported capabilities, and restoration after exceptional exit paths.
+Complete and green at workflow #882.
 
-The goal is behavioral parity where contracts are portable and explicit platform-specific behavior where they are not.
+T184 freezes platform symmetry and exact restoration:
+
+- POSIX apply/restore uses `AfterOutputDrained`;
+- Windows console apply/restore uses `Immediately`;
+- final cleanup restores the exact captured baseline;
+- redirected/non-interactive endpoint policy remains truthful;
+- initialization and restoration failures remain explicit.
+
+Record: `docs/T184-Platform-and-Terminal-Mode-Hardening.md`.
 
 ### T185 — downstream soak and integration hardening — `0.18.0-alpha.6`
 
-Expand real `Icod.DCurses` acceptance into longer mixed-operation scenarios combining full-screen refresh, rich input, queries, synchronized output, pointer shape, colors, semantic prompt markers, progress, notifications/current-location output, modern keyboard reporting, lifecycle reentry, and deterministic disposal.
+Complete and green at workflow #889.
 
-Add repeated-cycle/soak-style tests where practical to expose leaked ownership, stranded terminal state, parser accumulation, or stale session state.
+A new real-`Icod.DCurses` soak runs eight complete ownership cycles per supported TFM and verifies rich-input acquisition, Kitty negotiation, full-screen handoff, refresh/input decoding, exact teardown, stale-lease safety, and one native apply/restore pair per cycle.
 
-### T186 — compatibility, documentation, and release closure — `0.18.0`
+Record: `docs/T185-Downstream-Soak-and-Integration-Hardening.md`.
 
-Freeze the 0.18 public API/package baseline, document all hardening guarantees and any intentionally unresolved limitations, retain every historical package gate, add a 0.18 hardening package contract, and require exact stable PR-head plus exact-main Release validation before tag.
+### T186 — compatibility, documentation, package, and stable closure — `0.18.0`
+
+Implementation complete. The package-contract candidate is green at workflow #898; exact stable PR-head validation remains the final PR gate.
+
+T186 freezes:
+
+- no public API signature delta from 0.17;
+- `docs/Public-API-Baseline-0.18.md` as the 0.18 API/behavior baseline;
+- a fresh-package 0.18 hardening consumer on net8/net9/net10;
+- the 0.18 package gate in both PR and Release distribution validation;
+- all retained 0.8–0.17 package contracts;
+- the real DCurses hardening soak in PR and Release validation.
+
+Record: `docs/T186-Compatibility-Package-and-Stable-Closure.md`.
 
 ---
 
-## 4. Required testing matrix
+## 4. Stable release testing matrix
 
-By stable closure, 0.18 SHALL prove at minimum:
+The stable candidate must prove:
 
-- no regression in all retained 0.8–0.17 package contracts;
+- no regression in retained 0.8–0.17 package contracts;
 - parser memory remains bounded under adversarial incomplete/malformed input;
 - malformed escape/control traffic recovers deterministically;
 - active queries do not consume unrelated input or each other's replies;
 - timeout/cancellation leaves query routing usable for later operations;
 - concurrent leases reconcile deterministically;
 - session composition prevents cross-manager interleaving violations;
-- lock-order tests do not deadlock under forced contention;
 - lifecycle suspend/resume restores only state the library owns and can truthfully re-establish;
-- invalidation never causes stale believed state to be treated as authoritative;
-- multi-step failures surface rollback failure rather than silently masking uncertainty;
-- stale lease disposal remains safe and idempotent after owner/session cleanup;
-- transport exceptions propagate without corrupting unrelated later state where recovery is contractually allowed;
-- Windows/Linux/macOS remain green;
-- x64 and ARM64 Release distribution validation remain green where hosted runners are available;
+- invalidation never treats stale believed state as authoritative;
+- multi-step failures surface rollback failures rather than mask uncertainty;
+- stale lease disposal remains safe/idempotent after owner/session cleanup;
+- Windows/Linux/macOS PR validation remains green;
 - net8/net9/net10 fresh package-only consumers remain green;
-- real `Icod.DCurses` acceptance remains green throughout the hardening line.
+- real `Icod.DCurses` acceptance and soak remain green;
+- after merge, Release distribution validation is green on the six configured x64/ARM64 runners.
 
 ---
 
 ## 5. Explicit non-goals
 
-0.18 does not plan new terminal protocols, terminal-brand heuristics, raw escape-sequence APIs, keyboard remapping policy, global hotkeys, IME control, new graphics/image protocols, arbitrary vendor OSC expansion, or broader PTY/process-management surface.
-
-A discovered correctness defect may justify a narrowly scoped compatibility-preserving API adjustment, but such a change must be documented as a hardening correction rather than feature expansion.
+0.18 does not add new terminal protocols, terminal-brand heuristics, raw escape-sequence APIs, keyboard remapping policy, global hotkeys, IME control, graphics/image protocols, arbitrary vendor OSC expansion, or broader PTY/process-management surface.
 
 ---
 
-## 6. Current development state
+## 6. Stable candidate state
 
 ```text
 VersionPrefix:    0.18.0
-VersionSuffix:    alpha.3
-Version:          0.18.0-alpha.3
-PackageVersion:   0.18.0-alpha.3
+VersionSuffix:    <empty>
+Version:          0.18.0
+PackageVersion:   0.18.0
 AssemblyVersion:  0.18.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** T183 — failure injection, cancellation, and rollback hardening.
+**Next:** validate the exact stable PR head. If green, review PR #31 for merge readiness. After merge, validate the exact resulting `main` commit under Release. Tag `v0.18.0` only with explicit authorization because tagging triggers publication.
