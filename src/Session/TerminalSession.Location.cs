@@ -29,8 +29,8 @@ public sealed partial class TerminalSession {
 	/// </para>
 	/// <para>
 	/// The path is converted to the canonical <c>file:</c> URI form defined by the
-	/// 0.5 contract. The conversion performs no filesystem lookup, existence check,
-	/// symlink resolution, or hidden path canonicalization.
+	/// Icod.Terminal current-location contract. The conversion performs no filesystem
+	/// lookup, existence check, symlink resolution, or hidden path canonicalization.
 	/// </para>
 	/// </remarks>
 	public async ValueTask PublishCurrentLocationAsync(
