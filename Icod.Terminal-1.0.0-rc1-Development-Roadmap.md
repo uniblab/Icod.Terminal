@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T193 complete and green; T194 in progress
+**Status:** T190–T193 complete and green; T194 implementation complete, exact-head validation pending
 
 ---
 
@@ -28,7 +28,7 @@ No new terminal protocol is planned for rc1. New API is allowed only when the pu
 
 The release candidate is complete only when a new consumer can understand the 1.0 contract without reading versioned tranche notes from 0.1 through 0.18.
 
-Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, and security/privacy. T195 will add compatibility/versioning and migration authorities; T194/T196 reconcile source XML, samples, README/package metadata, and machine-verifiable public/package baselines against those documents.
+Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, security/privacy, and the frozen rc1 public API. T195 will add compatibility/versioning and migration authorities; T196 will reconcile README/package metadata and package-only rc1 documentation artifacts.
 
 ---
 
@@ -92,21 +92,44 @@ Authorities:
 
 T193 permanently distinguishes exact restoration, terminal-policy reset, Icod-owned nested state without an observable external baseline, and ephemeral metadata. It also freezes the bounded safe OSC 9 subset and hazardous-command exclusions as a 1.x safety decision.
 
-### T194 — public API/XML/sample regret closure — in progress
+### T194 — public API/XML/sample regret closure — implementation complete
 
-Current work:
+The exact post-cleanup head must still pass the full PR gate before T194 is closed.
 
-1. generate a deterministic reflection snapshot of the exported public API on net8.0, net9.0, and net10.0;
-2. prove all three TFMs expose exactly the same surface;
-3. capture that result as the checked-in 1.x public API baseline and turn generation into verification;
-4. freeze every current public enum numeric value through that same baseline;
-5. remove release-number wording from public XML documentation where it describes a permanent contract;
-6. reconcile exception/cancellation/restoration XML against T191–T193;
-7. audit samples for the one-authoritative-reader/output-ownership rules;
-8. rewrite `samples/README.md` as a task-oriented 1.x index rather than release chronology;
-9. add samples only if an important 1.x workflow remains untaught.
+Public API capture:
 
-No final API correction enters T194 without a new D-class justification.
+- capture head: `510f9738f216064f80193eba1936583b5552170e`;
+- capture validation: workflow #926;
+- net8.0/net9.0/net10.0 snapshots identical;
+- normalized snapshot: 633 lines;
+- exported public types: 77;
+- public enums: 32 / 242 values;
+- public methods: 124;
+- public properties: 144;
+- public constructors: 13;
+- frozen SHA-256: `8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5`.
+
+Permanent/machine authorities:
+
+- `docs/Public-API-Baseline-1.0-rc1.md`;
+- `docs/Public-API-Baseline-1.0-rc1.sha256`;
+- `packaging/GeneratePublicApiBaseline.ps1`;
+- `packaging/VerifyPublicApiBaseline.ps1`.
+
+The verifier regenerates the reflection surface on all three TFMs, normalizes line endings, fails on TFM divergence, and fails on any drift from the frozen fingerprint. It is wired into PR validation and full distribution validation.
+
+T194 also:
+
+- freezes every current public enum numeric value through the machine baseline;
+- removes release-number wording from consumer-visible XML where it described permanent query/resource/protocol semantics;
+- confirms no additional D-class API correction is justified;
+- audits the existing sample set after removal of public `TerminalSession.Input`;
+- rewrites `samples/README.md` around consumer tasks and ownership rules rather than release chronology;
+- adds no new sample because the important 1.x workflows are already represented.
+
+Record:
+
+- `docs/T194-Public-API-XML-and-Sample-Regret-Closure.md`.
 
 ### T195 — compatibility, migration, and support policy
 
@@ -141,16 +164,16 @@ docs/Modern-Keyboard-Security-and-Compatibility.md
 docs/Presentation-and-Reversible-State.md
 docs/Semantic-Output-Protocols.md
 docs/Security-and-Privacy.md
+docs/Public-API-Baseline-1.0-rc1.md
 docs/Compatibility-and-Versioning.md                # T195
 docs/Migration-to-1.0.md                            # T195
-docs/Public-API-Baseline-1.0-rc1.md                 # T194
 ```
 
 Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release evidence rather than required reading for the supported 1.x contract.
 
 ---
 
-## 6. Frozen T190 decisions
+## 6. Frozen T190/T194 API decisions
 
 - custom `ITerminalInput`/`ITerminalOutput` and `ITerminalControlProvider` injection remain public;
 - a live `TerminalSession` does not return its raw input transport publicly;
@@ -159,7 +182,8 @@ Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release 
 - typed query APIs are the canonical response-correlation path;
 - `WriteTerminalStringAsync(...)` is the advanced already-resolved terminfo-string boundary, not a generic protocol recommendation;
 - semantic protocol APIs remain bounded and typed rather than generic vendor dispatch;
-- current public enum values will be frozen as the 1.x baseline rather than resurrecting superseded early-pre-1.0 layouts;
+- the exact current exported API and every current public enum value are frozen by the rc1 machine fingerprint;
+- no additional pre-1.0 API correction was justified by T194;
 - no new protocol work enters rc1.
 
 ---
@@ -177,7 +201,9 @@ T190 validation:       workflow #911
 T191 validation:       workflow #918
 T192 validation:       workflow #924
 T193 validation:       workflow #925
-T194 snapshot:         capture pending
+T194 capture:          workflow #926
+T194 API fingerprint:  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
+T194 final validation: pending exact current head
 ```
 
-**Next:** run the T194 reflection snapshot generator on all supported TFMs, capture the identical output, commit it as the 1.x baseline, and convert the generator into an enforcing verification gate.
+**Next:** validate the exact completed T194 head. If green, close T194 and begin T195 compatibility/versioning and migration documentation.
