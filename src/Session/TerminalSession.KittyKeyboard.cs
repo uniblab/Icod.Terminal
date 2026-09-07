@@ -8,6 +8,34 @@ public sealed partial class TerminalSession {
 		get;
 	} = TimeSpan.FromSeconds( 1 );
 
+	internal async ValueTask<bool> ProbeKittyKeyboardSupportAfterResumeAsync(
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+
+		bool useLifecycleObservation;
+		lock ( this.queryTransactionSync ) {
+			useLifecycleObservation = this.queryTransactionsSuspended;
+		}
+
+		if ( !useLifecycleObservation ) {
+			return await this.ProbeKittyKeyboardSupportAsync(
+				lifecycleObservation: false,
+				cancellationToken
+			).ConfigureAwait( false );
+		}
+
+		this.BeginLifecycleObservationQueryWindow();
+		try {
+			return await this.ProbeKittyKeyboardSupportAsync(
+				lifecycleObservation: true,
+				cancellationToken
+			).ConfigureAwait( false );
+		} finally {
+			this.EndLifecycleObservationQueryWindow();
+		}
+	}
+
 	internal async ValueTask<bool> ProbeKittyKeyboardSupportAsync(
 		bool lifecycleObservation,
 		CancellationToken cancellationToken
