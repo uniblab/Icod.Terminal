@@ -53,6 +53,9 @@ try {
     & (Join-Path $PSScriptRoot 'VerifyDCursesColorObservation.ps1') `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyDCursesModernKeyboard.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
