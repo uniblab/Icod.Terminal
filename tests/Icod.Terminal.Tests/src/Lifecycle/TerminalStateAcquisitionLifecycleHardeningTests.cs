@@ -151,14 +151,8 @@ public sealed class TerminalStateAcquisitionLifecycleHardeningTests {
 				StringCapability.ExitCursorAddressingMode,
 				ExitAlternateScreen
 			)
-			.SetString(
-				StringCapability.EnableBracketedPaste,
-				EnablePaste
-			)
-			.SetString(
-				StringCapability.DisableBracketedPaste,
-				DisablePaste
-			)
+			.SetExtendedString( "BE", EnablePaste )
+			.SetExtendedString( "BD", DisablePaste )
 			.Build();
 
 		return TerminalSession.OpenAsync(
