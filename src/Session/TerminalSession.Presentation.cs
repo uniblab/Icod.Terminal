@@ -15,7 +15,7 @@ public sealed partial class TerminalSession {
 	/// An available result containing the acquired lease, or a controlled unavailable
 	/// result when the selected terminal does not advertise the required capabilities.
 	/// </returns>
-	public ValueTask<TerminalControlResult<TerminalPresentationLease>> AcquirePresentationAsync(
+	public async ValueTask<TerminalControlResult<TerminalPresentationLease>> AcquirePresentationAsync(
 		TerminalPresentationOptions options,
 		CancellationToken cancellationToken = default
 	) {
@@ -23,10 +23,13 @@ public sealed partial class TerminalSession {
 		options.Validate();
 		cancellationToken.ThrowIfCancellationRequested();
 
-		return this.presentationManager.AcquireAsync(
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		return await this.presentationManager.AcquireAsync(
 			options,
 			cancellationToken
-		);
+		).ConfigureAwait( false );
 	}
 
 	private void InvalidatePresentationState() {
@@ -37,12 +40,30 @@ public sealed partial class TerminalSession {
 		this.InvalidateDynamicColorState();
 	}
 
-	private ValueTask SuspendPresentationStateAsync() {
-		return this.presentationManager.SuspendAsync();
+	private async ValueTask SuspendPresentationStateAsync() {
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
+		await this.presentationManager.SuspendAsync().ConfigureAwait( false );
 	}
 
-	private ValueTask ResumePresentationStateAsync() {
-		return this.presentationManager.ReenterAsync();
+	private async ValueTask ResumePresentationStateAsync() {
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
+
+		bool externalResume = 0 == Volatile.Read( ref this.lifecycleStateReleased );
+		if ( externalResume ) {
+			await this.inputProtocolManager.ReenterAsync().ConfigureAwait( false );
+		}
+
+		await this.presentationManager.ReenterAsync().ConfigureAwait( false );
+		if ( externalResume ) {
+			Interlocked.Exchange(
+				ref this.inputProtocolsReenteredBeforePresentation,
+				1
+			);
+		}
 	}
 
 	private async ValueTask<Exception?> ClosePresentationStateAsync() {
@@ -73,6 +94,9 @@ public sealed partial class TerminalSession {
 		}
 
 		try {
+			using IDisposable composition = await this.AcquireStateCompositionAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
 			await this.presentationManager.CloseAsync().ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );

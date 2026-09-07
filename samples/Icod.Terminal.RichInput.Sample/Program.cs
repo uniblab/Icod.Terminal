@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Icod.Terminal;
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
@@ -16,7 +17,8 @@ try {
 			new TerminalInputProtocolOptions {
 				BracketedPaste = true,
 				FocusReporting = true,
-				MouseTrackingMode = TerminalMouseTrackingMode.ButtonEvents
+				MouseTrackingMode = TerminalMouseTrackingMode.ButtonEvents,
+				KeyboardReportingMode = TerminalKeyboardReportingMode.AllKeys
 			}
 		);
 
@@ -24,31 +26,41 @@ try {
 		protocols = protocolResult.GetRequiredValue();
 		await WriteLineAsync(
 			session,
-			"Rich-input reporting enabled: bracketed paste, focus, and button mouse."
+			"Rich input enabled with negotiated Kitty AllKeys reporting."
 		);
 	} else {
 		await WriteLineAsync(
 			session,
-			string.Concat(
-				"Rich-input reporting is ",
-				protocolResult.Status.ToString(),
-				string.IsNullOrWhiteSpace( protocolResult.Message )
-					? "."
-					: string.Concat(
-						": ",
-						protocolResult.Message
-					)
-			)
+			"Modern keyboard reporting is unavailable; retaining traditional keyboard fallback."
 		);
-		await WriteLineAsync(
-			session,
-			"The event loop remains usable for input supported without that lease."
+		protocolResult = await session.AcquireInputProtocolsAsync(
+			new TerminalInputProtocolOptions {
+				BracketedPaste = true,
+				FocusReporting = true,
+				MouseTrackingMode = TerminalMouseTrackingMode.ButtonEvents
+			}
 		);
+		if ( protocolResult.IsAvailable ) {
+			protocols = protocolResult.GetRequiredValue();
+			await WriteLineAsync(
+				session,
+				"Bracketed paste, focus, and button mouse reporting remain enabled."
+			);
+		} else {
+			await WriteLineAsync(
+				session,
+				"Optional rich-input reporting is unavailable; the basic event loop remains usable."
+			);
+		}
 	}
 
 	await WriteLineAsync(
 		session,
 		"Type text, use modified/navigation keys, click the mouse, change focus, or paste."
+	);
+	await WriteLineAsync(
+		session,
+		"Kitty-capable terminals may report repeat/release phases, alternate key identities, and associated text."
 	);
 	await WriteLineAsync(
 		session,
@@ -58,10 +70,7 @@ try {
 		session,
 		"Press q, Q, or Escape to exit."
 	);
-	await WriteLineAsync(
-		session,
-		string.Empty
-	);
+	await WriteLineAsync( session, string.Empty );
 
 	bool running = true;
 	while ( running ) {
@@ -73,21 +82,12 @@ try {
 					?? throw new InvalidOperationException(
 						"An Input event did not carry an input payload."
 					);
-
 				if ( ShouldExit( input ) ) {
-					await WriteLineAsync(
-						session,
-						"Exit requested."
-					);
+					await WriteLineAsync( session, "Exit requested." );
 					running = false;
 					break;
 				}
-
-				await WriteLineAsync(
-					session,
-					FormatInput( input )
-				);
-
+				await WriteLineAsync( session, FormatInput( input ) );
 				if ( TerminalInputEventKind.EndOfInput == input.Kind ) {
 					running = false;
 				}
@@ -98,12 +98,7 @@ try {
 					?? throw new InvalidOperationException(
 						"A Lifecycle event did not carry a lifecycle payload."
 					);
-
-				await WriteLineAsync(
-					session,
-					FormatLifecycle( lifecycle )
-				);
-
+				await WriteLineAsync( session, FormatLifecycle( lifecycle ) );
 				if ( lifecycle.Kind is TerminalLifecycleEventKind.Interrupt
 					or TerminalLifecycleEventKind.Termination ) {
 					running = false;
@@ -111,17 +106,11 @@ try {
 				break;
 
 			case TerminalEventKind.Timeout:
-				await WriteLineAsync(
-					session,
-					"Timeout"
-				);
+				await WriteLineAsync( session, "Timeout" );
 				break;
 
 			case TerminalEventKind.Cancelled:
-				await WriteLineAsync(
-					session,
-					"Cancelled"
-				);
+				await WriteLineAsync( session, "Cancelled" );
 				running = false;
 				break;
 
@@ -143,7 +132,6 @@ static bool ShouldExit(
 	TerminalInputEvent input
 ) {
 	ArgumentNullException.ThrowIfNull( input );
-
 	if ( TerminalInputEventKind.Text == input.Kind
 		&& input.Character.HasValue ) {
 		int value = input.Character.Value.Value;
@@ -151,7 +139,6 @@ static bool ShouldExit(
 			return true;
 		}
 	}
-
 	return TerminalInputEventKind.Key == input.Kind
 		&& TerminalKey.Escape == input.Key;
 }
@@ -165,10 +152,7 @@ static string FormatInput(
 		case TerminalInputEventKind.Text:
 			return string.Concat(
 				"Text character=\"",
-				EscapeText(
-					input.Character?.ToString()
-						?? string.Empty
-				),
+				EscapeText( input.Character?.ToString() ?? string.Empty ),
 				"\""
 			);
 
@@ -181,16 +165,11 @@ static string FormatInput(
 					"A Mouse input event did not carry a mouse payload."
 				);
 			return string.Concat(
-				"Mouse action=",
-				mouse.Action.ToString(),
-				" button=",
-				mouse.Button.ToString(),
-				" column=",
-				mouse.Column.ToString( CultureInfo.InvariantCulture ),
-				" row=",
-				mouse.Row.ToString( CultureInfo.InvariantCulture ),
-				" modifiers=",
-				mouse.Modifiers.ToString()
+				"Mouse action=", mouse.Action.ToString(),
+				" button=", mouse.Button.ToString(),
+				" column=", mouse.Column.ToString( CultureInfo.InvariantCulture ),
+				" row=", mouse.Row.ToString( CultureInfo.InvariantCulture ),
+				" modifiers=", mouse.Modifiers.ToString()
 			);
 
 		case TerminalInputEventKind.Focus:
@@ -198,10 +177,7 @@ static string FormatInput(
 				?? throw new InvalidOperationException(
 					"A Focus input event did not carry a focus payload."
 				);
-			return string.Concat(
-				"Focus state=",
-				focus.State.ToString()
-			);
+			return string.Concat( "Focus state=", focus.State.ToString() );
 
 		case TerminalInputEventKind.Paste:
 			TerminalPasteEvent paste = input.Paste
@@ -209,21 +185,13 @@ static string FormatInput(
 					"A Paste input event did not carry a paste payload."
 				);
 			if ( TerminalPastePhase.Data == paste.Phase ) {
-				string text = paste.Text
-					?? throw new InvalidOperationException(
-						"A Paste Data event did not carry text."
-					);
 				return string.Concat(
 					"Paste phase=Data text=\"",
-					EscapeText( text ),
+					EscapeText( paste.Text ?? string.Empty ),
 					"\""
 				);
 			}
-
-			return string.Concat(
-				"Paste phase=",
-				paste.Phase.ToString()
-			);
+			return string.Concat( "Paste phase=", paste.Phase.ToString() );
 
 		case TerminalInputEventKind.EndOfInput:
 			return "EndOfInput";
@@ -240,89 +208,59 @@ static string FormatKey(
 ) {
 	ArgumentNullException.ThrowIfNull( input );
 
-	string keyName;
-	if ( TerminalKey.Function == input.Key
-		&& input.FunctionKeyNumber.HasValue ) {
-		keyName = string.Concat(
-			"F",
-			input.FunctionKeyNumber.Value.ToString( CultureInfo.InvariantCulture )
-		);
-	} else {
-		keyName = input.Key.ToString();
-	}
-
-	if ( input.Character.HasValue ) {
-		return string.Concat(
-			"Key key=",
-			keyName,
-			" character=\"",
-			EscapeText( input.Character.Value.ToString() ),
-			"\" modifiers=",
-			input.Modifiers.ToString()
-		);
-	}
+	string keyName = TerminalKey.Function == input.Key
+		&& input.FunctionKeyNumber.HasValue
+			? string.Concat(
+				"F",
+				input.FunctionKeyNumber.Value.ToString( CultureInfo.InvariantCulture )
+			)
+			: input.Key.ToString();
 
 	return string.Concat(
-		"Key key=",
-		keyName,
-		" modifiers=",
-		input.Modifiers.ToString()
+		"Key key=", keyName,
+		" phase=", input.KeyPhase?.ToString() ?? "unspecified",
+		" character=", FormatRune( input.Character ),
+		" shifted=", FormatRune( input.ShiftedCharacter ),
+		" baseLayout=", FormatRune( input.BaseLayoutCharacter ),
+		" associatedText=\"", EscapeText( input.AssociatedText ?? string.Empty ), "\"",
+		" modifiers=", input.Modifiers.ToString()
 	);
+}
+
+static string FormatRune(
+	Rune? value
+) {
+	return value.HasValue
+		? string.Concat( "\"", EscapeText( value.Value.ToString() ), "\"" )
+		: "none";
 }
 
 static string FormatLifecycle(
 	TerminalLifecycleEvent lifecycle
 ) {
 	ArgumentNullException.ThrowIfNull( lifecycle );
-
 	if ( lifecycle.Size.HasValue ) {
 		return string.Concat(
-			"Lifecycle kind=",
-			lifecycle.Kind.ToString(),
+			"Lifecycle kind=", lifecycle.Kind.ToString(),
 			" size=",
 			lifecycle.Size.Value.Columns.ToString( CultureInfo.InvariantCulture ),
 			"x",
 			lifecycle.Size.Value.Rows.ToString( CultureInfo.InvariantCulture )
 		);
 	}
-
-	return string.Concat(
-		"Lifecycle kind=",
-		lifecycle.Kind.ToString()
-	);
+	return string.Concat( "Lifecycle kind=", lifecycle.Kind.ToString() );
 }
 
 static string EscapeText(
 	string text
 ) {
 	ArgumentNullException.ThrowIfNull( text );
-
 	return text
-		.Replace(
-			"\\",
-			"\\\\",
-			StringComparison.Ordinal
-		)
-		.Replace(
-			"\u001b",
-			"\\e",
-			StringComparison.Ordinal
-		)
-		.Replace(
-			"\r",
-			"\\r",
-			StringComparison.Ordinal
-		)
-		.Replace(
-			"\n",
-			"\\n",
-			StringComparison.Ordinal
-		)
-		.Replace(
-			"\t",
-			"\\t",
-			StringComparison.Ordinal
-		);
+		.Replace( "\\", "\\\\", StringComparison.Ordinal )
+		.Replace( "\u001b", "\\e", StringComparison.Ordinal )
+		.Replace( "\r", "\\r", StringComparison.Ordinal )
+		.Replace( "\n", "\\n", StringComparison.Ordinal )
+		.Replace( "\t", "\\t", StringComparison.Ordinal );
 }
 
 static ValueTask WriteLineAsync(
@@ -331,11 +269,7 @@ static ValueTask WriteLineAsync(
 ) {
 	ArgumentNullException.ThrowIfNull( session );
 	ArgumentNullException.ThrowIfNull( text );
-
 	return session.WriteTextAsync(
-		string.Concat(
-			text,
-			"\r\n"
-		)
+		string.Concat( text, "\r\n" )
 	);
 }

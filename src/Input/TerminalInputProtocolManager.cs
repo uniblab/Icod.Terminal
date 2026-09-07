@@ -27,6 +27,7 @@ internal sealed class TerminalInputProtocolManager {
 	private const string DisableButtonMotion = "\u001b[?1002l";
 	private const string EnableAnyMotion = "\u001b[?1003h";
 	private const string DisableAnyMotion = "\u001b[?1003l";
+	private const string KittyKeyboardPop = "\u001b[<u";
 
 	private readonly TerminalSession session;
 	private readonly SemaphoreSlim gate = new( 1, 1 );
@@ -81,6 +82,7 @@ internal sealed class TerminalInputProtocolManager {
 				options.BracketedPaste,
 				options.FocusReporting,
 				options.MouseTrackingMode,
+				options.KeyboardReportingMode,
 				lease
 			);
 			this.leases.Add( leaseId, entry );
@@ -170,6 +172,82 @@ internal sealed class TerminalInputProtocolManager {
 		this.MarkInvalidated();
 	}
 
+	internal async ValueTask SuspendKeyboardForScreenSwitchAsync(
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			if ( this.closed || this.suspended ) {
+				return;
+			}
+			if ( !this.appliedKnown || this.IsInvalidated ) {
+				throw new InvalidOperationException(
+					"Keyboard reporting state is not trustworthy before a managed screen transition."
+				);
+			}
+			if ( !this.appliedState.KeyboardReportingMode.HasValue ) {
+				return;
+			}
+
+			InputProtocolState target = this.appliedState with {
+				KeyboardReportingMode = null
+			};
+			try {
+				await this.TransitionTransactionalAsync(
+					this.appliedState,
+					target,
+					cancellationToken
+				).ConfigureAwait( false );
+				this.appliedState = target;
+			} catch {
+				this.appliedKnown = false;
+				this.MarkInvalidated();
+				throw;
+			}
+		} finally {
+			this.gate.Release();
+		}
+	}
+
+	internal async ValueTask ResumeKeyboardAfterScreenSwitchAsync() {
+		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
+		try {
+			if ( this.closed || this.suspended ) {
+				return;
+			}
+			if ( !this.appliedKnown || this.IsInvalidated ) {
+				throw new InvalidOperationException(
+					"Keyboard reporting state is not trustworthy after a managed screen transition."
+				);
+			}
+
+			TerminalKeyboardReportingMode? desiredMode =
+				this.GetDesiredState().KeyboardReportingMode;
+			if ( this.appliedState.KeyboardReportingMode == desiredMode ) {
+				return;
+			}
+
+			InputProtocolState target = this.appliedState with {
+				KeyboardReportingMode = desiredMode
+			};
+			try {
+				await this.TransitionTransactionalAsync(
+					this.appliedState,
+					target,
+					CancellationToken.None
+				).ConfigureAwait( false );
+				this.appliedState = target;
+			} catch {
+				this.appliedKnown = false;
+				this.MarkInvalidated();
+				throw;
+			}
+		} finally {
+			this.gate.Release();
+		}
+	}
+
 	internal async ValueTask SuspendAsync() {
 		await this.gate.WaitAsync( CancellationToken.None ).ConfigureAwait( false );
 		try {
@@ -215,6 +293,20 @@ internal sealed class TerminalInputProtocolManager {
 				this.appliedKnown = true;
 				this.ClearInvalidated();
 				return;
+			}
+
+			if ( desired.KeyboardReportingMode.HasValue ) {
+				bool kittySupported = await this.session.ProbeKittyKeyboardSupportAfterResumeAsync(
+					CancellationToken.None
+				).ConfigureAwait( false );
+				if ( !kittySupported ) {
+					this.suspended = true;
+					this.appliedKnown = false;
+					this.MarkInvalidated();
+					throw new InvalidOperationException(
+						"Kitty progressive keyboard protocol support could not be re-established after lifecycle re-entry."
+					);
+				}
 			}
 
 			InputProtocolState from = !this.suspended
@@ -394,6 +486,7 @@ internal sealed class TerminalInputProtocolManager {
 		bool bracketedPaste = false;
 		bool focusReporting = false;
 		TerminalMouseTrackingMode? mouseTrackingMode = null;
+		TerminalKeyboardReportingMode? keyboardReportingMode = null;
 
 		foreach ( LeaseEntry entry in this.leases.Values ) {
 			bracketedPaste |= entry.BracketedPaste;
@@ -406,6 +499,14 @@ internal sealed class TerminalInputProtocolManager {
 				) ) {
 				mouseTrackingMode = entry.MouseTrackingMode;
 			}
+			if ( entry.KeyboardReportingMode.HasValue
+				&& (
+					!keyboardReportingMode.HasValue
+					|| GetKeyboardReportingStrength( entry.KeyboardReportingMode.Value )
+						> GetKeyboardReportingStrength( keyboardReportingMode.Value )
+				) ) {
+				keyboardReportingMode = entry.KeyboardReportingMode;
+			}
 		}
 
 		return new InputProtocolState(
@@ -414,7 +515,8 @@ internal sealed class TerminalInputProtocolManager {
 			mouseTrackingMode.HasValue
 				? this.GetMouseProtocol()
 				: MouseProtocolKind.None,
-			mouseTrackingMode
+			mouseTrackingMode,
+			keyboardReportingMode
 		);
 	}
 
@@ -478,6 +580,17 @@ internal sealed class TerminalInputProtocolManager {
 
 		bool wrote = false;
 		InputProtocolState state = progress.State;
+
+		if ( state.KeyboardReportingMode.HasValue
+			&& state.KeyboardReportingMode != target.KeyboardReportingMode ) {
+			await this.WriteAsync(
+				KittyKeyboardPop,
+				cancellationToken
+			).ConfigureAwait( false );
+			state = state with { KeyboardReportingMode = null };
+			progress.State = state;
+			wrote = true;
+		}
 
 		if ( state.MouseTrackingMode.HasValue
 			&& (
@@ -581,6 +694,17 @@ internal sealed class TerminalInputProtocolManager {
 			wrote = true;
 		}
 
+		if ( !state.KeyboardReportingMode.HasValue
+			&& target.KeyboardReportingMode.HasValue ) {
+			await this.WriteAsync(
+				GetKittyKeyboardPushSequence( target.KeyboardReportingMode.Value ),
+				cancellationToken
+			).ConfigureAwait( false );
+			state = state with { KeyboardReportingMode = target.KeyboardReportingMode };
+			progress.State = state;
+			wrote = true;
+		}
+
 		return wrote;
 	}
 
@@ -594,6 +718,12 @@ internal sealed class TerminalInputProtocolManager {
 		List<Exception> exceptions = [];
 		bool wrote = false;
 
+		if ( from.KeyboardReportingMode.HasValue ) {
+			wrote |= await this.TryWriteAsync(
+				KittyKeyboardPop,
+				exceptions
+			).ConfigureAwait( false );
+		}
 		if ( from.MouseTrackingMode.HasValue ) {
 			wrote |= await this.TryWriteAsync(
 				GetMouseTrackingSequence(
@@ -718,6 +848,37 @@ internal sealed class TerminalInputProtocolManager {
 		};
 	}
 
+	private static int GetKeyboardReportingStrength(
+		TerminalKeyboardReportingMode mode
+	) {
+		return mode switch {
+			TerminalKeyboardReportingMode.Disambiguated => 0,
+			TerminalKeyboardReportingMode.EventTypes => 1,
+			TerminalKeyboardReportingMode.AllKeys => 2,
+			_ => throw new ArgumentOutOfRangeException(
+				nameof( mode ),
+				mode,
+				"The terminal keyboard reporting mode is not recognized."
+			)
+		};
+	}
+
+	private static string GetKittyKeyboardPushSequence(
+		TerminalKeyboardReportingMode mode
+	) {
+		int flags = mode switch {
+			TerminalKeyboardReportingMode.Disambiguated => 5,
+			TerminalKeyboardReportingMode.EventTypes => 7,
+			TerminalKeyboardReportingMode.AllKeys => 31,
+			_ => throw new ArgumentOutOfRangeException(
+				nameof( mode ),
+				mode,
+				"The terminal keyboard reporting mode is not recognized."
+			)
+		};
+		return $"\u001b[>{flags}u";
+	}
+
 	private void MarkInvalidated() {
 		Volatile.Write( ref this.invalidated, 1 );
 	}
@@ -745,12 +906,14 @@ internal sealed class TerminalInputProtocolManager {
 			bool bracketedPaste,
 			bool focusReporting,
 			TerminalMouseTrackingMode? mouseTrackingMode,
+			TerminalKeyboardReportingMode? keyboardReportingMode,
 			TerminalInputProtocolLease lease
 		) {
 			ArgumentNullException.ThrowIfNull( lease );
 			this.BracketedPaste = bracketedPaste;
 			this.FocusReporting = focusReporting;
 			this.MouseTrackingMode = mouseTrackingMode;
+			this.KeyboardReportingMode = keyboardReportingMode;
 			this.Lease = lease;
 		}
 
@@ -763,6 +926,10 @@ internal sealed class TerminalInputProtocolManager {
 		}
 
 		internal TerminalMouseTrackingMode? MouseTrackingMode {
+			get;
+		}
+
+		internal TerminalKeyboardReportingMode? KeyboardReportingMode {
 			get;
 		}
 
@@ -794,7 +961,8 @@ internal sealed class TerminalInputProtocolManager {
 		bool BracketedPaste,
 		bool FocusReporting,
 		MouseProtocolKind MouseProtocol,
-		TerminalMouseTrackingMode? MouseTrackingMode
+		TerminalMouseTrackingMode? MouseTrackingMode,
+		TerminalKeyboardReportingMode? KeyboardReportingMode
 	) {
 		internal static InputProtocolState Baseline {
 			get;
@@ -802,6 +970,7 @@ internal sealed class TerminalInputProtocolManager {
 			false,
 			false,
 			MouseProtocolKind.None,
+			null,
 			null
 		);
 	}

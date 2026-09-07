@@ -77,10 +77,15 @@ internal sealed partial class TerminalInputDecoder {
 		CancellationToken cancellationToken
 	) {
 		TerminalResponseExpectation? expectation = this.GetResponseExpectation();
-		if ( expectation is null
-			|| !expectation.IsArmed
-			|| 0 < expectation.ProtectedBufferedBytes ) {
-			return null;
+		if ( expectation is null ) {
+			return await this.TryDecodeModernKeyboardResultAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+		}
+		if ( !expectation.IsArmed || 0 < expectation.ProtectedBufferedBytes ) {
+			return await this.TryDecodeModernKeyboardResultAsync(
+				cancellationToken
+			).ConfigureAwait( false );
 		}
 
 		int framingLimit = TerminalResponseFrameKind.Osc == expectation.Matcher.FrameKind
@@ -97,7 +102,15 @@ internal sealed partial class TerminalInputDecoder {
 				this.GetResponseExpectation(),
 				expectation
 			) ) {
-				return null;
+				return await this.TryDecodeModernKeyboardResultAsync(
+					cancellationToken
+				).ConfigureAwait( false );
+			}
+
+			if ( await this.TryConsumeKittyKeyboardFlagsProbeAsync(
+				cancellationToken
+			).ConfigureAwait( false ) ) {
+				continue;
 			}
 
 			TerminalResponseFrameParseResult parseResult = TerminalResponseFramer.Parse(
@@ -108,7 +121,9 @@ internal sealed partial class TerminalInputDecoder {
 
 			switch ( parseResult.Status ) {
 				case TerminalResponseFrameParseStatus.NotCandidate:
-					return null;
+					return await this.TryDecodeModernKeyboardResultAsync(
+						cancellationToken
+					).ConfigureAwait( false );
 
 				case TerminalResponseFrameParseStatus.Invalid:
 					TerminalInputDecodeResult? oversizedResponse =
@@ -117,7 +132,12 @@ internal sealed partial class TerminalInputDecoder {
 							maximumFrameBytes,
 							cancellationToken
 						).ConfigureAwait( false );
-					return oversizedResponse;
+					if ( oversizedResponse.HasValue ) {
+						return oversizedResponse;
+					}
+					return await this.TryDecodeModernKeyboardResultAsync(
+						cancellationToken
+					).ConfigureAwait( false );
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					bool appended = parseResult.IntroducerIncomplete
@@ -130,7 +150,9 @@ internal sealed partial class TerminalInputDecoder {
 							).ConfigureAwait( false )
 					;
 					if ( !appended ) {
-						return null;
+						return await this.TryDecodeModernKeyboardResultAsync(
+							cancellationToken
+						).ConfigureAwait( false );
 					}
 					continue;
 
@@ -140,14 +162,18 @@ internal sealed partial class TerminalInputDecoder {
 						parseResult.Length
 					);
 					if ( !expectation.Matcher.IsMatch( frame ) ) {
-						return null;
+						return await this.TryDecodeModernKeyboardResultAsync(
+							cancellationToken
+						).ConfigureAwait( false );
 					}
 
 					if ( !this.TryConsumeExpectedResponse(
 						expectation,
 						frame
 					) ) {
-						return null;
+						return await this.TryDecodeModernKeyboardResultAsync(
+							cancellationToken
+						).ConfigureAwait( false );
 					}
 
 					return TerminalInputDecodeResult.RoutedResponse(
@@ -161,6 +187,25 @@ internal sealed partial class TerminalInputDecoder {
 					);
 			}
 		}
+	}
+
+	private async ValueTask<TerminalInputDecodeResult?> TryDecodeModernKeyboardResultAsync(
+		CancellationToken cancellationToken
+	) {
+		if ( 0 < this.pendingModernKeyboardEvents.Count ) {
+			return TerminalInputDecodeResult.FromInput(
+				this.pendingModernKeyboardEvents.Dequeue()
+			);
+		}
+
+		TerminalInputEvent? inputEvent = await this.TryReadModernKeyboardEventAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		if ( inputEvent is null ) {
+			return null;
+		}
+
+		return TerminalInputDecodeResult.FromInput( inputEvent );
 	}
 
 	private async ValueTask<TerminalInputDecodeResult?> TryRouteOversizedCorrelatedResponseAsync(

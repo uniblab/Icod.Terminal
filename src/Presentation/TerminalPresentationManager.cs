@@ -335,6 +335,82 @@ internal sealed class TerminalPresentationManager {
 		PresentationState to,
 		CancellationToken cancellationToken
 	) {
+		bool screenChanged = from.AlternateScreen != to.AlternateScreen;
+		bool keyboardDetached = false;
+
+		if ( screenChanged ) {
+			await this.session.InputProtocolManagerForComposition
+				.SuspendKeyboardForScreenSwitchAsync( cancellationToken )
+				.ConfigureAwait( false );
+			keyboardDetached = true;
+		}
+
+		try {
+			await this.TransitionPresentationOnlyTransactionalAsync(
+				from,
+				to,
+				cancellationToken
+			).ConfigureAwait( false );
+		} catch ( Exception transitionException ) {
+			if ( !keyboardDetached ) {
+				throw;
+			}
+
+			try {
+				await this.session.InputProtocolManagerForComposition
+					.ResumeKeyboardAfterScreenSwitchAsync()
+					.ConfigureAwait( false );
+			} catch ( Exception keyboardException ) {
+				throw new AggregateException(
+					"Terminal presentation transition failed and keyboard reporting could not be restored.",
+					transitionException,
+					keyboardException
+				);
+			}
+
+			throw;
+		}
+
+		if ( !keyboardDetached ) {
+			return;
+		}
+
+		try {
+			await this.session.InputProtocolManagerForComposition
+				.ResumeKeyboardAfterScreenSwitchAsync()
+				.ConfigureAwait( false );
+		} catch ( Exception keyboardException ) {
+			List<Exception> exceptions = [ keyboardException ];
+			try {
+				await this.TransitionPresentationOnlyTransactionalAsync(
+					to,
+					from,
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception rollbackException ) {
+				exceptions.Add( rollbackException );
+			}
+
+			try {
+				await this.session.InputProtocolManagerForComposition
+					.ResumeKeyboardAfterScreenSwitchAsync()
+					.ConfigureAwait( false );
+			} catch ( Exception keyboardRollbackException ) {
+				exceptions.Add( keyboardRollbackException );
+			}
+
+			throw new AggregateException(
+				"Terminal screen transition completed but Kitty keyboard reporting could not be re-established; rollback was attempted.",
+				exceptions
+			);
+		}
+	}
+
+	private async ValueTask TransitionPresentationOnlyTransactionalAsync(
+		PresentationState from,
+		PresentationState to,
+		CancellationToken cancellationToken
+	) {
 		using IDisposable controlOutput = await this.session.AcquireControlOutputAsync(
 			cancellationToken
 		).ConfigureAwait( false );

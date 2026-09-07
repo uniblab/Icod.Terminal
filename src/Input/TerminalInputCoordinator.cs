@@ -107,6 +107,17 @@ internal sealed class TerminalInputCoordinator {
 		return this.decoder.RemoveResponseExpectation( expectation );
 	}
 
+	internal KittyKeyboardFlagsProbe RegisterKittyKeyboardFlagsProbe() {
+		return this.decoder.RegisterKittyKeyboardFlagsProbe();
+	}
+
+	internal void RemoveKittyKeyboardFlagsProbe(
+		KittyKeyboardFlagsProbe probe
+	) {
+		ArgumentNullException.ThrowIfNull( probe );
+		this.decoder.RemoveKittyKeyboardFlagsProbe( probe );
+	}
+
 	private bool TryAddApplicationDemand() {
 		lock ( this.sync ) {
 			if ( this.endOfInput ) {

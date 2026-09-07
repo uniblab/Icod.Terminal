@@ -42,6 +42,18 @@ public sealed class TerminalInputProtocolOptions {
 		init;
 	}
 
+	/// <summary>
+	/// Gets or initializes the requested negotiated modern-keyboard reporting intensity, when any.
+	/// </summary>
+	/// <remarks>
+	/// Keyboard reporting is negotiated through the Kitty progressive keyboard protocol.
+	/// Traditional keyboard decoding remains the default when this property is <see langword="null"/>.
+	/// </remarks>
+	public TerminalKeyboardReportingMode? KeyboardReportingMode {
+		get;
+		init;
+	}
+
 	internal void Validate() {
 		if ( this.MouseTrackingMode.HasValue
 			&& !Enum.IsDefined( this.MouseTrackingMode.Value ) ) {
@@ -51,9 +63,18 @@ public sealed class TerminalInputProtocolOptions {
 				"The terminal mouse tracking mode is not recognized."
 			);
 		}
+		if ( this.KeyboardReportingMode.HasValue
+			&& !Enum.IsDefined( this.KeyboardReportingMode.Value ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( this.KeyboardReportingMode ),
+				this.KeyboardReportingMode.Value,
+				"The terminal keyboard reporting mode is not recognized."
+			);
+		}
 		if ( !this.BracketedPaste
 			&& !this.FocusReporting
-			&& !this.MouseTrackingMode.HasValue ) {
+			&& !this.MouseTrackingMode.HasValue
+			&& !this.KeyboardReportingMode.HasValue ) {
 			throw new ArgumentException(
 				"At least one terminal input protocol must be requested."
 			);
@@ -66,9 +87,9 @@ public sealed class TerminalInputProtocolOptions {
 /// </summary>
 /// <remarks>
 /// Leases may overlap. Bracketed-paste and focus reporting remain active until
-/// the last requesting lease is released. Mouse tracking uses the strongest
-/// active request; releasing a stronger request deterministically restores the
-/// strongest remaining request.
+/// the last requesting lease is released. Mouse tracking and keyboard reporting
+/// use the strongest active request; releasing a stronger request deterministically
+/// restores the strongest remaining request.
 /// </remarks>
 public sealed class TerminalInputProtocolLease : IAsyncDisposable {
 	private readonly object sync = new();
@@ -89,6 +110,7 @@ public sealed class TerminalInputProtocolLease : IAsyncDisposable {
 		this.BracketedPaste = options.BracketedPaste;
 		this.FocusReporting = options.FocusReporting;
 		this.MouseTrackingMode = options.MouseTrackingMode;
+		this.KeyboardReportingMode = options.KeyboardReportingMode;
 	}
 
 	/// <summary>Gets whether this lease requests bracketed-paste reporting.</summary>
@@ -103,6 +125,11 @@ public sealed class TerminalInputProtocolLease : IAsyncDisposable {
 
 	/// <summary>Gets the mouse tracking request owned by this lease, when any.</summary>
 	public TerminalMouseTrackingMode? MouseTrackingMode {
+		get;
+	}
+
+	/// <summary>Gets the modern keyboard reporting request owned by this lease, when any.</summary>
+	public TerminalKeyboardReportingMode? KeyboardReportingMode {
 		get;
 	}
 
@@ -139,6 +166,10 @@ public sealed class TerminalInputProtocolLease : IAsyncDisposable {
 
 		bool released = false;
 		try {
+			using IDisposable composition = await TerminalStateComposition.AcquireAsync(
+				currentOwner,
+				CancellationToken.None
+			).ConfigureAwait( false );
 			await currentOwner.ReleaseAsync( this.leaseId ).ConfigureAwait( false );
 			released = true;
 		} finally {
