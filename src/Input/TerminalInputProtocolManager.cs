@@ -296,8 +296,7 @@ internal sealed class TerminalInputProtocolManager {
 			}
 
 			if ( desired.KeyboardReportingMode.HasValue ) {
-				bool kittySupported = await this.session.ProbeKittyKeyboardSupportAsync(
-					lifecycleObservation: true,
+				bool kittySupported = await this.session.ProbeKittyKeyboardSupportAfterResumeAsync(
 					CancellationToken.None
 				).ConfigureAwait( false );
 				if ( !kittySupported ) {
