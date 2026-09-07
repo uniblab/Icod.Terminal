@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Public DECRQSS status-string queries introduced by the 0.3 query milestone.
+/// Provides typed DEC Request Status String queries for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
 	/// <summary>
