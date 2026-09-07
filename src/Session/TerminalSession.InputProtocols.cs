@@ -35,6 +35,9 @@ public sealed partial class TerminalSession {
 			}
 		}
 
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			cancellationToken
+		).ConfigureAwait( false );
 		return await this.inputProtocolManager.AcquireAsync(
 			options,
 			cancellationToken
@@ -45,16 +48,25 @@ public sealed partial class TerminalSession {
 		this.inputProtocolManager.Invalidate();
 	}
 
-	private ValueTask SuspendInputProtocolStateAsync() {
-		return this.inputProtocolManager.SuspendAsync();
+	private async ValueTask SuspendInputProtocolStateAsync() {
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
+		await this.inputProtocolManager.SuspendAsync().ConfigureAwait( false );
 	}
 
-	private ValueTask ResumeInputProtocolStateAsync() {
-		return this.inputProtocolManager.ReenterAsync();
+	private async ValueTask ResumeInputProtocolStateAsync() {
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
+		await this.inputProtocolManager.ReenterAsync().ConfigureAwait( false );
 	}
 
 	private async ValueTask<Exception?> CloseInputProtocolStateAsync() {
 		try {
+			using IDisposable composition = await this.AcquireStateCompositionAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
 			await this.inputProtocolManager.CloseAsync().ConfigureAwait( false );
 			return null;
 		} catch ( Exception exception ) {
