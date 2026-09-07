@@ -195,16 +195,20 @@ RequireOrdered(
 	PushAllKeys,
 	"DCurses full-screen exit did not return Kitty ownership to the main screen."
 );
+Require(
+	2 <= transport.CountOf( PopKeyboard )
+		&& transport.ContainsWrite( "\u001b[?1000l" )
+		&& transport.ContainsWrite( "\u001b[?1006l" )
+		&& transport.ContainsWrite( "<F->" )
+		&& transport.ContainsWrite( "<P->" ),
+	"Disposing DCurses did not restore the TerminalSession-owned rich-input baseline."
+);
 
 transport.ClearWrites();
 await protocols.DisposeAsync();
 Require(
-	transport.ContainsWrite( PopKeyboard )
-		&& transport.ContainsWrite( "<P->" )
-		&& transport.ContainsWrite( "<F->" )
-		&& transport.ContainsWrite( "\u001b[?1000l" )
-		&& transport.ContainsWrite( "\u001b[?1006l" ),
-	"Final rich-input release did not restore the composed protocol baseline."
+	0 == transport.WriteCount,
+	"The protocol lease emitted duplicate cleanup after DCurses had disposed its owned TerminalSession."
 );
 
 Console.WriteLine(
@@ -264,6 +268,21 @@ internal sealed class DuplexTerminalTransport : ITerminalInput, ITerminalOutput 
 	) {
 		ArgumentNullException.ThrowIfNull( expected );
 		return 0 <= this.IndexOf( expected );
+	}
+
+	internal int CountOf(
+		string expected
+	) {
+		ArgumentNullException.ThrowIfNull( expected );
+		lock ( this.sync ) {
+			return this.writes.Count(
+				value => string.Equals(
+					value,
+					expected,
+					StringComparison.Ordinal
+				)
+			);
+		}
 	}
 
 	internal int IndexOf(
