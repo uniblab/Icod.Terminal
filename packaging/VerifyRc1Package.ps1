@@ -16,11 +16,11 @@ $repositoryRoot = [System.IO.Path]::GetFullPath(
 )
 Import-Module ( Join-Path $PSScriptRoot 'RepositoryTools.psm1' ) -Force
 
-if ( ![System.IO.Path]::IsPathRooted( $ArtifactDirectory ) ) {
+if ( -not [System.IO.Path]::IsPathRooted( $ArtifactDirectory ) ) {
 	$ArtifactDirectory = Join-Path $repositoryRoot $ArtifactDirectory
 }
 $ArtifactDirectory = [System.IO.Path]::GetFullPath( $ArtifactDirectory )
-if ( !( Test-Path -LiteralPath $ArtifactDirectory -PathType Container ) ) {
+if ( -not ( Test-Path -LiteralPath $ArtifactDirectory -PathType Container ) ) {
 	throw "Artifact directory '$ArtifactDirectory' does not exist."
 }
 
@@ -36,7 +36,7 @@ if ( [string]::IsNullOrWhiteSpace( $ExpectedVersion ) ) {
 }
 
 $packagePath = Join-Path $ArtifactDirectory "Icod.Terminal.$ExpectedVersion.nupkg"
-if ( !( Test-Path -LiteralPath $packagePath -PathType Leaf ) ) {
+if ( -not ( Test-Path -LiteralPath $packagePath -PathType Leaf ) ) {
 	throw "Expected package '$packagePath' was not produced."
 }
 
@@ -73,17 +73,24 @@ try {
 	$releaseNotesNode = $metadata.SelectSingleNode(
 		"*[local-name()='releaseNotes']"
 	)
-	if ( $null -eq $releaseNotesNode
-		-or !$releaseNotesNode.InnerText.Contains(
-			$ExpectedVersion,
-			[System.StringComparison]::Ordinal
-		) ) {
+	if ( $null -eq $releaseNotesNode ) {
+		throw 'The package nuspec does not contain release notes.'
+	}
+
+	$releaseNotes = $releaseNotesNode.InnerText
+	$releaseNotesHaveVersion = $releaseNotes.Contains(
+		$ExpectedVersion,
+		[System.StringComparison]::Ordinal
+	)
+	if ( -not $releaseNotesHaveVersion ) {
 		throw "Package release notes do not describe version $ExpectedVersion."
 	}
-	if ( !$releaseNotesNode.InnerText.Contains(
-			'TerminalSession.Input',
-			[System.StringComparison]::Ordinal
-		) ) {
+
+	$releaseNotesHaveMigration = $releaseNotes.Contains(
+		'TerminalSession.Input',
+		[System.StringComparison]::Ordinal
+	)
+	if ( -not $releaseNotesHaveMigration ) {
 		throw 'Package release notes do not document the pre-1.0 TerminalSession.Input correction.'
 	}
 
@@ -104,10 +111,11 @@ try {
 		'Compatibility-and-Versioning.md',
 		'Migration-to-1.0.md'
 	) ) {
-		if ( !$readme.Contains(
-				$requiredText,
-				[System.StringComparison]::Ordinal
-			) ) {
+		$readmeHasText = $readme.Contains(
+			$requiredText,
+			[System.StringComparison]::Ordinal
+		)
+		if ( -not $readmeHasText ) {
 			throw "The packed README is missing required release-candidate text '$requiredText'."
 		}
 	}
