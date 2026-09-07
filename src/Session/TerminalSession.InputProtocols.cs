@@ -13,9 +13,9 @@ public sealed partial class TerminalSession {
 	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
 	/// <returns>
 	/// An available result containing the acquired lease, or a controlled unavailable
-	/// result when the selected terminal does not advertise the required protocol contract.
+	/// result when the selected terminal cannot establish the required protocol contract.
 	/// </returns>
-	public ValueTask<TerminalControlResult<TerminalInputProtocolLease>> AcquireInputProtocolsAsync(
+	public async ValueTask<TerminalControlResult<TerminalInputProtocolLease>> AcquireInputProtocolsAsync(
 		TerminalInputProtocolOptions options,
 		CancellationToken cancellationToken = default
 	) {
@@ -23,10 +23,22 @@ public sealed partial class TerminalSession {
 		options.Validate();
 		cancellationToken.ThrowIfCancellationRequested();
 
-		return this.inputProtocolManager.AcquireAsync(
+		if ( options.KeyboardReportingMode.HasValue ) {
+			bool kittySupported = await this.ProbeKittyKeyboardSupportAsync(
+				lifecycleObservation: false,
+				cancellationToken
+			).ConfigureAwait( false );
+			if ( !kittySupported ) {
+				return TerminalControlResult<TerminalInputProtocolLease>.Unavailable(
+					"The terminal did not establish Kitty progressive keyboard protocol support."
+				);
+			}
+		}
+
+		return await this.inputProtocolManager.AcquireAsync(
 			options,
 			cancellationToken
-		);
+		).ConfigureAwait( false );
 	}
 
 	private void InvalidateInputProtocolState() {
