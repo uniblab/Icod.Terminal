@@ -56,6 +56,9 @@ try {
     & (Join-Path $PSScriptRoot 'VerifyDCursesModernKeyboard.ps1') `
         -Configuration $Configuration
 
+    & (Join-Path $PSScriptRoot 'VerifyDCursesHardeningSoak.ps1') `
+        -Configuration $Configuration
+
     Invoke-DotNet -Arguments @(
         'pack', $solutionPath,
         '-c', $Configuration,
@@ -106,6 +109,10 @@ try {
         -Configuration $Configuration
 
     & (Join-Path $PSScriptRoot 'VerifyModernKeyboardPackage.ps1') `
+        -ArtifactDirectory $packageDirectory `
+        -Configuration $Configuration
+
+    & (Join-Path $PSScriptRoot 'VerifyHardeningPackage.ps1') `
         -ArtifactDirectory $packageDirectory `
         -Configuration $Configuration
 

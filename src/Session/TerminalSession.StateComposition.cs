@@ -23,6 +23,15 @@ public sealed partial class TerminalSession {
 			cancellationToken
 		);
 	}
+
+	private void ThrowIfStateAcquisitionUnavailable() {
+		this.ThrowIfSessionOutputClosed();
+		if ( 0 != Volatile.Read( ref this.lifecycleStateReleased ) ) {
+			throw new InvalidOperationException(
+				"Terminal state cannot be acquired while the session is suspending, suspended, or re-entering terminal state."
+			);
+		}
+	}
 }
 
 /// <summary>
