@@ -22,7 +22,8 @@ internal sealed partial class TerminalInputDecoder {
 		while ( true ) {
 			int finalIndex = FindCsiFinalIndex( this.bufferedBytes );
 			if ( 0 <= finalIndex ) {
-				if ( (byte)'u' != this.bufferedBytes[ finalIndex ] ) {
+				byte finalByte = this.bufferedBytes[ finalIndex ];
+				if ( finalByte is not (byte)'u' and not (byte)'~' ) {
 					return null;
 				}
 
@@ -30,32 +31,41 @@ internal sealed partial class TerminalInputDecoder {
 					0,
 					finalIndex + 1
 				).ToArray();
-				this.Consume( frame.Length );
 
-				if ( TryDecodeKittyCsiUFrame(
-					frame,
-					out TerminalInputEvent? inputEvent,
-					out IReadOnlyList<TerminalInputEvent>? additionalEvents
-				) ) {
-					if ( additionalEvents is not null ) {
-						List<byte> pendingTextBytes = [];
-						foreach ( TerminalInputEvent additional in additionalEvents ) {
-							Rune character = additional.Character
-								?? throw new InvalidOperationException(
-									"A pending Kitty pure-text event must contain one Unicode scalar."
-								);
-							pendingTextBytes.AddRange(
-								Encoding.UTF8.GetBytes( character.ToString() )
-							);
-						}
-						if ( 0 < pendingTextBytes.Count ) {
-							this.bufferedBytes.InsertRange( 0, pendingTextBytes );
-						}
-					}
-					return inputEvent;
+				TerminalInputEvent? inputEvent;
+				IReadOnlyList<TerminalInputEvent>? additionalEvents = null;
+				bool decoded = (byte)'u' == finalByte
+					? TryDecodeKittyCsiUFrame(
+						frame,
+						out inputEvent,
+						out additionalEvents
+					)
+					: TryDecodeXtermModifyOtherKeysFrame(
+						frame,
+						out inputEvent
+					)
+				;
+				if ( !decoded ) {
+					return null;
 				}
 
-				return null;
+				this.Consume( frame.Length );
+				if ( additionalEvents is not null ) {
+					List<byte> pendingTextBytes = [];
+					foreach ( TerminalInputEvent additional in additionalEvents ) {
+						Rune character = additional.Character
+							?? throw new InvalidOperationException(
+								"A pending Kitty pure-text event must contain one Unicode scalar."
+							);
+						pendingTextBytes.AddRange(
+							Encoding.UTF8.GetBytes( character.ToString() )
+						);
+					}
+					if ( 0 < pendingTextBytes.Count ) {
+						this.bufferedBytes.InsertRange( 0, pendingTextBytes );
+					}
+				}
+				return inputEvent;
 			}
 
 			if ( this.bufferedBytes.Count >= MaximumModernKeyboardFrameBytes ) {
@@ -73,6 +83,45 @@ internal sealed partial class TerminalInputDecoder {
 				return null;
 			}
 		}
+	}
+
+	private static bool TryDecodeXtermModifyOtherKeysFrame(
+		ReadOnlySpan<byte> frame,
+		out TerminalInputEvent? inputEvent
+	) {
+		inputEvent = null;
+		if ( 8 > frame.Length
+			|| EscapeByte != frame[ 0 ]
+			|| (byte)'[' != frame[ 1 ]
+			|| (byte)'~' != frame[ ^1 ] ) {
+			return false;
+		}
+
+		string body = Encoding.ASCII.GetString( frame[ 2..^1 ] );
+		string[] parameters = body.Split( ';' );
+		if ( 3 != parameters.Length
+			|| !string.Equals( parameters[ 0 ], "27", StringComparison.Ordinal )
+			|| !TryParsePositiveInteger( parameters[ 1 ], out int encodedModifiers )
+			|| !TryMapXtermModifiers( encodedModifiers, out TerminalKeyModifiers modifiers )
+			|| !TryParseRune( parameters[ 2 ], out Rune character ) ) {
+			return false;
+		}
+
+		TerminalKey key = MapUnicodeKeyIdentity( character );
+		inputEvent = TerminalKey.Character == key
+			? TerminalInputEvent.FromKey(
+				TerminalKey.Character,
+				modifiers,
+				character,
+				keyPhase: TerminalKeyEventPhase.Press
+			)
+			: TerminalInputEvent.FromKey(
+				key,
+				modifiers,
+				keyPhase: TerminalKeyEventPhase.Press
+			)
+		;
+		return true;
 	}
 
 	private static bool TryDecodeKittyCsiUFrame(
@@ -239,7 +288,6 @@ internal sealed partial class TerminalInputDecoder {
 			if ( value is >= 0x40 and <= 0x7e ) {
 				return index;
 			}
-		}
 		return -1;
 	}
 
@@ -280,6 +328,27 @@ internal sealed partial class TerminalInputDecoder {
 			return false;
 		}
 		rune = new Rune( codePoint );
+		return true;
+	}
+
+	private static bool TryMapXtermModifiers(
+		int encodedModifiers,
+		out TerminalKeyModifiers modifiers
+	) {
+		modifiers = TerminalKeyModifiers.None;
+		int bits = encodedModifiers - 1;
+		if ( 0 > bits || 0 != ( bits & ~0x07 ) ) {
+			return false;
+		}
+		if ( 0 != ( bits & 1 ) ) {
+			modifiers |= TerminalKeyModifiers.Shift;
+		}
+		if ( 0 != ( bits & 2 ) ) {
+			modifiers |= TerminalKeyModifiers.Alt;
+		}
+		if ( 0 != ( bits & 4 ) ) {
+			modifiers |= TerminalKeyModifiers.Control;
+		}
 		return true;
 	}
 
@@ -429,12 +498,12 @@ internal sealed partial class TerminalInputDecoder {
 			57452 => TerminalKey.RightMeta,
 			57453 => TerminalKey.IsoLevel3Shift,
 			57454 => TerminalKey.IsoLevel5Shift,
-			_ => TerminalKey.Unrecognized
+			_ => TerminalKey.None
 		};
-		if ( codePoint is >= 57376 and <= 57398 ) {
-			functionKeyNumber = 13 + codePoint - 57376;
-			return true;
+
+		if ( TerminalKey.Function == key ) {
+			functionKeyNumber = codePoint - 57376 + 13;
 		}
-		return TerminalKey.Unrecognized != key;
+		return TerminalKey.None != key;
 	}
 }
