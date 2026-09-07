@@ -2,7 +2,8 @@
 
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Predecessor tranche:** T190 — contract/regret audit, workflow #911  
-**Status:** Implementation complete; exact-head validation pending
+**Status:** Complete and green  
+**Exact-head validation:** workflow #918 at `c16949d94cb8471b9b776ec4c5dec4a715ea10de`
 
 ## 1. Purpose
 
@@ -48,7 +49,7 @@ Examples of **implementation details** that may evolve compatibly include:
 
 ## 4. T190 correction integrated into permanent docs
 
-The permanent architecture now incorporates the sole T190 D-class correction:
+The permanent architecture incorporates the sole T190 D-class correction:
 
 - `ITerminalInput` remains public for custom transport injection;
 - `TerminalSession.Input` is not public in the 1.0 surface;
@@ -66,7 +67,7 @@ This distinction is no longer discoverable only from release-specific audit note
 
 `Lifecycle-and-Restoration.md` consolidates behavior previously spread across early lifecycle work, color/keyboard lifecycle extensions, 0.17 composition work, and 0.18 hardening.
 
-It now provides one durable explanation of:
+It provides one durable explanation of:
 
 - baseline capture;
 - POSIX/Windows restoration timing;
@@ -116,9 +117,21 @@ The document also freezes:
 - exact restoration vs reset policy;
 - multiple-session limitations.
 
-## 8. Remaining documentation tranches
+## 8. Validation
 
-T191 intentionally does not duplicate later permanent authorities.
+Workflow #918 passed at exact head `c16949d94cb8471b9b776ec4c5dec4a715ea10de`.
+
+The validation preserved:
+
+- Windows/Linux/macOS PR build and test coverage;
+- real `Icod.DCurses` focused acceptance;
+- repeated DCurses hardening soak;
+- exact Staging package verification;
+- every retained 0.8–0.18 package contract.
+
+T191 introduced no runtime feature or protocol change.
+
+## 9. Remaining documentation tranches
 
 T192 owns:
 
@@ -139,15 +152,13 @@ T195 owns:
 
 T194/T196 reconcile XML, samples, README/package metadata, and exact public/package baselines against these permanent authorities.
 
-## 9. Exit criteria
+## 10. Exit criteria
 
-T191 is complete when:
+T191 is complete because:
 
 1. the three permanent documents exist and agree with current source behavior;
 2. the T190 D-class input-ownership correction is represented permanently;
 3. architecture boundaries are understandable without historical tranche documents;
 4. lifecycle participant ordering and restoration semantics are consolidated;
 5. normative behavior is distinguished from implementation detail;
-6. Windows/Linux/macOS PR validation and retained downstream/package gates remain green at the exact T191 head.
-
-No new runtime feature or protocol is part of T191.
+6. Windows/Linux/macOS PR validation and retained downstream/package gates are green at the exact T191 head.
