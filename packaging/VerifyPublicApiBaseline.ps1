@@ -29,9 +29,9 @@ if ( $expectedHash -notmatch '^[0-9A-Fa-f]{64}$' ) {
 	-OutputDirectory $OutputDirectory
 
 $generated = @(
-	Join-Path $outputRoot 'Icod.Terminal-net8.0.txt',
-	Join-Path $outputRoot 'Icod.Terminal-net9.0.txt',
-	Join-Path $outputRoot 'Icod.Terminal-net10.0.txt'
+	( Join-Path $outputRoot 'Icod.Terminal-net8.0.txt' )
+	( Join-Path $outputRoot 'Icod.Terminal-net9.0.txt' )
+	( Join-Path $outputRoot 'Icod.Terminal-net10.0.txt' )
 )
 
 function Get-NormalizedSha256(
