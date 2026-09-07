@@ -1,17 +1,9 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Cross-manager serialization for terminal state that must compose on one physical screen.
+/// Cross-manager access used to preserve screen-local terminal state ordering.
 /// </summary>
 public sealed partial class TerminalSession {
-	private readonly SemaphoreSlim stateCompositionGate = new( 1, 1 );
-
-	internal SemaphoreSlim StateCompositionGate {
-		get {
-			return this.stateCompositionGate;
-		}
-	}
-
 	internal TerminalInputProtocolManager InputProtocolManagerForComposition {
 		get {
 			return this.inputProtocolManager;
