@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Icod.Terminal;
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
