@@ -24,6 +24,30 @@ internal sealed class TerminalInputCoordinator {
 	private bool closed;
 
 	internal TerminalInputCoordinator(
+		ITerminalInput input,
+		TerminalDescription terminal,
+		TerminalInputDecoderOptions decoderOptions,
+		Icod.Timing.IMonotonicClock monotonicClock,
+		CancellationToken stopToken
+	) : this(
+		new TerminalInputDecoder(
+			input,
+			terminal,
+			monotonicClock,
+			decoderOptions.EscapeSequenceTimeout,
+			decoderOptions.MaximumBufferedBytes,
+			decoderOptions.PasteChunkBytes
+		),
+		stopToken,
+		decoderOptions.DeferredEventCapacity
+	) {
+		ArgumentNullException.ThrowIfNull( input );
+		ArgumentNullException.ThrowIfNull( terminal );
+		ArgumentNullException.ThrowIfNull( decoderOptions );
+		ArgumentNullException.ThrowIfNull( monotonicClock );
+	}
+
+	internal TerminalInputCoordinator(
 		TerminalInputDecoder decoder,
 		CancellationToken stopToken,
 		int deferredEventCapacity = DefaultDeferredEventCapacity
@@ -251,6 +275,7 @@ internal sealed class TerminalInputCoordinator {
 			if ( 0 < this.queryDemandCount ) {
 				--this.queryDemandCount;
 			}
+		}
 	}
 
 	private void ThrowIfClosed() {
