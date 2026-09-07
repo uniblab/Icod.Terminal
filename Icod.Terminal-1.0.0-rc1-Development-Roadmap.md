@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190 in progress
+**Status:** T190 complete and green; T191 in progress
 
 ---
 
@@ -69,21 +69,22 @@ During rc1:
 
 ### T190 — 1.0 contract and regret-audit freeze — `1.0.0-rc1`
 
-Establish the rc1 baseline from exact published `0.18.0` main and perform a systematic public-contract audit.
+Complete and green at workflow #911.
 
-Required work:
+T190 classified the accumulated public surface using the A–E regret framework and found one justified D-class correction before 1.0: a live `TerminalSession` no longer publicly exposes its borrowed raw input transport. `ITerminalInput` remains public for custom transport injection, but session-owned input now has one authoritative public read path through `ReadEventAsync(...)` and typed query operations.
 
-- inventory every public type/member and classify it by contract domain;
-- identify accidental, redundant, misleading, or underspecified pre-1.0 surface;
-- identify semantics that are public in behavior but not adequately documented;
-- identify stale package metadata, release notes, roadmap authorities, and samples;
-- freeze rc1 non-goals and compatibility policy;
-- record any proposed breaking/renaming change before implementation;
-- prove the baseline remains green before corrective work begins.
+The correction preserves all historical package/downstream gates. The audit found no sufficient reason to redesign the control-provider/native-snapshot layer, typed query/result contracts, semantic protocol APIs, reversible ownership leases, modern keyboard model, or the advanced caller-owned raw output transport.
 
-Record: `docs/T190-1.0-Contract-and-Regret-Audit-Freeze.md`.
+Comprehensive current enum numeric values and exact public-surface freezing are assigned to T194.
+
+Records:
+
+- `docs/T190-1.0-Contract-and-Regret-Audit-Freeze.md`;
+- `docs/T190-Public-API-Regret-Audit.md`.
 
 ### T191 — permanent architecture and ownership documentation
+
+In progress.
 
 Replace historical-development context as the primary architecture authority with durable 1.0-facing documents.
 
@@ -134,6 +135,7 @@ Required work:
 - audit every public/protected member's XML documentation for 1.0 semantics;
 - correct stale or pre-1.0-only wording;
 - audit exception/cancellation/lifecycle statements;
+- freeze the exact current public surface and every public enum numeric value as the 1.x baseline;
 - audit all samples for current best practice and ownership cleanup;
 - add samples only where an important public workflow is not otherwise taught;
 - remove or rewrite misleading examples;
@@ -150,7 +152,7 @@ Create permanent consumer-facing compatibility guidance:
 - supported TFMs/platform policy;
 - deprecation/obsoletion policy;
 - terminal capability vs emulator-specific behavior policy;
-- migration guidance from pre-1.0 package versions;
+- migration guidance from pre-1.0 package versions, including removal of public `TerminalSession.Input`;
 - guidance for direct consumers vs `Icod.DCurses` consumers;
 - security-reporting and compatibility caveats where repository conventions support them.
 
@@ -187,7 +189,7 @@ Tag/publish only when explicitly authorized.
 
 ## 5. Permanent documentation target set
 
-The exact filenames may evolve during T191–T195, but by rc1 closure the repository should have durable authorities equivalent to:
+By rc1 closure the repository will have durable authorities equivalent to:
 
 ```text
 docs/Architecture.md
@@ -203,26 +205,24 @@ docs/Migration-to-1.0.md
 docs/Public-API-Baseline-1.0-rc1.md
 ```
 
-Historical `Txxx` and `Public-API-Baseline-0.x` documents should remain as design/release records, but they should no longer be required reading to understand the supported 1.0 contract.
+Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release records, but they are no longer intended to be required reading for the supported 1.0 contract.
 
 ---
 
-## 6. Public-API regret questions
+## 6. Frozen T190 decisions
 
-Every existing public surface should be challenged before 1.0:
+The first 1.0 regret audit freezes these decisions:
 
-1. Is this abstraction at the correct layer?
-2. Is its name semantic rather than implementation/vendor-specific where possible?
-3. Is ownership explicit?
-4. Is restoration behavior truthful?
-5. Are unavailable, unsupported, failed, and canceled states distinguishable where callers need them?
-6. Are cancellation commit boundaries documented?
-7. Does the API expose raw platform/vendor details unnecessarily?
-8. Can the behavior be supported compatibly for the lifetime of 1.x?
-9. Is the same concept represented twice with incompatible semantics?
-10. Would we regret being unable to change this after 1.0?
-
-A “yes” to the final question requires explicit review during T190/T194.
+- custom `ITerminalInput`/`ITerminalOutput` and `ITerminalControlProvider` injection remain public;
+- a live `TerminalSession` does **not** return its raw input transport publicly;
+- `TerminalSession.Output` remains an advanced caller-owned escape hatch outside session serialization and must be documented as such;
+- `ReadEventAsync(...)` remains the canonical session-owned input path;
+- typed query APIs remain the canonical response-correlation path;
+- `WriteTerminalStringAsync(...)` remains the low-level already-resolved terminfo-string boundary, not a generic protocol recommendation;
+- semantic protocol APIs remain bounded and typed rather than generic vendor dispatch;
+- lifecycle, presentation, rich-input, and color ownership models remain supportable as 1.x contracts;
+- current enum values, rather than superseded early-pre-1.0 layouts, will be frozen comprehensively in T194;
+- no new protocol work enters rc1.
 
 ---
 
@@ -237,6 +237,7 @@ Version:               1.0.0-rc1
 PackageVersion:        1.0.0-rc1
 AssemblyVersion:       1.0.0.0
 TargetFrameworks:      net8.0;net9.0;net10.0
+T190 validation:       workflow #911
 ```
 
-**Next:** T190 — complete the public-contract/regret audit and freeze the permanent-documentation plan before making any 1.0-facing API correction.
+**Next:** T191 — establish permanent 1.0 architecture, session ownership, and lifecycle/restoration documentation.
