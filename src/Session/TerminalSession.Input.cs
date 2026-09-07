@@ -26,8 +26,8 @@ public sealed partial class TerminalSession {
 	/// Gets the maximum number of undecoded bytes retained by the input decoder.
 	/// </summary>
 	/// <remarks>
-	/// The 0.7 ceiling is 87,400 bytes, matching the independently enforced
-	/// maximum complete OSC 52 frame size.
+	/// The ceiling is 87,400 bytes, matching the independently enforced maximum
+	/// complete OSC 52 frame size.
 	/// </remarks>
 	public static int MaximumBufferedInputBytes {
 		get {
