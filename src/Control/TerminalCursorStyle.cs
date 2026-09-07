@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Identifies one semantic terminal text-cursor style supported by the 0.8 contract.
+/// Identifies one semantic terminal text-cursor style.
 /// </summary>
 public enum TerminalCursorStyle {
 	/// <summary>A blinking block cursor.</summary>
@@ -34,7 +34,7 @@ internal static class TerminalCursorStyleCodec {
 			throw new ArgumentOutOfRangeException(
 				nameof( style ),
 				style,
-				"The cursor style is not defined by the frozen 0.8 contract."
+				"The cursor style is not recognized by the Icod.Terminal semantic cursor-style contract."
 			);
 		}
 
@@ -48,7 +48,7 @@ internal static class TerminalCursorStyleCodec {
 			_ => throw new ArgumentOutOfRangeException(
 				nameof( style ),
 				style,
-				"The cursor style is not defined by the frozen 0.8 contract."
+				"The cursor style is not recognized by the Icod.Terminal semantic cursor-style contract."
 			)
 		};
 	}

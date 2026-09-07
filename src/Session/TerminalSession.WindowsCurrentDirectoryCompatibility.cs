@@ -12,7 +12,7 @@ public sealed partial class TerminalSession {
 	/// <returns>A value task representing compatibility-hint emission.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="windowsPath"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">
-	/// The path is empty, contains malformed Unicode or C0/C1/DEL controls, or exceeds the 0.16 OSC 9;9 payload bound.
+	/// The path is empty, contains malformed Unicode or C0/C1/DEL controls, or exceeds the 32,768-byte OSC payload bound.
 	/// </exception>
 	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
 	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>

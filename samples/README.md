@@ -1,187 +1,194 @@
 # Icod.Terminal Samples
 
-The sample projects are repository consumers built through project references. Release packages are validated separately by the package-verification harnesses under `tools/`; those consumers restore only the freshly produced NuGet artifact and run on `net8.0`, `net9.0`, and `net10.0`.
+The sample projects are small repository consumers built through project references. They teach the supported 1.x usage model; package-only compatibility is validated separately by the consumers under `tools/`, which restore only the freshly packed NuGet artifact.
 
-## Icod.Terminal.Notification.Sample
+All samples target `net8.0`, `net9.0`, and `net10.0`.
 
-`Icod.Terminal.Notification.Sample` is the focused 0.16 legacy OSC 9 desktop-notification demonstration.
+## Usage rules demonstrated by the samples
 
-```text
-dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- "Build complete"
-```
+The examples follow the permanent 1.x ownership contract:
 
-The sample publishes only the notification text supplied explicitly on the command line:
+- a live `TerminalSession` owns the authoritative input reader; use `ReadEventAsync(...)` and typed query methods rather than opening a competing reader;
+- use session-managed output APIs for ordinary application and terminal-control output;
+- `TerminalSession.Output` is an advanced borrowed transport outside session serialization and is not the normal application-output path;
+- use `await using` / `DisposeAsync()` for scoped terminal-state leases so cleanup and restoration remain deterministic;
+- exact restoration is used only where the library first observed or captured a truthful baseline;
+- terminal-policy reset is not described as exact restoration;
+- metadata publication is explicit because paths, clipboard contents, notifications, command lines, and hyperlinks may disclose information outside the application.
 
-```csharp
-await session.SendNotificationAsync( message );
-```
+## Start here — open a live terminal session
 
-Successful completion means the complete OSC 9 request was emitted; it does not prove the desktop displayed a notification.
+### `Icod.Terminal.Sample`
 
-Notification text can appear in desktop notification history, lock screens, screen sharing, remote/multiplexed sessions, or terminal logs. Do not pass credentials, bearer tokens, customer data, private paths, or other sensitive values unless that disclosure is appropriate.
-
-The 0.16 implementation rejects malformed Unicode and every C0/DEL/C1 control character, uses strict UTF-8 and ST termination, and rejects payloads larger than 4,096 OSC bytes before waiting for terminal output.
-
-The focused sample is built separately by `packaging/VerifyNotificationSample.ps1` on `net8.0`, `net9.0`, and `net10.0` as part of PR, distribution, and tagged-release validation.
-
-## Icod.Terminal.Color.Sample
-
-`Icod.Terminal.Color.Sample` is the focused 0.14 terminal-color demonstration. It covers the 0.13 observation API and the new lifecycle-safe scoped ownership contract, and is included in the root solution so the normal repository build matrix compiles it on every supported configuration.
-
-```text
-dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0
-```
-
-By default it performs observation only:
-
-```csharp
-TerminalColor palette = await session.QueryPaletteColorAsync(
-	1,
-	timeout
-);
-
-TerminalColor foreground = await session.QueryDynamicColorAsync(
-	TerminalDynamicColor.DefaultForeground,
-	timeout
-);
-```
-
-The returned values preserve 16-bit RGB channel precision. Timeout, malformed correlated replies, and unavailable active-query conditions are reported as sample output rather than terminating with an unhandled exception.
-
-Scoped mutation is deliberately opt-in:
-
-```text
-dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0 -- --mutate
-```
-
-That mode acquires a palette-color lease and a text-cursor dynamic-color lease:
-
-```csharp
-await using TerminalPaletteColorLease paletteLease =
-	await session.AcquirePaletteColorAsync(
-		1,
-		TerminalColor.FromRgb8( 255, 64, 64 ),
-		timeout
-	);
-
-await using TerminalDynamicColorLease cursorLease =
-	await session.AcquireDynamicColorAsync(
-		TerminalDynamicColor.TextCursor,
-		TerminalColor.FromRgb8( 64, 255, 64 ),
-		timeout
-	);
-```
-
-The first owner observes the exact external baseline before mutation. Leaving the scope restores those observed baselines explicitly. OSC 104 and OSC 112 remain terminal-policy reset APIs and are intentionally not used as restoration.
-
-All terminal input and output in the sample goes through `TerminalSession`; it does not mix `Console.ReadLine()` with the session-owned input/query path.
-
-## Icod.Terminal.SemanticPrompt.Sample
-
-`Icod.Terminal.SemanticPrompt.Sample` is the focused 0.12/0.15 OSC 133 semantic-prompt demonstration.
-
-```text
-dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.SemanticPrompt.Sample.csproj -f net10.0
-```
-
-It demonstrates prompt, command-input, command-output, explicit completion, abort markers, typed extended prompt metadata, and explicit command-line metadata with ordinary application text.
-
-## Icod.Terminal.PointerShape.Sample
-
-Focused 0.11 OSC 22 pointer-shape demonstration covering explicit set/reset, scoped ownership, nested restoration, and bounded Kitty-compatible pointer queries.
-
-```text
-dotnet run --project samples/Icod.Terminal.PointerShape.Sample/Icod.Terminal.PointerShape.Sample.csproj -f net10.0
-```
-
-## Icod.Terminal.Progress.Sample
-
-Focused 0.10 OSC 9;4 progress demonstration covering determinate, indeterminate, attention, and scoped ownership.
-
-```text
-dotnet run --project samples/Icod.Terminal.Progress.Sample/Icod.Terminal.Progress.Sample.csproj -f net10.0
-```
-
-## Icod.Terminal.SynchronizedOutput.Sample
-
-Focused 0.9 DEC private mode 2026 demonstration.
-
-```text
-dotnet run --project samples/Icod.Terminal.SynchronizedOutput.Sample/Icod.Terminal.SynchronizedOutput.Sample.csproj -f net10.0
-```
-
-## Icod.Terminal.CursorStyle.Sample
-
-Focused 0.8 DECSCUSR cursor-style observation and truthful scoped-restoration demonstration.
-
-```text
-dotnet run --project samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj -f net10.0 -- SteadyUnderline
-```
-
-## Icod.Terminal.Clipboard.Sample
-
-Focused 0.7 OSC 52 clipboard/selection demonstration.
-
-```text
-dotnet run --project samples/Icod.Terminal.Clipboard.Sample/Icod.Terminal.Clipboard.Sample.csproj -f net10.0 -- "copied text"
-```
-
-## Icod.Terminal.Hyperlink.Sample
-
-Focused 0.6 OSC 8 hyperlink demonstration.
-
-```text
-dotnet run --project samples/Icod.Terminal.Hyperlink.Sample/Icod.Terminal.Hyperlink.Sample.csproj -f net10.0 -- https://example.com/ "example link" example-1
-```
-
-## Icod.Terminal.Location.Sample
-
-`Icod.Terminal.Location.Sample` demonstrates both the preferred portable OSC 7 location publication and the explicit 0.16 OSC 9;9 Windows-current-directory compatibility form.
-
-Preferred OSC 7 example:
-
-```text
-dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /usr/local/src
-```
-
-Explicit Windows Terminal/ConEmu compatibility example:
-
-```text
-dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- windows-osc9 C:\work\repo
-```
-
-OSC 7 remains the preferred/default current-location protocol. The sample does not detect terminal brand, translate WSL/Cygwin paths, inspect the process current directory, or emit both protocols automatically. Applications that deliberately need both protocols must call both public APIs themselves.
-
-## Icod.Terminal.Title.Sample
-
-Focused 0.4 OSC 0/1/2 title demonstration.
-
-```text
-dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
-```
-
-## Icod.Terminal.Query.Sample
-
-Explicit active-query demonstration for Primary/Secondary DA, DSR, CPR, DECRQSS, and XTGETTCAP.
-
-```text
-dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
-```
-
-## Icod.Terminal.RichInput.Sample
-
-Interactive rich-input event inspector using reversible bracketed-paste, focus, and mouse protocol ownership when available.
-
-```text
-dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
-```
-
-## Icod.Terminal.Sample
-
-Minimal live-session example covering terminal identity, dimensions, application text, and captured-state restoration.
+Minimal session example covering terminal identity, dimensions, application text, and captured native-mode restoration.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
 ```
 
-All sample projects target `net8.0`, `net9.0`, and `net10.0`.
+Use this sample first when learning session construction and disposal.
+
+## Read terminal input
+
+### `Icod.Terminal.RichInput.Sample`
+
+Interactive event inspector for text, keys, bracketed paste, focus, mouse, and negotiated modern keyboard reporting.
+
+```text
+dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
+```
+
+The sample attempts optional rich-input protocol ownership and retains the traditional keyboard path as the compatibility floor. All input remains on `TerminalSession.ReadEventAsync(...)`.
+
+## Query live terminal state
+
+### `Icod.Terminal.Query.Sample`
+
+Demonstrates explicit bounded Primary/Secondary DA, DSR, CPR, DECRQSS, and XTGETTCAP queries.
+
+```text
+dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
+```
+
+Each query has a caller-visible deadline and uses the session's single response-correlation path. Timeout is not treated as proof that a terminal lacks support.
+
+### `Icod.Terminal.Color.Sample`
+
+Demonstrates typed palette/dynamic-color observation and optional exact-restoration ownership.
+
+Observation only:
+
+```text
+dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0
+```
+
+Opt-in scoped mutation:
+
+```text
+dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Sample.csproj -f net10.0 -- --mutate
+```
+
+The first scoped owner observes the external color before mutation. Final release replays that observed value; OSC 104 and OSC 110–119 remain terminal-policy reset operations instead of restoration substitutes.
+
+## Own reversible presentation or terminal state
+
+### `Icod.Terminal.CursorStyle.Sample`
+
+Typed DECSCUSR cursor-style observation, explicit mutation, and truthful scoped restoration.
+
+```text
+dotnet run --project samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj -f net10.0 -- SteadyUnderline
+```
+
+### `Icod.Terminal.SynchronizedOutput.Sample`
+
+Scoped DEC private mode 2026 synchronized-output ownership.
+
+```text
+dotnet run --project samples/Icod.Terminal.SynchronizedOutput.Sample/Icod.Terminal.SynchronizedOutput.Sample.csproj -f net10.0
+```
+
+The lease brackets terminal-side presentation timing; it is not an application-side byte buffer.
+
+### `Icod.Terminal.Progress.Sample`
+
+Scoped terminal progress covering determinate, indeterminate, error/attention state, nesting, and cleanup.
+
+```text
+dotnet run --project samples/Icod.Terminal.Progress.Sample/Icod.Terminal.Progress.Sample.csproj -f net10.0
+```
+
+### `Icod.Terminal.PointerShape.Sample`
+
+OSC 22 pointer-shape mutation, scoped ownership, nested fallback, explicit terminal-policy reset, and bounded pointer queries.
+
+```text
+dotnet run --project samples/Icod.Terminal.PointerShape.Sample/Icod.Terminal.PointerShape.Sample.csproj -f net10.0
+```
+
+Pointer-shape reset intentionally returns control to terminal policy; it does not claim knowledge of an arbitrary pre-Icod pointer shape.
+
+## Publish semantic terminal metadata
+
+### `Icod.Terminal.Title.Sample`
+
+Semantic OSC 0/1/2 icon/window title operations.
+
+```text
+dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
+```
+
+### `Icod.Terminal.Location.Sample`
+
+Preferred portable OSC 7 current-location publication plus the explicit Windows Terminal/ConEmu OSC 9;9 compatibility form.
+
+Portable location example:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /usr/local/src
+```
+
+Explicit Windows compatibility example:
+
+```text
+dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- windows-osc9 C:\work\repo
+```
+
+OSC 7 remains the preferred location API. The sample does not inspect the process current directory, detect terminal brand, translate WSL/Cygwin paths, or emit both protocols automatically.
+
+### `Icod.Terminal.SemanticPrompt.Sample`
+
+Portable and typed OSC 133 prompt/command-region metadata.
+
+```text
+dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.SemanticPrompt.Sample.csproj -f net10.0
+```
+
+The sample demonstrates prompt, command-input, command-output, explicit completion, abort, typed prompt metadata, and explicit command-line metadata. Command lines can contain secrets; publication is caller policy and is not automatically redacted.
+
+### `Icod.Terminal.Notification.Sample`
+
+Bounded legacy OSC 9 desktop notification.
+
+```text
+dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- "Build complete"
+```
+
+Successful completion means the frame was emitted, not that the desktop displayed it. Notification text may appear in notification history, lock screens, screen sharing, multiplexed sessions, or terminal logs.
+
+The focused notification sample is also built by `packaging/VerifyNotificationSample.ps1` on every supported TFM during repository validation.
+
+## Publish interactive content
+
+### `Icod.Terminal.Hyperlink.Sample`
+
+Bounded OSC 8 hyperlink output and scoped hyperlink ownership.
+
+```text
+dotnet run --project samples/Icod.Terminal.Hyperlink.Sample/Icod.Terminal.Hyperlink.Sample.csproj -f net10.0 -- https://example.com/ "example link" example-1
+```
+
+The library validates and emits a URI; it does not decide whether a scheme is trustworthy or activate the target. Applications that need a scheme allow-list must enforce it themselves.
+
+### `Icod.Terminal.Clipboard.Sample`
+
+Explicit OSC 52 clipboard/selection writes and privacy-sensitive reads.
+
+```text
+dotnet run --project samples/Icod.Terminal.Clipboard.Sample/Icod.Terminal.Clipboard.Sample.csproj -f net10.0 -- "copied text"
+```
+
+Clipboard reads are never automatic. Terminal-side security policy may ignore or deny them, and a timeout is not interpreted as permanent lack of support.
+
+## Choosing a sample
+
+For ordinary terminal-aware applications, a useful progression is:
+
+```text
+Icod.Terminal.Sample
+    -> Icod.Terminal.RichInput.Sample
+    -> Icod.Terminal.Query.Sample
+    -> one focused state/output sample relevant to the application
+```
+
+Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cell/window/refresh policy directly.

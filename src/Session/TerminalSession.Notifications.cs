@@ -12,7 +12,7 @@ public sealed partial class TerminalSession {
 	/// <returns>A value task representing notification emission.</returns>
 	/// <exception cref="ArgumentNullException"><paramref name="message"/> is <see langword="null"/>.</exception>
 	/// <exception cref="ArgumentException">
-	/// The message contains malformed Unicode, C0/C1/DEL controls, or exceeds the 0.16 notification payload bound.
+	/// The message contains malformed Unicode, C0/C1/DEL controls, or exceeds the 4,096-byte OSC payload bound.
 	/// </exception>
 	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
 	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>

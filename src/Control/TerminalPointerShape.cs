@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Identifies one semantic terminal mouse-pointer shape supported by the 0.11 contract.
+/// Identifies one semantic terminal mouse-pointer shape.
 /// </summary>
 public enum TerminalPointerShape {
 	/// <summary>The CSS <c>alias</c> pointer shape.</summary>
@@ -106,7 +106,7 @@ internal static class TerminalPointerShapeCodec {
 			throw new ArgumentOutOfRangeException(
 				nameof( shape ),
 				shape,
-				"The pointer shape is not defined by the frozen 0.11 contract."
+				"The pointer shape is not recognized by the Icod.Terminal semantic pointer-shape contract."
 			);
 		}
 
@@ -144,7 +144,7 @@ internal static class TerminalPointerShapeCodec {
 			_ => throw new ArgumentOutOfRangeException(
 				nameof( shape ),
 				shape,
-				"The pointer shape is not defined by the frozen 0.11 contract."
+				"The pointer shape is not recognized by the Icod.Terminal semantic pointer-shape contract."
 			)
 		};
 	}
@@ -186,7 +186,7 @@ internal static class TerminalPointerShapeCodec {
 			"zoom-in" => TerminalPointerShape.ZoomIn,
 			"zoom-out" => TerminalPointerShape.ZoomOut,
 			_ => throw new FormatException(
-				$"OSC 22 pointer shape name '{wireName}' is not part of the frozen 0.11 semantic vocabulary."
+				$"OSC 22 pointer shape name '{wireName}' is not part of the Icod.Terminal semantic pointer-shape vocabulary."
 			)
 		};
 	}

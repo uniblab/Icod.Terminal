@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Public CSI device, status, and cursor queries introduced by the 0.3 query milestone.
+/// Provides typed CSI device, status, and cursor queries for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
 	/// <summary>

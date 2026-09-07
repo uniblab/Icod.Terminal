@@ -1,7 +1,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Identifies one semantic xterm dynamic-color slot supported by the 0.13 contract.
+/// Identifies one semantic xterm dynamic-color slot supported by Icod.Terminal.
 /// </summary>
 public enum TerminalDynamicColor {
 	/// <summary>The terminal's default text foreground color.</summary>

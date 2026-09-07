@@ -35,6 +35,10 @@ try {
         '--logger', 'trx'
     )
 
+    & (Join-Path $PSScriptRoot 'VerifyPublicApiBaseline.ps1') `
+        -Configuration $Configuration `
+        -OutputDirectory 'artifacts/distribution-validation/public-api'
+
     & (Join-Path $PSScriptRoot 'VerifyNotificationSample.ps1') `
         -Configuration $Configuration
 
@@ -113,6 +117,14 @@ try {
         -Configuration $Configuration
 
     & (Join-Path $PSScriptRoot 'VerifyHardeningPackage.ps1') `
+        -ArtifactDirectory $packageDirectory `
+        -Configuration $Configuration
+
+    & (Join-Path $PSScriptRoot 'VerifyRc1Package.ps1') `
+        -ArtifactDirectory $packageDirectory `
+        -Configuration $Configuration
+
+    & (Join-Path $PSScriptRoot 'VerifyDCursesRc1Package.ps1') `
         -ArtifactDirectory $packageDirectory `
         -Configuration $Configuration
 

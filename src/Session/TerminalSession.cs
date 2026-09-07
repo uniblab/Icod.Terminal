@@ -103,12 +103,18 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		}
 	}
 
-	/// <summary>Gets the borrowed terminal input byte service.</summary>
-	public ITerminalInput Input {
+	internal ITerminalInput Input {
 		get;
 	}
 
 	/// <summary>Gets the borrowed terminal output byte service.</summary>
+	/// <remarks>
+	/// Direct use is an advanced escape hatch and is not serialized with
+	/// <see cref="WriteTextAsync"/>, <see cref="WriteTerminalStringAsync"/>,
+	/// semantic output operations, query traffic, or lifecycle-owned control output.
+	/// Callers that use this transport directly are responsible for preventing
+	/// interleaving with all session-managed output.
+	/// </remarks>
 	public ITerminalOutput Output {
 		get;
 	}
