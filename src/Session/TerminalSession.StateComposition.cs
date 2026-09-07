@@ -6,6 +6,8 @@ using System.Runtime.CompilerServices;
 /// Cross-manager serialization used to preserve screen-local terminal state ordering.
 /// </summary>
 public sealed partial class TerminalSession {
+	private int inputProtocolsReenteredBeforePresentation;
+
 	internal TerminalInputProtocolManager InputProtocolManagerForComposition {
 		get {
 			return this.inputProtocolManager;
