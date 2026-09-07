@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T193 complete and green; T194 implementation complete, exact-head validation pending
+**Status:** T190–T194 complete and green; T195 implementation complete, exact-head validation pending
 
 ---
 
@@ -28,7 +28,7 @@ No new terminal protocol is planned for rc1. New API is allowed only when the pu
 
 The release candidate is complete only when a new consumer can understand the 1.0 contract without reading versioned tranche notes from 0.1 through 0.18.
 
-Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, security/privacy, and the frozen rc1 public API. T195 will add compatibility/versioning and migration authorities; T196 will reconcile README/package metadata and package-only rc1 documentation artifacts.
+Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, security/privacy, the frozen rc1 public API, compatibility/versioning, and migration from 0.18. T196 will reconcile README/package metadata and package-only rc1 documentation artifacts; T197 will close downstream RC acceptance.
 
 ---
 
@@ -92,9 +92,9 @@ Authorities:
 
 T193 permanently distinguishes exact restoration, terminal-policy reset, Icod-owned nested state without an observable external baseline, and ephemeral metadata. It also freezes the bounded safe OSC 9 subset and hazardous-command exclusions as a 1.x safety decision.
 
-### T194 — public API/XML/sample regret closure — implementation complete
+### T194 — public API/XML/sample regret closure — complete
 
-The exact post-cleanup head must still pass the full PR gate before T194 is closed.
+Workflow #947 at exact head `86ff0cfc923314aca35bcf8fb731a97bd0ade526`.
 
 Public API capture:
 
@@ -116,29 +116,38 @@ Permanent/machine authorities:
 - `packaging/GeneratePublicApiBaseline.ps1`;
 - `packaging/VerifyPublicApiBaseline.ps1`.
 
-The verifier regenerates the reflection surface on all three TFMs, normalizes line endings, fails on TFM divergence, and fails on any drift from the frozen fingerprint. It is wired into PR validation and full distribution validation.
-
-T194 also:
-
-- freezes every current public enum numeric value through the machine baseline;
-- removes release-number wording from consumer-visible XML where it described permanent query/resource/protocol semantics;
-- confirms no additional D-class API correction is justified;
-- audits the existing sample set after removal of public `TerminalSession.Input`;
-- rewrites `samples/README.md` around consumer tasks and ownership rules rather than release chronology;
-- adds no new sample because the important 1.x workflows are already represented.
+The verifier runs in both PR and full distribution validation. T194 also removes release-number wording from permanent public XML, freezes current enum numeric values, audits all samples after removal of `TerminalSession.Input`, and rewrites `samples/README.md` as a task-oriented 1.x guide.
 
 Record:
 
 - `docs/T194-Public-API-XML-and-Sample-Regret-Closure.md`.
 
-### T195 — compatibility, migration, and support policy
+### T195 — compatibility, migration, and support policy — implementation complete
 
-Create:
+Exact-head validation pending.
+
+Permanent authorities:
 
 - `docs/Compatibility-and-Versioning.md`;
 - `docs/Migration-to-1.0.md`.
 
-Freeze source/binary compatibility, semantic-versioning, TFM/platform support, deprecation policy, capability-vs-emulator behavior, pre-1.0 migration, and direct-vs-DCurses consumption guidance.
+T195 freezes:
+
+- conservative SemVer expectations for 1.x;
+- public API plus documented behavioral compatibility;
+- existing public enum numeric-value stability;
+- explicit minor-release review/baseline update for compatible additive API;
+- deprecation-before-removal policy where safe/practical;
+- `net8.0`, `net9.0`, and `net10.0` as first-class targets;
+- Windows/Linux/macOS built-in system-provider support;
+- controlled `Unsupported` behavior on other platforms unless a custom provider is supplied;
+- terminal capability/query evidence rather than emulator-brand support inference;
+- the sole 0.18 -> 1.0 breaking correction: removal of `TerminalSession.Input`;
+- direct `TerminalSession` vs `Icod.DCurses` ownership guidance.
+
+Record:
+
+- `docs/T195-Compatibility-Migration-and-Support-Policy.md`.
 
 ### T196 — package metadata and documentation artifact closure
 
@@ -165,15 +174,15 @@ docs/Presentation-and-Reversible-State.md
 docs/Semantic-Output-Protocols.md
 docs/Security-and-Privacy.md
 docs/Public-API-Baseline-1.0-rc1.md
-docs/Compatibility-and-Versioning.md                # T195
-docs/Migration-to-1.0.md                            # T195
+docs/Compatibility-and-Versioning.md
+docs/Migration-to-1.0.md
 ```
 
 Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release evidence rather than required reading for the supported 1.x contract.
 
 ---
 
-## 6. Frozen T190/T194 API decisions
+## 6. Frozen API/compatibility decisions
 
 - custom `ITerminalInput`/`ITerminalOutput` and `ITerminalControlProvider` injection remain public;
 - a live `TerminalSession` does not return its raw input transport publicly;
@@ -183,7 +192,10 @@ Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release 
 - `WriteTerminalStringAsync(...)` is the advanced already-resolved terminfo-string boundary, not a generic protocol recommendation;
 - semantic protocol APIs remain bounded and typed rather than generic vendor dispatch;
 - the exact current exported API and every current public enum value are frozen by the rc1 machine fingerprint;
-- no additional pre-1.0 API correction was justified by T194;
+- compatible additions require deliberate minor-release review and baseline update;
+- existing enum numeric values do not change in ordinary 1.x releases;
+- ordinary breaking removals/renames/signature changes belong to a new major release;
+- package compatibility does not fabricate terminal-protocol support evidence;
 - no new protocol work enters rc1.
 
 ---
@@ -202,8 +214,9 @@ T191 validation:       workflow #918
 T192 validation:       workflow #924
 T193 validation:       workflow #925
 T194 capture:          workflow #926
+T194 final validation: workflow #947
 T194 API fingerprint:  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
-T194 final validation: pending exact current head
+T195 validation:       pending exact current head
 ```
 
-**Next:** validate the exact completed T194 head. If green, close T194 and begin T195 compatibility/versioning and migration documentation.
+**Next:** validate the exact T195 documentation head. If green, close T195 and begin T196 package metadata/documentation artifact closure plus the fresh package-only 1.0-rc1 contract.
