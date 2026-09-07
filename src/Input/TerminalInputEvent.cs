@@ -409,7 +409,7 @@ public sealed class TerminalInputEvent {
 		}
 
 		if ( TerminalKey.Function == key ) {
-			if ( functionKeyNumber is < 1 or > 63 ) {
+			if ( functionKeyNumber is < 0 or > 63 ) {
 				throw new ArgumentOutOfRangeException( nameof( functionKeyNumber ) );
 			}
 			if ( !functionKeyNumber.HasValue ) {
