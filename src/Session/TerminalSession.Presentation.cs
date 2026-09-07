@@ -51,7 +51,19 @@ public sealed partial class TerminalSession {
 		using IDisposable composition = await this.AcquireStateCompositionAsync(
 			CancellationToken.None
 		).ConfigureAwait( false );
+
+		bool externalResume = 0 == Volatile.Read( ref this.lifecycleStateReleased );
+		if ( externalResume ) {
+			await this.inputProtocolManager.ReenterAsync().ConfigureAwait( false );
+		}
+
 		await this.presentationManager.ReenterAsync().ConfigureAwait( false );
+		if ( externalResume ) {
+			Interlocked.Exchange(
+				ref this.inputProtocolsReenteredBeforePresentation,
+				1
+			);
+		}
 	}
 
 	private async ValueTask<Exception?> ClosePresentationStateAsync() {
