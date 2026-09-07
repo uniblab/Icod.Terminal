@@ -246,6 +246,7 @@ static void RequireOrdered(
 }
 
 internal sealed class DuplexTerminalTransport : ITerminalInput, ITerminalOutput {
+	private const string ProbeRequest = "\u001b[?u\u001b[c";
 	private readonly Channel<byte[]> input = Channel.CreateUnbounded<byte[]>();
 	private readonly object sync = new();
 	private readonly List<string> writes = [];
