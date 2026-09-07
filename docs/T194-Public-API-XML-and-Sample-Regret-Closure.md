@@ -2,7 +2,8 @@
 
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Predecessor:** T193 — permanent output/presentation/security semantics, workflow #925  
-**Status:** Implementation complete; exact-head validation pending
+**Status:** Complete and green  
+**Exact-head validation:** workflow #947 at `86ff0cfc923314aca35bcf8fb731a97bd0ade526`
 
 ## 1. Purpose
 
@@ -44,13 +45,7 @@ The normalized SHA-256 is:
 8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
 ```
 
-The fingerprint is stored in:
-
-`docs/Public-API-Baseline-1.0-rc1.sha256`
-
-The consumer-facing explanation is:
-
-`docs/Public-API-Baseline-1.0-rc1.md`
+The fingerprint is stored in `docs/Public-API-Baseline-1.0-rc1.sha256`; the consumer-facing explanation is `docs/Public-API-Baseline-1.0-rc1.md`.
 
 ## 3. Enforcement
 
@@ -62,14 +57,11 @@ The verifier:
 2. normalizes line endings before fingerprinting;
 3. fails if any supported TFM exposes a different public surface;
 4. fails if the common surface differs from the frozen rc1 SHA-256;
-5. leaves the generated text snapshots in the validation artifacts for inspection.
+5. leaves the generated text snapshots in validation artifacts for inspection.
 
-The gate is wired into:
+The gate is wired into PR Staging validation and `VerifyDistribution.ps1`, so Release/main validation also enforces it.
 
-- PR Staging validation; and
-- `VerifyDistribution.ps1`, so Release/main validation also enforces it.
-
-The baseline therefore detects accidental exported type/member changes, signature/nullability/default-value drift represented by the snapshot format, interface changes, and public enum renumbering.
+The initial enforcement wiring exposed two PowerShell-only verifier defects: an error-message parser expression and a three-path array construction. Neither changed the library or fingerprint. Both were corrected before the exact T194 closure run.
 
 ## 4. T190 breaking correction represented permanently
 
@@ -104,41 +96,15 @@ The complete `TerminalKey` vocabulary and every other public enum are equally co
 
 The package-generated XML audit found public wording that described permanent behavior using historical release labels such as “0.3 query milestone,” “0.7 ceiling,” “0.8 contract,” “0.13 contract,” and “0.15/0.16 bound.”
 
-T194 rewrites those consumer-visible descriptions as permanent semantic/resource contracts.
-
-Covered areas include:
-
-- CSI/DECRQSS/XTGETTCAP query summaries;
-- maximum undecoded-input buffer documentation;
-- cursor-style, pointer-shape, and dynamic-color summaries;
-- OSC 7 current-location conversion wording;
-- OSC 9 notification and Windows-CWD resource bounds;
-- OSC 133 extended metadata parameter-order and payload-bound wording.
+T194 rewrites those consumer-visible descriptions as permanent semantic/resource contracts. Covered areas include CSI/DECRQSS/XTGETTCAP query summaries, maximum undecoded-input buffering, cursor/pointer/color summaries, OSC 7 location conversion, OSC 9 bounds, and OSC 133 metadata ordering/bounds.
 
 These changes are documentation/runtime-message cleanup only. They do not change public signatures or protocol behavior.
 
-Historical internal/tranche documentation is intentionally not rewritten merely to erase its original release context.
-
 ## 7. Sample audit
 
-The existing sample set already covers the important 1.x workflows:
+The existing sample set already covers the important 1.x workflows: session open/dispose, unified rich input, active typed queries, cursor style, synchronized output, progress, pointer shape, palette/dynamic color observation and ownership, titles, location, hyperlinks, clipboard, semantic prompt metadata, and desktop notification.
 
-- session open/dispose;
-- unified rich input;
-- active typed queries;
-- cursor style;
-- synchronized output;
-- progress;
-- pointer shape;
-- palette/dynamic color observation and ownership;
-- titles;
-- location;
-- hyperlinks;
-- clipboard;
-- semantic prompt metadata;
-- desktop notification.
-
-The samples already compile with the T190 removal of public `TerminalSession.Input`, proving none depends on the unsafe raw-reader escape hatch.
+The samples compile with the T190 removal of public `TerminalSession.Input`, proving none depends on the unsafe raw-reader escape hatch.
 
 The audit found no reason to add another sample solely for rc1. The missing problem was navigation and permanent guidance, not workflow coverage.
 
@@ -146,33 +112,17 @@ The audit found no reason to add another sample solely for rc1. The missing prob
 
 `samples/README.md` is rewritten around consumer tasks and ownership semantics rather than release chronology.
 
-It now teaches:
-
-- one authoritative session input reader;
-- typed query routing;
-- `await using` for scoped state;
-- exact restoration vs terminal-policy reset;
-- semantic session output rather than raw borrowed output;
-- explicit privacy/disclosure choices;
-- which sample to start from for a new application.
-
-Release numbers are no longer the organizing principle.
+It now teaches one authoritative session input reader, typed query routing, `await using` for scoped state, exact restoration vs terminal-policy reset, semantic session output rather than raw borrowed output, explicit privacy/disclosure choices, and which sample to start from for a new application.
 
 ## 9. No additional sample/API expansion
 
-T194 deliberately does not add:
+T194 deliberately does not add a sample for raw `TerminalSession.Output` writes, internal lifecycle race machinery, generic escape construction, or a second input reader; nor does it add a new protocol/convenience API merely for catalog symmetry.
 
-- a sample for raw `TerminalSession.Output` writes;
-- a sample for internal lifecycle race machinery;
-- a generic escape-sequence sample;
-- a second input-reader sample;
-- any new protocol or convenience API solely to make the sample catalog more symmetrical.
+## 10. Validation
 
-Those additions would teach the wrong abstraction boundary or expand rc1 without a contract need.
+Workflow #947 passed at exact head `86ff0cfc923314aca35bcf8fb731a97bd0ade526`.
 
-## 10. Exit gate
-
-T194 closes when the exact post-cleanup head passes:
+The closure gate passed:
 
 - Windows/Linux/macOS build and tests;
 - the frozen public API fingerprint gate;
@@ -180,4 +130,4 @@ T194 closes when the exact post-cleanup head passes:
 - exact Staging package verification;
 - every retained package-only contract from 0.8 through 0.18.
 
-After that gate, T195 may freeze the permanent compatibility/versioning and migration policy.
+T194 is therefore complete. T195 owns permanent compatibility/versioning and migration policy.
