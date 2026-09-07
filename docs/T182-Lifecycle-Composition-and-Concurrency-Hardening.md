@@ -3,7 +3,7 @@
 **Release line:** `Icod.Terminal 0.18.0`  
 **Development target:** `0.18.0-alpha.3`  
 **PR:** #31  
-**Status:** implementation in progress
+**Status:** complete and green at workflow #874
 
 ## Scope
 
@@ -94,12 +94,8 @@ T182 retains T175/T176 coverage proving:
 - Kitty pop/switch/push shares the same composition domain as other rich-input mutations;
 - real DCurses full-screen ownership composes with rich input and deterministic disposal.
 
-## Remaining T182 work
+## Closure
 
-Before alpha.3 closes:
+Workflow #874 passed Windows, Linux, and macOS together with the retained downstream/package gates. The lock-order audit found no reverse-order acquisition requiring another production change.
 
-- validate the new barrier on Windows/Linux/macOS;
-- confirm retained downstream/package gates remain green;
-- audit disposal/lifecycle lock ordering for reverse-order acquisition paths;
-- add another contention regression only if that audit finds an uncovered interleaving;
-- bump to `0.18.0-alpha.3` only after the exact implementation head is green.
+T182 closed at `0.18.0-alpha.3` with no public API or wire-protocol expansion.
