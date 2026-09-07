@@ -166,6 +166,10 @@ public sealed class TerminalInputProtocolLease : IAsyncDisposable {
 
 		bool released = false;
 		try {
+			using IDisposable composition = await TerminalStateComposition.AcquireAsync(
+				currentOwner,
+				CancellationToken.None
+			).ConfigureAwait( false );
 			await currentOwner.ReleaseAsync( this.leaseId ).ConfigureAwait( false );
 			released = true;
 		} finally {
