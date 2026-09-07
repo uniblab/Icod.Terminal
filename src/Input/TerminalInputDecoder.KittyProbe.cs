@@ -67,6 +67,11 @@ internal sealed partial class TerminalInputDecoder {
 
 				this.Consume( frame.Length );
 				probe.Record( flags );
+				if ( 0 == this.bufferedBytes.Count && !this.endOfInput ) {
+					_ = await this.ReadMoreAsync(
+						cancellationToken
+					).ConfigureAwait( false );
+				}
 				return true;
 			}
 
