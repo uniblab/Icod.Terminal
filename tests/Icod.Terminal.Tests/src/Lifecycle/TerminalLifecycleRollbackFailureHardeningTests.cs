@@ -33,10 +33,13 @@ public sealed class TerminalLifecycleRollbackFailureHardeningTests {
 		);
 		Assert.Equal( TerminalLifecycleEventKind.Suspending, suspending.Kind );
 
-		AggregateException failure = await Assert.ThrowsAsync<AggregateException>(
+		ChannelClosedException channelFailure = await Assert.ThrowsAsync<ChannelClosedException>(
 			() => session.ReadLifecycleEventAsync(
 				timeout.Token
 			).AsTask()
+		);
+		AggregateException failure = Assert.IsType<AggregateException>(
+			channelFailure.InnerException
 		);
 
 		Assert.Equal( 4, provider.SetModeCount );
