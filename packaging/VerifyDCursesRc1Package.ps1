@@ -16,11 +16,11 @@ $repositoryRoot = [System.IO.Path]::GetFullPath(
 )
 Import-Module ( Join-Path $PSScriptRoot 'RepositoryTools.psm1' ) -Force
 
-if ( ![System.IO.Path]::IsPathRooted( $ArtifactDirectory ) ) {
+if ( -not [System.IO.Path]::IsPathRooted( $ArtifactDirectory ) ) {
 	$ArtifactDirectory = Join-Path $repositoryRoot $ArtifactDirectory
 }
 $ArtifactDirectory = [System.IO.Path]::GetFullPath( $ArtifactDirectory )
-if ( !( Test-Path -LiteralPath $ArtifactDirectory -PathType Container ) ) {
+if ( -not ( Test-Path -LiteralPath $ArtifactDirectory -PathType Container ) ) {
 	throw "Artifact directory '$ArtifactDirectory' does not exist."
 }
 
@@ -36,7 +36,7 @@ if ( [string]::IsNullOrWhiteSpace( $ExpectedVersion ) ) {
 }
 
 $packagePath = Join-Path $ArtifactDirectory "Icod.Terminal.$ExpectedVersion.nupkg"
-if ( !( Test-Path -LiteralPath $packagePath -PathType Leaf ) ) {
+if ( -not ( Test-Path -LiteralPath $packagePath -PathType Leaf ) ) {
 	throw "Expected package '$packagePath' was not produced."
 }
 
