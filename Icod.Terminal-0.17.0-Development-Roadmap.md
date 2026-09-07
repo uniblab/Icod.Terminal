@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.17.0`  
-**Development version:** `0.17.0-alpha.5`  
+**Development version:** `0.17.0-alpha.6`  
 **Predecessor:** `0.16.0` — OSC 9 Safe Extensions  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** modern keyboard contracts and negotiated keyboard protocols  
-**Status:** T170–T173 complete and green; T174 xterm decode compatibility implemented, exact-head validation pending
+**Status:** T170–T175 complete; T175 implementation hardening green at workflow #831
 
 ---
 
@@ -83,7 +83,7 @@ public string? AssociatedText { get; }
 
 `TerminalKey` retains every existing value through `Function` and appends semantic identities for the frozen Kitty functional-key table plus `Unrecognized`; raw Kitty private-use integers are not public API.
 
-`TerminalInputProtocolOptions` and `TerminalInputProtocolLease` now expose nullable `KeyboardReportingMode` as part of the existing compound rich-input ownership surface.
+`TerminalInputProtocolOptions` and `TerminalInputProtocolLease` expose nullable `KeyboardReportingMode` as part of the existing compound rich-input ownership surface.
 
 ---
 
@@ -101,9 +101,16 @@ Frozen release rules include:
 - cancellation before output commitment emits nothing;
 - committed transitions are complete serialized writes;
 - suspend/resume/invalidation/disposal keep believed state truthful;
-- managed main/alternate-screen transitions use pop/switch/push choreography so a library-owned stack entry is never stranded on the inactive screen.
+- managed main/alternate-screen transitions use pop/switch/push choreography so a library-owned stack entry is never stranded on the inactive screen;
+- input and presentation mutations share a session composition serialization domain so a keyboard lease change cannot interleave inside a managed screen handoff.
 
-The first six ownership primitives are implemented in T173. Cross-manager managed-screen handoff and post-resume re-establishment remain mandatory T175 hardening gates so they can be validated with lock-order and rollback fault injection.
+T175 closes the cross-manager obligations with the lock order:
+
+```text
+state composition -> manager -> control output
+```
+
+and adds failure/rollback and adversarial concurrency coverage.
 
 ---
 
@@ -143,25 +150,27 @@ Complete and green at workflow #799.
 
 Delivered nullable keyboard reporting requests on the existing compound input-protocol lease, timing-independent Kitty support detection using `CSI ? u` + Primary DA delimiter, exact flag pushes `5/7/31`, one-entry pop, strongest-mode nesting/downgrade, and composition with bracketed paste/focus/mouse.
 
-Cross-manager alternate-screen handoff and post-resume state re-establishment remain mandatory T175 hardening gates.
-
 Record: `docs/T173-Negotiated-Kitty-Keyboard-Ownership.md`.
 
 ### T174 — xterm `modifyOtherKeys` decoder compatibility — `0.17.0-alpha.5`
 
-Implemented; exact-head validation pending.
+Complete and green at workflow #809.
 
-Decode-only compatibility now accepts conventional level-2 `CSI 27;modifier;key~` and the unambiguous xterm/fixterms-style CSI-u shape. xterm events normalize to `Press`, preserve only Shift/Alt/Control semantics actually present, and never gain Kitty-only alternate-key, associated-text, release/repeat, or modern-modifier semantics. No xterm activation is emitted.
+Decode-only compatibility accepts conventional level-2 `CSI 27;modifier;key~` and the unambiguous xterm/fixterms-style CSI-u shape. xterm events normalize to `Press`, preserve only Shift/Alt/Control semantics actually present, and never gain Kitty-only alternate-key, associated-text, release/repeat, or modern-modifier semantics. No xterm activation is emitted.
 
 Record: `docs/T174-Xterm-ModifyOtherKeys-Decoder-Compatibility.md`.
 
 ### T175 — composition and hardening — `0.17.0-alpha.6`
 
-Next after green T174 validation.
+Complete. Implementation hardening passed Windows/Linux/macOS PR validation at workflow #831.
 
-Exercise modern keyboard input with traditional keys/text, paste/focus/mouse, active queries, fragmented/coalesced reads, malformed recovery, concurrent leases, managed presentation screen transitions, suspend/resume/invalidation/disposal, Kitty post-resume re-detection/re-establishment, transition output failures, bounded parser behavior, and lock/deadlock resistance.
+Delivered shared cross-manager composition serialization, atomic managed-screen Kitty pop/switch/push choreography, managed lifecycle Kitty re-detection/re-establishment, rollback across screen/keyboard failures, and adversarial concurrency coverage proving keyboard lease mutation cannot interleave inside a screen handoff. Existing paste/focus/mouse protocols remain undisturbed during screen movement.
+
+Record: `docs/T175-Composition-and-Hardening.md`.
 
 ### T176 — downstream `Icod.DCurses` acceptance — `0.17.0-alpha.7`
+
+Next.
 
 Extend real `Icod.DCurses` acceptance through public APIs, validating negotiated Kitty bytes/events and coexistence with full-screen refresh and existing rich input on net8/net9/net10.
 
@@ -189,6 +198,8 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 - Kitty acquisition/release is exact, bounded, and reversible;
 - overlapping leases reconcile deterministically;
 - managed screen transitions do not strand Kitty stack entries;
+- concurrent lease mutations cannot enter the pop/switch/push critical section;
+- screen-transition failures restore keyboard state or surface aggregate rollback failure;
 - lifecycle suspend/resume re-establishes negotiated keyboard state truthfully;
 - active-query routing remains correct while modern keyboard input flows;
 - no raw/generic keyboard-control API enters the package;
@@ -200,11 +211,11 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 
 ```text
 VersionPrefix:    0.17.0
-VersionSuffix:    alpha.5
-Version:          0.17.0-alpha.5
-PackageVersion:   0.17.0-alpha.5
+VersionSuffix:    alpha.6
+Version:          0.17.0-alpha.6
+PackageVersion:   0.17.0-alpha.6
 AssemblyVersion:  0.17.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next after exact-head T174 validation:** T175 — composition and hardening.
+**Next:** T176 — downstream `Icod.DCurses` acceptance.
