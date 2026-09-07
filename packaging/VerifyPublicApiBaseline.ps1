@@ -66,11 +66,8 @@ foreach ( $hash in $actualHashes | Select-Object -Skip 1 ) {
 }
 
 if ( $referenceHash -ne $expectedHash.ToLowerInvariant() ) {
-	throw (
-		"The Icod.Terminal public API does not match the frozen 1.0.0-rc1 baseline. "
-		+ "Expected $expectedHash but generated $referenceHash. "
-		+ "Inspect artifacts/public-api before changing the baseline intentionally."
-	)
+	$message = "The Icod.Terminal public API does not match the frozen 1.0.0-rc1 baseline. Expected $expectedHash but generated $referenceHash. Inspect artifacts/public-api before changing the baseline intentionally."
+	throw $message
 }
 
 Write-Host 'Verified the frozen Icod.Terminal 1.0.0-rc1 public API baseline.'
