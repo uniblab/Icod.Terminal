@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T195 complete and green; T196 implementation complete, exact-head validation pending
+**Status:** T190–T196 complete and green; T197 implementation complete, exact-head validation pending
 
 ---
 
@@ -14,25 +14,15 @@
 
 `1.0.0-rc1` is the point where `Icod.Terminal` stops being documented primarily as a sequence of pre-1.0 feature releases and becomes documented as one coherent terminal/session platform.
 
-The default rule for this release is:
+The default rule is:
 
 > freeze, reconcile, document, and prove the existing contract before adding anything new.
 
-No new terminal protocol is planned for rc1. New API is allowed only when the public-API regret audit demonstrates that the existing shape would be materially harder or less safe to support after 1.0 without a final pre-1.0 correction.
-
-`1.0.0` itself is reserved for release closure after the rc1 contract has survived final downstream and package validation.
+No new terminal protocol is planned for rc1. `1.0.0` itself remains reserved for stable release closure after the release-candidate contract has survived downstream/package validation.
 
 ---
 
-## 2. RC1 success criteria
-
-The release candidate is complete only when a new consumer can understand the 1.0 contract without reading versioned tranche notes from 0.1 through 0.18.
-
-Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, security/privacy, the frozen rc1 public API, compatibility/versioning, migration from 0.18, and current package/readme metadata. T197 will perform final downstream RC acceptance and release-candidate closure.
-
----
-
-## 3. Release rules
+## 2. Release rules
 
 During rc1:
 
@@ -43,13 +33,13 @@ During rc1:
 - retain bounded parsing/query ownership;
 - keep Windows/POSIX differences observable rather than fabricated;
 - retain `net8.0`, `net9.0`, and `net10.0` unless a concrete security/maintenance constraint requires reconsideration;
-- retain all 0.8–0.18 package gates until equivalent 1.0 umbrella gates demonstrably subsume them;
-- validate real `Icod.DCurses` throughout the release candidate;
-- treat stale documentation as a release defect.
+- retain historical package gates until equivalent 1.x coverage demonstrably subsumes them;
+- validate real `Icod.DCurses` throughout;
+- treat stale current documentation as a release defect.
 
 ---
 
-## 4. Tranche status
+## 3. Tranche status
 
 ### T190 — contract and regret audit — complete
 
@@ -90,81 +80,91 @@ Authorities:
 - `docs/Semantic-Output-Protocols.md`;
 - `docs/Security-and-Privacy.md`.
 
-T193 permanently distinguishes exact restoration, terminal-policy reset, Icod-owned nested state without an observable external baseline, and ephemeral metadata. It also freezes the bounded safe OSC 9 subset and hazardous-command exclusions as a 1.x safety decision.
-
 ### T194 — public API/XML/sample regret closure — complete
 
-Workflow #947 at exact head `86ff0cfc923314aca35bcf8fb731a97bd0ade526`.
+Workflow #947 at `86ff0cfc923314aca35bcf8fb731a97bd0ade526`.
 
-Public API capture:
+The rc1 public API was captured independently under net8.0/net9.0/net10.0 and frozen as:
 
-- capture head: `510f9738f216064f80193eba1936583b5552170e`;
-- capture validation: workflow #926;
-- net8.0/net9.0/net10.0 snapshots identical;
-- normalized snapshot: 633 lines;
-- exported public types: 77;
-- public enums: 32 / 242 values;
-- public methods: 124;
-- public properties: 144;
-- public constructors: 13;
-- frozen SHA-256: `8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5`.
+```text
+633 lines
+77 exported public types
+32 public enums / 242 values
+124 public methods
+144 public properties
+13 public constructors
+SHA-256 8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
+```
 
-Permanent/machine authorities:
+Authorities/gates:
 
 - `docs/Public-API-Baseline-1.0-rc1.md`;
 - `docs/Public-API-Baseline-1.0-rc1.sha256`;
 - `packaging/GeneratePublicApiBaseline.ps1`;
 - `packaging/VerifyPublicApiBaseline.ps1`.
 
-The verifier runs in both PR and full distribution validation. T194 also removes release-number wording from permanent public XML, freezes current enum numeric values, audits all samples after removal of `TerminalSession.Input`, and rewrites `samples/README.md` as a task-oriented 1.x guide.
-
-Record:
-
-- `docs/T194-Public-API-XML-and-Sample-Regret-Closure.md`.
+T194 also made public XML version-neutral and rewrote `samples/README.md` as a task-oriented 1.x guide.
 
 ### T195 — compatibility, migration, and support policy — complete
 
-Workflow #952 at exact head `676aaff4ac552eeb3e824fb7b6027ef241b3c486`.
+Workflow #952 at `676aaff4ac552eeb3e824fb7b6027ef241b3c486`.
 
-Permanent authorities:
+Authorities:
 
 - `docs/Compatibility-and-Versioning.md`;
 - `docs/Migration-to-1.0.md`.
 
-T195 freezes conservative SemVer expectations, public API plus documented behavioral compatibility, enum numeric-value stability, deprecation policy, net8/net9/net10 support, Windows/Linux/macOS built-in provider support, evidence-based protocol support semantics, migration from `TerminalSession.Input`, and direct-vs-DCurses ownership guidance.
+T195 freezes conservative SemVer expectations, enum-value stability, deprecation policy, net8/net9/net10 support, Windows/Linux/macOS built-in provider support, evidence-based protocol support semantics, migration from `TerminalSession.Input`, and direct-vs-DCurses ownership guidance.
 
-Record:
+### T196 — package metadata and documentation artifact closure — complete
 
-- `docs/T195-Compatibility-Migration-and-Support-Policy.md`.
-
-### T196 — package metadata and documentation artifact closure — implementation complete
-
-Exact-head validation pending.
+Workflow #954 at exact head `09ef20a2b0eee2fe3202459a906e837001c7ba6d`.
 
 T196:
 
-- updates package release notes from stale 0.16 text to `1.0.0-rc1` contract-freeze notes;
-- rewrites the root/package README as the current rc1 consumer guide;
-- preserves the original long-form root development roadmap under `docs/history/` and replaces the root roadmap with a current roadmap/index;
-- adds `tools/package-rc1-smoke` as a fresh NuGet-only 1.0 consumer;
-- adds `packaging/VerifyRc1Package.ps1` to inspect nuspec release notes, packed README, generated XML, the removed raw-input property, retained injection/output seams, representative public APIs, and enum anchors;
-- runs the new gate on net8.0/net9.0/net10.0;
-- wires the gate into PR Staging and full Release distribution validation;
-- retains all historical package gates from 0.8 through 0.18.
+- updates package release notes to `1.0.0-rc1`;
+- rewrites the root/package README for the rc1/1.x contract;
+- preserves the original long-form development roadmap under `docs/history/` and makes the root roadmap a current index;
+- adds a fresh NuGet-only rc1 package consumer on net8/net9/net10;
+- verifies current nuspec release notes, packed README, generated XML docs, removed `TerminalSession.Input`, retained injection/output seams, representative 1.x APIs, and enum anchors;
+- integrates the rc1 package gate into PR and full Release distribution validation;
+- retains all package-only gates from 0.8 through 0.18.
 
 Record:
 
 - `docs/T196-Package-Metadata-and-Documentation-Artifact-Closure.md`.
 
-### T197 — downstream RC acceptance and release-candidate closure
+### T197 — final downstream RC acceptance and release-candidate closure — implementation complete
 
-Require exact Windows/Linux/macOS PR green, real DCurses acceptances/soak, fresh package-only consumers on all supported TFMs, no accidental public API drift, Release x64/ARM64 distribution validation after merge, and no stale in-progress rc1 authorities.
+Exact-head validation pending.
 
-Tag/publish only when explicitly authorized.
+T197 closes the remaining artifact-boundary gap by running the **existing eight-cycle DCurses hardening soak unchanged** against:
+
+```text
+freshly packed Icod.Terminal 1.0.0-rc1
++
+published Icod.DCurses 0.1.0
+```
+
+on net8.0, net9.0, and net10.0.
+
+Added:
+
+- `tools/dcurses-rc1-package-acceptance/Icod.Terminal.DCursesRc1PackageAcceptance.csproj`;
+- `tools/dcurses-rc1-package-acceptance/Program.cs` (same program as the project-reference hardening soak);
+- `packaging/VerifyDCursesRc1Package.ps1`.
+
+The gate is wired into PR Staging and full Release distribution validation after the rc1 package-only contract.
+
+Record:
+
+- `docs/T197-Final-Downstream-RC-Acceptance-and-Release-Candidate-Closure.md`.
+
+After the substantive T197 head is green, perform the final complete-PR audit. Any status/documentation closure commit must receive its own exact-head validation before PR #32 is called merge-ready.
 
 ---
 
-## 5. Permanent documentation set
+## 4. Permanent documentation set
 
 ```text
 docs/Architecture.md
@@ -181,29 +181,27 @@ docs/Compatibility-and-Versioning.md
 docs/Migration-to-1.0.md
 ```
 
-Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release evidence rather than required reading for the supported 1.x contract. The original long-form repository roadmap is preserved under `docs/history/`.
+Historical T-series, 0.x public API baselines, and the original long-form roadmap remain preserved as design/release evidence.
 
 ---
 
-## 6. Frozen API/compatibility decisions
+## 5. Frozen API/compatibility decisions
 
-- custom `ITerminalInput`/`ITerminalOutput` and `ITerminalControlProvider` injection remain public;
-- a live `TerminalSession` does not return its raw input transport publicly;
+- `ITerminalInput`, `ITerminalOutput`, and `ITerminalControlProvider` injection remain public;
+- a live `TerminalSession` does not expose its raw input transport;
 - `TerminalSession.Output` remains an advanced caller-owned escape hatch outside session serialization;
-- `ReadEventAsync(...)` is the canonical session-owned input path;
-- typed query APIs are the canonical response-correlation path;
-- `WriteTerminalStringAsync(...)` is the advanced already-resolved terminfo-string boundary, not a generic protocol recommendation;
-- semantic protocol APIs remain bounded and typed rather than generic vendor dispatch;
-- the exact current exported API and every current public enum value are frozen by the rc1 machine fingerprint;
+- `ReadEventAsync(...)` is the canonical application-input path;
+- typed queries are the canonical response-correlation path;
+- semantic protocol APIs remain bounded/typed rather than generic vendor dispatch;
+- the rc1 machine fingerprint freezes the current exported surface and enum values;
 - compatible additions require deliberate minor-release review and baseline update;
-- existing enum numeric values do not change in ordinary 1.x releases;
-- ordinary breaking removals/renames/signature changes belong to a new major release;
+- ordinary breaking removals/renames/signature changes belong to a new major;
 - package compatibility does not fabricate terminal-protocol support evidence;
 - no new protocol work enters rc1.
 
 ---
 
-## 7. Current baseline
+## 6. Current baseline
 
 ```text
 Published predecessor: v0.18.0
@@ -217,10 +215,11 @@ T191 validation:       workflow #918
 T192 validation:       workflow #924
 T193 validation:       workflow #925
 T194 capture:          workflow #926
-T194 final validation: workflow #947
+T194 validation:       workflow #947
 T194 API fingerprint:  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
 T195 validation:       workflow #952
-T196 validation:       pending exact current head
+T196 validation:       workflow #954
+T197 validation:       pending exact current head
 ```
 
-**Next:** validate the exact T196 package/documentation head. If green, close T196 and begin T197 final downstream release-candidate acceptance and closure audit.
+**Next:** validate the exact T197 implementation head. If green, perform the final rc1 audit and closure-only status update, then validate that exact final head before merge readiness.
