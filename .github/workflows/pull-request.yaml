@@ -59,10 +59,10 @@ jobs:
       - run: dotnet restore '${{ steps.repository.outputs.solution_path }}'
       - run: dotnet build '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
       - run: dotnet test '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
-      - name: Generate 1.0 public API snapshots
+      - name: Verify frozen 1.0 public API baseline
         if: matrix.verify_packages
         shell: pwsh
-        run: ./packaging/GeneratePublicApiBaseline.ps1 -Configuration '${{ env.CONFIGURATION }}' -OutputDirectory artifacts/public-api
+        run: ./packaging/VerifyPublicApiBaseline.ps1 -Configuration '${{ env.CONFIGURATION }}' -OutputDirectory artifacts/public-api
       - name: Verify focused notification sample builds
         shell: pwsh
         run: ./packaging/VerifyNotificationSample.ps1 -Configuration '${{ env.CONFIGURATION }}'
