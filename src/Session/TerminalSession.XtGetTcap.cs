@@ -3,7 +3,7 @@ namespace Icod.Terminal;
 using Icod.TermInfo;
 
 /// <summary>
-/// Public XTGETTCAP live-capability queries introduced by the 0.3 query milestone.
+/// Provides typed XTGETTCAP live-capability queries for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
 	/// <summary>
