@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190 complete and green; T191 in progress
+**Status:** T190–T191 complete and green; T192 implementation complete, exact-head validation pending
 
 ---
 
@@ -67,13 +67,13 @@ During rc1:
 
 ## 4. Tranches
 
-### T190 — 1.0 contract and regret-audit freeze — `1.0.0-rc1`
+### T190 — 1.0 contract and regret-audit freeze — complete
 
-Complete and green at workflow #911.
+Green at workflow #911.
 
 T190 classified the accumulated public surface using the A–E regret framework and found one justified D-class correction before 1.0: a live `TerminalSession` no longer publicly exposes its borrowed raw input transport. `ITerminalInput` remains public for custom transport injection, but session-owned input now has one authoritative public read path through `ReadEventAsync(...)` and typed query operations.
 
-The correction preserves all historical package/downstream gates. The audit found no sufficient reason to redesign the control-provider/native-snapshot layer, typed query/result contracts, semantic protocol APIs, reversible ownership leases, modern keyboard model, or the advanced caller-owned raw output transport.
+The correction preserved all historical package/downstream gates. The audit found no sufficient reason to redesign the control-provider/native-snapshot layer, typed query/result contracts, semantic protocol APIs, reversible ownership leases, modern keyboard model, or the advanced caller-owned raw output transport.
 
 Comprehensive current enum numeric values and exact public-surface freezing are assigned to T194.
 
@@ -82,36 +82,49 @@ Records:
 - `docs/T190-1.0-Contract-and-Regret-Audit-Freeze.md`;
 - `docs/T190-Public-API-Regret-Audit.md`.
 
-### T191 — permanent architecture and ownership documentation
+### T191 — permanent architecture and ownership documentation — complete
 
-In progress.
+Green at exact head `c16949d94cb8471b9b776ec4c5dec4a715ea10de`, workflow #918.
 
-Replace historical-development context as the primary architecture authority with durable 1.0-facing documents.
+Permanent authorities:
 
-At minimum create or refresh permanent documents covering:
+- `docs/Architecture.md`;
+- `docs/Terminal-Session-and-Ownership.md`;
+- `docs/Lifecycle-and-Restoration.md`.
 
-- architecture/layer responsibilities;
-- `TerminalSession` ownership and endpoints;
-- state composition and lock ordering;
-- lifecycle/restoration/invalidation/disposal;
-- native platform-mode boundaries;
-- relationship to `Icod.TermInfo`, `Icod.DCurses`, and future `Icod.Pty`.
+T191 consolidates architecture boundaries, transport/state ownership, one-reader semantics, lifecycle composition, lock/order principles, exact restoration, participant ordering, invalidation, rollback uncertainty, and disposal authority.
 
-These documents must distinguish normative guarantees from implementation notes.
+Record:
+
+- `docs/T191-Permanent-Architecture-and-Ownership-Documentation.md`.
 
 ### T192 — permanent input, query, and protocol semantics
 
-Consolidate the input/query contract into durable documentation:
+Implementation complete; exact-head validation pending.
+
+Permanent authorities:
+
+- `docs/Input-and-Events.md`;
+- `docs/Queries-and-Responses.md`;
+- `docs/Modern-Keyboard-Security-and-Compatibility.md` refreshed as a 1.x authority.
+
+T192 consolidates:
 
 - text/key/mouse/focus/paste event semantics;
+- one authoritative live-session input reader;
 - traditional vs Kitty/xterm compatibility behavior;
-- query routing and response correlation;
+- rich-input lease composition;
 - bounded framing/buffering;
+- query routing and response correlation;
 - timeout/cancellation commit boundaries;
-- late-response ownership and lifecycle generations;
+- bounded late-response ownership;
+- suspend/resume generations;
+- lifecycle observation through the same ambiguity domain;
 - unsupported/unsafe activation behavior.
 
-Versioned protocol notes remain historical evidence, not the only source of truth.
+Record:
+
+- `docs/T192-Permanent-Input-Query-and-Protocol-Semantics.md`.
 
 ### T193 — permanent output, presentation, and security semantics
 
@@ -238,6 +251,8 @@ PackageVersion:        1.0.0-rc1
 AssemblyVersion:       1.0.0.0
 TargetFrameworks:      net8.0;net9.0;net10.0
 T190 validation:       workflow #911
+T191 validation:       workflow #918
+T192 validation:       pending exact current head
 ```
 
-**Next:** T191 — establish permanent 1.0 architecture, session ownership, and lifecycle/restoration documentation.
+**Next:** validate the exact T192 documentation head. If green, close T192 and begin T193 permanent output, presentation, and security documentation.
