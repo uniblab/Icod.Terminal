@@ -187,6 +187,7 @@ internal sealed partial class TerminalInputDecoder {
 					|| !TryMapKittyEventPhase( eventType, out phase ) ) {
 					return false;
 				}
+			}
 		}
 
 		string? associatedText = null;
@@ -213,7 +214,7 @@ internal sealed partial class TerminalInputDecoder {
 				if ( 0 < parameters[ index ].Length ) {
 					return false;
 				}
-		}
+			}
 
 		if ( 0 == keyCode ) {
 			if ( associatedRunes is null || 0 == associatedRunes.Count ) {
