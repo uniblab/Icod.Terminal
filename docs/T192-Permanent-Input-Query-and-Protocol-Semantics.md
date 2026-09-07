@@ -2,7 +2,8 @@
 
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Predecessor:** T191 — permanent architecture and ownership documentation, workflow #918  
-**Status:** Implementation complete; exact-head validation pending
+**Status:** Complete and green  
+**Exact-head validation:** workflow #924 at `528ef6a59aff5ec654bc59571018f1ef70cd92e5`
 
 ## 1. Purpose
 
@@ -114,9 +115,21 @@ Historical records including T16, T18–T20, T141, T170–T176, T181, and the 0.
 
 They are no longer required reading to understand current 1.x input/query behavior. Where a historical document reflects a superseded pre-1.0 surface, the permanent documents are authoritative for the 1.x contract.
 
-## 9. Exit criteria
+## 9. Validation
 
-T192 closes when:
+Workflow #924 passed at exact head `528ef6a59aff5ec654bc59571018f1ef70cd92e5`.
+
+The exact-head gate retained and passed:
+
+- Windows/Linux/macOS build and tests;
+- real `Icod.DCurses` focused acceptance;
+- repeated DCurses hardening soak;
+- exact Staging package verification;
+- every package-only compatibility contract from 0.8 through 0.18.
+
+## 10. Exit criteria
+
+T192 is complete because:
 
 1. the two permanent authorities exist and agree with current source behavior;
 2. modern-keyboard compatibility guidance is no longer release-specific;
@@ -124,4 +137,4 @@ T192 closes when:
 4. parser/query resource limits and late-response ownership are documented;
 5. lifecycle generation and post-resume observation semantics are documented;
 6. no raw/vendor protocol surface has been introduced accidentally;
-7. the exact T192 head passes Windows/Linux/macOS, DCurses acceptance/soak, package verification, and every retained 0.8–0.18 package contract.
+7. the exact T192 head passed Windows/Linux/macOS, DCurses acceptance/soak, package verification, and every retained 0.8–0.18 package contract.

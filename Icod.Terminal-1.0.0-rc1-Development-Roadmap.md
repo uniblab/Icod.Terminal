@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T191 complete and green; T192 implementation complete, exact-head validation pending
+**Status:** T190–T192 complete and green; T193 implementation complete, exact-head validation pending
 
 ---
 
@@ -98,9 +98,9 @@ Record:
 
 - `docs/T191-Permanent-Architecture-and-Ownership-Documentation.md`.
 
-### T192 — permanent input, query, and protocol semantics
+### T192 — permanent input, query, and protocol semantics — complete
 
-Implementation complete; exact-head validation pending.
+Green at exact head `528ef6a59aff5ec654bc59571018f1ef70cd92e5`, workflow #924.
 
 Permanent authorities:
 
@@ -108,19 +108,7 @@ Permanent authorities:
 - `docs/Queries-and-Responses.md`;
 - `docs/Modern-Keyboard-Security-and-Compatibility.md` refreshed as a 1.x authority.
 
-T192 consolidates:
-
-- text/key/mouse/focus/paste event semantics;
-- one authoritative live-session input reader;
-- traditional vs Kitty/xterm compatibility behavior;
-- rich-input lease composition;
-- bounded framing/buffering;
-- query routing and response correlation;
-- timeout/cancellation commit boundaries;
-- bounded late-response ownership;
-- suspend/resume generations;
-- lifecycle observation through the same ambiguity domain;
-- unsupported/unsafe activation behavior.
+T192 consolidates one-reader input semantics, text/key/mouse/focus/paste normalization, traditional/Kitty/xterm compatibility, rich-input ownership, bounded parsing, ambiguity-sensitive query correlation, cancellation/timeout commit boundaries, bounded late-response ownership, suspend/resume generations, and lifecycle observation through the same ambiguity domain.
 
 Record:
 
@@ -128,16 +116,29 @@ Record:
 
 ### T193 — permanent output, presentation, and security semantics
 
-Consolidate semantic-output and reversible presentation contracts:
+Implementation complete; exact-head validation pending.
 
+Permanent authorities:
+
+- `docs/Presentation-and-Reversible-State.md`;
+- `docs/Semantic-Output-Protocols.md`;
+- `docs/Security-and-Privacy.md`.
+
+T193 consolidates:
+
+- presentation lease composition and transactional rollback;
+- exact-restoration vs terminal-policy reset vs Icod-owned nested state vs ephemeral metadata;
 - titles, location, hyperlinks, clipboard;
 - cursor style, synchronized output, progress, pointer shape;
 - semantic prompt/OSC 133;
-- terminal colors and scoped ownership;
-- safe OSC 9 subset;
-- presentation leases and screen-local keyboard composition;
-- privacy/security consequences of terminal metadata and desktop integration;
-- explicit exclusions for hazardous or unverifiable vendor operations.
+- terminal colors and scoped exact restoration;
+- safe OSC 9 subset and permanent hazardous-command exclusions;
+- privacy/security consequences of terminal metadata, clipboard, command lines, notifications, modern keyboard metadata, and observations;
+- the advanced unsynchronized raw-output boundary.
+
+Record:
+
+- `docs/T193-Permanent-Output-Presentation-and-Security-Semantics.md`.
 
 ### T194 — public API/XML/sample regret closure
 
@@ -252,7 +253,8 @@ AssemblyVersion:       1.0.0.0
 TargetFrameworks:      net8.0;net9.0;net10.0
 T190 validation:       workflow #911
 T191 validation:       workflow #918
-T192 validation:       pending exact current head
+T192 validation:       workflow #924
+T193 validation:       pending exact current head
 ```
 
-**Next:** validate the exact T192 documentation head. If green, close T192 and begin T193 permanent output, presentation, and security documentation.
+**Next:** validate the exact T193 documentation head. If green, close T193 and begin T194 public API/XML/sample regret closure and exact 1.x surface freeze.
