@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T192 complete and green; T193 implementation complete, exact-head validation pending
+**Status:** T190–T193 complete and green; T194 in progress
 
 ---
 
@@ -28,23 +28,7 @@ No new terminal protocol is planned for rc1. New API is allowed only when the pu
 
 The release candidate is complete only when a new consumer can understand the 1.0 contract without reading versioned tranche notes from 0.1 through 0.18.
 
-The repository must therefore provide durable, non-versioned documentation for:
-
-- architecture and layer boundaries;
-- terminal session ownership and endpoint semantics;
-- platform mode capture/application/restoration;
-- lifecycle, suspend/resume, invalidation, and disposal;
-- input events and rich-input lease ownership;
-- active query routing, ambiguity, timeout, cancellation, and late-response ownership;
-- presentation ownership and screen-local state;
-- semantic output protocols and their safety/compatibility boundaries;
-- failure, rollback, and state-uncertainty semantics;
-- supported platforms/TFMs and compatibility policy;
-- security/privacy considerations;
-- downstream integration expectations;
-- package/versioning support promises.
-
-All public API and XML documentation must agree with those permanent documents.
+Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, and security/privacy. T195 will add compatibility/versioning and migration authorities; T194/T196 reconcile source XML, samples, README/package metadata, and machine-verifiable public/package baselines against those documents.
 
 ---
 
@@ -52,9 +36,9 @@ All public API and XML documentation must agree with those permanent documents.
 
 During rc1:
 
-- preserve all stable 0.18 behavioral guarantees unless a documented 1.0 regret correction requires change;
+- preserve stable 0.18 behavior unless a documented 1.0 regret correction requires change;
 - do not add raw escape-sequence or arbitrary vendor-command surfaces;
-- prefer semantic APIs and reversible ownership;
+- prefer semantic APIs and truthful reversible ownership;
 - retain exact restoration rather than guessed defaults;
 - retain bounded parsing/query ownership;
 - keep Windows/POSIX differences observable rather than fabricated;
@@ -65,145 +49,87 @@ During rc1:
 
 ---
 
-## 4. Tranches
+## 4. Tranche status
 
-### T190 — 1.0 contract and regret-audit freeze — complete
+### T190 — contract and regret audit — complete
 
-Green at workflow #911.
-
-T190 classified the accumulated public surface using the A–E regret framework and found one justified D-class correction before 1.0: a live `TerminalSession` no longer publicly exposes its borrowed raw input transport. `ITerminalInput` remains public for custom transport injection, but session-owned input now has one authoritative public read path through `ReadEventAsync(...)` and typed query operations.
-
-The correction preserved all historical package/downstream gates. The audit found no sufficient reason to redesign the control-provider/native-snapshot layer, typed query/result contracts, semantic protocol APIs, reversible ownership leases, modern keyboard model, or the advanced caller-owned raw output transport.
-
-Comprehensive current enum numeric values and exact public-surface freezing are assigned to T194.
+Workflow #911. One D-class correction: public `TerminalSession.Input` was removed while `ITerminalInput` remains the custom-transport injection seam. No additional API redesign was justified.
 
 Records:
 
 - `docs/T190-1.0-Contract-and-Regret-Audit-Freeze.md`;
 - `docs/T190-Public-API-Regret-Audit.md`.
 
-### T191 — permanent architecture and ownership documentation — complete
+### T191 — permanent architecture and ownership — complete
 
-Green at exact head `c16949d94cb8471b9b776ec4c5dec4a715ea10de`, workflow #918.
+Workflow #918 at `c16949d94cb8471b9b776ec4c5dec4a715ea10de`.
 
-Permanent authorities:
+Authorities:
 
 - `docs/Architecture.md`;
 - `docs/Terminal-Session-and-Ownership.md`;
 - `docs/Lifecycle-and-Restoration.md`.
 
-T191 consolidates architecture boundaries, transport/state ownership, one-reader semantics, lifecycle composition, lock/order principles, exact restoration, participant ordering, invalidation, rollback uncertainty, and disposal authority.
+### T192 — permanent input/query/protocol semantics — complete
 
-Record:
+Workflow #924 at `528ef6a59aff5ec654bc59571018f1ef70cd92e5`.
 
-- `docs/T191-Permanent-Architecture-and-Ownership-Documentation.md`.
-
-### T192 — permanent input, query, and protocol semantics — complete
-
-Green at exact head `528ef6a59aff5ec654bc59571018f1ef70cd92e5`, workflow #924.
-
-Permanent authorities:
+Authorities:
 
 - `docs/Input-and-Events.md`;
 - `docs/Queries-and-Responses.md`;
-- `docs/Modern-Keyboard-Security-and-Compatibility.md` refreshed as a 1.x authority.
+- `docs/Modern-Keyboard-Security-and-Compatibility.md`.
 
-T192 consolidates one-reader input semantics, text/key/mouse/focus/paste normalization, traditional/Kitty/xterm compatibility, rich-input ownership, bounded parsing, ambiguity-sensitive query correlation, cancellation/timeout commit boundaries, bounded late-response ownership, suspend/resume generations, and lifecycle observation through the same ambiguity domain.
+### T193 — permanent output/presentation/security semantics — complete
 
-Record:
+Workflow #925 at `7e62057ff6c0c8ba64e820d37823fc78cdad1674`.
 
-- `docs/T192-Permanent-Input-Query-and-Protocol-Semantics.md`.
-
-### T193 — permanent output, presentation, and security semantics
-
-Implementation complete; exact-head validation pending.
-
-Permanent authorities:
+Authorities:
 
 - `docs/Presentation-and-Reversible-State.md`;
 - `docs/Semantic-Output-Protocols.md`;
 - `docs/Security-and-Privacy.md`.
 
-T193 consolidates:
+T193 permanently distinguishes exact restoration, terminal-policy reset, Icod-owned nested state without an observable external baseline, and ephemeral metadata. It also freezes the bounded safe OSC 9 subset and hazardous-command exclusions as a 1.x safety decision.
 
-- presentation lease composition and transactional rollback;
-- exact-restoration vs terminal-policy reset vs Icod-owned nested state vs ephemeral metadata;
-- titles, location, hyperlinks, clipboard;
-- cursor style, synchronized output, progress, pointer shape;
-- semantic prompt/OSC 133;
-- terminal colors and scoped exact restoration;
-- safe OSC 9 subset and permanent hazardous-command exclusions;
-- privacy/security consequences of terminal metadata, clipboard, command lines, notifications, modern keyboard metadata, and observations;
-- the advanced unsynchronized raw-output boundary.
+### T194 — public API/XML/sample regret closure — in progress
 
-Record:
+Current work:
 
-- `docs/T193-Permanent-Output-Presentation-and-Security-Semantics.md`.
+1. generate a deterministic reflection snapshot of the exported public API on net8.0, net9.0, and net10.0;
+2. prove all three TFMs expose exactly the same surface;
+3. capture that result as the checked-in 1.x public API baseline and turn generation into verification;
+4. freeze every current public enum numeric value through that same baseline;
+5. remove release-number wording from public XML documentation where it describes a permanent contract;
+6. reconcile exception/cancellation/restoration XML against T191–T193;
+7. audit samples for the one-authoritative-reader/output-ownership rules;
+8. rewrite `samples/README.md` as a task-oriented 1.x index rather than release chronology;
+9. add samples only if an important 1.x workflow remains untaught.
 
-### T194 — public API/XML/sample regret closure
+No final API correction enters T194 without a new D-class justification.
 
-Reconcile source documentation and examples against the permanent contract.
+### T195 — compatibility, migration, and support policy
 
-Required work:
+Create:
 
-- audit every public/protected member's XML documentation for 1.0 semantics;
-- correct stale or pre-1.0-only wording;
-- audit exception/cancellation/lifecycle statements;
-- freeze the exact current public surface and every public enum numeric value as the 1.x baseline;
-- audit all samples for current best practice and ownership cleanup;
-- add samples only where an important public workflow is not otherwise taught;
-- remove or rewrite misleading examples;
-- make `samples/README.md` a durable sample index rather than a release-history index where practical.
+- `docs/Compatibility-and-Versioning.md`;
+- `docs/Migration-to-1.0.md`.
 
-Any final public API correction discovered here must be small, justified, and covered by migration notes.
-
-### T195 — compatibility policy, migration, and support contract
-
-Create permanent consumer-facing compatibility guidance:
-
-- source/binary compatibility expectations after 1.0;
-- semantic-versioning policy;
-- supported TFMs/platform policy;
-- deprecation/obsoletion policy;
-- terminal capability vs emulator-specific behavior policy;
-- migration guidance from pre-1.0 package versions, including removal of public `TerminalSession.Input`;
-- guidance for direct consumers vs `Icod.DCurses` consumers;
-- security-reporting and compatibility caveats where repository conventions support them.
+Freeze source/binary compatibility, semantic-versioning, TFM/platform support, deprecation policy, capability-vs-emulator behavior, pre-1.0 migration, and direct-vs-DCurses consumption guidance.
 
 ### T196 — package metadata and documentation artifact closure
 
-Make package/repository metadata tell the same 1.0 story.
-
-Required work:
-
-- replace stale `PackageReleaseNotes` from older releases;
-- audit package description/tags/README/license/icon/repository metadata;
-- verify generated XML documentation on all TFMs;
-- verify documentation links packaged in README remain valid;
-- add a 1.0-rc1 package contract that validates the frozen public surface and permanent documentation markers from the freshly packed NuGet;
-- retain historical package gates until final 1.0 closure.
+Replace stale package release notes; audit package description/tags/README/license/icon/repository metadata; verify XML docs on all TFMs; add a package-only 1.0-rc1 contract; retain historical package gates.
 
 ### T197 — downstream RC acceptance and stable-candidate closure
 
-Run the frozen contract through real downstream consumers and release infrastructure.
-
-Required proof:
-
-- Windows/Linux/macOS PR matrix green;
-- real `Icod.DCurses` focused acceptances green;
-- repeated DCurses hardening soak green;
-- fresh package-only consumers green on net8/net9/net10;
-- no accidental public API drift against the rc1 baseline;
-- Release distribution validation green across configured x64/ARM64 runners after merge;
-- rc1 documentation contains no stale "in progress" authorities.
+Require exact Windows/Linux/macOS PR green, real DCurses acceptances/soak, fresh package-only consumers on all supported TFMs, no accidental public API drift, Release x64/ARM64 distribution validation after merge, and no stale in-progress rc1 authorities.
 
 Tag/publish only when explicitly authorized.
 
 ---
 
-## 5. Permanent documentation target set
-
-By rc1 closure the repository will have durable authorities equivalent to:
+## 5. Permanent documentation set
 
 ```text
 docs/Architecture.md
@@ -211,31 +137,29 @@ docs/Terminal-Session-and-Ownership.md
 docs/Lifecycle-and-Restoration.md
 docs/Input-and-Events.md
 docs/Queries-and-Responses.md
+docs/Modern-Keyboard-Security-and-Compatibility.md
 docs/Presentation-and-Reversible-State.md
 docs/Semantic-Output-Protocols.md
 docs/Security-and-Privacy.md
-docs/Compatibility-and-Versioning.md
-docs/Migration-to-1.0.md
-docs/Public-API-Baseline-1.0-rc1.md
+docs/Compatibility-and-Versioning.md                # T195
+docs/Migration-to-1.0.md                            # T195
+docs/Public-API-Baseline-1.0-rc1.md                 # T194
 ```
 
-Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release records, but they are no longer intended to be required reading for the supported 1.0 contract.
+Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release evidence rather than required reading for the supported 1.x contract.
 
 ---
 
 ## 6. Frozen T190 decisions
 
-The first 1.0 regret audit freezes these decisions:
-
 - custom `ITerminalInput`/`ITerminalOutput` and `ITerminalControlProvider` injection remain public;
-- a live `TerminalSession` does **not** return its raw input transport publicly;
-- `TerminalSession.Output` remains an advanced caller-owned escape hatch outside session serialization and must be documented as such;
-- `ReadEventAsync(...)` remains the canonical session-owned input path;
-- typed query APIs remain the canonical response-correlation path;
-- `WriteTerminalStringAsync(...)` remains the low-level already-resolved terminfo-string boundary, not a generic protocol recommendation;
+- a live `TerminalSession` does not return its raw input transport publicly;
+- `TerminalSession.Output` remains an advanced caller-owned escape hatch outside session serialization;
+- `ReadEventAsync(...)` is the canonical session-owned input path;
+- typed query APIs are the canonical response-correlation path;
+- `WriteTerminalStringAsync(...)` is the advanced already-resolved terminfo-string boundary, not a generic protocol recommendation;
 - semantic protocol APIs remain bounded and typed rather than generic vendor dispatch;
-- lifecycle, presentation, rich-input, and color ownership models remain supportable as 1.x contracts;
-- current enum values, rather than superseded early-pre-1.0 layouts, will be frozen comprehensively in T194;
+- current public enum values will be frozen as the 1.x baseline rather than resurrecting superseded early-pre-1.0 layouts;
 - no new protocol work enters rc1.
 
 ---
@@ -245,8 +169,6 @@ The first 1.0 regret audit freezes these decisions:
 ```text
 Published predecessor: v0.18.0
 Main baseline SHA:     c0f0ff482c8bb0d358c4fcb38e454d717b1b6f1c
-VersionPrefix:         1.0.0
-VersionSuffix:         rc1
 Version:               1.0.0-rc1
 PackageVersion:        1.0.0-rc1
 AssemblyVersion:       1.0.0.0
@@ -254,7 +176,8 @@ TargetFrameworks:      net8.0;net9.0;net10.0
 T190 validation:       workflow #911
 T191 validation:       workflow #918
 T192 validation:       workflow #924
-T193 validation:       pending exact current head
+T193 validation:       workflow #925
+T194 snapshot:         capture pending
 ```
 
-**Next:** validate the exact T193 documentation head. If green, close T193 and begin T194 public API/XML/sample regret closure and exact 1.x surface freeze.
+**Next:** run the T194 reflection snapshot generator on all supported TFMs, capture the identical output, commit it as the 1.x baseline, and convert the generator into an enforcing verification gate.

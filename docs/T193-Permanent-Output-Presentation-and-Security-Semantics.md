@@ -2,7 +2,8 @@
 
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Predecessor:** T192 — permanent input/query semantics, workflow #924  
-**Status:** Implementation complete; exact-head validation pending
+**Status:** Complete and green  
+**Exact-head validation:** workflow #925 at `7e62057ff6c0c8ba64e820d37823fc78cdad1674`
 
 ## 1. Purpose
 
@@ -25,7 +26,7 @@ These documents replace the need to reconstruct current behavior from the 0.4–
 The audit found that a generic “terminal lease/reset” description would be materially misleading. T193 therefore permanently distinguishes four categories:
 
 1. **exact-restoration state** — an external baseline is observed/captured and replayed exactly;
-2. **terminal-policy reset state** — the protocol returns control to terminal policy without claiming the exact prior value;
+2. **terminal-policy reset state** — the protocol returns control to terminal policy without claiming the exact previous value;
 3. **library-owned nested state without an observable external baseline** — outer Icod-owned state can be restored, but unknown pre-Icod state is not claimed;
 4. **ephemeral metadata** — explicit output with no retained/restorable lifecycle state.
 
@@ -129,9 +130,21 @@ Historical release records remain useful evidence for protocol references, byte-
 
 Consumers should use the permanent T191–T193 authorities for the current 1.x contract rather than reconstructing it from those historical milestones.
 
-## 10. Exit criteria
+## 10. Validation
 
-T193 closes when:
+Workflow #925 passed at exact head `7e62057ff6c0c8ba64e820d37823fc78cdad1674`.
+
+The exact-head gate retained and passed:
+
+- Windows/Linux/macOS build and tests;
+- real `Icod.DCurses` focused acceptance;
+- repeated DCurses hardening soak;
+- exact Staging package verification;
+- every package-only compatibility contract from 0.8 through 0.18.
+
+## 11. Exit criteria
+
+T193 is complete because:
 
 1. the three permanent authorities exist and agree with the current public behavior;
 2. restoration categories are described without conflating reset with exact restoration;
@@ -139,5 +152,5 @@ T193 closes when:
 4. safe OSC 9 exclusions are explicitly permanent;
 5. metadata disclosure/privacy boundaries are consolidated;
 6. the advanced raw-output boundary is stated explicitly;
-7. no runtime feature/API/protocol change has entered T193;
-8. the exact T193 documentation head passes Windows/Linux/macOS, real DCurses acceptance/soak, exact package verification, and all retained 0.8–0.18 package contracts.
+7. no runtime feature/API/protocol change entered T193;
+8. the exact T193 documentation head passed Windows/Linux/macOS, real DCurses acceptance/soak, exact package verification, and all retained 0.8–0.18 package contracts.
