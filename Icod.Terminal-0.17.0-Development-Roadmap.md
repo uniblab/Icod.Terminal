@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.17.0`  
-**Development version:** `0.17.0-alpha.1`  
+**Development version:** `0.17.0-alpha.2`  
 **Predecessor:** `0.16.0` — OSC 9 Safe Extensions  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** modern keyboard contracts and negotiated keyboard protocols  
-**Status:** T170 contract/reference freeze in progress
+**Status:** T170 frozen and green; T171 semantic model implemented, exact-head validation pending
 
 ---
 
@@ -26,265 +26,232 @@ The 0.17 release modernizes keyboard input without breaking the traditional term
 
 ---
 
-## 2. Design goals
+## 2. Frozen protocol architecture
 
-0.17 SHALL:
+### Traditional input
 
-- preserve the current traditional-key decoder and byte compatibility when no modern protocol is active;
-- represent key press, repeat, and release semantics explicitly where the terminal protocol can report them;
-- represent modern modifier state without collapsing distinct modifier identities into Alt/Control/Shift;
-- decode negotiated Kitty keyboard protocol events into terminal-independent semantic events;
-- support xterm `modifyOtherKeys` as a narrower compatibility protocol rather than pretending it is Kitty/CSI-u;
-- keep protocol negotiation reversible and lease-owned through the existing `TerminalInputProtocolManager` architecture;
-- compose modern keyboard requests with bracketed paste, focus reporting, and mouse tracking;
-- preserve active terminal-query routing and incremental input framing;
-- avoid terminal-brand heuristics when a protocol can instead be requested explicitly;
-- expose semantic APIs rather than raw keyboard escape-sequence switches.
+Traditional terminal keyboard decoding remains the default/fallback and is unchanged on the wire. Traditional key events normalize to `TerminalKeyEventPhase.Press`; ordinary text remains `TerminalInputEventKind.Text`.
 
----
+### Kitty progressive keyboard protocol
 
-## 3. Compatibility constraints
+Kitty is the only keyboard mode that 0.17 will actively negotiate and lease-own because its support can be queried and its application state can be pushed/popped reversibly.
 
-The current public input model already defines:
+The frozen semantic modes map to Kitty flags:
 
-- `TerminalInputEventKind.Text` and `TerminalInputEventKind.Key`;
-- terminal-independent named keys via `TerminalKey`;
-- `TerminalKeyModifiers.Shift`, `Control`, and `Alt`;
-- traditional character/key decoding;
-- reversible rich-input protocol ownership through `TerminalInputProtocolOptions` and `TerminalInputProtocolLease`.
+```text
+Disambiguated = 5   (1 | 4)
+EventTypes    = 7   (1 | 2 | 4)
+AllKeys       = 31  (1 | 2 | 4 | 8 | 16)
+```
 
-0.17 evolves these contracts additively. Existing enum values and existing decoding semantics SHALL remain stable.
+### xterm `modifyOtherKeys`
 
-Traditional terminal input remains the fallback and default. Modern keyboard protocol acquisition is explicit.
+T170 corrected the initial roadmap direction: xterm `modifyOtherKeys` is **decoder compatibility only** in 0.17. The lease manager does not blindly enable/disable it because xterm lacks the query/push/pop ownership model required to prove restoration of pre-existing terminal state.
+
+T174 therefore decodes supported xterm modified-key forms and normalizes them into the shared semantic key model without claiming Kitty-only semantics.
 
 ---
 
-## 4. Protocol tiers
+## 3. Frozen semantic public contract
 
-### Tier A — traditional terminal keyboard input
+0.17 adds:
 
-Retained unchanged as the compatibility baseline. Traditional input produces press-like semantic events only because release/repeat distinction is not present on the wire.
+```csharp
+public enum TerminalKeyEventPhase {
+	Press = 0,
+	Repeat = 1,
+	Release = 2
+}
 
-### Tier B — xterm `modifyOtherKeys`
+public enum TerminalKeyboardReportingMode {
+	Disambiguated = 0,
+	EventTypes = 1,
+	AllKeys = 2
+}
+```
 
-Supported as a compatibility protocol for disambiguating modified ordinary keys.
+`TerminalKeyModifiers` retains:
 
-It is narrower than Kitty:
+```text
+Shift   = 1
+Control = 2
+Alt     = 4
+```
 
-- primarily enriches modified-key encoding;
-- does not provide the complete Kitty event-type/modifier model;
-- must not be represented publicly as “Kitty mode” or “full CSI-u”.
+and appends:
 
-0.17 will decode the forms actually negotiated by the library and normalize them into the shared semantic key model.
+```text
+Super    = 8
+Hyper    = 16
+Meta     = 32
+CapsLock = 64
+NumLock  = 128
+```
 
-### Tier C — Kitty keyboard protocol
+`TerminalInputEvent` adds:
 
-The preferred modern keyboard protocol for applications that explicitly request rich keyboard semantics.
+```csharp
+public TerminalKeyEventPhase? KeyPhase { get; }
+public Rune? ShiftedCharacter { get; }
+public Rune? BaseLayoutCharacter { get; }
+public string? AssociatedText { get; }
+```
 
-0.17 will use the protocol's application-negotiated mode rather than terminal-brand detection. The implementation will initially request only the smallest flag set required by the public 0.17 contract and will restore/pop its owned mode deterministically.
+`TerminalKey` retains every existing value through `Function` and appends semantic identities for the frozen Kitty functional-key table plus `Unrecognized`; raw Kitty private-use integers are not public API.
 
----
+`TerminalInputProtocolOptions.KeyboardReportingMode` is intentionally deferred until T173 so no public option can be accepted before its negotiated ownership implementation exists.
 
-## 5. Semantic key model direction
-
-T170 freezes the exact public shape before production implementation, but the intended additive model is:
-
-- retain `TerminalInputEventKind.Key`;
-- add a key-event phase/type describing `Press`, `Repeat`, or `Release`;
-- retain all existing `TerminalKey` values and append any additional named-key identities required by the modern protocols;
-- retain existing `Shift`, `Control`, and `Alt` flag values;
-- add distinct modern modifier flags such as `Super`, `Hyper`, `Meta`, `CapsLock`, and `NumLock` where the source protocol can report them;
-- preserve a Unicode `Rune` for character-bearing key events;
-- preserve function-key numbering for `TerminalKey.Function`;
-- do not expose raw Kitty numeric key codes as the primary public contract.
-
-Traditional events normalize to `Press` and retain their current modifiers.
-
----
-
-## 6. Negotiation and ownership direction
-
-Modern keyboard mode will integrate with the existing input-protocol lease model.
-
-A keyboard request SHALL be:
-
-- explicitly requested by application code;
-- reversible;
-- nestable/overlappable with other leases;
-- reconciled by the manager to the strongest active keyboard request;
-- restored when the last requesting lease is released;
-- suspended/restored according to the existing lifecycle-safe protocol-manager rules;
-- independent of application output such as OSC 9, colors, synchronized output, or OSC 133.
-
-The manager must avoid protocol-state corruption when multiple callers request compatible or stronger keyboard capabilities concurrently.
+Full contract: `docs/T170-Modern-Keyboard-Contract-and-Reference-Freeze.md`.
 
 ---
 
-## 7. Explicit exclusions from 0.17
+## 4. Ownership and lifecycle invariants
 
-Unless T170 reference work demonstrates a compelling interoperability requirement, 0.17 will not add:
+Modern keyboard reporting joins the existing `TerminalInputProtocolManager` lease domain.
 
-- terminal-brand auto-detection as a prerequisite for keyboard mode;
-- arbitrary raw `CSI > ...`/`CSI < ...` keyboard-control APIs;
-- a generic “send keyboard protocol escape sequence” API;
-- application-visible Kitty numeric private-use key codes where a stable semantic key identity can be used instead;
-- physical scan-code APIs;
-- OS-native keyboard-hook APIs;
+Frozen rules include:
+
+- explicit acquisition only;
+- strongest-request reconciliation: `none < Disambiguated < EventTypes < AllKeys`;
+- one physical library-owned Kitty stack entry on the currently managed screen regardless of logical lease count;
+- Kitty support detection before acquisition;
+- no silent fallback to xterm;
+- cancellation before output commitment emits nothing;
+- committed transitions are complete serialized writes;
+- suspend/resume/invalidation/disposal keep believed state truthful;
+- managed main/alternate-screen transitions use pop/switch/push choreography so a library-owned stack entry is never stranded on the inactive screen.
+
+---
+
+## 5. Explicit exclusions
+
+0.17 does not add:
+
+- raw keyboard control-sequence APIs;
+- public Kitty flag integers;
+- public raw Kitty private-use key codes;
 - global hotkeys;
-- IME control or composition policy;
-- Windows Console `KEY_EVENT_RECORD` as a new public terminal protocol abstraction;
-- keyboard remapping/binding policy (belongs to higher-level consumers such as `Icod.DCurses`).
+- keyboard remapping/binding policy;
+- OS keyboard hooks;
+- physical scan-code contracts;
+- automatic terminal-brand activation;
+- IME configuration/control;
+- synthetic repeat detection;
+- fabricated release events;
+- blind xterm `modifyOtherKeys` activation;
+- automatic promotion of globally configured plain CSI-u into a claimed lease-owned mode.
 
 ---
 
-## 8. Tranche plan
+## 6. Tranche record
 
 ### T170 — modern keyboard contract/reference freeze — `0.17.0-alpha.1`
 
-Freeze:
+Complete and green at workflow #771.
 
-- protocol reference tiers and supported wire forms;
-- exact additive public event/modifier/key contracts;
-- Kitty flag/event-type scope;
-- xterm `modifyOtherKeys` scope;
-- negotiation/lease semantics;
-- fallback/traditional compatibility;
-- malformed/unknown input behavior;
-- lifecycle, cancellation, and response-routing rules;
-- test obligations and explicit exclusions.
+Frozen decisions include:
+
+- exact key phase/modifier/reporting-mode public contracts;
+- complete semantic Kitty functional-key coverage without raw PUA leakage;
+- alternate-key and associated-text shape;
+- Kitty flag sets `5`, `7`, `31`;
+- Kitty as the only lease-owned modern keyboard protocol;
+- xterm `modifyOtherKeys` as decode-only compatibility;
+- support-detection/query routing;
+- managed main/alternate-screen ownership choreography;
+- unknown/malformed frame recovery and security behavior.
 
 Record: `docs/T170-Modern-Keyboard-Contract-and-Reference-Freeze.md`.
 
 ### T171 — semantic key-event model — `0.17.0-alpha.2`
 
-Implement the frozen additive public event model before adding any modern wire decoder.
+Implemented; exact-head validation pending.
 
-Expected work:
+Delivered:
 
-- key event type/phase;
-- expanded modifier flags;
-- required named-key additions;
-- constructor/factory invariants;
-- traditional decoder normalization to press events;
-- API/XML/unit tests proving existing values and behavior remain compatible.
+- `TerminalKeyEventPhase`;
+- expanded `TerminalKeyModifiers`;
+- additive `TerminalKey` modern named-key set plus `Unrecognized`;
+- `KeyPhase`, `ShiftedCharacter`, `BaseLayoutCharacter`, `AssociatedText` on `TerminalInputEvent`;
+- `TerminalKeyboardReportingMode` vocabulary without premature acquisition plumbing;
+- traditional key factory normalization to `Press`;
+- explicit retention of old enum values and the historical function-key `0..63` internal range;
+- dedicated semantic-contract unit tests.
+
+Record: `docs/T171-Modern-Keyboard-Semantic-Key-Event-Model.md`.
 
 ### T172 — Kitty keyboard decoder foundation — `0.17.0-alpha.3`
 
-Implement incremental Kitty/CSI-u event parsing for the frozen supported forms.
+Next after green T171 validation.
 
-Cover:
+Implement incremental Kitty/CSI-u input decoding for the frozen supported forms:
 
 - character keys;
-- named functional keys in scope;
-- modifiers;
-- press/repeat/release event type;
-- UTF-8/Unicode scalar correctness;
-- partial frames and bounded parameter parsing;
-- malformed and unsupported sequences without poisoning subsequent input;
-- interaction with terminal-response framing/routing.
+- current Kitty functional-key table;
+- modern modifiers;
+- press/repeat/release;
+- shifted/base-layout key identities;
+- associated text;
+- pure associated-text frames;
+- fragmented/coalesced bounded parsing;
+- safe unknown/malformed recovery;
+- active response-routing priority.
 
 ### T173 — negotiated Kitty keyboard ownership — `0.17.0-alpha.4`
 
-Integrate the preferred modern keyboard request into `TerminalInputProtocolOptions`, `TerminalInputProtocolLease`, and `TerminalInputProtocolManager`.
+Integrate `TerminalKeyboardReportingMode? KeyboardReportingMode` into `TerminalInputProtocolOptions` and `TerminalInputProtocolLease`, then implement support detection, push/pop ownership, strongest-request reconciliation, lifecycle re-entry, and managed main/alternate-screen transition choreography.
 
-Prove:
+### T174 — xterm `modifyOtherKeys` decoder compatibility — `0.17.0-alpha.5`
 
-- explicit acquisition/release;
-- nested ownership;
-- strongest-request reconciliation;
-- push/pop or equivalent protocol-safe restoration;
-- cancellation before output commitment;
-- one complete control-frame write per transition;
-- suspend/resume lifecycle behavior;
-- no terminal-brand heuristics.
-
-### T174 — xterm `modifyOtherKeys` compatibility — `0.17.0-alpha.5`
-
-Add the frozen narrower xterm compatibility tier.
-
-Prove:
-
-- negotiated enable/disable behavior;
-- exact supported wire forms;
-- modified ordinary-key disambiguation;
-- normalization into the same semantic event model;
-- no false promotion to Kitty-only semantics;
-- coexistence/reconciliation rules with Kitty requests.
+Decode the frozen level-2 conventional and CSI-u forms when received. Normalize to `Press` with only semantics actually present. Do not add lease-owned xterm activation.
 
 ### T175 — composition and hardening — `0.17.0-alpha.6`
 
-Exercise modern keyboard input with:
-
-- traditional keys/text;
-- paste/focus/mouse protocols;
-- active terminal queries;
-- fragmented/coalesced reads;
-- malformed input and recovery;
-- concurrent protocol leases;
-- suspend/resume/invalidation/disposal;
-- output failures during protocol transitions;
-- bounded input and deadlock/lock-order tests.
+Exercise modern keyboard input with traditional keys/text, paste/focus/mouse, active queries, fragmented/coalesced reads, malformed recovery, concurrent leases, presentation screen transitions, suspend/resume/invalidation/disposal, transition output failures, and bounded parser/deadlock behavior.
 
 ### T176 — downstream `Icod.DCurses` acceptance — `0.17.0-alpha.7`
 
-Extend real `Icod.DCurses` acceptance using only public APIs.
-
-Validate that a full-screen consumer can:
-
-- acquire modern keyboard mode;
-- receive semantic press/repeat/release events and richer modifiers;
-- continue receiving ordinary text, focus, paste, and mouse events;
-- refresh output while input mode is active;
-- release/restorе the protocol deterministically.
-
-Acceptance must run on net8/net9/net10 and validate deterministic protocol bytes/events rather than depending on the CI runner terminal emulator.
+Extend real `Icod.DCurses` acceptance through public APIs, validating negotiated Kitty bytes/events and coexistence with full-screen refresh plus existing rich input on net8/net9/net10.
 
 ### T177 — public API/package/stable closure — `0.17.0`
 
-Deliver:
-
-- `docs/Public-API-Baseline-0.17.md`;
-- README and focused sample updates;
-- keyboard security/interoperability documentation;
-- XML documentation assertions;
-- fresh NuGet-only net8/net9/net10 consumer;
-- retained 0.8–0.16 package gates;
-- new 0.17 package contract in PR/main/tag validation;
-- stable package metadata/release notes;
-- exact-head validation before merge and exact-main Release validation before tag.
+Deliver public API baseline, README/sample/security docs, XML/package-only net8/net9/net10 consumer, retained 0.8–0.16 gates, new 0.17 package contract, stable metadata, and exact-head/exact-main release validation.
 
 ---
 
-## 9. Required testing matrix
+## 7. Required testing matrix
 
 0.17 SHALL prove at minimum:
 
 - all existing traditional-key tests remain green;
 - existing enum values used by 0.16 and earlier remain unchanged;
-- traditional keys normalize to press events;
+- traditional keys normalize to `Press`;
 - modern modifiers are preserved distinctly;
+- all frozen current Kitty functional keys map semantically;
+- shifted/base-layout keys and associated text preserve Unicode data;
 - Kitty character/named-key press, repeat, and release decoding;
 - xterm `modifyOtherKeys` decoding for the frozen supported forms;
 - incomplete/malformed sequence recovery;
-- unknown modern key codes follow a documented safe fallback/error policy;
-- protocol acquisition/release is exact and reversible;
+- unknown modern functional codes map to `Unrecognized` without raw PUA exposure;
+- Kitty acquisition/release is exact, bounded, and reversible;
 - overlapping leases reconcile deterministically;
-- lifecycle suspend/resume does not leak or double-pop keyboard modes;
+- managed screen transitions do not strand Kitty stack entries;
+- lifecycle suspend/resume does not leak or double-pop modes;
 - active-query routing remains correct while modern keyboard input is flowing;
 - no raw/generic keyboard-control API enters the public package;
 - Windows/Linux/macOS CI and net8/net9/net10 package-only consumers.
 
 ---
 
-## 10. Current development state
+## 8. Current development state
 
 ```text
 VersionPrefix:    0.17.0
-VersionSuffix:    alpha.1
-Version:          0.17.0-alpha.1
-PackageVersion:   0.17.0-alpha.1
+VersionSuffix:    alpha.2
+Version:          0.17.0-alpha.2
+PackageVersion:   0.17.0-alpha.2
 AssemblyVersion:  0.17.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Current work:** T170 — modern keyboard contract/reference freeze.
+**Next after exact-head T171 validation:** T172 — Kitty keyboard decoder foundation.
