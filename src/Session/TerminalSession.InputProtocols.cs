@@ -49,13 +49,8 @@ public sealed partial class TerminalSession {
 		return this.inputProtocolManager.SuspendAsync();
 	}
 
-	private async ValueTask ResumeInputProtocolStateAsync() {
-		this.BeginLifecycleObservationQueryWindow();
-		try {
-			await this.inputProtocolManager.ReenterAsync().ConfigureAwait( false );
-		} finally {
-			this.EndLifecycleObservationQueryWindow();
-		}
+	private ValueTask ResumeInputProtocolStateAsync() {
+		return this.inputProtocolManager.ReenterAsync();
 	}
 
 	private async ValueTask<Exception?> CloseInputProtocolStateAsync() {
