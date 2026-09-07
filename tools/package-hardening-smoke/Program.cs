@@ -1,5 +1,4 @@
 using System.Text;
-using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
 
@@ -8,63 +7,8 @@ const string DisablePaste = "<P->";
 const string EnterAlternateScreen = "<A+>";
 const string ExitAlternateScreen = "<A->";
 
-TestTerminalLifecycleSource lifecycle = new() {
-	AutoResume = true
-};
 RecordingTransport transport = new();
-await using TerminalSession session = await OpenSessionAsync(
-	lifecycle,
-	transport
-);
-BlockingParticipant participant = new();
-using IDisposable registration = session.RegisterLifecycleParticipant(
-	participant
-);
-using CancellationTokenSource timeout = new(
-	TimeSpan.FromSeconds( 5 )
-);
-
-lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
-await participant.WaitUntilPreparingAsync().WaitAsync( timeout.Token );
-Require(
-	!session.IsStateValid,
-	"The package did not mark terminal state released during suspend preparation."
-);
-
-await RequireThrowsAsync<InvalidOperationException>(
-	() => session.AcquireInputProtocolsAsync(
-		new TerminalInputProtocolOptions {
-			BracketedPaste = true
-		}
-	).AsTask(),
-	"Rich-input acquisition was not rejected while lifecycle state was released."
-);
-await RequireThrowsAsync<InvalidOperationException>(
-	() => session.AcquirePresentationAsync(
-		new TerminalPresentationOptions {
-			AlternateScreen = true
-		}
-	).AsTask(),
-	"Presentation acquisition was not rejected while lifecycle state was released."
-);
-Require(
-	0 == transport.Writes.Count,
-	"Rejected state acquisition emitted terminal-control output."
-);
-
-participant.ReleasePreparation();
-TerminalLifecycleEvent suspending = await session.ReadLifecycleEventAsync(
-	timeout.Token
-);
-TerminalLifecycleEvent resumed = await session.ReadLifecycleEventAsync(
-	timeout.Token
-);
-Require(
-	TerminalLifecycleEventKind.Suspending == suspending.Kind
-		&& TerminalLifecycleEventKind.Resumed == resumed.Kind
-		&& session.IsStateValid,
-	"The package did not complete lifecycle re-entry before restoring public state acquisition."
-);
+TerminalSession session = await OpenSessionAsync( transport );
 
 TerminalInputProtocolLease inputLease = (
 	await session.AcquireInputProtocolsAsync(
@@ -97,8 +41,34 @@ RequireSequence(
 	DisablePaste
 );
 
+transport.Writes.Clear();
+Task disposal = session.DisposeAsync().AsTask();
+
+await RequireThrowsAsync<ObjectDisposedException>(
+	() => session.AcquireInputProtocolsAsync(
+		new TerminalInputProtocolOptions {
+			BracketedPaste = true
+		}
+	).AsTask(),
+	"Rich-input acquisition was not rejected after package-session teardown began."
+);
+await RequireThrowsAsync<ObjectDisposedException>(
+	() => session.AcquirePresentationAsync(
+		new TerminalPresentationOptions {
+			AlternateScreen = true
+		}
+	).AsTask(),
+	"Presentation acquisition was not rejected after package-session teardown began."
+);
+
+await disposal;
+Require(
+	0 == transport.Writes.Count,
+	"Rejected post-teardown state acquisition emitted terminal-control output."
+);
+
 Console.WriteLine(
-	"Icod.Terminal 0.18 package lifecycle/state-acquisition hardening smoke passed."
+	"Icod.Terminal 0.18 package teardown/state-acquisition hardening smoke passed."
 );
 
 static async Task RequireThrowsAsync<TException>(
@@ -139,10 +109,8 @@ static void RequireSequence(
 }
 
 static ValueTask<TerminalSession> OpenSessionAsync(
-	TestTerminalLifecycleSource lifecycle,
 	RecordingTransport transport
 ) {
-	ArgumentNullException.ThrowIfNull( lifecycle );
 	ArgumentNullException.ThrowIfNull( transport );
 
 	TerminalDescription terminal = new TerminalDescriptionBuilder(
@@ -171,82 +139,9 @@ static ValueTask<TerminalSession> OpenSessionAsync(
 		new TerminalSessionOptions {
 			TerminalOverride = terminal,
 			ConfigureOutput = false,
-			LifecycleSource = lifecycle
+			ObserveLifecycleEvents = false
 		}
 	);
-}
-
-internal sealed class BlockingParticipant : ITerminalSessionLifecycleParticipant {
-	private readonly TaskCompletionSource preparing = new(
-		TaskCreationOptions.RunContinuationsAsynchronously
-	);
-	private readonly TaskCompletionSource release = new(
-		TaskCreationOptions.RunContinuationsAsynchronously
-	);
-
-	internal Task WaitUntilPreparingAsync() {
-		return this.preparing.Task;
-	}
-
-	internal void ReleasePreparation() {
-		this.release.TrySetResult();
-	}
-
-	public async ValueTask PrepareForTerminalSuspendAsync(
-		CancellationToken cancellationToken = default
-	) {
-		cancellationToken.ThrowIfCancellationRequested();
-		this.preparing.TrySetResult();
-		await this.release.Task.WaitAsync(
-			cancellationToken
-		).ConfigureAwait( false );
-	}
-
-	public ValueTask ResumeAfterTerminalSuspendAsync(
-		CancellationToken cancellationToken = default
-	) {
-		cancellationToken.ThrowIfCancellationRequested();
-		return ValueTask.CompletedTask;
-	}
-}
-
-internal sealed class TestTerminalLifecycleSource
-	: ITerminalLifecycleSource,
-	  ITerminalSuspendController {
-	private readonly Channel<TerminalLifecycleSignal> signals =
-		Channel.CreateUnbounded<TerminalLifecycleSignal>();
-
-	internal bool AutoResume {
-		get;
-		init;
-	}
-
-	internal void Publish(
-		TerminalLifecycleSignalKind kind
-	) {
-		if ( !this.signals.Writer.TryWrite( new TerminalLifecycleSignal( kind ) ) ) {
-			throw new InvalidOperationException(
-				"The package-smoke lifecycle signal could not be queued."
-			);
-		}
-	}
-
-	public ValueTask<TerminalLifecycleSignal> ReadAsync(
-		CancellationToken cancellationToken = default
-	) {
-		return this.signals.Reader.ReadAsync( cancellationToken );
-	}
-
-	public TerminalControlMutationResult SuspendCurrentProcess() {
-		if ( this.AutoResume ) {
-			this.Publish( TerminalLifecycleSignalKind.Resume );
-		}
-		return TerminalControlMutationResult.Success();
-	}
-
-	public void Dispose() {
-		this.signals.Writer.TryComplete();
-	}
 }
 
 internal sealed class RecordingTransport : ITerminalInput, ITerminalOutput {
