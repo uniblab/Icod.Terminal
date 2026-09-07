@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.18.0`  
-**Development version:** `0.18.0-alpha.1`  
+**Development version:** `0.18.0-alpha.2`  
 **Predecessor:** `0.17.0` — Modern Keyboard Contracts and Protocols  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** hardening, invariants, failure semantics, parser bounds, lifecycle/concurrency correctness, and downstream/package closure  
-**Status:** T180 audit/contract freeze in progress
+**Status:** T180–T181 complete and green; T182 next
 
 ---
 
@@ -43,30 +43,25 @@ Traditional behavior remains the compatibility floor. Existing public enum numer
 
 ### T180 — hardening contract and audit freeze — `0.18.0-alpha.1`
 
-Inventory the existing architecture and freeze the 0.18 hardening scope. Produce an explicit defect/risk matrix covering:
+Complete and green at workflow #859.
 
-- incremental input parser bounds and malformed recovery;
-- active query routing and response correlation;
-- cancellation and output commitment boundaries;
-- lease reconciliation and restoration semantics;
-- state invalidation and believed-state truthfulness;
-- session composition and manager lock ordering;
-- lifecycle suspend/resume/reentry ordering;
-- disposal idempotence and stale-lease behavior;
-- transport read/write failure propagation;
-- Windows/POSIX mode restoration and platform parity;
-- public API/package compatibility;
-- real downstream `Icod.DCurses` integration.
+The tranche froze the release as hardening-only and established the risk matrix across parser/query bounds, cancellation, lifecycle/composition, failure semantics, platform restoration, compatibility, and downstream integration.
 
-No production behavior change is required for T180 unless the audit uncovers a release-blocking defect that cannot safely wait for the next tranche.
+Record: `docs/T180-Hardening-Contract-and-Audit-Freeze.md`.
 
 ### T181 — parser and query-router hardening — `0.18.0-alpha.2`
 
-Strengthen incremental decoding and active-query routing under fragmentation, coalescing, malformed prefixes, oversized payloads, ambiguous CSI/OSC/DCS traffic, interleaved ordinary input, cancellation, and response timeouts.
+Complete and green at workflow #860.
 
-Required outcomes include bounded buffering, deterministic recovery, no accidental query-response theft, and tests that exercise repeated malformed input without unbounded retained state.
+The production parser/query design required no semantic correction. New adversarial tests freeze the suspend/resume generation and ambiguity invariants: post-resume lifecycle observation cannot overtake an emitted pre-suspend transaction that still owns a possible late response, and queued pre-suspend old-generation queries are invalidated without emission before the observation request becomes the next physical query.
+
+Parser audit confirmed `MaximumBufferedBytes` remains authoritative; active response framing uses the smaller of the protocol framing limit and decoder bound; correlated oversized responses fail deterministically and bounded OSC discard/resynchronization remains explicit.
+
+Record: `docs/T181-Parser-and-Query-Router-Hardening.md`.
 
 ### T182 — lifecycle, composition, and concurrency hardening — `0.18.0-alpha.3`
+
+Next.
 
 Stress the session-wide composition domain and manager interactions under concurrent acquisition/release, presentation transitions, query activity, lifecycle suspend/resume, invalidation, and disposal.
 
@@ -132,11 +127,11 @@ A discovered correctness defect may justify a narrowly scoped compatibility-pres
 
 ```text
 VersionPrefix:    0.18.0
-VersionSuffix:    alpha.1
-Version:          0.18.0-alpha.1
-PackageVersion:   0.18.0-alpha.1
+VersionSuffix:    alpha.2
+Version:          0.18.0-alpha.2
+PackageVersion:   0.18.0-alpha.2
 AssemblyVersion:  0.18.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** complete T180 audit/contract freeze and convert the risk inventory into executable hardening gates.
+**Next:** T182 — lifecycle, composition, and concurrency hardening.
