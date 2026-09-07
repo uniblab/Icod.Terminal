@@ -107,6 +107,12 @@ internal sealed partial class TerminalInputDecoder {
 				).ConfigureAwait( false );
 			}
 
+			if ( await this.TryConsumeKittyKeyboardFlagsProbeAsync(
+				cancellationToken
+			).ConfigureAwait( false ) ) {
+				continue;
+			}
+
 			TerminalResponseFrameParseResult parseResult = TerminalResponseFramer.Parse(
 				this.bufferedBytes,
 				expectation.Matcher.FrameKind,
@@ -186,11 +192,6 @@ internal sealed partial class TerminalInputDecoder {
 	private async ValueTask<TerminalInputDecodeResult?> TryDecodeModernKeyboardResultAsync(
 		CancellationToken cancellationToken
 	) {
-		if ( await this.TryConsumeKittyKeyboardFlagsProbeAsync(
-			cancellationToken
-		).ConfigureAwait( false ) ) {
-			return null;
-		}
 		if ( 0 < this.pendingModernKeyboardEvents.Count ) {
 			return TerminalInputDecodeResult.FromInput(
 				this.pendingModernKeyboardEvents.Dequeue()
