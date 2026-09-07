@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.18.0`  
-**Development version:** `0.18.0-alpha.2`  
+**Development version:** `0.18.0-alpha.3`  
 **Predecessor:** `0.17.0` — Modern Keyboard Contracts and Protocols  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** hardening, invariants, failure semantics, parser bounds, lifecycle/concurrency correctness, and downstream/package closure  
-**Status:** T180–T181 complete and green; T182 next
+**Status:** T180–T182 complete and green; T183 in progress
 
 ---
 
@@ -53,21 +53,34 @@ Record: `docs/T180-Hardening-Contract-and-Audit-Freeze.md`.
 
 Complete and green at workflow #860.
 
-The production parser/query design required no semantic correction. New adversarial tests freeze the suspend/resume generation and ambiguity invariants: post-resume lifecycle observation cannot overtake an emitted pre-suspend transaction that still owns a possible late response, and queued pre-suspend old-generation queries are invalidated without emission before the observation request becomes the next physical query.
-
-Parser audit confirmed `MaximumBufferedBytes` remains authoritative; active response framing uses the smaller of the protocol framing limit and decoder bound; correlated oversized responses fail deterministically and bounded OSC discard/resynchronization remains explicit.
+New adversarial tests froze the suspend/resume generation and ambiguity invariants. Parser audit confirmed bounded framing and deterministic oversized-response recovery without requiring a production semantic change.
 
 Record: `docs/T181-Parser-and-Query-Router-Hardening.md`.
 
 ### T182 — lifecycle, composition, and concurrency hardening — `0.18.0-alpha.3`
 
-Next.
+Complete and green at workflow #874.
 
-Stress the session-wide composition domain and manager interactions under concurrent acquisition/release, presentation transitions, query activity, lifecycle suspend/resume, invalidation, and disposal.
+T182 found and corrected a public-acquisition race: new input-protocol or presentation ownership could begin after lifecycle teardown had already released session state, and similarly after disposal had begun. Public state acquisition now re-checks lifecycle/teardown availability inside the state-composition gate before entering either manager.
 
-Required outcomes include a documented lock graph, adversarial tests for deadlock resistance, and proof that no manager can advance believed state past an uncommitted or failed physical transition.
+The authoritative order is:
+
+```text
+state composition
+    -> lifecycle/teardown availability
+        -> manager gate
+            -> control output
+```
+
+Cleanup paths intentionally remain permitted while state is released so lease disposal, lifecycle rollback/reentry, and final manager close cannot deadlock.
+
+Deterministic tests prove acquisition is rejected with zero control output during suspend preparation, succeeds again after completed reentry, and is rejected with `ObjectDisposedException` after teardown begins.
+
+Record: `docs/T182-Lifecycle-Composition-and-Concurrency-Hardening.md`.
 
 ### T183 — failure injection, cancellation, and rollback hardening — `0.18.0-alpha.4`
+
+In progress.
 
 Add systematic injected failures around transport writes/reads, query delimiters, multi-step restoration, screen/keyboard choreography, colors, rich-input leases, and semantic output.
 
@@ -127,11 +140,11 @@ A discovered correctness defect may justify a narrowly scoped compatibility-pres
 
 ```text
 VersionPrefix:    0.18.0
-VersionSuffix:    alpha.2
-Version:          0.18.0-alpha.2
-PackageVersion:   0.18.0-alpha.2
+VersionSuffix:    alpha.3
+Version:          0.18.0-alpha.3
+PackageVersion:   0.18.0-alpha.3
 AssemblyVersion:  0.18.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** T182 — lifecycle, composition, and concurrency hardening.
+**Next:** T183 — failure injection, cancellation, and rollback hardening.
