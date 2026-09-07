@@ -84,9 +84,11 @@ The release candidate retains:
 
 - full build/test coverage on `net8.0`, `net9.0`, and `net10.0`;
 - the frozen 1.0 public-API fingerprint;
-- real `Icod.DCurses` acceptance and repeated ownership/disposal soak;
 - exact NuGet artifact/XML verification;
 - historical package-only contracts from 0.8 through 0.18;
-- a fresh 1.0 release-candidate package-only contract.
+- a fresh 1.0 release-candidate package-only contract;
+- current `Icod.DCurses 0.1.0` project-reference and package-boundary integration/ownership acceptance.
+
+The DCurses checks are compatibility witnesses for the integration surface its current early release exercises. They are not treated as exhaustive proof of every `Icod.Terminal` contract; Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full 1.x surface.
 
 Tags trigger publication. A tag is created only after the exact release candidate has passed the required PR and post-merge Release gates and publication is explicitly authorized.

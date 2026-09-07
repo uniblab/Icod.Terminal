@@ -8,7 +8,7 @@
 
 `1.0.0-rc1` is the release candidate for the intended 1.x contract.
 
-The rc1 line is a **contract freeze and permanent-documentation release**, not a new terminal-protocol wave. It consolidates the accumulated 0.x behavior into durable 1.x authorities, freezes the exported API/enum layout, defines compatibility and migration policy, and proves the package through real downstream and fresh NuGet-only consumers.
+The rc1 line is a **contract freeze and permanent-documentation release**, not a new terminal-protocol wave. It consolidates the accumulated 0.x behavior into durable 1.x authorities, freezes the exported API/enum layout, defines compatibility and migration policy, and validates the package through Terminal-owned package/invariant gates plus current downstream compatibility checks.
 
 The one intentional pre-1.0 API correction is that a live `TerminalSession` no longer exposes its raw input transport through `TerminalSession.Input`. `ITerminalInput` remains public for custom transport injection. Application input now has one authoritative live-session path through `ReadEventAsync(...)` and typed query operations.
 
@@ -211,7 +211,9 @@ On POSIX hosts:
 sh build.sh
 ```
 
-PR validation runs Windows/Linux/macOS builds and tests, the frozen 1.0 public-API fingerprint, real `Icod.DCurses` acceptance and repeated ownership soak, exact Staging package verification, retained package-only contracts from 0.8 through 0.18, and the 1.0 release-candidate package contract.
+PR validation runs Windows/Linux/macOS builds and tests, the frozen 1.0 public-API fingerprint, exact Staging package verification, retained package-only contracts from 0.8 through 0.18, and the fresh 1.0 release-candidate package contract.
+
+The repository also runs current `Icod.DCurses 0.1.0` integration/ownership acceptance, including a package-boundary soak against the freshly packed Terminal artifact. Because DCurses is still an early downstream, these checks are **compatibility witnesses for the integration paths it currently exercises**, not exhaustive proof of every `Icod.Terminal` 1.x contract. Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full surface.
 
 After merge, Release distribution validation runs the same distribution contract across the configured Windows/Linux/macOS x64/ARM64 matrix.
 

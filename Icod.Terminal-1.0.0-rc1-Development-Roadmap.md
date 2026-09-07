@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T196 complete and green; T197 implementation complete, exact-head validation pending
+**Status:** T190–T197 implementation and audit complete; the exact current PR head is the merge-readiness gate
 
 ---
 
@@ -14,7 +14,7 @@
 
 `1.0.0-rc1` is the point where `Icod.Terminal` stops being documented primarily as a sequence of pre-1.0 feature releases and becomes documented as one coherent terminal/session platform.
 
-The default rule is:
+The governing rule is:
 
 > freeze, reconcile, document, and prove the existing contract before adding anything new.
 
@@ -34,7 +34,7 @@ During rc1:
 - keep Windows/POSIX differences observable rather than fabricated;
 - retain `net8.0`, `net9.0`, and `net10.0` unless a concrete security/maintenance constraint requires reconsideration;
 - retain historical package gates until equivalent 1.x coverage demonstrably subsumes them;
-- validate real `Icod.DCurses` throughout;
+- validate real downstream integration without treating an early downstream as exhaustive proof of the Terminal contract;
 - treat stale current documentation as a release defect.
 
 ---
@@ -43,7 +43,9 @@ During rc1:
 
 ### T190 — contract and regret audit — complete
 
-Workflow #911. One D-class correction: public `TerminalSession.Input` was removed while `ITerminalInput` remains the custom-transport injection seam. No additional API redesign was justified.
+Workflow #911.
+
+One D-class correction was justified before 1.0: public `TerminalSession.Input` was removed while `ITerminalInput` remains the custom-transport injection seam. No additional API redesign was justified.
 
 Records:
 
@@ -80,6 +82,8 @@ Authorities:
 - `docs/Semantic-Output-Protocols.md`;
 - `docs/Security-and-Privacy.md`.
 
+T193 permanently distinguishes exact restoration, terminal-policy reset, Icod-owned nested state without an observable external baseline, and ephemeral metadata. It also freezes the bounded safe OSC 9 subset and hazardous-command exclusions as a 1.x safety decision.
+
 ### T194 — public API/XML/sample regret closure — complete
 
 Workflow #947 at `86ff0cfc923314aca35bcf8fb731a97bd0ade526`.
@@ -103,7 +107,7 @@ Authorities/gates:
 - `packaging/GeneratePublicApiBaseline.ps1`;
 - `packaging/VerifyPublicApiBaseline.ps1`.
 
-T194 also made public XML version-neutral and rewrote `samples/README.md` as a task-oriented 1.x guide.
+T194 also made public XML version-neutral, froze current enum numeric values, audited samples after the `TerminalSession.Input` correction, and rewrote `samples/README.md` as a task-oriented 1.x guide.
 
 ### T195 — compatibility, migration, and support policy — complete
 
@@ -134,11 +138,11 @@ Record:
 
 - `docs/T196-Package-Metadata-and-Documentation-Artifact-Closure.md`.
 
-### T197 — final downstream RC acceptance and release-candidate closure — implementation complete
+### T197 — final downstream RC acceptance and release-candidate closure — implementation/audit complete
 
-Exact-head validation pending.
+Substantive validation: workflow #956 at exact head `039927f555f8f109a31423825dc0e2191a5c2ac6`.
 
-T197 closes the remaining artifact-boundary gap by running the **existing eight-cycle DCurses hardening soak unchanged** against:
+T197 adds a fresh-package downstream compatibility witness by running the existing eight-cycle DCurses hardening soak unchanged against:
 
 ```text
 freshly packed Icod.Terminal 1.0.0-rc1
@@ -151,16 +155,18 @@ on net8.0, net9.0, and net10.0.
 Added:
 
 - `tools/dcurses-rc1-package-acceptance/Icod.Terminal.DCursesRc1PackageAcceptance.csproj`;
-- `tools/dcurses-rc1-package-acceptance/Program.cs` (same program as the project-reference hardening soak);
+- `tools/dcurses-rc1-package-acceptance/Program.cs`;
 - `packaging/VerifyDCursesRc1Package.ps1`.
 
-The gate is wired into PR Staging and full Release distribution validation after the rc1 package-only contract.
+The DCurses gate is intentionally treated as a real compatibility witness for the integration paths its current `0.1.0` release exercises, not as exhaustive proof of every `Icod.Terminal` feature. Terminal's own frozen API, unit/hardening tests, invariant coverage, exact package verification, retained 0.8–0.18 package contracts, and fresh rc1 package contract remain the primary release evidence for the full 1.x surface.
+
+The complete PR audit after #956 found no additional production feature, test, sample, package, documentation, or API correction that justifies expanding rc1.
 
 Record:
 
 - `docs/T197-Final-Downstream-RC-Acceptance-and-Release-Candidate-Closure.md`.
 
-After the substantive T197 head is green, perform the final complete-PR audit. Any status/documentation closure commit must receive its own exact-head validation before PR #32 is called merge-ready.
+The exact current PR head must pass the complete matrix before PR #32 is called merge-ready.
 
 ---
 
@@ -219,7 +225,8 @@ T194 validation:       workflow #947
 T194 API fingerprint:  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
 T195 validation:       workflow #952
 T196 validation:       workflow #954
-T197 validation:       pending exact current head
+T197 substantive gate: workflow #956
+Final merge gate:      exact current PR head must be green
 ```
 
-**Next:** validate the exact T197 implementation head. If green, perform the final rc1 audit and closure-only status update, then validate that exact final head before merge readiness.
+**Next:** require the exact current closure head to pass PR validation. If green, PR #32 is merge-ready. After merge, validate the exact resulting `main` commit under the full Release x64/ARM64 matrix. Create tag `v1.0.0-rc1` only with explicit publication authorization.
