@@ -3,7 +3,8 @@
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Base:** published `0.18.0` at `c0f0ff482c8bb0d358c4fcb38e454d717b1b6f1c`  
 **Baseline validation:** workflow #908  
-**Status:** first classified pass complete; exact correction-head validation pending
+**Correction validation:** workflow #911  
+**Status:** Complete
 
 ## 1. Purpose
 
@@ -17,8 +18,8 @@ The audit starts from the 0.18 behavioral baseline and the historical public API
 | --- | --- | --- |
 | `ITerminalInput` / `ITerminalOutput` | A | Freeze as public custom-transport injection seams. |
 | `ITerminalControlProvider` and native snapshot/result contracts | A | Freeze as the deliberate low-level provider/diagnostic layer below normal semantic session policy. |
-| `TerminalSession.Input` raw transport property | D | Remove from the public 1.0 surface. A session owns one authoritative input reader/decoder/query-router path; public raw reads can steal bytes and invalidate that contract. |
-| `TerminalSession.Output` raw transport property | A/B | Retain as an explicit advanced escape hatch, but permanently document that direct use is outside session output serialization and requires caller synchronization. |
+| `TerminalSession.Input` raw transport property | D | Removed from the public 1.0 surface. A session owns one authoritative input reader/decoder/query-router path; public raw reads can steal bytes and invalidate that contract. |
+| `TerminalSession.Output` raw transport property | A/B | Retain as an explicit advanced escape hatch; XML/permanent docs state that direct use is outside session output serialization and requires caller responsibility. |
 | `TerminalSession.OpenAsync(... ITerminalInput, ITerminalOutput ...)` | A | Freeze. Custom transport injection remains necessary even though the session no longer returns its owned input transport publicly. |
 | `TerminalSession.ReadEventAsync(...)` cancellation-as-event semantics | A/B | Freeze behavior; permanent documentation must explain why caller cancellation does not cancel the underlying read and why `TerminalEventKind.Cancelled` is returned. |
 | Lifecycle participant API | A/B | Freeze; permanent docs must define participant ordering, query restrictions during callbacks, ownership, and disposal. Internal lifecycle source/signal seams remain internal. |
@@ -36,9 +37,9 @@ The audit starts from the 0.18 behavioral baseline and the historical public API
 
 ## 3. D-class decision — remove public `TerminalSession.Input`
 
-### Existing surface
+### Existing 0.18 surface
 
-0.18 exposes both:
+0.18 exposed both:
 
 ```csharp
 public ITerminalInput Input { get; }
@@ -47,13 +48,13 @@ public ITerminalOutput Output { get; }
 
 The public `ITerminalInput` interface itself is intentional: callers can supply a custom transport when opening a session.
 
-The regret lies in returning that input transport again from the live session.
+The regret lay in returning that input transport again from the live session.
 
 ### Concrete long-term regret
 
 Once a `TerminalSession` is active, its decoder and query transaction manager require one authoritative reader over the input byte stream.
 
-A caller using `session.Input.ReadAsync(...)` can consume bytes that belong to:
+A caller using `session.Input.ReadAsync(...)` could consume bytes that belong to:
 
 - a fragmented UTF-8 scalar;
 - a fragmented escape/control sequence;
@@ -92,28 +93,30 @@ Callers that supplied a custom `ITerminalInput` may retain their original refere
 
 The property undermines a core correctness invariant rather than representing a missing convenience. Freezing it for all of 1.x would either force support for unsafe mixed-reader behavior or require a major-version break immediately after 1.0. rc1 is the intended final opportunity to correct that abstraction boundary.
 
-### Implementation
+### Implementation and proof
 
 `TerminalSession.Input` is now internal rather than public. The `ITerminalInput` interface and custom `OpenAsync(...)` injection overload remain public.
 
-A public-surface regression verifies that:
+`TerminalSessionPublicSurfaceFreezeTests` verifies that:
 
 - no public `TerminalSession.Input` property exists;
 - `ITerminalInput` remains public;
 - the custom `OpenAsync(...)` overload still accepts both transport interfaces;
 - the intentionally retained raw output property remains visible.
 
+Workflow #911 passed Windows/Linux/macOS, real DCurses acceptances and soak, exact package validation, and all retained 0.8–0.18 package contracts.
+
 ## 4. Why `TerminalSession.Output` is different
 
-The output property is not being removed in T190.
+The output property is not removed by T190.
 
-Output has a viable advanced coexistence model: a caller may provide its own synchronization and deliberately use the borrowed transport outside session-managed writes. This is lower-level than the normal semantic/session output APIs but is not intrinsically impossible to use correctly.
+The historical public contract deliberately defines borrowed `session.Output` as outside session synchronization. Unlike raw input, there is no parser state or authoritative-reader cursor that a direct output operation consumes irreversibly. Advanced callers may choose to use the transport directly only when they accept responsibility for avoiding interleaving with session-managed output.
 
-It also has an established downstream use: `Icod.DCurses` routes rendered text and terminfo strings through `TerminalSession` methods and currently uses the borrowed output service for flushing.
+It also has an established downstream use: `Icod.DCurses` routes rendered text and terminfo strings through `TerminalSession` methods and uses the borrowed output service for flushing.
 
-The 1.0 contract therefore retains `Output` but now explicitly states in XML documentation that direct use is not serialized with session-managed writes, query traffic, or lifecycle-owned control output. Ordinary consumers should prefer session APIs.
+The 1.0 contract therefore retains `Output` and strengthens its XML documentation: direct use is not serialized with session-managed writes, query traffic, or lifecycle-owned control output. Ordinary consumers should prefer session APIs.
 
-This A/B decision must be revisited only if later T190/T194 evidence shows the escape hatch cannot be supported coherently.
+This is an intentional A/B decision rather than an accidental symmetry break.
 
 ## 5. Enum-value history and 1.0 freeze
 
@@ -132,9 +135,33 @@ T190 does not attempt to resurrect superseded 0.1 numeric layouts. The rc1 task 
 
 That is classified C and assigned to T194/package closure.
 
-## 6. No additional D-class changes from the first pass
+## 6. Options and live-policy mutation audit
 
-The first pass found no sufficient basis to redesign:
+`TerminalSession.Options` was reviewed as a possible mutable-policy escape hatch.
+
+The public option properties are init-only. Nested `TerminalInputDecoderOptions` values are also init-only. The session clones `ApplicationEncoding` for live application-text use. Provider/clock/delay objects are explicit injected services rather than mutable scalar policy.
+
+The audit therefore found no second D-class defect here. Permanent documentation should describe options as open-time policy, but no API correction is required.
+
+## 7. Vendor/raw protocol leakage audit
+
+The completed scan found no public generic OSC dispatcher, raw OSC 9/133 builder, public Kitty flag integer surface, or public raw Kitty private-use key-code surface.
+
+The intentionally low-level `WriteTerminalStringAsync(...)` remains an already-resolved terminfo-string boundary for capability-driven renderers and is not reclassified as a general-purpose raw protocol API.
+
+No D-class change is required.
+
+## 8. Result/exception audit
+
+The low-level control layer reuses `TerminalControlStatus.Available` for successful observation/mutation results. This is slightly unusual, but the typed result wrappers make success/availability behavior coherent and it is already deeply used by custom providers and package tests.
+
+Unavailable, unsupported, controlled failure, thrown exceptional failure, cancellation, and query timeout have meaningful distinct roles. The audit found documentation work, not sufficient regret to justify a breaking result-model redesign before 1.0.
+
+These semantics are assigned to T191/T192 permanent documentation.
+
+## 9. No additional D-class changes
+
+The completed T190 pass found no sufficient basis to redesign:
 
 - `TerminalControlStatus` / mutation result reuse;
 - `TerminalEndpoint` file-descriptor/path abstraction;
@@ -144,18 +171,16 @@ The first pass found no sufficient basis to redesign:
 - typed query result shapes;
 - semantic protocol APIs;
 - presentation/input/color ownership leases;
-- public modern-keyboard semantic types.
+- public modern-keyboard semantic types;
+- `TerminalSession.Output` advanced transport access;
+- open-time session option model.
 
 Some of these APIs are low-level or unusual, but they have coherent use cases and can be documented/supportable throughout 1.x. Aesthetic preference is not a D-class reason.
 
-## 7. Remaining T190 work
+## 10. Closure
 
-Before T190 closes:
+T190 is complete.
 
-1. validate the `TerminalSession.Input` correction on Windows/Linux/macOS and through all package/downstream gates;
-2. complete the final scan for duplicate public operations, vendor-number leakage, and inconsistent result/exception semantics;
-3. confirm the permanent-document assignments for every B-class item;
-4. confirm the T194 exact public-surface/enum-value gate design;
-5. update the PR record with the classified result.
+The exact corrected head passed workflow #911. Permanent-document B-class work now moves to T191–T193/T195, comprehensive public-surface and enum-value C-class proof moves to T194, and package metadata cleanup moves to T196.
 
-No new protocol implementation is part of this work.
+No new protocol implementation entered the release candidate.
