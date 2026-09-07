@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.17.0`  
-**Development version:** `0.17.0-alpha.6`  
+**Development version:** `0.17.0-alpha.7`  
 **Predecessor:** `0.16.0` — OSC 9 Safe Extensions  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** modern keyboard contracts and negotiated keyboard protocols  
-**Status:** T170–T175 complete; T175 implementation hardening green at workflow #831
+**Status:** T170–T176 complete and green; T177 stable closure next
 
 ---
 
@@ -112,6 +112,8 @@ state composition -> manager -> control output
 
 and adds failure/rollback and adversarial concurrency coverage.
 
+T176 proves those invariants through real `Icod.DCurses 0.1.0` ownership and alternate-screen transitions.
+
 ---
 
 ## 5. Explicit exclusions
@@ -162,7 +164,7 @@ Record: `docs/T174-Xterm-ModifyOtherKeys-Decoder-Compatibility.md`.
 
 ### T175 — composition and hardening — `0.17.0-alpha.6`
 
-Complete. Implementation hardening passed Windows/Linux/macOS PR validation at workflow #831.
+Complete. Implementation hardening passed Windows/Linux/macOS PR validation at workflow #831 and final alpha.6 bookkeeping passed exact-head workflow #834.
 
 Delivered shared cross-manager composition serialization, atomic managed-screen Kitty pop/switch/push choreography, managed lifecycle Kitty re-detection/re-establishment, rollback across screen/keyboard failures, and adversarial concurrency coverage proving keyboard lease mutation cannot interleave inside a screen handoff. Existing paste/focus/mouse protocols remain undisturbed during screen movement.
 
@@ -170,11 +172,15 @@ Record: `docs/T175-Composition-and-Hardening.md`.
 
 ### T176 — downstream `Icod.DCurses` acceptance — `0.17.0-alpha.7`
 
-Next.
+Complete and green at workflow #841.
 
-Extend real `Icod.DCurses` acceptance through public APIs, validating negotiated Kitty bytes/events and coexistence with full-screen refresh and existing rich input on net8/net9/net10.
+A real `Icod.DCurses 0.1.0` consumer now runs on net8/net9/net10 through CI and distribution validation. It proves negotiated Kitty `AllKeys`, alternate-screen pop/switch/push ownership, real `CursesSession.RefreshAsync()` output, coexistence with focus/bracketed-paste/mouse protocols, modern key metadata, and exact owner-driven cleanup when DCurses disposes the transferred `TerminalSession`.
+
+Record: `docs/T176-Downstream-DCurses-Modern-Keyboard-Acceptance.md`.
 
 ### T177 — public API/package/stable closure — `0.17.0`
+
+Next.
 
 Deliver public API baseline, README/sample/security docs, XML/package-only net8/net9/net10 consumer, retained 0.8–0.16 gates, new 0.17 package contract, stable metadata, exact-head validation, and exact-main Release validation before tag.
 
@@ -202,6 +208,7 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 - screen-transition failures restore keyboard state or surface aggregate rollback failure;
 - lifecycle suspend/resume re-establishes negotiated keyboard state truthfully;
 - active-query routing remains correct while modern keyboard input flows;
+- real DCurses full-screen refresh and rich-input ownership coexist with negotiated Kitty reporting;
 - no raw/generic keyboard-control API enters the package;
 - Windows/Linux/macOS CI and net8/net9/net10 package-only consumers.
 
@@ -211,11 +218,11 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 
 ```text
 VersionPrefix:    0.17.0
-VersionSuffix:    alpha.6
-Version:          0.17.0-alpha.6
-PackageVersion:   0.17.0-alpha.6
+VersionSuffix:    alpha.7
+Version:          0.17.0-alpha.7
+PackageVersion:   0.17.0-alpha.7
 AssemblyVersion:  0.17.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** T176 — downstream `Icod.DCurses` acceptance.
+**Next:** T177 — public API/package/stable closure.
