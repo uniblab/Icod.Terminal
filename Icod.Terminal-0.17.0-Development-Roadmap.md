@@ -2,12 +2,12 @@
 
 **Project:** `Icod.Terminal`  
 **Release line:** `0.17.0`  
-**Development version:** `0.17.0-alpha.7`  
+**Development version:** `0.17.0`  
 **Predecessor:** `0.16.0` — OSC 9 Safe Extensions  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** modern keyboard contracts and negotiated keyboard protocols  
-**Status:** T170–T176 complete and green; T177 stable closure next
+**Status:** T170–T176 complete and green; T177 implementation complete, exact stable-head validation pending
 
 ---
 
@@ -174,15 +174,28 @@ Record: `docs/T175-Composition-and-Hardening.md`.
 
 Complete and green at workflow #841.
 
-A real `Icod.DCurses 0.1.0` consumer now runs on net8/net9/net10 through CI and distribution validation. It proves negotiated Kitty `AllKeys`, alternate-screen pop/switch/push ownership, real `CursesSession.RefreshAsync()` output, coexistence with focus/bracketed-paste/mouse protocols, modern key metadata, and exact owner-driven cleanup when DCurses disposes the transferred `TerminalSession`.
+A real `Icod.DCurses 0.1.0` consumer runs on net8/net9/net10 through CI and distribution validation. It proves negotiated Kitty `AllKeys`, alternate-screen pop/switch/push ownership, real `CursesSession.RefreshAsync()` output, coexistence with focus/bracketed-paste/mouse protocols, modern key metadata, and exact owner-driven cleanup when DCurses disposes the transferred `TerminalSession`.
 
 Record: `docs/T176-Downstream-DCurses-Modern-Keyboard-Acceptance.md`.
 
 ### T177 — public API/package/stable closure — `0.17.0`
 
-Next.
+Implementation complete; exact stable-head validation pending.
 
-Deliver public API baseline, README/sample/security docs, XML/package-only net8/net9/net10 consumer, retained 0.8–0.16 gates, new 0.17 package contract, stable metadata, exact-head validation, and exact-main Release validation before tag.
+Delivered:
+
+- stable public API baseline;
+- modern-keyboard security/compatibility guidance;
+- 0.17 README and expanded rich-input sample;
+- generated-XML verification for the modern-keyboard surface;
+- a fresh package-only net8/net9/net10 consumer;
+- retained 0.8–0.16 package gates plus the new 0.17 package contract;
+- real DCurses modern-keyboard acceptance in PR, distribution, and tag workflows;
+- stable `0.17.0` repository metadata.
+
+The complete `alpha.7` closure surface, including the new 0.17 package-only contract, passed workflow #854 before switching to stable metadata.
+
+Record: `docs/T177-Public-API-Package-and-Stable-Closure.md`.
 
 ---
 
@@ -214,15 +227,15 @@ Deliver public API baseline, README/sample/security docs, XML/package-only net8/
 
 ---
 
-## 8. Current development state
+## 8. Current stable-candidate state
 
 ```text
 VersionPrefix:    0.17.0
-VersionSuffix:    alpha.7
-Version:          0.17.0-alpha.7
-PackageVersion:   0.17.0-alpha.7
+VersionSuffix:    <empty>
+Version:          0.17.0
+PackageVersion:   0.17.0
 AssemblyVersion:  0.17.0.0
 TargetFrameworks: net8.0;net9.0;net10.0
 ```
 
-**Next:** T177 — public API/package/stable closure.
+**Current gate:** exact stable PR-head Staging validation. After that passes, merge to `main`, validate the exact resulting main commit under Release, and only then tag `v0.17.0`.
