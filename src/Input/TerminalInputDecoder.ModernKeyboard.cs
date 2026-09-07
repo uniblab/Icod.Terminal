@@ -288,6 +288,7 @@ internal sealed partial class TerminalInputDecoder {
 			if ( value is >= 0x40 and <= 0x7e ) {
 				return index;
 			}
+		}
 		return -1;
 	}
 
