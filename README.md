@@ -1,34 +1,32 @@
 # Icod.Terminal
 
-![Icod TUI Toolchain](https://raw.githubusercontent.com/uniblab/Icod.Terminal/v0.3.0/icod_tui_toolchain.jpg)
+![Icod TUI Toolchain](https://raw.githubusercontent.com/uniblab/Icod.Terminal/main/icod_tui_toolchain.jpg)
 
-`Icod.Terminal` is the managed, cross-platform live-terminal layer for the Icod library family. It sits between `Icod.TermInfo` and higher-level consumers such as `Icod.DCurses`, terminal-aware command-line tools, monitors, editors, pagers, and REPLs.
+`Icod.Terminal` is the managed, cross-platform live-terminal session layer for the Icod library family. It sits between `Icod.TermInfo` and higher-level consumers such as `Icod.DCurses`, terminal-aware command-line tools, monitors, editors, pagers, and REPLs.
 
 ## Status
 
-`0.18.0` is a hardening release with **no public API surface delta from 0.17**.
+`1.0.0-rc1` is the release candidate for the intended 1.x contract.
 
-The release strengthens existing contracts around:
+The rc1 line is a **contract freeze and permanent-documentation release**, not a new terminal-protocol wave. It consolidates the accumulated 0.x behavior into durable 1.x authorities, freezes the exported API/enum layout, defines compatibility and migration policy, and proves the package through real downstream and fresh NuGet-only consumers.
 
-- bounded parser and query-router behavior;
-- suspend/resume generation and stale-response ownership;
-- state-composition lock ordering;
-- lifecycle/teardown rejection of new terminal-state acquisition;
-- transactional rollback and explicit uncertainty after double failures;
-- exact POSIX/Windows native-mode restoration;
-- redirected/non-interactive endpoint truthfulness;
-- repeated real `Icod.DCurses` ownership/disposal cycles;
-- fresh-package validation of the 0.18 teardown barrier.
-
-No new terminal protocol surface is added.
+The one intentional pre-1.0 API correction is that a live `TerminalSession` no longer exposes its raw input transport through `TerminalSession.Input`. `ITerminalInput` remains public for custom transport injection. Application input now has one authoritative live-session path through `ReadEventAsync(...)` and typed query operations.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 0.18.0
+dotnet add package Icod.Terminal --version 1.0.0-rc1
 ```
 
-The package targets `net8.0`, `net9.0`, and `net10.0` and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
+The package targets:
+
+```text
+net8.0
+net9.0
+net10.0
+```
+
+and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
 
 ## Architecture
 
@@ -42,137 +40,162 @@ Icod.Terminal
 Icod.DCurses
       ^
       |
-watch / slabtop / top
+terminal applications
 ```
 
-`Icod.TermInfo` remains the immutable terminal-capability authority. `Icod.Terminal` owns live endpoint observation, terminal modes, input, dimensions, lifecycle, terminal identity, output setup, active terminal-query routing, semantic terminal-output operations, and reversible rich-input protocol ownership. `Icod.DCurses` owns cells, windows, virtual-screen state, and refresh/diff policy.
+`Icod.TermInfo` is the immutable terminal-capability authority. `Icod.Terminal` owns the live terminal conversation: endpoint observation, terminal modes, input decoding, lifecycle, active query routing, semantic output, and scoped/reversible terminal state. `Icod.DCurses` owns the higher-level virtual-screen/curses presentation model.
 
-## 0.18 hardening guarantees
+PTY/process hosting remains orthogonal to this package.
 
-### State composition and lifecycle
+## Quick start
 
-Public input-protocol and presentation acquisition share one session composition domain.
+```csharp
+using Icod.Terminal;
 
-The frozen order is:
+await using TerminalSession session = await TerminalSession.OpenAsync(
+	new TerminalSessionOptions {
+		InputMode = TerminalInputMode.CBreak,
+		EchoInput = false
+	}
+);
 
-```text
-state composition
-    -> lifecycle/teardown availability
-        -> manager gate
-            -> control output
+await session.WriteTextAsync( "Terminal session ready.\r\n" );
+
+TerminalEvent terminalEvent = await session.ReadEventAsync(
+	TimeSpan.FromSeconds( 1 )
+);
 ```
 
-New terminal-state ownership is rejected while the session is suspending, suspended, re-entering, or disposing. Cleanup paths remain permitted so lease disposal, rollback, lifecycle reentry, and final restoration cannot deadlock behind the availability barrier.
+For a curses-style virtual screen, prefer `Icod.DCurses` rather than rebuilding windows/cells/diff policy directly over `TerminalSession`.
 
-### Parser and query routing
+## Core 1.x guarantees
 
-The incremental decoder remains bounded. Active query transactions retain bounded late-response ownership after timeout/cancellation so stale replies cannot satisfy later queries.
+### One authoritative input path
 
-Suspend invalidates queued old-generation queries before emission. Internal post-resume observation uses the same ambiguity gate and routing machinery rather than bypassing query ownership.
+A live `TerminalSession` owns the only authoritative input reader for its transport. Ordinary consumers use:
 
-### Failure and rollback semantics
+- `ReadEventAsync(...)` for application input and lifecycle events;
+- typed query operations for terminal responses.
 
-Multi-step terminal mutations either restore the prior truthful state or surface uncertainty explicitly.
+Do not run a competing `Console.Read*`, stream read, or retained custom-transport read on the same live terminal conversation.
 
-If a transition fails and rollback fails too, both failures are preserved. The library does not silently claim the requested or baseline state is active.
+### Bounded query routing
 
-Lifecycle reentry follows the same rule: failed reapply plus failed baseline rollback leaves `IsStateValid == false`, terminates the lifecycle pump, and preserves final disposal as the last restoration authority.
+Queries share the same incremental input/router domain as application input. The contract includes bounded parser state, ambiguity-aware query serialization, finite caller timeouts, pre-emission versus post-emission cancellation semantics, bounded late-response ownership, and lifecycle query generations.
 
-### Platform restoration
+A timeout is not automatically proof that the terminal does not support a feature.
 
-POSIX input-mode application and restoration use `TerminalModeApplyTiming.AfterOutputDrained`.
+### Reversible ownership
 
-Windows console input-mode application and restoration use `TerminalModeApplyTiming.Immediately`.
+Scoped state uses leases where overlapping ownership matters. The 1.x documentation distinguishes:
 
-Final cleanup restores the exact captured baseline snapshot rather than synthesizing an approximation.
+1. **exact restoration** — a captured/observed external baseline is replayed exactly;
+2. **terminal-policy reset** — control returns to terminal policy without claiming the exact previous value;
+3. **Icod-owned nested state** — an outer library-owned value can be restored even when the pre-Icod state is not observable;
+4. **ephemeral metadata** — explicit output with no lifecycle replay/restoration state.
+
+`TerminalSession.DisposeAsync()` remains final cleanup/restoration authority for session-owned state.
+
+### Output serialization boundary
+
+Use session semantic operations for ordinary terminal output. `TerminalSession.Output` remains available only as an advanced borrowed transport and is outside normal session serialization when used directly by callers.
+
+`WriteTerminalStringAsync(...)` is intended for already-resolved terminfo capability strings; it is not a recommendation to construct arbitrary OSC/CSI/vendor traffic manually.
+
+## Semantic terminal features
+
+The supported semantic surface includes:
+
+- application text and resolved terminfo capability output;
+- terminal titles (OSC 0/1/2);
+- current-location publication (OSC 7);
+- hyperlinks (OSC 8);
+- clipboard/selection operations and explicit reads (OSC 52);
+- cursor style observation/ownership (DECSCUSR/DECRQSS);
+- synchronized output (DEC private mode 2026);
+- terminal progress (OSC 9;4);
+- terminal pointer shape (OSC 22);
+- semantic prompt/command metadata (OSC 133);
+- indexed palette and selected dynamic terminal colors (OSC 4/104, 10–14, 17, 19 and resets);
+- negotiated modern keyboard reporting;
+- bracketed paste, focus, and mouse input protocols;
+- bounded safe OSC 9 notification and Windows-CWD compatibility operations.
+
+The safe OSC 9 subset intentionally excludes host-affecting vendor commands for sleep/blocking UI, GUI macros, process launch, environment disclosure, and emulator mutation.
 
 ## Modern keyboard reporting
 
-Modern keyboard reporting remains opt-in through the existing compound input-protocol lease:
+Modern keyboard reporting is opt-in through the compound input-protocol lease. Traditional keyboard decoding remains the compatibility floor.
 
-```csharp
-TerminalControlResult<TerminalInputProtocolLease> result =
-	await session.AcquireInputProtocolsAsync(
-		new TerminalInputProtocolOptions {
-			BracketedPaste = true,
-			FocusReporting = true,
-			MouseTrackingMode = TerminalMouseTrackingMode.ButtonEvents,
-			KeyboardReportingMode = TerminalKeyboardReportingMode.AllKeys
-		}
-	);
-```
-
-The three public reporting modes map to exact Kitty flag sets:
+The public modes are semantic:
 
 ```text
-Disambiguated = 5
-EventTypes    = 7
-AllKeys       = 31
+Disambiguated
+EventTypes
+AllKeys
 ```
 
-Kitty support is negotiated before ownership is acquired. If the requested reversible contract is unavailable, the call returns an unavailable result instead of silently enabling another protocol.
+Kitty support is negotiated before reversible ownership is acquired. xterm `modifyOtherKeys` remains decode-only and is not blindly activated.
 
-Traditional keyboard input remains the compatibility floor. xterm `modifyOtherKeys` remains decode-only and is never blindly activated.
+## Security and privacy
 
-## OSC 9 safe subset
+Semantic APIs validate and bound terminal protocol data before commitment where the contract permits it. The library deliberately avoids a generic raw vendor-command API as the ordinary extension mechanism.
 
-`Icod.Terminal` intentionally exposes only the bounded semantic OSC 9 forms already frozen before 0.18:
+Several operations disclose caller-supplied metadata by design:
 
-- legacy notification: `OSC 9;<message> ST`;
-- progress: `OSC 9;4;<state>;<value> BEL`;
-- Windows/ConEmu current-directory compatibility: `OSC 9;9;<cwd> ST`.
+- clipboard contents;
+- current filesystem locations;
+- hyperlinks;
+- OSC 133 command-line metadata;
+- desktop notification text;
+- keyboard/mouse/focus/paste input.
 
-Hazardous or redundant OSC 9 subcommands remain excluded. OSC 7 remains the preferred portable current-location protocol, and OSC 133 remains the semantic prompt/command-region protocol.
+The library does not automatically discover or redact secrets. Applications remain responsible for deciding what data is appropriate to publish.
 
-## Downstream Icod.DCurses acceptance
+## Compatibility policy
 
-The real `Icod.DCurses 0.1.0` acceptance matrix runs on `net8.0`, `net9.0`, and `net10.0`.
+The rc1 public API is machine-frozen across net8.0/net9.0/net10.0. Existing public enum numeric values are part of that baseline.
 
-In addition to the historical focused gates, 0.18 adds a repeated hardening soak. Each TFM runs eight complete ownership cycles covering:
+For the stable 1.x line:
 
-```text
-TerminalSession open
-rich-input acquisition + Kitty negotiation
-DCurses full-screen entry
-refresh + modern/focus/paste input decoding
-DCurses/TerminalSession teardown
-stale-lease disposal
-exact native mode restoration
-```
+- patch releases fix/harden the documented contract without intentionally breaking it;
+- minor releases may add compatible API/semantic features with an intentional baseline update;
+- ordinary removals, renames, signature breaks, enum renumbering, or incompatible ownership/security/restoration changes require a new major release.
 
-The soak is part of both PR validation and Release distribution validation.
+Vendor runtime EOL alone is not sufficient reason to drop net8.0 or net9.0; a concrete security/toolchain/maintenance blocker is required.
 
-## Security and compatibility boundary
+## Platform support
 
-0.18 does not expose:
+The built-in `SystemTerminalControlProvider` supports:
 
-- raw terminal escape-sequence writers;
-- generic Kitty flag integers;
-- raw Kitty private-use key codes;
-- blind xterm activation/deactivation;
-- global hotkeys or OS keyboard hooks;
-- scan-code contracts;
-- IME control;
-- keyboard remapping/binding policy;
-- terminal-brand-triggered automatic activation;
-- generic or hazardous OSC 9 execution/control commands.
+- Windows;
+- Linux;
+- macOS.
 
-## Previous release highlights
+Other hosts receive controlled `Unsupported` results from the built-in provider. Custom implementations may be supplied through `ITerminalControlProvider`, `ITerminalInput`, and `ITerminalOutput`.
 
-- **0.17** — modern keyboard contracts and negotiated Kitty ownership.
-- **0.16** — bounded safe OSC 9 notification and Windows-CWD compatibility APIs.
-- **0.15** — typed OSC 133 extended semantic metadata.
-- **0.14** — lifecycle-safe scoped color ownership and exact restoration.
-- **0.13** — observable OSC 4/104 and selected OSC 10–19 terminal colors.
-- **0.12** — portable OSC 133 semantic prompt/command-region markers.
-- **0.11** — OSC 22 pointer shape.
-- **0.10** — OSC 9;4 progress.
-- **0.9** — DEC private mode 2026 synchronized output.
-- **0.8** — DECSCUSR cursor style with observation/scoped restoration.
-- **0.7** — OSC 52 clipboard/selections.
-- **0.6** — OSC 8 hyperlinks.
-- **0.5** — OSC 7 current location.
-- **0.4** — OSC 0/1/2 title operations.
+## Permanent documentation
+
+The 1.x contract is documented in:
+
+- [Architecture](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Architecture.md)
+- [Terminal Session and Ownership](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Terminal-Session-and-Ownership.md)
+- [Lifecycle and Restoration](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Lifecycle-and-Restoration.md)
+- [Input and Events](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Input-and-Events.md)
+- [Queries and Responses](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Queries-and-Responses.md)
+- [Modern Keyboard Security and Compatibility](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Modern-Keyboard-Security-and-Compatibility.md)
+- [Presentation and Reversible State](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Presentation-and-Reversible-State.md)
+- [Semantic Output Protocols](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Semantic-Output-Protocols.md)
+- [Security and Privacy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Security-and-Privacy.md)
+- [Public API Baseline](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Public-API-Baseline-1.0-rc1.md)
+- [Compatibility and Versioning](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
+- [Migration to 1.0](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Migration-to-1.0.md)
+
+Historical T-series and 0.x public-API baselines remain available as design/release evidence.
+
+## Samples
+
+Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, and notifications.
 
 ## Build and validation
 
@@ -188,29 +211,19 @@ On POSIX hosts:
 sh build.sh
 ```
 
-Distribution validation builds/tests the solution, runs real downstream `Icod.DCurses` acceptance and the 0.18 soak, packs the NuGet artifact, verifies package structure/XML documentation, and runs fresh package-only consumers.
+PR validation runs Windows/Linux/macOS builds and tests, the frozen 1.0 public-API fingerprint, real `Icod.DCurses` acceptance and repeated ownership soak, exact Staging package verification, retained package-only contracts from 0.8 through 0.18, and the 1.0 release-candidate package contract.
 
-The retained 0.8–0.17 package contracts plus the new 0.18 hardening package contract run from the freshly produced NuGet artifact on `net8.0`, `net9.0`, and `net10.0`.
+After merge, Release distribution validation runs the same distribution contract across the configured Windows/Linux/macOS x64/ARM64 matrix.
 
 ## Release process
 
-Publishing 0.18.0 requires:
+`1.0.0-rc1` is publishable only after the exact PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
-1. exact stable PR-head validation green on Windows, Linux, and macOS;
-2. exact Staging package verification green;
-3. all real downstream `Icod.DCurses` acceptance and soak gates green;
-4. retained 0.8–0.17 plus new 0.18 package-only gates green on all supported TFMs;
-5. merge to `main`;
-6. Release validation green on the exact resulting `main` commit across the configured x64/ARM64 runners;
-7. only then create tag `v0.18.0`.
-
-Tagging triggers publication, so the release tag must not be created until explicitly authorized.
+Tagging triggers publication; no release tag should be created merely because a PR is green.
 
 ## Development roadmap
 
-The 0.18 milestone is documented in [`Icod.Terminal-0.18.0-Development-Roadmap.md`](Icod.Terminal-0.18.0-Development-Roadmap.md), with tranche records T180–T186 under `docs/`.
-
-See also [`docs/Public-API-Baseline-0.18.md`](docs/Public-API-Baseline-0.18.md).
+Current rc1 work is tracked in [`Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`](Icod.Terminal-1.0.0-rc1-Development-Roadmap.md).
 
 ## License
 

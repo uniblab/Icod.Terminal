@@ -6,7 +6,7 @@
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Language:** C# 13  
 **Theme:** contract freeze, public-API regret audit, permanent documentation, compatibility policy, and 1.0 release-candidate proof  
-**Status:** T190–T194 complete and green; T195 implementation complete, exact-head validation pending
+**Status:** T190–T195 complete and green; T196 implementation complete, exact-head validation pending
 
 ---
 
@@ -28,7 +28,7 @@ No new terminal protocol is planned for rc1. New API is allowed only when the pu
 
 The release candidate is complete only when a new consumer can understand the 1.0 contract without reading versioned tranche notes from 0.1 through 0.18.
 
-Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, security/privacy, the frozen rc1 public API, compatibility/versioning, and migration from 0.18. T196 will reconcile README/package metadata and package-only rc1 documentation artifacts; T197 will close downstream RC acceptance.
+Durable authorities now exist for architecture, session ownership, lifecycle/restoration, input/events, query routing, modern keyboard compatibility, presentation/reversible state, semantic output protocols, security/privacy, the frozen rc1 public API, compatibility/versioning, migration from 0.18, and current package/readme metadata. T197 will perform final downstream RC acceptance and release-candidate closure.
 
 ---
 
@@ -122,38 +122,41 @@ Record:
 
 - `docs/T194-Public-API-XML-and-Sample-Regret-Closure.md`.
 
-### T195 — compatibility, migration, and support policy — implementation complete
+### T195 — compatibility, migration, and support policy — complete
 
-Exact-head validation pending.
+Workflow #952 at exact head `676aaff4ac552eeb3e824fb7b6027ef241b3c486`.
 
 Permanent authorities:
 
 - `docs/Compatibility-and-Versioning.md`;
 - `docs/Migration-to-1.0.md`.
 
-T195 freezes:
-
-- conservative SemVer expectations for 1.x;
-- public API plus documented behavioral compatibility;
-- existing public enum numeric-value stability;
-- explicit minor-release review/baseline update for compatible additive API;
-- deprecation-before-removal policy where safe/practical;
-- `net8.0`, `net9.0`, and `net10.0` as first-class targets;
-- Windows/Linux/macOS built-in system-provider support;
-- controlled `Unsupported` behavior on other platforms unless a custom provider is supplied;
-- terminal capability/query evidence rather than emulator-brand support inference;
-- the sole 0.18 -> 1.0 breaking correction: removal of `TerminalSession.Input`;
-- direct `TerminalSession` vs `Icod.DCurses` ownership guidance.
+T195 freezes conservative SemVer expectations, public API plus documented behavioral compatibility, enum numeric-value stability, deprecation policy, net8/net9/net10 support, Windows/Linux/macOS built-in provider support, evidence-based protocol support semantics, migration from `TerminalSession.Input`, and direct-vs-DCurses ownership guidance.
 
 Record:
 
 - `docs/T195-Compatibility-Migration-and-Support-Policy.md`.
 
-### T196 — package metadata and documentation artifact closure
+### T196 — package metadata and documentation artifact closure — implementation complete
 
-Replace stale package release notes; audit package description/tags/README/license/icon/repository metadata; verify XML docs on all TFMs; add a package-only 1.0-rc1 contract; retain historical package gates.
+Exact-head validation pending.
 
-### T197 — downstream RC acceptance and stable-candidate closure
+T196:
+
+- updates package release notes from stale 0.16 text to `1.0.0-rc1` contract-freeze notes;
+- rewrites the root/package README as the current rc1 consumer guide;
+- preserves the original long-form root development roadmap under `docs/history/` and replaces the root roadmap with a current roadmap/index;
+- adds `tools/package-rc1-smoke` as a fresh NuGet-only 1.0 consumer;
+- adds `packaging/VerifyRc1Package.ps1` to inspect nuspec release notes, packed README, generated XML, the removed raw-input property, retained injection/output seams, representative public APIs, and enum anchors;
+- runs the new gate on net8.0/net9.0/net10.0;
+- wires the gate into PR Staging and full Release distribution validation;
+- retains all historical package gates from 0.8 through 0.18.
+
+Record:
+
+- `docs/T196-Package-Metadata-and-Documentation-Artifact-Closure.md`.
+
+### T197 — downstream RC acceptance and release-candidate closure
 
 Require exact Windows/Linux/macOS PR green, real DCurses acceptances/soak, fresh package-only consumers on all supported TFMs, no accidental public API drift, Release x64/ARM64 distribution validation after merge, and no stale in-progress rc1 authorities.
 
@@ -178,7 +181,7 @@ docs/Compatibility-and-Versioning.md
 docs/Migration-to-1.0.md
 ```
 
-Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release evidence rather than required reading for the supported 1.x contract.
+Historical `Txxx` and `Public-API-Baseline-0.x` documents remain design/release evidence rather than required reading for the supported 1.x contract. The original long-form repository roadmap is preserved under `docs/history/`.
 
 ---
 
@@ -216,7 +219,8 @@ T193 validation:       workflow #925
 T194 capture:          workflow #926
 T194 final validation: workflow #947
 T194 API fingerprint:  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
-T195 validation:       pending exact current head
+T195 validation:       workflow #952
+T196 validation:       pending exact current head
 ```
 
-**Next:** validate the exact T195 documentation head. If green, close T195 and begin T196 package metadata/documentation artifact closure plus the fresh package-only 1.0-rc1 contract.
+**Next:** validate the exact T196 package/documentation head. If green, close T196 and begin T197 final downstream release-candidate acceptance and closure audit.

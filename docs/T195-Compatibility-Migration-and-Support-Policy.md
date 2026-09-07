@@ -2,7 +2,8 @@
 
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Predecessor:** T194 — public API/XML/sample regret closure, workflow #947  
-**Status:** Implementation complete; exact-head validation pending
+**Status:** Complete and green  
+**Exact-head validation:** workflow #952 at `676aaff4ac552eeb3e824fb7b6027ef241b3c486`
 
 ## 1. Purpose
 
@@ -17,7 +18,7 @@ T195 adds:
 - `docs/Compatibility-and-Versioning.md`;
 - `docs/Migration-to-1.0.md`.
 
-These become the consumer-facing authorities for package versioning, compatibility expectations, TFM/platform support, deprecation, and pre-1.0 migration.
+These are the consumer-facing authorities for package versioning, compatibility expectations, TFM/platform support, deprecation, and pre-1.0 migration.
 
 ## 3. SemVer policy frozen
 
@@ -104,22 +105,20 @@ T195 freezes the architectural guidance:
 - `Icod.DCurses` consumers use the higher-level virtual-screen/presentation layer and honor its terminal-session ownership transfer;
 - applications should not create multiple independent state-owning sessions over the same physical terminal as a substitute for layering.
 
-## 11. T194 closure evidence
+## 11. Validation
 
-T194 is closed by workflow #947 at exact head:
+Workflow #952 passed at exact head `676aaff4ac552eeb3e824fb7b6027ef241b3c486`.
 
-`86ff0cfc923314aca35bcf8fb731a97bd0ade526`
-
-That run passed:
+The exact-head gate retained and passed:
 
 - Windows/Linux/macOS build and tests;
-- frozen 1.0 public API fingerprint verification;
-- focused real `Icod.DCurses` acceptance and hardening soak;
+- the frozen 1.0 public API fingerprint;
+- real `Icod.DCurses` focused acceptance and hardening soak;
 - exact Staging package verification;
 - all retained package-only contracts from 0.8 through 0.18.
 
-## 12. Exit gate
+## 12. Exit criteria
 
-T195 closes when the exact documentation head passes the full PR matrix without public API fingerprint drift.
+T195 is complete because the permanent compatibility/versioning and migration authorities exist, agree with the frozen API/behavioral contract, and passed the full exact-head validation matrix.
 
-After that, T196 may proceed with package metadata, README/package documentation artifacts, and a fresh package-only 1.0-rc1 contract.
+T196 owns package metadata, README/documentation artifact closure, and the fresh package-only 1.0 release-candidate contract.
