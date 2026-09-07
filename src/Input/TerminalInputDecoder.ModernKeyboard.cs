@@ -215,6 +215,7 @@ internal sealed partial class TerminalInputDecoder {
 					return false;
 				}
 			}
+		}
 
 		if ( 0 == keyCode ) {
 			if ( associatedRunes is null || 0 == associatedRunes.Count ) {
