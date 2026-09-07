@@ -12,6 +12,8 @@ using Xunit;
 public sealed class TerminalStateAcquisitionLifecycleHardeningTests {
 	private const string EnablePaste = "<P+>";
 	private const string DisablePaste = "<P->";
+	private const string PasteStart = "<PS>";
+	private const string PasteEnd = "<PE>";
 	private const string EnterAlternateScreen = "<A+>";
 	private const string ExitAlternateScreen = "<A->";
 
@@ -153,6 +155,8 @@ public sealed class TerminalStateAcquisitionLifecycleHardeningTests {
 			)
 			.SetExtendedString( "BE", EnablePaste )
 			.SetExtendedString( "BD", DisablePaste )
+			.SetExtendedString( "PS", PasteStart )
+			.SetExtendedString( "PE", PasteEnd )
 			.Build();
 
 		return TerminalSession.OpenAsync(
