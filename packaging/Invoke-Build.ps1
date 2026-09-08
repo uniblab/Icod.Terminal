@@ -54,6 +54,7 @@ function Invoke-Pack {
 function Invoke-Validate {
     Write-Host ''
     Write-Host "=== Validate ($Configuration) ==="
+    & (Join-Path $PSScriptRoot 'VerifyLicenseHeaders.ps1')
     & (Join-Path $PSScriptRoot 'VerifyPackageArtifact.ps1') `
         -ArtifactDirectory $artifactDirectory `
         -Configuration $Configuration
