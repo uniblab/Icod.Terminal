@@ -35,6 +35,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Verify license headers under Windows PowerShell 5.1
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./packaging/VerifyLicenseHeaders.ps1
       - name: Verify runtime and source integration
         shell: pwsh
         run: ./packaging/VerifyRuntime.ps1 -Configuration '${{ env.CONFIGURATION }}'
