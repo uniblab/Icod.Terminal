@@ -118,7 +118,7 @@ jobs:
           retention-days: 7
 
   package-contracts:
-    needs: [metadata, package-prep]
+    needs: [package-prep]
     strategy:
       fail-fast: false
       matrix:
@@ -152,7 +152,7 @@ jobs:
           -ExpectedVersion '${{ needs.metadata.outputs.version }}'
 
   publish-nuget:
-    needs: [metadata, runtime, package-prep, package-contracts]
+    needs: [runtime, package-contracts]
     runs-on: ubuntu-latest
     environment: Release
     permissions:
@@ -181,7 +181,7 @@ jobs:
           if (0 -ne $LASTEXITCODE) { throw "NuGet.org publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   publish-github-packages:
-    needs: [metadata, runtime, package-prep, package-contracts]
+    needs: [runtime, package-contracts]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -207,7 +207,7 @@ jobs:
           if (0 -ne $LASTEXITCODE) { throw "GitHub Packages publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   github-release:
-    needs: [metadata, publish-nuget, publish-github-packages]
+    needs: [publish-nuget, publish-github-packages]
     if: >-
       always() &&
       needs.metadata.result == 'success' &&
