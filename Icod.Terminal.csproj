@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+	Icod.Terminal
+	Managed, cross-platform live-terminal session and terminal-control library for .NET.
+	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
+-->
+
+<!--
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Copyright>Copyright (c) 2026 Timothy J. Bruce</Copyright>
@@ -19,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.0.0-rc1 freezes the intended 1.x contract across net8.0/net9.0/net10.0. Breaking change: public TerminalSession.Input is removed so a live session retains one authoritative input/query-routing path; ITerminalInput remains public for custom transport injection. The release candidate adds permanent 1.x documentation, a machine-frozen public API/enum baseline, compatibility/migration policy, and strengthened package/release validation without adding a new terminal protocol family. Full notes: https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/releases/1.0.0-rc1.md ; migration: https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Migration-to-1.0.md</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.0.0 establishes the stable 1.x contract across net8.0/net9.0/net10.0 with the same frozen public API and enum layout qualified by 1.0.0-rc1. Breaking change from the final 0.x line: public TerminalSession.Input is removed so a live session retains one authoritative input/query-routing path; ITerminalInput remains public for custom transport injection. Stable 1.0 adds no new terminal protocol family beyond rc1; it promotes the documented architecture, ownership, lifecycle, query, restoration, security, compatibility, and package contracts to stable support. Full notes: https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/releases/1.0.0.md ; migration: https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Migration-to-1.0.md</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

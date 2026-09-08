@@ -60,7 +60,7 @@ foreach ( $requiredText in @(
 
 $changelogPath = Join-Path $repositoryRoot 'CHANGELOG.md'
 if ( -not ( Test-Path -LiteralPath $changelogPath -PathType Leaf ) ) {
-	throw "The repository does not contain CHANGELOG.md."
+	throw 'The repository does not contain CHANGELOG.md.'
 }
 $changelog = [System.IO.File]::ReadAllText( $changelogPath )
 $changelogHeading = "## $ExpectedVersion"
@@ -154,7 +154,7 @@ try {
 			[System.StringComparison]::Ordinal
 		)
 		if ( -not $readmeHasText ) {
-			throw "The packed README is missing required release-candidate text '$requiredText'."
+			throw "The packed README is missing required release-line text '$requiredText'."
 		}
 	}
 
@@ -206,10 +206,10 @@ $smokeRoot = Join-Path (
 New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
 try {
 	Copy-Item `
-		-LiteralPath ( Join-Path $repositoryRoot 'tools/package-rc1-smoke/Icod.Terminal.PackageRc1Smoke.csproj' ) `
-		-Destination ( Join-Path $smokeRoot 'Icod.Terminal.PackageRc1Smoke.csproj' )
+		-LiteralPath ( Join-Path $repositoryRoot 'tools/package-release-line-smoke/Icod.Terminal.PackageReleaseLineSmoke.csproj' ) `
+		-Destination ( Join-Path $smokeRoot 'Icod.Terminal.PackageReleaseLineSmoke.csproj' )
 	Copy-Item `
-		-LiteralPath ( Join-Path $repositoryRoot 'tools/package-rc1-smoke/Program.cs' ) `
+		-LiteralPath ( Join-Path $repositoryRoot 'tools/package-release-line-smoke/Program.cs' ) `
 		-Destination ( Join-Path $smokeRoot 'Program.cs' )
 
 	$nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
@@ -230,7 +230,7 @@ try {
 		[System.Text.UTF8Encoding]::new( $false )
 	)
 
-	$project = Join-Path $smokeRoot 'Icod.Terminal.PackageRc1Smoke.csproj'
+	$project = Join-Path $smokeRoot 'Icod.Terminal.PackageReleaseLineSmoke.csproj'
 	$oldNuGetPackages = $env:NUGET_PACKAGES
 	$env:NUGET_PACKAGES = Join-Path $smokeRoot 'packages'
 	try {
@@ -245,7 +245,7 @@ try {
 
 		foreach ( $framework in @('net8.0', 'net9.0', 'net10.0') ) {
 			Write-Host ''
-			Write-Host "=== Fresh package 1.0 contract consumer: $framework ==="
+			Write-Host "=== Fresh package 1.0 release-line consumer: $framework ==="
 			Invoke-DotNet -Arguments @(
 				'run',
 				'--project',
@@ -267,4 +267,4 @@ try {
 	}
 }
 
-Write-Host "1.0 release-candidate package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.0 release-line package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

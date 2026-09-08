@@ -83,8 +83,8 @@ jobs:
             name: Presentation
           - shard: semantic
             name: Semantic and hardening
-          - shard: rc
-            name: 1.0 RC
+          - shard: release
+            name: 1.0 release line
     name: Package ${{ matrix.name }}
     runs-on: ubuntu-24.04
     steps:

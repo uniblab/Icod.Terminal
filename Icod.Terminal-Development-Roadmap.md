@@ -4,19 +4,22 @@
 **Package:** `Icod.Terminal`  
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Current release line:** `1.0.0-rc1`  
-**Current roadmap:** [`Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`](Icod.Terminal-1.0.0-rc1-Development-Roadmap.md)  
-**Stable contract target:** `1.0.0`
+**Current release line:** `1.0.0`  
+**Stable contract:** `1.0.0`
 
 ## Purpose
 
-This file is the permanent entry point for current `Icod.Terminal` development planning.
+This file is the permanent entry point for current `Icod.Terminal` development and release planning.
 
 The repository began with a detailed pre-1.0 architecture and milestone plan. That original document remains valuable historical design evidence and is preserved verbatim at:
 
 [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md)
 
-The current release-specific roadmap, rather than the historical initial plan, is authoritative for active development state.
+The completed rc1 development program remains preserved at:
+
+[`Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`](Icod.Terminal-1.0.0-rc1-Development-Roadmap.md)
+
+Stable `1.0.0` promotes that qualified contract without adding a new feature or public-API delta.
 
 ## Current architecture
 
@@ -38,11 +41,9 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Current 1.0 release-candidate program
+## Stable 1.0 program
 
-`1.0.0-rc1` is a contract-freeze release rather than a protocol-expansion release.
-
-Its tranches are:
+The pre-1.0 contract-freeze program completed T190–T197 covering:
 
 ```text
 T190  contract and public-API regret audit
@@ -55,7 +56,9 @@ T196  package metadata / documentation artifact closure
 T197  downstream RC acceptance / release-candidate closure
 ```
 
-See the current rc1 roadmap for exact tranche status and validation workflow numbers.
+`1.0.0-rc1` was published and qualified. Publication/CI hardening then merged to `main` at `dfa149c604aaf860a18923d23999b045ab98532d`; workflow run `34191123678` passed the redesigned six-runtime/single-package/four-shard Release validation graph.
+
+Stable `1.0.0` is a release promotion only. No new terminal protocol, production feature, or public API change is permitted in the stable-promotion branch unless a release-blocking defect is discovered and explicitly re-audited.
 
 ## Permanent 1.x authorities
 
@@ -70,25 +73,54 @@ Consumers and maintainers should treat these documents as the current contract a
 - `docs/Presentation-and-Reversible-State.md`
 - `docs/Semantic-Output-Protocols.md`
 - `docs/Security-and-Privacy.md`
-- `docs/Public-API-Baseline-1.0-rc1.md`
+- `docs/Public-API-Baseline-1.0.md`
 - `docs/Compatibility-and-Versioning.md`
 - `docs/Migration-to-1.0.md`
+- `docs/releases/1.0.0.md`
+- `CHANGELOG.md`
 
-Historical `Txxx`, `Public-API-Baseline-0.x`, and version-specific roadmap files remain design/release evidence.
+Historical T-series, 0.x public API baselines, and `Public-API-Baseline-1.0-rc1.*` remain design/release evidence.
+
+## Stable API baseline
+
+Stable 1.0 must reproduce the rc1 public API fingerprint exactly:
+
+```text
+633 lines
+77 exported public types
+32 public enums / 242 enum values
+124 public methods
+144 public properties
+13 public constructors
+SHA-256 8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
+```
+
+Any deviation during stable promotion is a release blocker requiring explicit compatibility review rather than a baseline update by default.
 
 ## Release discipline
 
-Pull requests validate the Staging configuration on Windows, Linux, and macOS. Distribution validation on `main` uses Release across the configured Windows/Linux/macOS x64/ARM64 matrix.
+Pull requests validate Staging on Windows, Linux, and macOS runtime/source paths while one portable package candidate feeds four parallel package-contract shards.
 
-The release candidate retains:
+`main` Release validation runs runtime/source checks on:
+
+- Windows x64;
+- Windows ARM64;
+- Linux x64;
+- Linux ARM64;
+- macOS x64;
+- macOS ARM64;
+
+and separately validates one RID-independent package candidate through the four package shards.
+
+The release line retains:
 
 - full build/test coverage on `net8.0`, `net9.0`, and `net10.0`;
-- the frozen 1.0 public-API fingerprint;
-- exact NuGet artifact/XML verification;
+- the frozen stable 1.0 public-API fingerprint;
+- exact NuGet artifact/XML/symbol/Source Link verification;
 - historical package-only contracts from 0.8 through 0.18;
-- a fresh 1.0 release-candidate package-only contract;
-- current `Icod.DCurses 0.1.0` project-reference and package-boundary integration/ownership acceptance.
+- the stable 1.0 release-line package contract;
+- current `Icod.DCurses 0.1.0` project-reference and package-boundary compatibility/ownership acceptance.
 
 The DCurses checks are compatibility witnesses for the integration surface its current early release exercises. They are not treated as exhaustive proof of every `Icod.Terminal` contract; Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full 1.x surface.
 
-Tags trigger publication. A tag is created only after the exact release candidate has passed the required PR and post-merge Release gates and publication is explicitly authorized.
+Tags trigger publication. Tag `v1.0.0` is created only after the exact stable-promotion PR head and resulting exact `main` commit pass their required gates and publication is explicitly authorized.

@@ -6,6 +6,40 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.0.0
+
+### Stable contract
+
+- Promotes the `1.0.0-rc1` contract to stable `1.0.0` without changing the frozen public API or adding a new terminal-protocol family.
+- Establishes the permanent 1.x architecture, ownership, lifecycle, input/query, presentation/output, security, compatibility, licensing, migration, and public-API documents as the stable support authorities.
+- Retains `net8.0`, `net9.0`, and `net10.0` as first-class package targets.
+- Retains Windows, Linux, and macOS support in the built-in system terminal-control provider.
+
+### Compatibility
+
+- Keeps the rc1 public API fingerprint unchanged: `8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5`.
+- Carries the one pre-1.0 breaking correction forward: public `TerminalSession.Input` remains removed so a live session has one authoritative input/query-routing path.
+- Retains public `ITerminalInput`, `ITerminalOutput`, and `ITerminalControlProvider` injection seams.
+- Retains `TerminalSession.Output` as the documented advanced borrowed output transport outside session serialization.
+
+### Licensing
+
+- Makes the reusable `Icod.Terminal` library, root project, and library C# sources explicitly `LGPL-3.0-or-later`; the published NuGet package remains LGPL.
+- Makes repository test, sample, package-smoke, verification, and downstream acceptance/soak executable programs explicitly `GPL-3.0-or-later`.
+- Adds project-appropriate license headers to every tracked `.cs` and `.csproj` file, including owning assembly name, one-line description, and the 2026 Timothy J. Bruce copyright notice.
+- Requires every project file to place its license header immediately after `<?xml version="1.0" encoding="utf-8"?>` and before `<Project ...>`.
+- Adds an exact license-header verification gate to package-candidate CI and local `all` / `validate` builds.
+- Adds `docs/Licensing.md` as the permanent explanation of the library/executable license boundary; the root `LICENSE` contains the LGPLv3 terms and incorporated GPLv3 terms.
+
+### Validation and release engineering
+
+- Uses the optimized runtime/package validation graph proven after rc1: six OS/architecture runtime jobs, one portable package candidate, and four parallel package-contract shards.
+- Retains exact package/XML/symbol/Source Link verification and package-only contracts from 0.8 through 0.18.
+- Retains the fresh 1.0 release-line package contract and current packaged `Icod.DCurses 0.1.0` compatibility witness.
+- Requires curated release notes for tag publication.
+
+See `docs/releases/1.0.0.md` for the full stable release notes.
+
 ## 1.0.0-rc1
 
 ### Contract freeze
