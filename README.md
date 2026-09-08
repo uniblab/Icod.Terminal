@@ -192,6 +192,7 @@ The links below are intentionally pinned to the `v1.0.0` tag so documentation bu
 - [Presentation and Reversible State](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Semantic-Output-Protocols.md)
 - [Security and Privacy](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Security-and-Privacy.md)
+- [Licensing](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Licensing.md)
 - [Public API Baseline](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Public-API-Baseline-1.0.md)
 - [Compatibility and Versioning](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Compatibility-and-Versioning.md)
 - [Migration to 1.0](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Migration-to-1.0.md)
@@ -216,7 +217,7 @@ On POSIX hosts:
 sh build.sh
 ```
 
-PR validation runs Windows/Linux/macOS runtime/source validation, the frozen 1.0 public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining contracts from 0.8 through the stable 1.0 release line.
+PR validation runs Windows/Linux/macOS runtime/source validation, the frozen 1.0 public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining contracts from 0.8 through the stable 1.0 release line. The package-candidate gate also verifies the exact project-appropriate GPL/LGPL header template for every tracked `.cs` and `.csproj` file.
 
 The repository also runs current `Icod.DCurses 0.1.0` integration/ownership acceptance, including a package-boundary soak against the freshly packed Terminal artifact. Because DCurses is still an early downstream, these checks are **compatibility witnesses for the integration paths it currently exercises**, not exhaustive proof of every `Icod.Terminal` 1.x contract. Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full surface.
 
@@ -236,4 +237,8 @@ Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Ic
 
 ## License
 
-`Icod.Terminal` is licensed under `LGPL-3.0-or-later`. See [`LICENSE`](LICENSE).
+The published `Icod.Terminal` library package and the C# sources compiled into the library are licensed under **LGPL-3.0-or-later**.
+
+Repository executable/test programs—including `Icod.Terminal.Tests`, samples, package smoke tests, validation utilities, and downstream acceptance tools—are licensed under **GPL-3.0-or-later**. Their GPL license does not change the LGPL license of the reusable `Icod.Terminal` library they consume.
+
+The root [`LICENSE`](LICENSE) contains the LGPLv3 terms and the incorporated GPLv3 terms. See [Licensing](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Licensing.md) for the project-by-project policy and source-header requirements.
