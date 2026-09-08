@@ -5,6 +5,29 @@ $ErrorActionPreference = 'Stop'
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
+function Get-RepositoryRelativePath {
+	param( [Parameter( Mandatory = $true )][string] $Path )
+
+	$rootPath = [IO.Path]::GetFullPath( $root )
+	$fullPath = [IO.Path]::GetFullPath( $Path )
+
+	if ( $fullPath.Equals( $rootPath, [StringComparison]::OrdinalIgnoreCase ) ) {
+		return '.'
+	}
+
+	$separator = [IO.Path]::DirectorySeparatorChar.ToString()
+	$rootPrefix = $rootPath
+	if ( -not $rootPrefix.EndsWith( $separator, [StringComparison]::Ordinal ) ) {
+		$rootPrefix += $separator
+	}
+
+	if ( -not $fullPath.StartsWith( $rootPrefix, [StringComparison]::OrdinalIgnoreCase ) ) {
+		throw "Path '$fullPath' is not within repository root '$rootPath'."
+	}
+
+	return $fullPath.Substring( $rootPrefix.Length ).Replace( '\', '/' )
+}
+
 function Get-ProjectAssemblyName {
 	param( [Parameter( Mandatory = $true )][string] $ProjectPath )
 
@@ -52,7 +75,7 @@ function Get-ProjectDescription {
 function Get-LicenseKind {
 	param( [Parameter( Mandatory = $true )][string] $ProjectPath )
 
-	$relative = [IO.Path]::GetRelativePath( $root, $ProjectPath ).Replace( '\\', '/' )
+	$relative = Get-RepositoryRelativePath -Path $ProjectPath
 	if ( $relative -eq 'Icod.Terminal.csproj' ) {
 		return 'LGPL'
 	}
@@ -166,7 +189,8 @@ foreach ( $project in $projects ) {
 	$expectedHeader = Get-ProjectHeader -AssemblyName $assemblyName -Description $description -LicenseKind $licenseKind
 
 	if ( -not $content.StartsWith( $expectedHeader, [StringComparison]::Ordinal ) ) {
-		$failures.Add( "Project header mismatch: $([IO.Path]::GetRelativePath( $root, $project.FullName ))" )
+		$relativePath = Get-RepositoryRelativePath -Path $project.FullName
+		$failures.Add( "Project header mismatch: $relativePath" )
 	}
 }
 
@@ -183,7 +207,8 @@ foreach ( $source in $sources ) {
 	$expectedHeader = Get-CSharpHeader -AssemblyName $assemblyName -Description $description -LicenseKind $licenseKind
 
 	if ( -not $content.StartsWith( $expectedHeader, [StringComparison]::Ordinal ) ) {
-		$failures.Add( "C# header mismatch: $([IO.Path]::GetRelativePath( $root, $source.FullName ))" )
+		$relativePath = Get-RepositoryRelativePath -Path $source.FullName
+		$failures.Add( "C# header mismatch: $relativePath" )
 	}
 }
 
