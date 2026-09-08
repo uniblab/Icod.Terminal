@@ -105,11 +105,11 @@ _ = typeof( TerminalColor );
 Version? assemblyVersion = sessionType.Assembly.GetName().Version;
 Require(
 	assemblyVersion is not null && 1 == assemblyVersion.Major,
-	"The release-candidate package must expose a 1.x assembly version."
+	"The stable 1.x package must expose a 1.x assembly version."
 );
 
 Console.WriteLine(
-	"Icod.Terminal 1.0 release-candidate package contract smoke passed."
+	"Icod.Terminal stable 1.x release-line package contract smoke passed."
 );
 
 static void Require(

@@ -18,11 +18,13 @@ A bug fix may change observed behavior when the previous behavior violated the a
 
 ## 2. Machine public-API baseline
 
-The rc1 exported surface is frozen by:
+The stable `1.0.0` exported surface is frozen by:
 
-- `docs/Public-API-Baseline-1.0-rc1.md`;
-- `docs/Public-API-Baseline-1.0-rc1.sha256`;
+- `docs/Public-API-Baseline-1.0.md`;
+- `docs/Public-API-Baseline-1.0.sha256`;
 - `packaging/VerifyPublicApiBaseline.ps1`.
+
+Stable 1.0 intentionally adopts the same fingerprint qualified by `1.0.0-rc1`; the rc1 baseline remains historical qualification evidence.
 
 The reflection snapshot covers exported types, constructors, methods, properties, interfaces, nullability/default information represented by the generator, constants, and public enum numeric values across net8.0/net9.0/net10.0.
 

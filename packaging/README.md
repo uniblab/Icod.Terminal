@@ -61,10 +61,10 @@ These checks run on every OS/architecture claimed by the relevant workflow.
 
 | Shard | Contracts |
 | --- | --- |
-| `foundation` | exact package structure/Source Link/XML plus 0.8 synchronized/cursor/progress foundations |
+| `foundation` | exact package structure/Source Link/XML plus 0.8–0.10 package foundations |
 | `presentation` | 0.11 pointer shape, 0.12 semantic prompt, 0.13 colors, 0.14 lifecycle-safe color ownership |
 | `semantic` | 0.15 semantic metadata, 0.16 safe OSC 9, 0.17 modern keyboard, 0.18 hardening |
-| `rc` | fresh 1.0 release-candidate package contract and packaged `Icod.DCurses` compatibility witness |
+| `release` | stable 1.0 release-line package contract and packaged `Icod.DCurses` compatibility witness |
 
 The shards have no ordering dependency on one another once the package candidate exists, so GitHub Actions executes them in parallel. `VerifyPackageDistribution.ps1` runs the same shards sequentially when a single-process local distribution check is desired.
 

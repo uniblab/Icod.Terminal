@@ -1,15 +1,15 @@
 # Migration to Icod.Terminal 1.0
 
-This document describes migration from the final pre-1.0 line (`0.18.0`) to `1.0.0-rc1` and the intended stable `1.0.0` contract.
+This document describes migration from the final pre-1.0 line (`0.18.0`) to stable `1.0.0`.
 
-The migration is intentionally small. The rc1 program is primarily contract freeze, permanent documentation, and compatibility proof rather than a new protocol release.
+The migration is intentionally small. The 1.0 program is primarily contract freeze, permanent documentation, compatibility proof, and stable release closure rather than a new protocol release.
 
 ## 1. Package update
 
-Change the package reference from the final pre-1.0 release to the release candidate when evaluating rc1:
+Change the package reference from the final pre-1.0 release to stable 1.0:
 
 ```xml
-<PackageReference Include="Icod.Terminal" Version="1.0.0-rc1" />
+<PackageReference Include="Icod.Terminal" Version="1.0.0" />
 ```
 
 The supported target frameworks remain:
@@ -26,7 +26,7 @@ The public package continues to depend on the same live-terminal architecture: `
 
 The sole D-class pre-1.0 correction is removal of the public `TerminalSession.Input` property.
 
-Before rc1, code could obtain the raw input transport from a live session. That cannot coexist safely with the session's authoritative incremental decoder and query router because a competing read can steal bytes belonging to UTF-8 scalars, escape sequences, paste/mouse/focus reports, Kitty keyboard frames, or active query responses.
+Before 1.0, code could obtain the raw input transport from a live session. That cannot coexist safely with the session's authoritative incremental decoder and query router because a competing read can steal bytes belonging to UTF-8 scalars, escape sequences, paste/mouse/focus reports, Kitty keyboard frames, or active query responses.
 
 The public `ITerminalInput` interface is **not** removed. It remains the custom-transport injection seam when opening a session.
 
@@ -96,7 +96,7 @@ Ordinary applications should prefer session-managed operations such as:
 
 All semantic terminal protocol APIs present in 0.18 remain available unless affected by the single raw-input correction above.
 
-There is no rc1 migration from one protocol family to another.
+Stable 1.0 does not replace one protocol family with another.
 
 In particular:
 
@@ -174,9 +174,9 @@ On another operating system, the built-in provider returns controlled `Unsupport
 
 ## 10. Public enum values
 
-The rc1 machine baseline freezes the current public enum numeric layout for 1.x.
+The stable 1.0 machine baseline freezes the current public enum numeric layout for the 1.x line.
 
-Applications should not depend on superseded numeric layouts from early pre-1.0 development documents. The authoritative rc1 values are the values compiled into the package and recorded by the 1.0 public-API fingerprint.
+Applications should not depend on superseded numeric layouts from early pre-1.0 development documents. The authoritative stable values are the values compiled into the `1.0.0` package and recorded by the stable 1.0 public-API fingerprint.
 
 Existing values will not be renumbered within ordinary 1.x releases.
 
@@ -201,7 +201,7 @@ A query timeout should not be translated automatically to “terminal does not s
 
 For a typical 0.18 consumer:
 
-1. update the package reference to rc1;
+1. update the package reference to `1.0.0`;
 2. compile on every TFM you ship;
 3. search for `session.Input` / `TerminalSession.Input`;
 4. replace raw live-session input reads with `ReadEventAsync(...)` or typed query APIs;
@@ -213,7 +213,13 @@ For a typical 0.18 consumer:
 
 If none of your code used the removed raw input property, migration from 0.18 should generally be a package-version change plus normal regression testing.
 
-## 13. Historical documentation
+## 13. Release-candidate history
+
+`1.0.0-rc1` qualified the same public API/behavioral contract before stable promotion. Stable `1.0.0` intentionally does not introduce a new feature or API delta relative to that candidate.
+
+The rc1 roadmap, T-series records, and `Public-API-Baseline-1.0-rc1.*` files remain historical qualification evidence.
+
+## 14. Historical documentation
 
 The `0.x` roadmaps and T-series documents remain useful as design evidence, protocol references, and exact test history.
 
@@ -227,4 +233,5 @@ They are no longer required reading to understand the supported 1.x behavior. Pr
 - `Presentation-and-Reversible-State.md`;
 - `Semantic-Output-Protocols.md`;
 - `Security-and-Privacy.md`;
+- `Public-API-Baseline-1.0.md`;
 - `Compatibility-and-Versioning.md`.

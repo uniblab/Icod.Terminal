@@ -6,21 +6,21 @@
 
 ## Status
 
-`1.0.0-rc1` is the release candidate for the intended 1.x contract.
+`1.0.0` is the stable release of the intended 1.x contract.
 
-The rc1 line is a **contract freeze and permanent-documentation release**, not a new terminal-protocol wave. It consolidates the accumulated 0.x behavior into durable 1.x authorities, freezes the exported API/enum layout, defines compatibility and migration policy, and validates the package through Terminal-owned package/invariant gates plus current downstream compatibility checks.
+Stable 1.0 promotes the contract qualified by `1.0.0-rc1` without adding a new terminal-protocol family or changing the frozen public API. It consolidates the accumulated 0.x behavior into durable 1.x authorities, freezes the exported API/enum layout, defines compatibility and migration policy, and validates the package through Terminal-owned package/invariant gates plus current downstream compatibility checks.
 
 The one intentional pre-1.0 API correction is that a live `TerminalSession` no longer exposes its raw input transport through `TerminalSession.Input`. `ITerminalInput` remains public for custom transport injection. Application input now has one authoritative live-session path through `ReadEventAsync(...)` and typed query operations.
 
 Full release notes and concise release history:
 
-- [Icod.Terminal 1.0.0-rc1 release notes](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/releases/1.0.0-rc1.md)
-- [Changelog](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/CHANGELOG.md)
+- [Icod.Terminal 1.0.0 release notes](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/releases/1.0.0.md)
+- [Changelog](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.0.0-rc1
+dotnet add package Icod.Terminal --version 1.0.0
 ```
 
 The package targets:
@@ -159,7 +159,7 @@ The library does not automatically discover or redact secrets. Applications rema
 
 ## Compatibility policy
 
-The rc1 public API is machine-frozen across net8.0/net9.0/net10.0. Existing public enum numeric values are part of that baseline.
+The stable 1.0 public API is machine-frozen across net8.0/net9.0/net10.0. Existing public enum numeric values are part of that baseline.
 
 For the stable 1.x line:
 
@@ -181,22 +181,22 @@ Other hosts receive controlled `Unsupported` results from the built-in provider.
 
 ## Permanent documentation
 
-The links below are intentionally pinned to the `v1.0.0-rc1` tag so the documentation bundled with the rc1 package cannot silently drift as `main` advances:
+The links below are intentionally pinned to the `v1.0.0` tag so documentation bundled with the stable package cannot silently drift as `main` advances:
 
-- [Architecture](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Architecture.md)
-- [Terminal Session and Ownership](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Terminal-Session-and-Ownership.md)
-- [Lifecycle and Restoration](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Lifecycle-and-Restoration.md)
-- [Input and Events](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Input-and-Events.md)
-- [Queries and Responses](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Queries-and-Responses.md)
-- [Modern Keyboard Security and Compatibility](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Modern-Keyboard-Security-and-Compatibility.md)
-- [Presentation and Reversible State](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Presentation-and-Reversible-State.md)
-- [Semantic Output Protocols](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Semantic-Output-Protocols.md)
-- [Security and Privacy](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Security-and-Privacy.md)
-- [Public API Baseline](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Public-API-Baseline-1.0-rc1.md)
-- [Compatibility and Versioning](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Compatibility-and-Versioning.md)
-- [Migration to 1.0](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Migration-to-1.0.md)
+- [Architecture](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Architecture.md)
+- [Terminal Session and Ownership](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Terminal-Session-and-Ownership.md)
+- [Lifecycle and Restoration](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Lifecycle-and-Restoration.md)
+- [Input and Events](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Input-and-Events.md)
+- [Queries and Responses](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Queries-and-Responses.md)
+- [Modern Keyboard Security and Compatibility](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Modern-Keyboard-Security-and-Compatibility.md)
+- [Presentation and Reversible State](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Presentation-and-Reversible-State.md)
+- [Semantic Output Protocols](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Semantic-Output-Protocols.md)
+- [Security and Privacy](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Security-and-Privacy.md)
+- [Public API Baseline](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Public-API-Baseline-1.0.md)
+- [Compatibility and Versioning](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Compatibility-and-Versioning.md)
+- [Migration to 1.0](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0/docs/Migration-to-1.0.md)
 
-Historical T-series and 0.x public-API baselines remain available as design/release evidence.
+Historical T-series, 0.x baselines, and the rc1 baseline remain available as design/release evidence.
 
 ## Samples
 
@@ -216,23 +216,23 @@ On POSIX hosts:
 sh build.sh
 ```
 
-PR validation runs Windows/Linux/macOS builds and tests, the frozen 1.0 public-API fingerprint, exact Staging package verification, retained package-only contracts from 0.8 through 0.18, and the fresh 1.0 release-candidate package contract.
+PR validation runs Windows/Linux/macOS runtime/source validation, the frozen 1.0 public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining contracts from 0.8 through the stable 1.0 release line.
 
 The repository also runs current `Icod.DCurses 0.1.0` integration/ownership acceptance, including a package-boundary soak against the freshly packed Terminal artifact. Because DCurses is still an early downstream, these checks are **compatibility witnesses for the integration paths it currently exercises**, not exhaustive proof of every `Icod.Terminal` 1.x contract. Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full surface.
 
-After merge, Release distribution validation runs the same distribution contract across the configured Windows/Linux/macOS x64/ARM64 matrix.
+After merge, Release distribution validation runs six Windows/Linux/macOS x64/ARM64 runtime jobs plus the single portable package/four-shard package contract.
 
 ## Release process
 
-`1.0.0-rc1` is publishable only after the exact PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.0.0` is publishable only after the exact stable-promotion PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
-The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the frozen API, hardening, historical package, rc1 package, and current downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
+The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the frozen API, hardening, historical package, stable release-line package, and current downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 
 ## Development roadmap
 
-Current rc1 work is tracked in [`Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`](Icod.Terminal-1.0.0-rc1-Development-Roadmap.md).
+Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The completed rc1 program remains preserved in `Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`.
 
 ## License
 

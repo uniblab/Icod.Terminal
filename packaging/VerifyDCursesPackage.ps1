@@ -46,10 +46,10 @@ $acceptanceRoot = Join-Path (
 New-Item -ItemType Directory -Path $acceptanceRoot -Force | Out-Null
 try {
 	Copy-Item `
-		-LiteralPath ( Join-Path $repositoryRoot 'tools/dcurses-rc1-package-acceptance/Icod.Terminal.DCursesRc1PackageAcceptance.csproj' ) `
-		-Destination ( Join-Path $acceptanceRoot 'Icod.Terminal.DCursesRc1PackageAcceptance.csproj' )
+		-LiteralPath ( Join-Path $repositoryRoot 'tools/dcurses-package-acceptance/Icod.Terminal.DCursesPackageAcceptance.csproj' ) `
+		-Destination ( Join-Path $acceptanceRoot 'Icod.Terminal.DCursesPackageAcceptance.csproj' )
 	Copy-Item `
-		-LiteralPath ( Join-Path $repositoryRoot 'tools/dcurses-rc1-package-acceptance/Program.cs' ) `
+		-LiteralPath ( Join-Path $repositoryRoot 'tools/dcurses-hardening-soak/Program.cs' ) `
 		-Destination ( Join-Path $acceptanceRoot 'Program.cs' )
 
 	$nugetConfig = Join-Path $acceptanceRoot 'NuGet.Config'
@@ -70,7 +70,7 @@ try {
 		[System.Text.UTF8Encoding]::new( $false )
 	)
 
-	$project = Join-Path $acceptanceRoot 'Icod.Terminal.DCursesRc1PackageAcceptance.csproj'
+	$project = Join-Path $acceptanceRoot 'Icod.Terminal.DCursesPackageAcceptance.csproj'
 	$oldNuGetPackages = $env:NUGET_PACKAGES
 	$env:NUGET_PACKAGES = Join-Path $acceptanceRoot 'packages'
 	try {
@@ -107,4 +107,4 @@ try {
 	}
 }
 
-Write-Host "Fresh-package Icod.DCurses release-candidate acceptance completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Fresh-package Icod.DCurses release-line acceptance completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

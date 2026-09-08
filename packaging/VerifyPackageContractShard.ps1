@@ -3,7 +3,7 @@ param(
     [string]$ArtifactDirectory,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('foundation', 'presentation', 'semantic', 'rc')]
+    [ValidateSet('foundation', 'presentation', 'semantic', 'release')]
     [string]$Shard,
 
     [ValidateSet('Debug', 'Staging', 'Release')]
@@ -57,10 +57,10 @@ $scripts = switch ($Shard) {
             'VerifyHardeningPackage.ps1'
         )
     }
-    'rc' {
+    'release' {
         @(
-            'VerifyRc1Package.ps1',
-            'VerifyDCursesRc1Package.ps1'
+            'VerifyReleaseLinePackage.ps1',
+            'VerifyDCursesPackage.ps1'
         )
     }
 }

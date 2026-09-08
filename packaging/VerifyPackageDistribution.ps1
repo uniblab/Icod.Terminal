@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-foreach ($shard in @('foundation', 'presentation', 'semantic', 'rc')) {
+foreach ($shard in @('foundation', 'presentation', 'semantic', 'release')) {
     $parameters = @{
         ArtifactDirectory = $ArtifactDirectory
         Shard = $shard
