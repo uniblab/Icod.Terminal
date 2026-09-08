@@ -39,6 +39,8 @@ New-Item -ItemType Directory -Path $ArtifactDirectory -Force | Out-Null
 
 Push-Location $repositoryRoot
 try {
+    & (Join-Path $PSScriptRoot 'VerifyLicenseHeaders.ps1')
+
     Write-Host ''
     Write-Host "=== Restore package project ($Configuration) ==="
     Invoke-DotNet -Arguments @('restore', $projectPath)
