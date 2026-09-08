@@ -11,7 +11,7 @@ No unreleased 1.x changes are currently recorded.
 ### Stable contract
 
 - Promotes the `1.0.0-rc1` contract to stable `1.0.0` without changing the frozen public API or adding a new terminal-protocol family.
-- Establishes the permanent 1.x architecture, ownership, lifecycle, input/query, presentation/output, security, compatibility, migration, and public-API documents as the stable support authorities.
+- Establishes the permanent 1.x architecture, ownership, lifecycle, input/query, presentation/output, security, compatibility, licensing, migration, and public-API documents as the stable support authorities.
 - Retains `net8.0`, `net9.0`, and `net10.0` as first-class package targets.
 - Retains Windows, Linux, and macOS support in the built-in system terminal-control provider.
 
@@ -21,6 +21,15 @@ No unreleased 1.x changes are currently recorded.
 - Carries the one pre-1.0 breaking correction forward: public `TerminalSession.Input` remains removed so a live session has one authoritative input/query-routing path.
 - Retains public `ITerminalInput`, `ITerminalOutput`, and `ITerminalControlProvider` injection seams.
 - Retains `TerminalSession.Output` as the documented advanced borrowed output transport outside session serialization.
+
+### Licensing
+
+- Makes the reusable `Icod.Terminal` library, root project, and library C# sources explicitly `LGPL-3.0-or-later`; the published NuGet package remains LGPL.
+- Makes repository test, sample, package-smoke, verification, and downstream acceptance/soak executable programs explicitly `GPL-3.0-or-later`.
+- Adds project-appropriate license headers to every tracked `.cs` and `.csproj` file, including owning assembly name, one-line description, and the 2026 Timothy J. Bruce copyright notice.
+- Requires every project file to place its license header immediately after `<?xml version="1.0" encoding="utf-8"?>` and before `<Project ...>`.
+- Adds an exact license-header verification gate to package-candidate CI and local `all` / `validate` builds.
+- Adds `docs/Licensing.md` as the permanent explanation of the library/executable license boundary; the root `LICENSE` contains the LGPLv3 terms and incorporated GPLv3 terms.
 
 ### Validation and release engineering
 
