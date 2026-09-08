@@ -18,8 +18,7 @@ Write-Host ''
 Write-Host '=== Restore DCurses pointer-shape acceptance ==='
 Invoke-DotNet -Arguments @(
     'restore',
-    $project,
-    '--no-cache'
+    $project
 )
 
 foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {

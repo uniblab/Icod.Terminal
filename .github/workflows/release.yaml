@@ -25,22 +25,16 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-      solution_path: ${{ steps.repository.outputs.solution_path }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-      - id: repository
-        shell: pwsh
-        run: ./packaging/Get-RepositoryMetadata.ps1 -Configuration '${{ env.CONFIGURATION }}' -GitHubOutputPath $env:GITHUB_OUTPUT
       - name: Require solution
         shell: pwsh
         run: |
-          if ('true' -ne '${{ steps.repository.outputs.has_solution }}') {
-              throw 'A tagged release requires exactly one root .sln or .slnx file.'
+          $solutionPath = Join-Path $PWD '${{ github.event.repository.name }}.sln'
+          if (-not (Test-Path -LiteralPath $solutionPath -PathType Leaf)) {
+              throw "A tagged release requires the root solution '$solutionPath'."
           }
       - name: Require tagged commit on default branch
         shell: pwsh
@@ -60,86 +54,60 @@ jobs:
           $version = $Matches.version
           "version=$version" >> $env:GITHUB_OUTPUT
           "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+      - name: Require curated release notes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $notesPath = Join-Path $PWD "docs/releases/$version.md"
+          if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+              throw "Tagged release '$version' requires curated release notes at '$notesPath'."
+          }
 
-  package:
+  runtime:
     needs: metadata
+    name: Runtime acceptance
     runs-on: ubuntu-latest
-    outputs:
-      has_packages: ${{ steps.select.outputs.has_packages }}
-      package_count: ${{ steps.select.outputs.package_count }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - run: dotnet restore '${{ needs.metadata.outputs.solution_path }}'
-      - run: dotnet build '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - run: dotnet test '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
-      - name: Verify focused notification sample builds
+      - name: Verify runtime and source integration
         shell: pwsh
-        run: ./packaging/VerifyNotificationSample.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses synchronized-output acceptance
+        run: ./packaging/VerifyRuntime.ps1 -Configuration '${{ env.CONFIGURATION }}'
+
+  package-prep:
+    needs: metadata
+    name: Package candidate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Build package candidate and freeze public API
         shell: pwsh
-        run: ./packaging/VerifyDCursesSynchronizedOutput.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses terminal-progress acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesProgress.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses pointer-shape acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesPointerShape.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses semantic-prompt acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesSemanticPrompt.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses lifecycle-safe color acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesColorObservation.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses modern-keyboard acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesModernKeyboard.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - run: dotnet pack '${{ needs.metadata.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o ${{ env.RELEASE_DIRECTORY }} -p:ContinuousIntegrationBuild=true
+        run: >-
+          ./packaging/BuildPackageArtifact.ps1
+          -ArtifactDirectory '${{ env.RELEASE_DIRECTORY }}'
+          -Configuration '${{ env.CONFIGURATION }}'
+          -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+          -ApiOutputDirectory artifacts/release-public-api
       - id: select
         shell: pwsh
-        run: ./packaging/SelectReleasePackages.ps1 -SourceDirectory '${{ env.RELEASE_DIRECTORY }}' -DestinationDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}' -GitHubOutputPath $env:GITHUB_OUTPUT
+        run: >-
+          ./packaging/SelectReleasePackages.ps1
+          -SourceDirectory '${{ env.RELEASE_DIRECTORY }}'
+          -DestinationDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}'
+          -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+          -GitHubOutputPath $env:GITHUB_OUTPUT
       - name: Require Icod.Terminal release package
         shell: pwsh
         run: |
           if ('true' -ne '${{ steps.select.outputs.has_packages }}' -or '1' -ne '${{ steps.select.outputs.package_count }}') {
               throw 'The Icod.Terminal release must select exactly one package matching the release tag.'
           }
-      - name: Verify exact release package artifacts
-        shell: pwsh
-        run: ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.8 cursor-style release contract
-        shell: pwsh
-        run: ./packaging/VerifyCursorStylePackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.9 synchronized-output release contract
-        shell: pwsh
-        run: ./packaging/VerifySynchronizedOutputPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.10 terminal-progress release contract
-        shell: pwsh
-        run: ./packaging/VerifyProgressPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.11 pointer-shape release contract
-        shell: pwsh
-        run: ./packaging/VerifyPointerShapePackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.12 semantic-prompt release contract
-        shell: pwsh
-        run: ./packaging/VerifySemanticPromptPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.13 terminal-color release contract
-        shell: pwsh
-        run: ./packaging/VerifyColorPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.14 lifecycle-safe color ownership release contract
-        shell: pwsh
-        run: ./packaging/VerifyColorOwnershipPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.15 OSC 133 extended semantic metadata release contract
-        shell: pwsh
-        run: ./packaging/VerifySemanticMetadataPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.16 safe OSC 9 release contract
-        shell: pwsh
-        run: ./packaging/VerifySafeOsc9Package.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Verify 0.17 modern-keyboard release contract
-        shell: pwsh
-        run: ./packaging/VerifyModernKeyboardPackage.ps1 -ArtifactDirectory '${{ env.SELECTED_PACKAGE_DIRECTORY }}' -Configuration '${{ env.CONFIGURATION }}' -ExpectedVersion '${{ needs.metadata.outputs.version }}'
-      - name: Upload release packages
+      - name: Upload package candidate
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PACKAGE_ARTIFACT }}
@@ -149,8 +117,42 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  package-contracts:
+    needs: [metadata, package-prep]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: foundation
+            name: Foundation
+          - shard: presentation
+            name: Presentation
+          - shard: semantic
+            name: Semantic and hardening
+          - shard: rc
+            name: 1.0 RC
+    name: Package ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_ARTIFACT }}
+          path: artifacts/package
+      - name: Verify package contract shard
+        shell: pwsh
+        run: >-
+          ./packaging/VerifyPackageContractShard.ps1
+          -ArtifactDirectory artifacts/package
+          -Shard '${{ matrix.shard }}'
+          -Configuration '${{ env.CONFIGURATION }}'
+          -ExpectedVersion '${{ needs.metadata.outputs.version }}'
+
   publish-nuget:
-    needs: [metadata, package]
+    needs: [metadata, runtime, package-prep, package-contracts]
     runs-on: ubuntu-latest
     environment: Release
     permissions:
@@ -179,7 +181,7 @@ jobs:
           if (0 -ne $LASTEXITCODE) { throw "NuGet.org publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   publish-github-packages:
-    needs: [metadata, package]
+    needs: [metadata, runtime, package-prep, package-contracts]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -205,17 +207,17 @@ jobs:
           if (0 -ne $LASTEXITCODE) { throw "GitHub Packages publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   github-release:
-    needs: [metadata, package, publish-nuget, publish-github-packages]
+    needs: [metadata, publish-nuget, publish-github-packages]
     if: >-
       always() &&
       needs.metadata.result == 'success' &&
-      needs.package.result == 'success' &&
       needs.publish-nuget.result == 'success' &&
       needs.publish-github-packages.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: ${{ env.PACKAGE_ARTIFACT }}
@@ -237,8 +239,23 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
+          $version = '${{ needs.metadata.outputs.version }}'
+          $notesPath = Join-Path $PWD "docs/releases/$version.md"
+          if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+              throw "Curated release notes are missing for $version at '$notesPath'."
+          }
+
           $assets = @(Get-ChildItem -LiteralPath 'artifacts/release-assets' -File | Sort-Object Name | ForEach-Object { $_.FullName })
-          $arguments = @('release', 'create', $env:GITHUB_REF_NAME, '--verify-tag', '--title', "Icod.Terminal ${{ needs.metadata.outputs.version }}", '--generate-notes')
+          $arguments = @(
+              'release',
+              'create',
+              $env:GITHUB_REF_NAME,
+              '--verify-tag',
+              '--title',
+              "Icod.Terminal $version",
+              '--notes-file',
+              $notesPath
+          )
           if ('true' -eq '${{ needs.metadata.outputs.prerelease }}') {
               $arguments += '--prerelease'
               $arguments += '--latest=false'

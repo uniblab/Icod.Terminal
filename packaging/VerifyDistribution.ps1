@@ -8,8 +8,7 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 Import-Module (Join-Path $PSScriptRoot 'RepositoryTools.psm1') -Force
-
-$solutionPath = Get-RepositorySolution -RepositoryRoot $repositoryRoot
+$projectPath = Join-Path $repositoryRoot 'Icod.Terminal.csproj'
 $validationRoot = Join-Path $repositoryRoot 'artifacts/distribution-validation'
 $packageDirectory = Join-Path $validationRoot 'packages'
 
@@ -20,51 +19,17 @@ New-Item -ItemType Directory -Path $packageDirectory -Force | Out-Null
 
 Push-Location $repositoryRoot
 try {
-    Invoke-DotNet -Arguments @('restore', $solutionPath)
-    Invoke-DotNet -Arguments @(
-        'build', $solutionPath,
-        '-c', $Configuration,
-        '--no-restore',
-        '-p:ContinuousIntegrationBuild=true'
-    )
-    Invoke-DotNet -Arguments @(
-        'test', $solutionPath,
-        '-c', $Configuration,
-        '--no-build',
-        '--no-restore',
-        '--logger', 'trx'
-    )
+    & (Join-Path $PSScriptRoot 'VerifyRuntime.ps1') `
+        -Configuration $Configuration
 
     & (Join-Path $PSScriptRoot 'VerifyPublicApiBaseline.ps1') `
         -Configuration $Configuration `
         -OutputDirectory 'artifacts/distribution-validation/public-api'
 
-    & (Join-Path $PSScriptRoot 'VerifyNotificationSample.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesSynchronizedOutput.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesProgress.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesPointerShape.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesSemanticPrompt.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesColorObservation.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesModernKeyboard.ps1') `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesHardeningSoak.ps1') `
-        -Configuration $Configuration
-
+    Write-Host ''
+    Write-Host "=== Pack distribution candidate ($Configuration) ==="
     Invoke-DotNet -Arguments @(
-        'pack', $solutionPath,
+        'pack', $projectPath,
         '-c', $Configuration,
         '--no-build',
         '--no-restore',
@@ -72,65 +37,12 @@ try {
         '-p:ContinuousIntegrationBuild=true'
     )
 
-    & (Join-Path $PSScriptRoot 'VerifyPackageArtifact.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyCursorStylePackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifySynchronizedOutputPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyProgressPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyPointerShapePackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifySemanticPromptPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyColorPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyColorOwnershipPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifySemanticMetadataPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifySafeOsc9Package.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyModernKeyboardPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyHardeningPackage.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyRc1Package.ps1') `
-        -ArtifactDirectory $packageDirectory `
-        -Configuration $Configuration
-
-    & (Join-Path $PSScriptRoot 'VerifyDCursesRc1Package.ps1') `
+    & (Join-Path $PSScriptRoot 'VerifyPackageDistribution.ps1') `
         -ArtifactDirectory $packageDirectory `
         -Configuration $Configuration
 
     Write-Host ''
     Write-Host "Distribution verification completed successfully ($Configuration)."
-    Write-Host "  Solution: $solutionPath"
 } finally {
     Pop-Location
 }

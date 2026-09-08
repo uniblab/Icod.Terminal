@@ -2,16 +2,19 @@
 
 **Release:** `Icod.Terminal 1.0.0-rc1`  
 **Predecessor:** T196 — package metadata/documentation artifact closure, workflow #954  
-**Status:** Implementation and final audit complete; the exact current PR head must be green for merge readiness  
-**Substantive T197 validation:** workflow #956 at `039927f555f8f109a31423825dc0e2191a5c2ac6`
+**Status:** Complete; PR #32 merged and the merged `main` candidate passed the six-runner Release distribution matrix  
+**Substantive T197 validation:** workflow #956 at `039927f555f8f109a31423825dc0e2191a5c2ac6`  
+**Final PR validation:** workflow #957 at `254ceea67f5ca01070af15d928faba630d31af79`  
+**Merged `main`:** `852d84722c6d9b5f91b5c6dcf9176f26ded78982`  
+**Merged Release validation:** run `34163501979` — green on all six configured runners
 
 ## 1. Purpose
 
 T197 is the final release-candidate acceptance tranche. It adds no production API, terminal protocol, wire behavior, or new semantic test scenario.
 
-The tranche closes the remaining artifact-boundary gap: existing real `Icod.DCurses` acceptance uses the current `Icod.Terminal` project reference, while package validation consumes the NuGet package without exercising the full downstream curses ownership soak.
+The tranche closes the artifact-boundary gap between repository/project-reference downstream acceptance and the freshly packed NuGet package.
 
-T197 therefore runs the existing eight-cycle hardening soak unchanged against the **freshly packed `Icod.Terminal 1.0.0-rc1` NuGet artifact** plus published `Icod.DCurses 0.1.0`.
+T197 runs the existing eight-cycle hardening soak unchanged against the **freshly packed `Icod.Terminal 1.0.0-rc1` NuGet artifact** plus published `Icod.DCurses 0.1.0`.
 
 ## 2. Package-to-downstream acceptance
 
@@ -81,15 +84,7 @@ The verifier restores once and runs the same soak under net8.0, net9.0, and net1
 
 This proves that the package artifact and published downstream package resolve and execute together without a project-reference side channel.
 
-## 6. Workflow integration and validation
-
-The package-based downstream acceptance runs after:
-
-- exact package verification;
-- retained package-only contracts from 0.8 through 0.18;
-- the T196 1.0 release-candidate package contract.
-
-It is wired into both PR Staging validation and `VerifyDistribution.ps1`.
+## 6. PR validation
 
 Workflow #956 passed the substantive T197 head at:
 
@@ -105,7 +100,40 @@ including:
 - the fresh rc1 NuGet-only contract;
 - the new fresh-package + published-DCurses acceptance on net8.0/net9.0/net10.0.
 
-After merge, the distribution path exercises the same package/downstream witness on each configured Release runner:
+The closure-only head then passed workflow #957 at:
+
+`254ceea67f5ca01070af15d928faba630d31af79`
+
+No later runtime/API change entered PR #32.
+
+## 7. Final RC audit result
+
+The complete PR from published `0.18.0` to rc1 was audited before merge.
+
+The audit confirmed:
+
+- version remained exactly `1.0.0-rc1` / assembly `1.0.0.0`;
+- the public API fingerprint remained the T194 freeze;
+- the only intentional public breaking correction was removal of `TerminalSession.Input`;
+- `ITerminalInput`/`ITerminalOutput`/`ITerminalControlProvider` injection remained public;
+- `TerminalSession.Output` remained the explicitly documented advanced borrowed transport;
+- all other production-source changes were version-neutral documentation/error-text cleanup rather than protocol or behavior expansion;
+- no new terminal protocol or feature family entered rc1;
+- package README, nuspec release notes, current roadmap, migration guide, API baseline, and permanent authorities agreed;
+- the original long-form roadmap remained preserved under `docs/history/`;
+- samples remained task-oriented and compiled under the supported framework matrix;
+- no additional sample was justified merely for rc1;
+- no additional Terminal-owned regression gap was found that justified expanding the release candidate;
+- no unresolved PR review/comment thread remained;
+- PR #32 was mergeable against `main`.
+
+## 8. Merged Release qualification
+
+PR #32 merged to `main` as:
+
+`852d84722c6d9b5f91b5c6dcf9176f26ded78982`
+
+Release workflow run `34163501979` completed successfully on:
 
 - Windows x64;
 - Windows ARM64;
@@ -114,48 +142,33 @@ After merge, the distribution path exercises the same package/downstream witness
 - macOS x64;
 - macOS ARM64.
 
-## 7. Final RC audit result
+Each runner executed the distribution verifier. This post-merge qualification proves the merged candidate, not merely the PR merge simulation.
 
-The complete PR from published `0.18.0` to rc1 was audited after workflow #956.
+## 9. Publication hardening follow-up
 
-The audit confirms:
+The merged Release audit identified a release-process/documentation gap outside the runtime contract: the tag-triggered `release.yaml` had not yet been brought up to parity with the qualified `main` distribution path and GitHub Releases still relied on sparse auto-generated notes.
 
-- version remains exactly `1.0.0-rc1` / assembly `1.0.0.0`;
-- the public API fingerprint remains the T194 freeze;
-- the only intentional public breaking correction is removal of `TerminalSession.Input`;
-- `ITerminalInput`/`ITerminalOutput`/`ITerminalControlProvider` injection remains public;
-- `TerminalSession.Output` remains the explicitly documented advanced borrowed transport;
-- all other production-source changes are version-neutral documentation/error-text cleanup rather than protocol or behavior expansion;
-- no new terminal protocol or feature family entered rc1;
-- package README, nuspec release notes, current roadmap, migration guide, API baseline, and permanent authorities agree;
-- the original long-form roadmap remains preserved under `docs/history/`;
-- samples remain task-oriented and compile under the supported framework matrix;
-- no additional sample is justified merely for rc1;
-- no additional Terminal-owned regression gap was found that justifies expanding the release candidate;
-- no unresolved PR review/comment thread is present;
-- PR #32 remains open, non-draft, and mergeable against `main`.
+A focused publication-hardening follow-up therefore adds:
 
-## 8. Final exact-head rule
+- tag-time frozen public-API verification;
+- tag-time hardening soak;
+- tag-time 0.18 hardening, rc1 package, and package-boundary downstream gates;
+- curated `docs/releases/<version>.md` notes as a required release artifact;
+- a root changelog;
+- concise NuGet release notes with immutable release/migration links;
+- immutable tag-pinned package documentation links.
 
-The green substantive T197 head is not by itself merge authority because this closure record and status wording are a later commit.
+These changes do not alter T197's runtime/API conclusion. They must independently pass PR and post-merge Release validation before tagging.
 
-The **exact current PR head** must therefore pass the complete PR matrix before PR #32 is called merge-ready.
+## 10. Publication rule
 
-This wording is intentionally timeless: no further repository commit is required merely to insert the final workflow number after the closure head passes. The PR description may record that workflow without changing the tested tree.
+Tagging triggers publication and is never an automatic consequence of merge or green CI.
 
-## 9. Post-merge release rule
+Before `v1.0.0-rc1` is created:
 
-Merging rc1 does not itself authorize publication.
+1. merge the publication-hardening follow-up only after its exact PR head is green;
+2. require the resulting `main` commit to pass the full six-runner Release matrix;
+3. review the curated release notes/package metadata one final time;
+4. create the tag only with explicit publication authorization.
 
-After merge:
-
-1. identify the exact resulting `main` commit;
-2. require full Release distribution validation on all configured x64/ARM64 runners;
-3. review the resulting package artifacts;
-4. create the `v1.0.0-rc1` tag only with explicit publication authorization.
-
-Tagging triggers publication and is never an automatic consequence of PR merge readiness.
-
-## 10. Exit gate
-
-T197 is implementation/audit complete. PR #32 becomes merge-ready only when the exact current closure head is green across the complete PR matrix.
+No further T197 status mutation is required merely to insert that later publication-hardening workflow number.

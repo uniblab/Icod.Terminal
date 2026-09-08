@@ -63,19 +63,38 @@ Push-Location $repositoryRoot
 try {
     switch ($Section) {
         'all' {
-            Invoke-Clean
             Invoke-Restore
             Invoke-Build
             Invoke-Test
             Invoke-Pack
             Invoke-Validate
         }
-        'clean' { Invoke-Clean }
-        'restore' { Invoke-Restore }
-        'build' { Invoke-Build }
-        'test' { Invoke-Test }
-        'pack' { Invoke-Pack }
-        'validate' { Invoke-Validate }
+        'clean' {
+            Invoke-Clean
+        }
+        'restore' {
+            Invoke-Restore
+        }
+        'build' {
+            Invoke-Restore
+            Invoke-Build
+        }
+        'test' {
+            Invoke-Restore
+            Invoke-Build
+            Invoke-Test
+        }
+        'pack' {
+            Invoke-Restore
+            Invoke-Build
+            Invoke-Pack
+        }
+        'validate' {
+            Invoke-Restore
+            Invoke-Build
+            Invoke-Pack
+            Invoke-Validate
+        }
     }
 } finally {
     Pop-Location

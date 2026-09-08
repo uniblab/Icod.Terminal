@@ -12,6 +12,11 @@ The rc1 line is a **contract freeze and permanent-documentation release**, not a
 
 The one intentional pre-1.0 API correction is that a live `TerminalSession` no longer exposes its raw input transport through `TerminalSession.Input`. `ITerminalInput` remains public for custom transport injection. Application input now has one authoritative live-session path through `ReadEventAsync(...)` and typed query operations.
 
+Full release notes and concise release history:
+
+- [Icod.Terminal 1.0.0-rc1 release notes](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/releases/1.0.0-rc1.md)
+- [Changelog](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/CHANGELOG.md)
+
 ## Installation
 
 ```text
@@ -176,20 +181,20 @@ Other hosts receive controlled `Unsupported` results from the built-in provider.
 
 ## Permanent documentation
 
-The 1.x contract is documented in:
+The links below are intentionally pinned to the `v1.0.0-rc1` tag so the documentation bundled with the rc1 package cannot silently drift as `main` advances:
 
-- [Architecture](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Architecture.md)
-- [Terminal Session and Ownership](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Terminal-Session-and-Ownership.md)
-- [Lifecycle and Restoration](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Lifecycle-and-Restoration.md)
-- [Input and Events](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Input-and-Events.md)
-- [Queries and Responses](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Queries-and-Responses.md)
-- [Modern Keyboard Security and Compatibility](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Modern-Keyboard-Security-and-Compatibility.md)
-- [Presentation and Reversible State](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Presentation-and-Reversible-State.md)
-- [Semantic Output Protocols](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Semantic-Output-Protocols.md)
-- [Security and Privacy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Security-and-Privacy.md)
-- [Public API Baseline](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Public-API-Baseline-1.0-rc1.md)
-- [Compatibility and Versioning](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
-- [Migration to 1.0](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Migration-to-1.0.md)
+- [Architecture](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Architecture.md)
+- [Terminal Session and Ownership](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Terminal-Session-and-Ownership.md)
+- [Lifecycle and Restoration](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Lifecycle-and-Restoration.md)
+- [Input and Events](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Input-and-Events.md)
+- [Queries and Responses](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Queries-and-Responses.md)
+- [Modern Keyboard Security and Compatibility](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Modern-Keyboard-Security-and-Compatibility.md)
+- [Presentation and Reversible State](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Presentation-and-Reversible-State.md)
+- [Semantic Output Protocols](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Semantic-Output-Protocols.md)
+- [Security and Privacy](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Security-and-Privacy.md)
+- [Public API Baseline](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Public-API-Baseline-1.0-rc1.md)
+- [Compatibility and Versioning](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Compatibility-and-Versioning.md)
+- [Migration to 1.0](https://github.com/uniblab/Icod.Terminal/blob/v1.0.0-rc1/docs/Migration-to-1.0.md)
 
 Historical T-series and 0.x public-API baselines remain available as design/release evidence.
 
@@ -220,6 +225,8 @@ After merge, Release distribution validation runs the same distribution contract
 ## Release process
 
 `1.0.0-rc1` is publishable only after the exact PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+
+The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the frozen API, hardening, historical package, rc1 package, and current downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 

@@ -35,6 +35,42 @@ if ( [string]::IsNullOrWhiteSpace( $ExpectedVersion ) ) {
 	throw 'Unable to determine the expected Icod.Terminal package version.'
 }
 
+$curatedReleaseNotesPath = Join-Path $repositoryRoot "docs/releases/$ExpectedVersion.md"
+if ( -not ( Test-Path -LiteralPath $curatedReleaseNotesPath -PathType Leaf ) ) {
+	throw "Curated release notes are missing for $ExpectedVersion at '$curatedReleaseNotesPath'."
+}
+$curatedReleaseNotes = [System.IO.File]::ReadAllText( $curatedReleaseNotesPath )
+foreach ( $requiredText in @(
+	$ExpectedVersion,
+	'TerminalSession.Input',
+	'net8.0',
+	'net9.0',
+	'net10.0',
+	'Migration-to-1.0.md',
+	'Compatibility-and-Versioning.md'
+) ) {
+	$curatedHasText = $curatedReleaseNotes.Contains(
+		$requiredText,
+		[System.StringComparison]::Ordinal
+	)
+	if ( -not $curatedHasText ) {
+		throw "Curated release notes are missing required text '$requiredText'."
+	}
+}
+
+$changelogPath = Join-Path $repositoryRoot 'CHANGELOG.md'
+if ( -not ( Test-Path -LiteralPath $changelogPath -PathType Leaf ) ) {
+	throw "The repository does not contain CHANGELOG.md."
+}
+$changelog = [System.IO.File]::ReadAllText( $changelogPath )
+$changelogHeading = "## $ExpectedVersion"
+if ( -not $changelog.Contains(
+		$changelogHeading,
+		[System.StringComparison]::Ordinal
+	) ) {
+	throw "CHANGELOG.md does not contain release heading '$changelogHeading'."
+}
+
 $packagePath = Join-Path $ArtifactDirectory "Icod.Terminal.$ExpectedVersion.nupkg"
 if ( -not ( Test-Path -LiteralPath $packagePath -PathType Leaf ) ) {
 	throw "Expected package '$packagePath' was not produced."
@@ -78,20 +114,19 @@ try {
 	}
 
 	$releaseNotes = $releaseNotesNode.InnerText
-	$releaseNotesHaveVersion = $releaseNotes.Contains(
+	foreach ( $requiredText in @(
 		$ExpectedVersion,
-		[System.StringComparison]::Ordinal
-	)
-	if ( -not $releaseNotesHaveVersion ) {
-		throw "Package release notes do not describe version $ExpectedVersion."
-	}
-
-	$releaseNotesHaveMigration = $releaseNotes.Contains(
 		'TerminalSession.Input',
-		[System.StringComparison]::Ordinal
-	)
-	if ( -not $releaseNotesHaveMigration ) {
-		throw 'Package release notes do not document the pre-1.0 TerminalSession.Input correction.'
+		"docs/releases/$ExpectedVersion.md",
+		'Migration-to-1.0.md'
+	) ) {
+		$releaseNotesHaveText = $releaseNotes.Contains(
+			$requiredText,
+			[System.StringComparison]::Ordinal
+		)
+		if ( -not $releaseNotesHaveText ) {
+			throw "Package release notes are missing required text '$requiredText'."
+		}
 	}
 
 	$readmeEntry = $archive.GetEntry( 'README.md' )
@@ -109,7 +144,10 @@ try {
 		$ExpectedVersion,
 		'TerminalSession.Input',
 		'Compatibility-and-Versioning.md',
-		'Migration-to-1.0.md'
+		'Migration-to-1.0.md',
+		"docs/releases/$ExpectedVersion.md",
+		'CHANGELOG.md',
+		"blob/v$ExpectedVersion/docs/Architecture.md"
 	) ) {
 		$readmeHasText = $readme.Contains(
 			$requiredText,
