@@ -9,9 +9,9 @@ function Get-ProjectAssemblyName {
 	param( [Parameter( Mandatory = $true )][string] $ProjectPath )
 
 	[xml] $projectXml = Get-Content -LiteralPath $ProjectPath -Raw
-	$assemblyNameNode = $projectXml.Project.PropertyGroup.AssemblyName | Select-Object -First 1
-	if ( $null -ne $assemblyNameNode -and -not [string]::IsNullOrWhiteSpace( [string] $assemblyNameNode ) ) {
-		return [string] $assemblyNameNode
+	$assemblyNameNode = $projectXml.SelectSingleNode( '/Project/PropertyGroup/AssemblyName' )
+	if ( $null -ne $assemblyNameNode -and -not [string]::IsNullOrWhiteSpace( [string] $assemblyNameNode.InnerText ) ) {
+		return [string] $assemblyNameNode.InnerText
 	}
 
 	return [IO.Path]::GetFileNameWithoutExtension( $ProjectPath )
