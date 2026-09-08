@@ -13,147 +13,106 @@ permissions:
 env:
   DOTNET_VERSION: 10.0.x
   CONFIGURATION: Staging
+  PACKAGE_CANDIDATE_ARTIFACT: icod-terminal-pr-package-candidate
+  PACKAGE_ARTIFACT: icod-terminal-pr-packages
 
 jobs:
-  metadata:
-    runs-on: ubuntu-latest
-    outputs:
-      has_solution: ${{ steps.repository.outputs.has_solution }}
-      solution_path: ${{ steps.repository.outputs.solution_path }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-      - id: repository
-        shell: pwsh
-        run: ./packaging/Get-RepositoryMetadata.ps1 -Configuration '${{ env.CONFIGURATION }}' -GitHubOutputPath $env:GITHUB_OUTPUT
-
-  validate:
-    needs: metadata
-    if: needs.metadata.outputs.has_solution == 'true'
+  runtime:
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
             name: Windows
-            verify_packages: false
           - os: ubuntu-latest
             name: Linux
-            verify_packages: true
           - os: macos-latest
             name: macOS
-            verify_packages: false
-    name: ${{ matrix.name }}
+    name: Runtime ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-      - name: Discover repository metadata on runner
-        id: repository
+      - name: Verify runtime and source integration
         shell: pwsh
-        run: ./packaging/Get-RepositoryMetadata.ps1 -Configuration '${{ env.CONFIGURATION }}' -GitHubOutputPath $env:GITHUB_OUTPUT
-      - run: dotnet restore '${{ steps.repository.outputs.solution_path }}'
-      - run: dotnet build '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-restore -p:ContinuousIntegrationBuild=true
-      - run: dotnet test '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore --logger trx
-      - name: Verify frozen 1.0 public API baseline
-        if: matrix.verify_packages
+        run: ./packaging/VerifyRuntime.ps1 -Configuration '${{ env.CONFIGURATION }}'
+
+  package-prep:
+    name: Package candidate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Build package candidate and freeze public API
         shell: pwsh
-        run: ./packaging/VerifyPublicApiBaseline.ps1 -Configuration '${{ env.CONFIGURATION }}' -OutputDirectory artifacts/public-api
-      - name: Verify focused notification sample builds
-        shell: pwsh
-        run: ./packaging/VerifyNotificationSample.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses synchronized-output acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesSynchronizedOutput.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses terminal-progress acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesProgress.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses pointer-shape acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesPointerShape.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses semantic-prompt acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesSemanticPrompt.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses lifecycle-safe color acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesColorObservation.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses modern-keyboard acceptance
-        shell: pwsh
-        run: ./packaging/VerifyDCursesModernKeyboard.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify DCurses hardening soak
-        shell: pwsh
-        run: ./packaging/VerifyDCursesHardeningSoak.ps1 -Configuration '${{ env.CONFIGURATION }}'
-      - name: Pack Staging artifacts
-        if: matrix.verify_packages
-        run: dotnet pack '${{ steps.repository.outputs.solution_path }}' -c ${{ env.CONFIGURATION }} --no-build --no-restore -o artifacts -p:ContinuousIntegrationBuild=true
-      - name: Verify exact Staging package artifacts
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyPackageArtifact.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.8 cursor-style package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyCursorStylePackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.9 synchronized-output package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifySynchronizedOutputPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.10 terminal-progress package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyProgressPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.11 pointer-shape package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyPointerShapePackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.12 semantic-prompt package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifySemanticPromptPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.13 terminal-color package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyColorPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.14 lifecycle-safe color ownership package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyColorOwnershipPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.15 OSC 133 extended semantic metadata package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifySemanticMetadataPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.16 safe OSC 9 package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifySafeOsc9Package.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.17 modern-keyboard package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyModernKeyboardPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 0.18 hardening package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyHardeningPackage.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify 1.0 release-candidate package contract
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyRc1Package.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Verify packaged Icod.DCurses release-candidate acceptance
-        if: matrix.verify_packages
-        shell: pwsh
-        run: ./packaging/VerifyDCursesRc1Package.ps1 -ArtifactDirectory artifacts -Configuration '${{ env.CONFIGURATION }}'
-      - name: Upload validated Staging package artifacts
-        if: matrix.verify_packages
+        run: >-
+          ./packaging/BuildPackageArtifact.ps1
+          -ArtifactDirectory artifacts/package
+          -Configuration '${{ env.CONFIGURATION }}'
+          -ApiOutputDirectory artifacts/public-api
+      - name: Upload package candidate
         uses: actions/upload-artifact@v4
         with:
-          name: icod-terminal-pr-packages
+          name: ${{ env.PACKAGE_CANDIDATE_ARTIFACT }}
           path: |
-            artifacts/*.nupkg
-            artifacts/*.snupkg
+            artifacts/package/*.nupkg
+            artifacts/package/*.snupkg
             artifacts/public-api/*.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  package-contracts:
+    needs: package-prep
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: foundation
+            name: Foundation
+          - shard: presentation
+            name: Presentation
+          - shard: semantic
+            name: Semantic and hardening
+          - shard: rc
+            name: 1.0 RC
+    name: Package ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_CANDIDATE_ARTIFACT }}
+          path: artifacts/candidate
+      - name: Verify package contract shard
+        shell: pwsh
+        run: >-
+          ./packaging/VerifyPackageContractShard.ps1
+          -ArtifactDirectory artifacts/candidate/package
+          -Shard '${{ matrix.shard }}'
+          -Configuration '${{ env.CONFIGURATION }}'
+
+  validated-package:
+    needs: [package-prep, package-contracts]
+    name: Validated package artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_CANDIDATE_ARTIFACT }}
+          path: artifacts/validated
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_ARTIFACT }}
+          path: |
+            artifacts/validated/package/*.nupkg
+            artifacts/validated/package/*.snupkg
+            artifacts/validated/public-api/*.txt
           if-no-files-found: error
           retention-days: 7
