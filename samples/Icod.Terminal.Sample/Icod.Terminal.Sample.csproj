@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 	Icod.Terminal.Sample
-	Sample application demonstrating Icod.Terminal Sample features.
+	Basic sample application demonstrating Icod.Terminal session usage.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 -->
 
@@ -30,14 +30,11 @@
 		<AssemblyName>Icod.Terminal.Sample</AssemblyName>
 		<RootNamespace>Icod.Terminal.Sample</RootNamespace>
 		<IsPackable>false</IsPackable>
-		<Configurations>Debug;Staging;Release</Configurations>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<Compile Include="Program.cs" />
-	</ItemGroup>
-
 	<ItemGroup>
 		<ProjectReference Include="..\..\Icod.Terminal.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="Program.cs" />
 	</ItemGroup>
 </Project>
