@@ -186,7 +186,7 @@ foreach ( $project in $projects ) {
 	$assemblyName = Get-ProjectAssemblyName -ProjectPath $project.FullName
 	$description = Get-ProjectDescription -AssemblyName $assemblyName
 	$licenseKind = Get-LicenseKind -ProjectPath $project.FullName
-	$expectedHeader = Get-ProjectHeader -AssemblyName $assemblyName -Description $description -LicenseKind $licenseKind
+	$expectedHeader = ( Get-ProjectHeader -AssemblyName $assemblyName -Description $description -LicenseKind $licenseKind ).Replace( "`r`n", "`n" )
 
 	if ( -not $content.StartsWith( $expectedHeader, [StringComparison]::Ordinal ) ) {
 		$relativePath = Get-RepositoryRelativePath -Path $project.FullName
@@ -204,7 +204,7 @@ foreach ( $source in $sources ) {
 	$assemblyName = Get-ProjectAssemblyName -ProjectPath $projectPath
 	$description = Get-ProjectDescription -AssemblyName $assemblyName
 	$licenseKind = Get-LicenseKind -ProjectPath $projectPath
-	$expectedHeader = Get-CSharpHeader -AssemblyName $assemblyName -Description $description -LicenseKind $licenseKind
+	$expectedHeader = ( Get-CSharpHeader -AssemblyName $assemblyName -Description $description -LicenseKind $licenseKind ).Replace( "`r`n", "`n" )
 
 	if ( -not $content.StartsWith( $expectedHeader, [StringComparison]::Ordinal ) ) {
 		$relativePath = Get-RepositoryRelativePath -Path $source.FullName
