@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented on the Icod.Terminal 1.5.0 development branch; exact-head validation remains the acceptance gate before N159 closure.
+Complete. N158 passed the full pull-request Staging matrix on exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad` in workflow run `34374645658`.
 
 N158 reconciles the existing 1.0–1.4 protocol surface with the N155 capability-evidence ledger, N156 semantic backend registry, and N157 deterministic resolver. It does not reinterpret any released public wire-specific method and does not add a public automatic-routing API.
 
@@ -51,7 +51,7 @@ reviewed wire backend
 | Pointer shape | OSC 22 | no exact TermInfo equivalent | keep OSC backend explicit |
 | Semantic prompt lifecycle | OSC 133 / OSC 633 | no exact TermInfo equivalent | keep distinct portable/vendor backend coverage |
 | Shell integration metadata | OSC 633 / OSC 1337 | no exact TermInfo equivalent | keep vendor metadata backends distinct |
-| Keyboard reporting | Kitty CSI / modifyOtherKeys | selected profile metadata describes traditional/extended key decoding but does not prove a modern negotiated keyboard backend | no broad TermInfo promotion in N158 |
+| Keyboard reporting | Kitty CSI / modifyOtherKeys | selected profile metadata describes traditional/extended key decoding but does not prove a modern negotiated keyboard backend | no broad TermInfo promotion; existing Kitty live negotiation feeds concrete backend evidence |
 | DA / DSR / CPR | CSI query families | observation protocols, not presentation alternatives | remain query/observation backends |
 | DECRQSS | DCS query | observation protocol | remains independent |
 | XTGETTCAP | DCS query | live observation of specific capability names | results stay capability-name-specific; no broad semantic backend claim |
@@ -149,6 +149,24 @@ timeout != unsupported
 
 The existing public query result and exceptions remain unchanged. A session-level regression test drives the real `QueryKittyNotificationSupportAsync(...)` request/response path and proves that the successful response upgrades desktop-notification routing to OSC 99.
 
+The existing Kitty keyboard support negotiation now feeds the same evidence broker without changing the public lease contract:
+
+```text
+Kitty flags response
+    -> CsiKittyKeyboard
+    -> Verified / ProtocolResponse
+
+Primary-DA barrier without Kitty flags
+    -> CsiKittyKeyboard
+    -> Unsupported / ProtocolResponse
+
+probe timeout
+    -> CsiKittyKeyboard
+    -> Unknown / LiveProbe
+```
+
+The negative DA barrier is reviewed protocol evidence; silence is not. The existing lease still returns its released available/unavailable result, while N155/N157 receive the more precise internal evidence state.
+
 ## Live-evidence generation and invalidation
 
 Static TermInfo/profile evidence survives state invalidation because the selected `TerminalDescription` is immutable for the session.
@@ -168,12 +186,13 @@ InvalidateState()
 
 ## Session integration
 
-`TerminalSession` now owns one lazily initialized semantic-evidence ledger. The first resolution seeds static evidence from the selected `TerminalDescription`. Internal live probes may record reviewed backend evidence into the same ledger.
+`TerminalSession` owns one lazily initialized semantic-evidence ledger. The first resolution seeds static evidence from the selected `TerminalDescription`. Internal live probes may record reviewed backend evidence into the same ledger.
 
 Endpoint availability is also semantic:
 
-- active query/input semantics require interactive input and output;
-- output-only semantic operations require an interactive output endpoint;
+- the live session itself always requires interactive input because it owns an input-mode transition;
+- active query/input semantics additionally require interactive output;
+- output semantic operations require an interactive output endpoint;
 - endpoint unavailability remains an effective routing state, not stored capability evidence.
 
 The session tests prove that `InvalidateState()` removes a verified live choice and restores the surviving exact TermInfo choice when one exists. The OSC 99 integration test similarly proves that invalidation removes a verified Kitty notification choice and returns routing to the reviewed OSC 9 unknown-support fallback.
@@ -191,15 +210,18 @@ N158 does not:
 - infer support from terminal brand alone;
 - expose a generic protocol writer.
 
-The new registry/evidence/resolver path remains internal until a future public semantic-routing API receives its own compatibility and security review.
+The registry/evidence/resolver path remains internal until a future public semantic-routing API receives its own compatibility and security review.
 
-## Acceptance
+## Acceptance result
 
-N158 is complete when:
+All N158 acceptance criteria are satisfied:
 
 1. exact TermInfo recipes are represented as static evidence without overclaiming partial overlaps;
 2. existing focus/paste/mouse metadata feeds the corresponding reviewed CSI backend identities;
-3. successful reviewed live probes can upgrade backend evidence;
+3. reviewed OSC 99 and Kitty keyboard live probes feed precise backend evidence;
 4. `InvalidateState()` invalidates live evidence while immutable TermInfo/profile evidence persists;
 5. existing 1.0–1.4 public protocol-specific APIs retain their released behavior;
-6. the full Staging runtime/package matrix remains green.
+6. the package candidate retained the frozen 1.4 public API fingerprint exactly;
+7. Windows, Linux, macOS runtime validation, all four package-contract shards, and the validated package artifact passed on exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`.
+
+N159 may proceed.
