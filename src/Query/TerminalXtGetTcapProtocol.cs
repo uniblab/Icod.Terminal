@@ -33,7 +33,18 @@ internal static class TerminalXtGetTcapProtocol {
 
 	internal static ITerminalResponseMatcher ResponseMatcher {
 		get;
-	} = new TerminalXtGetTcapResponseMatcher();
+	} = new TerminalXtGetTcapResponseMatcher(
+		requestedNameBytes: null
+	);
+
+	internal static ITerminalResponseMatcher CreateResponseMatcher(
+		string name
+	) {
+		ArgumentNullException.ThrowIfNull( name );
+		return new TerminalXtGetTcapResponseMatcher(
+			GetCapabilityNameBytes( name )
+		);
+	}
 
 	internal static void ValidateCapabilityName(
 		string name
@@ -310,7 +321,49 @@ internal static class TerminalXtGetTcapProtocol {
 		return true;
 	}
 
+	private static bool IsResponseForRequestedName(
+		TerminalControlFrameStructure structure,
+		ReadOnlySpan<byte> requestedNameBytes
+	) {
+		ReadOnlySpan<byte> parameters = structure.ParameterBytes.Span;
+		if ( 1 != parameters.Length || (byte)'1' != parameters[ 0 ] ) {
+			return true;
+		}
+
+		ReadOnlySpan<byte> payload = structure.PayloadBytes.Span;
+		if ( payload.IsEmpty ) {
+			return true;
+		}
+
+		int separator = payload.IndexOf( (byte)'=' );
+		if ( 0 >= separator ) {
+			return true;
+		}
+
+		try {
+			byte[] returnedNameBytes = DecodeHex(
+				payload.Slice(
+					0,
+					separator
+				),
+				MaximumCapabilityNameBytes,
+				"capability name"
+			);
+			return returnedNameBytes.AsSpan().SequenceEqual( requestedNameBytes );
+		} catch ( FormatException ) {
+			return true;
+		}
+	}
+
 	private sealed class TerminalXtGetTcapResponseMatcher : ITerminalResponseMatcher {
+		private readonly byte[]? requestedNameBytes;
+
+		internal TerminalXtGetTcapResponseMatcher(
+			byte[]? requestedNameBytes
+		) {
+			this.requestedNameBytes = requestedNameBytes?.ToArray();
+		}
+
 		public TerminalResponseFrameKind FrameKind {
 			get;
 		} = TerminalResponseFrameKind.Dcs;
@@ -319,9 +372,19 @@ internal static class TerminalXtGetTcapProtocol {
 			TerminalResponseFrame frame
 		) {
 			ArgumentNullException.ThrowIfNull( frame );
-			return TryGetResponseStructure(
+			if ( !TryGetResponseStructure(
 				frame,
-				out _
+				out TerminalControlFrameStructure structure
+			) ) {
+				return false;
+			}
+		if ( this.requestedNameBytes is null ) {
+			return true;
+		}
+
+			return IsResponseForRequestedName(
+				structure,
+				this.requestedNameBytes
 			);
 		}
 	}
