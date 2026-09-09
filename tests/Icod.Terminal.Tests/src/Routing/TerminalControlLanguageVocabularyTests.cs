@@ -52,19 +52,27 @@ public sealed class TerminalControlLanguageVocabularyTests {
 		}
 	}
 
-	[Theory]
-	[InlineData( TerminalProtocolBackend.Osc99KittyNotification, TerminalControlFamily.Osc )]
-	[InlineData( TerminalProtocolBackend.CsiKittyKeyboard, TerminalControlFamily.Csi )]
-	[InlineData( TerminalProtocolBackend.DcsDecrqss, TerminalControlFamily.Dcs )]
-	[InlineData( TerminalProtocolBackend.DcsSixel, TerminalControlFamily.Dcs )]
-	[InlineData( TerminalProtocolBackend.ApcKittyGraphics, TerminalControlFamily.Apc )]
-	public void RepresentativeBackendsMapToExpectedFamily(
-		TerminalProtocolBackend backend,
-		TerminalControlFamily expected
-	) {
-		Assert.Equal(
-			expected,
-			TerminalControlLanguageVocabulary.GetControlFamily( backend )
+	[Fact]
+	public void RepresentativeBackendsMapToExpectedFamily() {
+		AssertBackendFamily(
+			TerminalProtocolBackend.Osc99KittyNotification,
+			TerminalControlFamily.Osc
+		);
+		AssertBackendFamily(
+			TerminalProtocolBackend.CsiKittyKeyboard,
+			TerminalControlFamily.Csi
+		);
+		AssertBackendFamily(
+			TerminalProtocolBackend.DcsDecrqss,
+			TerminalControlFamily.Dcs
+		);
+		AssertBackendFamily(
+			TerminalProtocolBackend.DcsSixel,
+			TerminalControlFamily.Dcs
+		);
+		AssertBackendFamily(
+			TerminalProtocolBackend.ApcKittyGraphics,
+			TerminalControlFamily.Apc
 		);
 	}
 
@@ -86,6 +94,16 @@ public sealed class TerminalControlLanguageVocabularyTests {
 			() => TerminalControlLanguageVocabulary.GetControlFamily(
 				(TerminalProtocolBackend)int.MaxValue
 			)
+		);
+	}
+
+	private static void AssertBackendFamily(
+		TerminalProtocolBackend backend,
+		TerminalControlFamily expected
+	) {
+		Assert.Equal(
+			expected,
+			TerminalControlLanguageVocabulary.GetControlFamily( backend )
 		);
 	}
 
