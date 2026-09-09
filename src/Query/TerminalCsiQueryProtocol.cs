@@ -65,29 +65,29 @@ internal static class TerminalCsiQueryProtocol {
 	internal static ITerminalResponseMatcher PrimaryDeviceAttributesMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-		(byte)'c',
-		(byte)'?'
+			(byte)'c',
+			(byte)'?'
 	);
 
 	internal static ITerminalResponseMatcher SecondaryDeviceAttributesMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-		(byte)'c',
-		(byte)'>'
+			(byte)'c',
+			(byte)'>'
 	);
 
 	internal static ITerminalResponseMatcher DeviceStatusMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-		(byte)'n',
-		privateMarker: null
+			(byte)'n',
+			privateMarker: null
 	);
 
 	internal static ITerminalResponseMatcher CursorPositionMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-		(byte)'R',
-		privateMarker: null
+			(byte)'R',
+			privateMarker: null
 	);
 
 	internal static TerminalPrimaryDeviceAttributes ParsePrimaryDeviceAttributes(
@@ -186,123 +186,31 @@ internal static class TerminalCsiQueryProtocol {
 		byte finalByte,
 		byte? privateMarker
 	) {
-		if ( TerminalResponseFrameKind.Csi != frame.Kind ) {
-			throw new FormatException(
-				"The terminal response is not a CSI frame."
-			);
-		}
+		ArgumentNullException.ThrowIfNull( frame );
+		TerminalCsiSyntax syntax = TerminalCsiSyntax.Parse( frame );
 
-		TerminalControlFrameStructure structure = TerminalControlFrameStructure.Parse(
-			frame
+		TerminalCsiParameterSemantics.RequireFinalByte(
+			syntax,
+			finalByte
 		);
-		if ( TerminalControlFamily.Csi != structure.Family ) {
-			throw new FormatException(
-				"The terminal response is not a CSI frame."
-			);
-		}
-		if ( !structure.FinalByte.HasValue
-			|| finalByte != structure.FinalByte.Value ) {
-			throw new FormatException(
-				"The terminal response has an unexpected CSI final byte."
-			);
-		}
-		if ( !structure.IntermediateBytes.IsEmpty ) {
-			throw new FormatException(
-				"A CSI query response contains an unexpected intermediate byte."
-			);
-		}
-
-		ReadOnlySpan<byte> parameterBytes = structure.ParameterBytes.Span;
-		int start = 0;
+		TerminalCsiParameterSemantics.RequireNoIntermediateBytes( syntax );
 		if ( privateMarker.HasValue ) {
-			if ( parameterBytes.IsEmpty
-				|| privateMarker.Value != parameterBytes[ 0 ] ) {
-				throw new FormatException(
-					"The terminal response has an unexpected CSI private marker."
-				);
-			}
-			start = 1;
-		} else if ( !parameterBytes.IsEmpty
-			&& IsPrivateMarker( parameterBytes[ 0 ] ) ) {
-			throw new FormatException(
-				"The terminal response unexpectedly uses a CSI private marker."
+			Span<byte> expectedPrivate = stackalloc byte[] {
+				privateMarker.Value
+			};
+			TerminalCsiParameterSemantics.RequireExactPrivateParameterBytes(
+				syntax,
+				expectedPrivate
 			);
+		} else {
+			TerminalCsiParameterSemantics.RequireNoPrivateParameterBytes( syntax );
 		}
 
-		return ParseNumericParameters(
-			parameterBytes.Slice( start )
+		return TerminalCsiParameterSemantics.GetRequiredNumericParameters(
+			syntax,
+			MaximumParameterCount,
+			MaximumParameterValue
 		);
-	}
-
-	private static int[] ParseNumericParameters(
-		ReadOnlySpan<byte> bytes
-	) {
-		if ( bytes.IsEmpty ) {
-			return Array.Empty<int>();
-		}
-
-		List<int> parameters = [];
-		int value = 0;
-		bool hasDigit = false;
-
-		for ( int index = 0; index < bytes.Length; index++ ) {
-			byte current = bytes[ index ];
-			if ( current >= (byte)'0' && current <= (byte)'9' ) {
-				hasDigit = true;
-				int digit = current - (byte)'0';
-				if ( value > ( MaximumParameterValue - digit ) / 10 ) {
-					throw new FormatException(
-						$"A CSI numeric parameter exceeds the supported maximum of {MaximumParameterValue}."
-					);
-				}
-				value = checked( value * 10 + digit );
-				continue;
-			}
-
-			if ( (byte)';' != current ) {
-				throw new FormatException(
-					"A CSI query response contains a non-numeric parameter character."
-				);
-			}
-			if ( !hasDigit ) {
-				throw new FormatException(
-					"A CSI query response contains an empty numeric parameter."
-				);
-			}
-
-			AddParameter(
-				parameters,
-				value
-			);
-			value = 0;
-			hasDigit = false;
-		}
-
-		if ( !hasDigit ) {
-			throw new FormatException(
-				"A CSI query response ends with an empty numeric parameter."
-			);
-		}
-		AddParameter(
-			parameters,
-			value
-		);
-
-		return parameters.ToArray();
-	}
-
-	private static void AddParameter(
-		ICollection<int> parameters,
-		int value
-	) {
-		ArgumentNullException.ThrowIfNull( parameters );
-		if ( MaximumParameterCount <= parameters.Count ) {
-			throw new FormatException(
-				$"A CSI query response cannot contain more than {MaximumParameterCount} numeric parameters."
-			);
-		}
-
-		parameters.Add( value );
 	}
 
 	private static bool IsPrivateMarker(
