@@ -31,7 +31,7 @@ public sealed class DcsWriterTests {
 	[Fact]
 	public void EmptyStructuralFieldsUseCanonicalSevenBitFraming() {
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b[Pq\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001bPq\u001b\\" ),
 			DcsWriter.EncodeFrame(
 				ReadOnlySpan<byte>.Empty,
 				ReadOnlySpan<byte>.Empty,
@@ -44,7 +44,7 @@ public sealed class DcsWriterTests {
 	[Fact]
 	public void StructuralFieldsAndPayloadRemainByteExact() {
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b[P1;2$qabc\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001bP1;2$qabc\u001b\\" ),
 			DcsWriter.EncodeFrame(
 				Encoding.ASCII.GetBytes( "1;2" ),
 				[ (byte)'$' ],
