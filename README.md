@@ -9,21 +9,23 @@
 
 ## Status
 
-`1.4.0` is the current development release line and the fourth additive minor release after the stable 1.0 contract.
+`1.5.0` is the current development release line. It is the normalization/control-language foundation for complete CSI, DCS/Sixel, and APC/Kitty Graphics work planned for the following releases.
 
-Version 1.4 adds a typed, bounded Kitty OSC 99 desktop-notification surface without changing the meaning of existing 1.0–1.3 APIs. The release adds notification creation/update, explicit close, correlated capability discovery, alive-notification queries, bounded icon transfer/cache IDs, filtering metadata, urgency/expiry/sound options, and automatic protocol chunking.
+N150 establishes internal terminology and layer ownership without changing the public 1.4 surface. Semantic operation, protocol backend, control family, support state, and evidence source are now treated as separate concepts. Sixel is classified under DCS; Kitty Graphics is classified as an APC dialect; TermInfo-resolved capability strings remain a separate capability-driven backend path.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Versions 1.1, 1.2, and 1.3 retain their OSC 633, OSC 777, and OSC 1337 surfaces unchanged.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Existing OSC 633, OSC 777, OSC 1337, and OSC 99 APIs retain their exact wire semantics.
 
 Full release notes and concise release history:
 
-- [Icod.Terminal 1.4.0 release notes](docs/releases/1.4.0.md)
+- [Icod.Terminal 1.5.0 release notes](docs/releases/1.5.0.md)
+- [1.5.0 development roadmap](Icod.Terminal-1.5.0-Development-Roadmap.md)
+- [Control-language normalization and graphics roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
 - [Changelog](CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.4.0
+dotnet add package Icod.Terminal --version 1.5.0
 ```
 
 The package targets:
@@ -51,7 +53,7 @@ Icod.DCurses
 terminal applications
 ```
 
-`Icod.TermInfo` is the immutable terminal-capability authority. `Icod.Terminal` owns the live terminal conversation: endpoint observation, terminal modes, input decoding, lifecycle, active query routing, semantic output, and scoped/reversible terminal state. `Icod.DCurses` owns the higher-level virtual-screen/curses presentation model.
+`Icod.TermInfo` is the immutable terminal-capability authority. `Icod.Terminal` owns the live terminal conversation: endpoint observation, terminal modes, input decoding, lifecycle, active query routing, semantic output, protocol framing/routing, and scoped/reversible terminal state. `Icod.DCurses` owns the higher-level virtual-screen/curses presentation model and requests semantic behavior rather than selecting raw terminal control codes.
 
 PTY/process hosting remains orthogonal to this package.
 
@@ -108,7 +110,50 @@ Scoped state uses leases where overlapping ownership matters. The 1.x documentat
 
 Use session semantic operations for ordinary terminal output. `TerminalSession.Output` remains available only as an advanced borrowed transport and is outside normal session serialization when used directly by callers.
 
-`WriteTerminalStringAsync(...)` is intended for already-resolved terminfo capability strings; it is not a recommendation to construct arbitrary OSC/CSI/vendor traffic manually.
+`WriteTerminalStringAsync(...)` is intended for already-resolved terminfo capability strings; it is not a recommendation to construct arbitrary OSC/CSI/DCS/APC/vendor traffic manually.
+
+## Control-language normalization (`1.5`)
+
+Version 1.5 separates five layers which had previously been easy to conflate:
+
+```text
+semantic intent
+    -> capability/evidence resolution
+    -> protocol backend selection
+    -> control family framing
+    -> dialect codec / wire transport
+```
+
+The normalized control-family vocabulary is:
+
+```text
+CSI  ESC [
+DCS  ESC P
+OSC  ESC ]
+APC  ESC _
+PM   ESC ^
+SOS  ESC X
+ST   ESC \
+```
+
+N150 deliberately makes these concepts internal first. Existing public operations do not automatically reroute merely because a semantic backend registry is being built.
+
+Examples of the distinction include:
+
+```text
+DesktopNotification
+    -> OSC 9
+    -> OSC 777
+    -> OSC 99
+
+RasterGraphics
+    -> Sixel / DCS
+    -> Kitty Graphics / APC
+```
+
+A terminal/vendor name is not itself a capability. “Kitty” already spans CSI keyboard reporting, OSC 99 notifications, and APC graphics, so the architecture does not introduce a generic `SupportsKitty` flag.
+
+The complete 1.5 task sequence is N150–N159. See [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md) and [`docs/Control-Language-Normalization-and-Graphics-Roadmap.md`](docs/Control-Language-Normalization-and-Graphics-Roadmap.md).
 
 ## Semantic terminal features
 
@@ -153,7 +198,7 @@ await session.SendKittyNotificationAsync(
 );
 ```
 
-The same identifier can be supplied later to update or explicitly close a notification. The options surface also supports application/type filtering, activation focus policy, occasion, sound, icon names, transmitted PNG/JPEG/GIF icon data, and icon-cache identifiers.
+The same identifier can be supplied later to update or explicitly close a notification. The options surface also supports application/type filtering, activation focus policy, occasion, sound, icon names, transmitted PNG/JPEG/GIF icon data, and optional icon-cache identifiers.
 
 Title, body, and transmitted icon data are Base64 encoded. Encoded payload chunks are automatically limited to 4,096 bytes and multi-frame notifications are serialized as one logical session-output transaction. When chunking requires an identifier and the caller did not supply one, `Icod.Terminal` creates an internal bounded identifier rather than exposing raw OSC 99 framing.
 
@@ -271,7 +316,7 @@ OSC 99 capability/alive queries disclose that the application is probing notific
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally add compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Each minor release has its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0 while earlier baselines remain retained as compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
+Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` begins with internal normalization and intentionally retains the frozen 1.4 public surface at N150. Earlier machine-frozen baselines remain retained as compatibility evidence.
 
 For the stable 1.x line:
 
@@ -303,6 +348,8 @@ The permanent 1.x authorities include:
 - [Modern Keyboard Security and Compatibility](docs/Modern-Keyboard-Security-and-Compatibility.md)
 - [Presentation and Reversible State](docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
+- [Control-Language Normalization and Graphics Roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
+- [N150 Terminology and Layer-Ownership Freeze](docs/N150-Control-Language-Terminology-and-Layer-Ownership-Freeze.md)
 - [Kitty OSC 99 Desktop Notifications](docs/Kitty-Osc99-Desktop-Notifications.md)
 - [VS Code OSC 633 Shell Integration](docs/VsCode-Osc633-Shell-Integration.md)
 - [OSC 777 Titled Desktop Notifications](docs/Osc777-Desktop-Notifications.md)
@@ -347,15 +394,15 @@ After merge, Release distribution validation runs six Windows/Linux/macOS x64/AR
 
 ## Release process
 
-`1.4.0` is publishable only after the exact 1.4 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.5.0` is publishable only after the exact final 1.5 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
-The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
+The tag-triggered workflow requires curated `docs/releases/1.5.0.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 
 ## Development roadmap
 
-Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The completed rc1 program remains preserved in `Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`.
+Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current tranche is [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md). The completed rc1 program remains preserved in `Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`.
 
 ## Authors
 
