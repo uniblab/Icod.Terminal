@@ -67,6 +67,7 @@ public sealed partial class TerminalSession {
 	}
 
 	private void InvalidateInputProtocolState() {
+		this.AdvanceSemanticLiveEvidenceGeneration();
 		this.inputProtocolManager.Invalidate();
 	}
 
