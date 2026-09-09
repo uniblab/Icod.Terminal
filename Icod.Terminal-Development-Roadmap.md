@@ -4,7 +4,7 @@
 **Package:** `Icod.Terminal`  
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Current release line:** `1.1.0`  
+**Current release line:** `1.2.0`  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -41,22 +41,48 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## 1.1.0 program — VS Code OSC 633
+## 1.2.0 program — OSC 777 titled desktop notifications
 
-`1.1.0` adds a typed VS Code OSC 633 shell-integration surface as a distinct vendor protocol family. It does not alias OSC 633 to the existing portable OSC 133 API.
+`1.2.0` adds one typed urxvt-style OSC 777 desktop-notification operation while preserving the existing OSC 9 notification API unchanged.
 
-The 1.1 tranche covers:
+The 1.2 tranche covers:
 
 ```text
-V101  OSC 633 contract/reference review and protocol boundary
-V102  byte-exact bounded encoder/writer foundation
-V103  public TerminalSession semantic API
-V104  session ordering/cancellation/security hardening
-V105  package/XML/fresh-consumer validation
-V106  public-API baseline and release-documentation closure
+N201  OSC 777 contract/reference review and protocol boundary
+N202  byte-exact bounded encoder/writer foundation
+N203  public TerminalSession titled-notification API
+N204  output/cancellation/security hardening
+N205  package/XML/fresh-consumer validation
+N206  public-API baseline and release-documentation closure
 ```
 
-The supported 1.1 protocol surface is limited to the stable documented/current VS Code forms:
+The supported wire form is:
+
+```text
+OSC 777 ; notify ; <title> ; <message> ST
+```
+
+The public API is:
+
+```csharp
+ValueTask SendTitledNotificationAsync(
+	string title,
+	string message,
+	CancellationToken cancellationToken = default
+);
+```
+
+The existing `SendNotificationAsync(message, ...)` remains the OSC 9 compatibility API and is neither redirected nor auto-fallbacked to OSC 777.
+
+OSC 777 title/body fields are strict UTF-8, reject C0/C1/DEL controls, reject semicolons because the protocol defines no interoperable field-escaping grammar, and share a 4,096-byte complete OSC payload bound. The complete frame is encoded before waiting for the session output gate. Calls retain normal pre-commit cancellation and one-write/no-implicit-flush semantics.
+
+The public surface does not expose raw OSC 777 command names, arbitrary field arrays, terminal-brand auto-detection, host-native notification fallbacks, or richer OSC 99-style notification actions/IDs.
+
+## Completed 1.1.0 program — VS Code OSC 633
+
+`1.1.0` added a typed VS Code OSC 633 shell-integration surface as a distinct vendor protocol family rather than aliasing it to OSC 133.
+
+Its stable surface includes:
 
 ```text
 A                  prompt start
@@ -71,9 +97,7 @@ P;ContinuationPrompt=<prompt>
 P;HasRichCommandDetection=True|False
 ```
 
-The public API uses explicitly VS Code-named semantic methods. It does not expose raw OSC 633 marker/property dispatch, the unfinalized `F`/`G` continuation-region markers, the unfinalized `H`/`I` right-prompt markers, `SetMark`, `EnvJson`/`EnvSingle*`, automatic shell detection, automatic command/environment capture, or shell-startup-file mutation.
-
-The complete OSC payload is bounded to 65,536 UTF-8 bytes. Message fields use the VS Code escaping grammar, optional nonces are explicit bounded caller input, and all operations retain the normal `TerminalSession` output serialization and pre-commit cancellation contract.
+The complete OSC 633 payload remains bounded to 65,536 UTF-8 bytes with VS Code message escaping and explicit caller-supplied nonces where defined.
 
 ## Permanent 1.x authorities
 
@@ -88,13 +112,16 @@ Consumers and maintainers should treat these documents as the current contract a
 - `docs/Presentation-and-Reversible-State.md`
 - `docs/Semantic-Output-Protocols.md`
 - `docs/VsCode-Osc633-Shell-Integration.md`
+- `docs/Osc777-Desktop-Notifications.md`
 - `docs/Security-and-Privacy.md`
 - `docs/Public-API-Baseline-1.0.md`
 - `docs/Public-API-Baseline-1.1.md`
+- `docs/Public-API-Baseline-1.2.md`
 - `docs/Compatibility-and-Versioning.md`
 - `docs/Migration-to-1.0.md`
 - `docs/releases/1.0.0.md`
 - `docs/releases/1.1.0.md`
+- `docs/releases/1.2.0.md`
 - `CHANGELOG.md`
 
 Historical T-series, 0.x public API baselines, and `Public-API-Baseline-1.0-rc1.*` remain design/release evidence.
@@ -113,7 +140,9 @@ The stable 1.0 baseline remains retained as compatibility evidence:
 SHA-256 8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
 ```
 
-`1.1.0` intentionally adds ten public `TerminalSession` methods and therefore receives its own machine-generated fingerprint. The 1.1 baseline must be identical across net8.0/net9.0/net10.0 and is frozen only after the exact generated Staging snapshot is reviewed. Existing 1.0 public members and enum values remain unchanged.
+`1.1.0` intentionally added ten public `TerminalSession` methods and has its own retained baseline.
+
+`1.2.0` intentionally adds exactly one additional public `TerminalSession` method. Its machine-generated baseline must be identical across `net8.0`, `net9.0`, and `net10.0` and is frozen only after the exact generated Staging snapshot is reviewed. Existing 1.0/1.1 public members and enum values remain unchanged.
 
 ## Release discipline
 
@@ -133,13 +162,13 @@ and separately validates one RID-independent package candidate through the four 
 The release line retains:
 
 - full build/test coverage on `net8.0`, `net9.0`, and `net10.0`;
-- retained stable 1.0 public-API compatibility evidence plus the current 1.1 public-API fingerprint;
+- stable 1.0/1.1 compatibility evidence plus the current 1.2 public-API fingerprint;
 - exact NuGet artifact/XML/symbol/Source Link verification;
 - historical package-only contracts from 0.8 through 0.18;
 - the stable 1.x release-line package contract;
-- a fresh 1.1 OSC 633 package/XML consumer on all three TFMs;
+- fresh OSC 633 and OSC 777 package/XML consumers on all three TFMs;
 - current `Icod.DCurses 0.1.0` project-reference and package-boundary compatibility/ownership acceptance.
 
 The DCurses checks are compatibility witnesses for the integration surface its current early release exercises. They are not treated as exhaustive proof of every `Icod.Terminal` contract; Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full 1.x surface.
 
-Tags trigger publication. A `v1.1.0` tag is created only after the exact 1.1 PR head and resulting exact `main` commit pass their required gates and publication is explicitly authorized.
+Tags trigger publication. A `v1.2.0` tag is created only after the exact 1.2 PR head and resulting exact `main` commit pass their required gates and publication is explicitly authorized.
