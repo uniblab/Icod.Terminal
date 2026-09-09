@@ -270,6 +270,7 @@ public sealed partial class TerminalSession {
 
 	private async ValueTask HandleResumeAsync() {
 		this.InvalidateState();
+		this.AdvanceSemanticLiveEvidenceGeneration();
 		await this.ReapplySessionStateAsync().ConfigureAwait( false );
 
 		TerminalSize? size = this.TryGetAvailableSize();
@@ -342,7 +343,6 @@ public sealed partial class TerminalSession {
 								?? "The terminal baseline could not be restored before suspension."
 						)
 					);
-				}
 			} catch ( Exception exception ) {
 				exceptions.Add( exception );
 			}
@@ -452,7 +452,7 @@ public sealed partial class TerminalSession {
 				return;
 			}
 
-			exceptions.Add(
+		exceptions.Add(
 				new InvalidOperationException(
 					result.Message
 						?? "The terminal baseline could not be restored after failed lifecycle re-entry."
