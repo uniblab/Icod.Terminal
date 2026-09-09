@@ -43,7 +43,8 @@ internal static class TerminalTermInfoSemanticEvidence {
 	private const string LegacyMousePrefix = "\u001b[M";
 
 	/// <summary>
-	/// Seeds static TermInfo evidence for exact semantic equivalents selected by N158.
+	/// Seeds static TermInfo evidence for exact semantic equivalents and reviewed
+	/// metadata-backed protocol implementations selected by N158.
 	/// </summary>
 	internal static void Seed(
 		TerminalDescription terminal,
@@ -118,7 +119,7 @@ internal static class TerminalTermInfoSemanticEvidence {
 
 	/// <summary>
 	/// Gets whether the selected terminal contains an exact TermInfo implementation
-	/// for the reviewed semantic operation.
+	/// for the reviewed semantic operation through the generic TermInfo backend.
 	/// </summary>
 	internal static bool HasExactImplementation(
 		TerminalDescription terminal,
@@ -149,22 +150,6 @@ internal static class TerminalTermInfoSemanticEvidence {
 					&& !string.IsNullOrEmpty(
 						terminal.GetString( StringCapability.InitializeColor )
 					),
-			TerminalSemanticOperation.FocusReporting
-				=> HasExtendedStringContract(
-					terminal,
-					FocusEnableCapability,
-					FocusDisableCapability,
-					FocusInCapability,
-					FocusOutCapability
-				),
-			TerminalSemanticOperation.BracketedPaste
-				=> HasExtendedStringContract(
-					terminal,
-					BracketedPasteEnableCapability,
-					BracketedPasteDisableCapability,
-					BracketedPasteStartCapability,
-					BracketedPasteEndCapability
-				),
 			_ => false
 		};
 	}
