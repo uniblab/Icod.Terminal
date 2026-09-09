@@ -113,6 +113,7 @@ internal readonly struct TerminalControlFrameStructure {
 				this.payloadLength
 			);
 		}
+	}
 
 	internal TerminalStringTerminatorKind TerminatorKind {
 		get;

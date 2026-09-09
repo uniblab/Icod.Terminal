@@ -35,5 +35,5 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 );
 
 if ( terminalEvent.Kind == TerminalEventKind.Input ) {
-	await session.WriteTextAsync( $"Input: {terminalEvent.Input.Kind}\r\n" );
+	await session.WriteTextAsync( $"Input: {terminalEvent.Input?.Kind}\r\n" );
 }
