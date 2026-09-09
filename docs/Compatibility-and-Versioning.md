@@ -28,7 +28,8 @@ Stable 1.0 intentionally adopted the same fingerprint qualified by `1.0.0-rc1`; 
 Compatible minor-release additions receive separate reviewed baselines rather than overwriting earlier evidence:
 
 - `docs/Public-API-Baseline-1.1.md` / `.sha256` record the additive OSC 633 surface;
-- `docs/Public-API-Baseline-1.2.md` / `.sha256` record the additive OSC 777 titled-notification surface.
+- `docs/Public-API-Baseline-1.2.md` / `.sha256` record the additive OSC 777 titled-notification surface;
+- `docs/Public-API-Baseline-1.3.md` / `.sha256` record the additive typed iTerm2 OSC 1337 surface.
 
 `packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint. Older baseline files remain checked in as compatibility evidence.
 
@@ -86,7 +87,7 @@ Examples include:
 - output serialization boundaries;
 - explicit metadata/privacy disclosure;
 - no generic hazardous OSC 9 execution/control surface;
-- no generic raw OSC 633 or OSC 777 dispatch replacing typed semantic APIs.
+- no generic raw OSC 633, OSC 777, or OSC 1337 dispatch replacing typed semantic APIs.
 
 A minor/patch release may strengthen correctness while preserving these guarantees, but should not silently weaken or reverse them.
 
@@ -180,12 +181,13 @@ In particular, 1.x does not use a minor/patch release to quietly introduce:
 
 - generic raw OSC/CSI/DCS vendor dispatch as the ordinary API;
 - hazardous OSC 9 macro/process/environment/emulator-control operations;
-- generic OSC 633 or OSC 777 dispatch that bypasses the reviewed typed semantic surfaces;
+- generic OSC 633, OSC 777, or OSC 1337 dispatch that bypasses reviewed typed semantic surfaces;
+- invasive OSC 1337 profile/focus/browser/pasteboard/file-transfer/custom-script operations without separate security review;
 - automatic clipboard reads;
-- automatic command-line capture/redaction assumptions;
+- automatic command-line or shell/environment metadata capture/redaction assumptions;
 - hidden process/network/browser/OS-clipboard/host-notification side effects;
 - terminal-brand-triggered activation of state that cannot be restored truthfully;
-- automatic notification-protocol routing presented as capability truth without a negotiation contract.
+- automatic notification- or shell-integration-protocol routing presented as capability truth without a negotiation contract.
 
 New security-sensitive semantic features require explicit API, bounded validation, documentation, and tests.
 

@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.3.0
+
+### iTerm2 shell integration and semantic history — OSC 1337
+
+- Adds a separate typed OSC 1337 surface for iTerm2 shell-integration/semantic-history metadata rather than aliasing the vendor namespace to OSC 7 or OSC 133.
+- Adds explicit operations for `SetMark`, `CurrentDir`, `RemoteHost`, `SetUserVar`, the current `ShellIntegrationVersion=<version>;shell=<shell>` form, and `ClearCapturedOutput`.
+- Encodes user-variable values as strict UTF-8 followed by Base64, matching iTerm2's shell-integration convention.
+- Uses canonical ST termination, strict UTF-8, complete-frame prevalidation, a 65,536-byte payload ceiling, bounded delimited fields, and normal `TerminalSession` output serialization/pre-commit cancellation.
+- Keeps OSC 7 current-location and OSC 133 prompt/command metadata independent; no automatic vendor detection, aliasing, or fallback is introduced.
+- Deliberately excludes generic raw OSC 1337 dispatch, profile/focus/browser/pasteboard/file-transfer/custom-script operations, and overlapping mutation forms already owned by typed terminal APIs.
+
+### Compatibility and validation
+
+- Preserves all existing stable 1.0/1.1/1.2 public members, enum values, OSC 7/9/133/633/777 behavior, and documented ownership/security/restoration guarantees; 1.3 is additive.
+- Retains `net8.0`, `net9.0`, and `net10.0` as first-class package targets and retains the existing `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0` dependency floor.
+- Adds byte-exact OSC 1337 encoder/writer tests, public-session composition tests, and a fresh NuGet-only package/XML consumer on all three TFMs.
+- Intentionally advances the machine public-API baseline for six compatible 1.3 methods while retaining the frozen 1.0, 1.1, and 1.2 baselines as compatibility evidence.
+
+See `docs/releases/1.3.0.md` for the full release notes.
+
 ## 1.2.0
 
 ### Titled desktop notifications — OSC 777

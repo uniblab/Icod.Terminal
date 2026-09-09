@@ -53,7 +53,7 @@ Runtime/architecture evidence and portable package evidence are separate contrac
 
 These checks run on every OS/architecture claimed by the relevant workflow.
 
-`BuildPackageArtifact.ps1` builds the portable package candidate once and verifies the frozen public API fingerprint. CI then uploads that candidate for independent package-contract jobs rather than rebuilding the same RID-independent NuGet package on every architecture.
+`BuildPackageArtifact.ps1` builds the portable package candidate once and verifies the frozen current public API fingerprint. CI then uploads that candidate for independent package-contract jobs rather than rebuilding the same RID-independent NuGet package on every architecture.
 
 ## Package contract shards
 
@@ -62,9 +62,11 @@ These checks run on every OS/architecture claimed by the relevant workflow.
 | Shard | Contracts |
 | --- | --- |
 | `foundation` | exact package structure/Source Link/XML plus 0.8–0.10 package foundations |
-| `presentation` | 0.11 pointer shape, 0.12 semantic prompt, 0.13 colors, 0.14 lifecycle-safe color ownership |
-| `semantic` | 0.15 semantic metadata, 0.16 safe OSC 9, 0.17 modern keyboard, 0.18 hardening |
-| `release` | stable 1.0 release-line package contract and packaged `Icod.DCurses` compatibility witness |
+| `presentation` | pointer shape, semantic prompt, colors, and lifecycle-safe color ownership |
+| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, modern keyboard, and hardening |
+| `release` | stable 1.x release-line package contract and packaged `Icod.DCurses` compatibility witness |
+
+The semantic shard includes fresh package-only consumers and generated XML-documentation checks for the additive 1.x protocol APIs, including OSC 633, OSC 777, and OSC 1337.
 
 The shards have no ordering dependency on one another once the package candidate exists, so GitHub Actions executes them in parallel. `VerifyPackageDistribution.ps1` runs the same shards sequentially when a single-process local distribution check is desired.
 
@@ -100,6 +102,8 @@ This avoids repeating package layout/XML/Source Link and historical NuGet-consum
 ## Tag publication
 
 A release tag must use `v<semver>`, point to a commit contained in `main`, and have curated `docs/releases/<version>.md` notes.
+
+The tag workflow's `metadata` job resolves the exact tag version. Jobs that consume that version declare `metadata` as a direct dependency so `needs.metadata.outputs.version` and prerelease state remain available to package-contract and GitHub-release stages.
 
 The tag workflow runs runtime acceptance and package preparation in parallel. After the package candidate exists, all four package shards must pass before either registry publication job may start. NuGet.org and GitHub Packages publish independently in parallel; the GitHub Release is created only after both registry publications succeed.
 

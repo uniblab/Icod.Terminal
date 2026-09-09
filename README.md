@@ -9,21 +9,21 @@
 
 ## Status
 
-`1.2.0` is the current 1.x release line and the second additive minor release after the stable 1.0 contract.
+`1.3.0` is the current development release line and the third additive minor release after the stable 1.0 contract.
 
-Version 1.2 adds typed, bounded urxvt-style OSC 777 titled desktop notifications without changing the meaning of existing 1.0/1.1 APIs. The existing OSC 9 notification API remains unchanged; OSC 777 is a separate explicit titled-notification path.
+Version 1.3 adds typed, bounded iTerm2 OSC 1337 shell-integration and semantic-history metadata without changing the meaning of existing 1.0/1.1/1.2 APIs. The new surface covers marks, current directory, remote host identity, Base64-backed user variables, the current shell-integration version form, and explicit captured-output clearing.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Version 1.1's typed VS Code OSC 633 surface remains unchanged.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Versions 1.1 and 1.2 retain their typed OSC 633 and OSC 777 surfaces unchanged.
 
 Full release notes and concise release history:
 
-- [Icod.Terminal 1.2.0 release notes](docs/releases/1.2.0.md)
+- [Icod.Terminal 1.3.0 release notes](docs/releases/1.3.0.md)
 - [Changelog](CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.2.0
+dotnet add package Icod.Terminal --version 1.3.0
 ```
 
 The package targets:
@@ -126,12 +126,44 @@ The supported semantic surface includes:
 - portable semantic prompt/command metadata (OSC 133);
 - typed VS Code shell integration (OSC 633);
 - typed titled desktop notifications (OSC 777);
+- typed iTerm2 shell-integration/semantic-history metadata (OSC 1337);
 - indexed palette and selected dynamic terminal colors (OSC 4/104, 10–14, 17, 19 and resets);
 - negotiated modern keyboard reporting;
 - bracketed paste, focus, and mouse input protocols;
 - bounded safe OSC 9 notification and Windows-CWD compatibility operations.
 
 The safe OSC 9 subset intentionally excludes host-affecting vendor commands for sleep/blocking UI, GUI macros, process launch, environment disclosure, and emulator mutation.
+
+### iTerm2 OSC 1337
+
+The 1.3 iTerm2 surface is explicitly vendor-specific and typed:
+
+```csharp
+await session.SetITerm2MarkAsync();
+await session.PublishITerm2RemoteHostAsync(
+	"alice",
+	"host.example.test"
+);
+await session.PublishITerm2CurrentDirectoryAsync( "/srv/repo" );
+await session.SetITerm2UserVariableAsync(
+	"branch",
+	"main"
+);
+await session.PublishITerm2ShellIntegrationVersionAsync(
+	20,
+	"bash"
+);
+```
+
+The six supported operations are `SetMark`, `CurrentDir`, `RemoteHost`, `SetUserVar`, the current `ShellIntegrationVersion=<version>;shell=<shell>` form, and `ClearCapturedOutput`.
+
+User-variable values are encoded as strict UTF-8 followed by Base64. Other text is strictly validated and UTF-8 encoded. Frames use canonical ST termination, a 65,536-byte payload ceiling, the shared session output gate, and pre-commit cancellation.
+
+OSC 7 remains the preferred portable current-location API and OSC 133 remains the portable prompt/command-region API. The library never silently aliases those protocols to OSC 1337 and does not infer iTerm2 support from terminal identity.
+
+The public API deliberately excludes generic raw OSC 1337 dispatch and invasive/overlapping operations for profile mutation, focus stealing, URL opening, pasteboard/file transfer, custom script control, arbitrary color/cursor mutation, Unicode-version changes, or Touch Bar key labels.
+
+See [`docs/ITerm2-Osc1337-Shell-Integration.md`](docs/ITerm2-Osc1337-Shell-Integration.md).
 
 ### Titled desktop notifications — OSC 777
 
@@ -183,14 +215,15 @@ Several operations disclose caller-supplied metadata by design:
 - hyperlinks;
 - OSC 133 command-line metadata;
 - OSC 633 command-line/current-directory/continuation-prompt metadata and optional nonce;
+- OSC 1337 current-directory, remote-host, user-variable, and shell-integration metadata;
 - OSC 9 and OSC 777 desktop notification text/title;
 - keyboard/mouse/focus/paste input.
 
-The library does not automatically discover or redact secrets. Applications remain responsible for deciding what data is appropriate to publish.
+The library does not automatically discover or redact secrets. Applications remain responsible for deciding what data is appropriate to publish. Base64 used by OSC 1337 user variables is an encoding, not encryption.
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Version `1.1.0` intentionally added the OSC 633 methods, and version `1.2.0` intentionally adds `SendTitledNotificationAsync(...)`. Each minor release has its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0 while earlier baselines remain retained as compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
+Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, and `1.3.0` intentionally add compatible OSC 633, OSC 777, and OSC 1337 public methods respectively. Each minor release has its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0 while earlier baselines remain retained as compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
 
 For the stable 1.x line:
 
@@ -224,11 +257,13 @@ The permanent 1.x authorities include:
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
 - [VS Code OSC 633 Shell Integration](docs/VsCode-Osc633-Shell-Integration.md)
 - [OSC 777 Titled Desktop Notifications](docs/Osc777-Desktop-Notifications.md)
+- [iTerm2 OSC 1337 Shell Integration](docs/ITerm2-Osc1337-Shell-Integration.md)
 - [Security and Privacy](docs/Security-and-Privacy.md)
 - [Licensing](docs/Licensing.md)
 - [Public API Baseline 1.0](docs/Public-API-Baseline-1.0.md)
 - [Public API Baseline 1.1](docs/Public-API-Baseline-1.1.md)
 - [Public API Baseline 1.2](docs/Public-API-Baseline-1.2.md)
+- [Public API Baseline 1.3](docs/Public-API-Baseline-1.3.md)
 - [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
 - [Migration to 1.0](docs/Migration-to-1.0.md)
 
@@ -236,7 +271,7 @@ Historical T-series, 0.x baselines, and the rc1 baseline remain available as des
 
 ## Samples
 
-Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, and both legacy/titled desktop notifications.
+Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, desktop notifications, and iTerm2 shell metadata.
 
 ## Build and validation
 
@@ -254,7 +289,7 @@ sh build.sh
 
 PR validation runs Windows/Linux/macOS runtime/source validation, the current machine public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining contracts from 0.8 through the stable 1.x release line. The package-candidate gate also verifies the exact project-appropriate GPL/LGPL header template for every tracked `.cs` and `.csproj` file.
 
-The semantic package shard compiles and runs fresh NuGet-only OSC 633 and OSC 777 consumers on `net8.0`, `net9.0`, and `net10.0` and verifies generated XML documentation for the corresponding public APIs.
+The semantic package shard compiles and runs fresh NuGet-only OSC 633, OSC 777, and OSC 1337 consumers on `net8.0`, `net9.0`, and `net10.0` and verifies generated XML documentation for the corresponding public APIs.
 
 The repository also runs current `Icod.DCurses 0.1.0` integration/ownership acceptance, including a package-boundary soak against the freshly packed Terminal artifact. Because DCurses is still an early downstream, these checks are **compatibility witnesses for the integration paths it currently exercises**, not exhaustive proof of every `Icod.Terminal` 1.x contract. Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full surface.
 
@@ -262,7 +297,7 @@ After merge, Release distribution validation runs six Windows/Linux/macOS x64/AR
 
 ## Release process
 
-`1.2.0` is publishable only after the exact 1.2 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.3.0` is publishable only after the exact 1.3 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
 The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, and current downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 

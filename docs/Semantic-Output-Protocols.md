@@ -293,7 +293,33 @@ OSC 777 notifications are ephemeral output metadata. They add no lifecycle parti
 
 For the complete contract, see `Osc777-Desktop-Notifications.md`.
 
-## 15. Palette colors — OSC 4 / 104
+## 15. iTerm2 shell integration and semantic history — OSC 1337
+
+`Icod.Terminal 1.3` adds a distinct typed iTerm2 OSC 1337 metadata surface. OSC 1337 is a broad vendor namespace; the public API includes only the reviewed shell-integration/semantic-history core:
+
+```text
+SetITerm2MarkAsync()                         -> OSC 1337;SetMark ST
+PublishITerm2CurrentDirectoryAsync(path)      -> OSC 1337;CurrentDir=<path> ST
+PublishITerm2RemoteHostAsync(user, host)      -> OSC 1337;RemoteHost=<user>@<host> ST
+SetITerm2UserVariableAsync(name, value)       -> OSC 1337;SetUserVar=<name>=<base64(utf8(value))> ST
+PublishITerm2ShellIntegrationVersionAsync(n, shell)
+                                                -> OSC 1337;ShellIntegrationVersion=<n>;shell=<shell> ST
+ClearITerm2CapturedOutputAsync()              -> OSC 1337;ClearCapturedOutput ST
+```
+
+All textual content uses strict UTF-8. User-variable values are Base64 encoded after UTF-8 conversion. Delimited name/host/shell fields are bounded and reject characters that would alter the protocol grammar. The complete OSC payload is bounded to 65,536 bytes.
+
+The complete frame is encoded before waiting for the session output gate. Pre-commit cancellation emits nothing and a committed frame completes in one non-cancellable write without an implicit flush. Known redirected output is rejected.
+
+OSC 1337 metadata is ephemeral and explicit. The library does not automatically read current directory, user/host identity, environment variables, process arguments, shell history, or shell startup files. Base64 is an encoding rather than confidentiality protection.
+
+OSC 7 remains the preferred portable current-location API and OSC 133 remains the portable prompt/command-region API. Calling one family does not emit another family automatically.
+
+The public OSC 1337 surface intentionally excludes generic raw dispatch, profile/focus/browser/pasteboard/file-transfer/custom-script commands, overlapping arbitrary color/cursor mutation, Unicode-version mutation, Touch Bar labels, and arbitrary report-variable queries.
+
+For the complete contract, see `ITerm2-Osc1337-Shell-Integration.md`.
+
+## 16. Palette colors — OSC 4 / 104
 
 The indexed palette uses `byte` indices `0..255` and normalized 16-bit `TerminalColor` values.
 
@@ -303,7 +329,7 @@ OSC 104 is terminal-policy reset, not exact restoration.
 
 Scoped palette ownership is separately available and performs query-before-mutate exact restoration; see `Presentation-and-Reversible-State.md`.
 
-## 16. Dynamic colors — OSC 10–14, 17, 19 / resets 110–114, 117, 119
+## 17. Dynamic colors — OSC 10–14, 17, 19 / resets 110–114, 117, 119
 
 The semantic dynamic colors are:
 
@@ -323,7 +349,7 @@ Reset operations are terminal-policy resets. Scoped color leases provide exact o
 
 Tektronix OSC 15/16/18 and resets 115/116/118 are not part of the public semantic color contract.
 
-## 17. Color grammar
+## 18. Color grammar
 
 Canonical outbound color representation is:
 
@@ -335,7 +361,7 @@ with 16-bit RGB channels.
 
 Inbound observation accepts the frozen strict `rgb:` component forms and supported hash forms. Named colors, `rgbi:`, CSS color syntax, alpha channels, mixed-width components, and arbitrary raw color strings are outside the 1.x parser contract.
 
-## 18. Ephemeral vs owned state
+## 19. Ephemeral vs owned state
 
 A semantic output method does not automatically imply lifecycle ownership.
 
@@ -345,6 +371,7 @@ Examples of ephemeral output include:
 - current location;
 - OSC 133 markers and metadata;
 - OSC 633 VS Code shell-integration markers and metadata;
+- OSC 1337 iTerm2 shell-integration/semantic-history metadata;
 - OSC 9 and OSC 777 notification metadata;
 - OSC 9;9 metadata.
 
@@ -352,7 +379,7 @@ These are not replayed on resume or synthesized on disposal.
 
 Scoped features such as hyperlinks, cursor style, synchronized output, progress, pointer shape, and colors each have their own documented ownership/restoration semantics. Consumers should not infer one lease's rules from another merely because both implement `IAsyncDisposable`.
 
-## 19. Advanced raw-output boundary
+## 20. Advanced raw-output boundary
 
 `TerminalSession.Output` exposes the borrowed `ITerminalOutput` service as an advanced escape hatch. Direct calls are outside the session output-ordering contract and can interleave with session-managed traffic unless the caller provides external coordination.
 
@@ -362,7 +389,7 @@ Likewise, `WriteTerminalStringAsync(...)` is intended for already-resolved termi
 
 Ordinary consumers should prefer semantic APIs and `WriteTextAsync(...)`.
 
-## 20. No generic protocol dispatcher
+## 21. No generic protocol dispatcher
 
 The 1.x public surface intentionally does not provide:
 
