@@ -11,7 +11,9 @@
 
 `1.5.0` is the current development release line. It is the normalization/control-language foundation for complete CSI, DCS/Sixel, and APC/Kitty Graphics work planned for the following releases.
 
-N150 establishes internal terminology and layer ownership without changing the public 1.4 surface. Semantic operation, protocol backend, control family, support state, and evidence source are now treated as separate concepts. Sixel is classified under DCS; Kitty Graphics is classified as an APC dialect; TermInfo-resolved capability strings remain a separate capability-driven backend path.
+N150–N158 are complete. The release now has shared control-family framing, one bounded incremental scanner, structural CSI/DCS/string frames, multi-family query transactions, capability/evidence state, a semantic backend registry, deterministic routing, exact TermInfo reconciliation, OSC 99 live evidence integration, Kitty keyboard live evidence integration, and generation-scoped invalidation. N159 is the acceptance/package/documentation closure tranche.
+
+The public surface remains intentionally unchanged from 1.4. Generated `net8.0`, `net9.0`, and `net10.0` snapshots retain SHA-256 `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27`.
 
 The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Existing OSC 633, OSC 777, OSC 1337, and OSC 99 APIs retain their exact wire semantics.
 
@@ -19,6 +21,7 @@ Full release notes and concise release history:
 
 - [Icod.Terminal 1.5.0 release notes](docs/releases/1.5.0.md)
 - [1.5.0 development roadmap](Icod.Terminal-1.5.0-Development-Roadmap.md)
+- [N159 acceptance/package/documentation closure](docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md)
 - [Control-language normalization and graphics roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
 - [Changelog](CHANGELOG.md)
 
@@ -136,7 +139,7 @@ SOS  ESC X
 ST   ESC \
 ```
 
-N150 deliberately makes these concepts internal first. Existing public operations do not automatically reroute merely because a semantic backend registry is being built.
+N150–N158 keep this normalized machinery internal. Existing public operations do not automatically reroute merely because the library now has a semantic backend registry and evidence broker.
 
 Examples of the distinction include:
 
@@ -153,7 +156,9 @@ RasterGraphics
 
 A terminal/vendor name is not itself a capability. “Kitty” already spans CSI keyboard reporting, OSC 99 notifications, and APC graphics, so the architecture does not introduce a generic `SupportsKitty` flag.
 
-The complete 1.5 task sequence is N150–N159. See [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md) and [`docs/Control-Language-Normalization-and-Graphics-Roadmap.md`](docs/Control-Language-Normalization-and-Graphics-Roadmap.md).
+Static TermInfo advertisement and live evidence are separate. Exact TermInfo recipes are recognized only when their complete semantic contract is present; successful reviewed live probes can upgrade concrete backend evidence; `InvalidateState()` expires generation-scoped live evidence while retaining immutable TermInfo/profile evidence.
+
+The complete 1.5 task sequence is N150–N159. See [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md), [`docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md`](docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md), and [`docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md`](docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md).
 
 ## Semantic terminal features
 
@@ -316,7 +321,7 @@ OSC 99 capability/alive queries disclose that the application is probing notific
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` begins with internal normalization and intentionally retains the frozen 1.4 public surface at N150. Earlier machine-frozen baselines remain retained as compatibility evidence.
+Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` is an internal normalization release and intentionally retains the frozen 1.4 public surface. Earlier machine-frozen baselines remain retained as compatibility evidence.
 
 For the stable 1.x line:
 
@@ -350,6 +355,15 @@ The permanent 1.x authorities include:
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
 - [Control-Language Normalization and Graphics Roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
 - [N150 Terminology and Layer-Ownership Freeze](docs/N150-Control-Language-Terminology-and-Layer-Ownership-Freeze.md)
+- [N151 Generalized Control-Family Framing](docs/N151-Generalized-Control-Family-Framing.md)
+- [N152 Incremental Control-Language State Machine](docs/N152-Incremental-Control-Language-State-Machine.md)
+- [N153 Structural Control Frame Model](docs/N153-Structural-Control-Frame-Model.md)
+- [N154 Multi-Family Query Transactions](docs/N154-Multi-Family-Query-Transactions.md)
+- [N155 Capability Support and Evidence Model](docs/N155-Capability-Support-and-Evidence-Model.md)
+- [N156 Semantic Backend Registry](docs/N156-Semantic-Backend-Registry.md)
+- [N157 Deterministic Semantic Backend Routing Policy](docs/N157-Deterministic-Semantic-Backend-Routing-Policy.md)
+- [N158 Existing Protocol and TermInfo Reconciliation](docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md)
+- [N159 Acceptance, Package, and Documentation Closure](docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md)
 - [Kitty OSC 99 Desktop Notifications](docs/Kitty-Osc99-Desktop-Notifications.md)
 - [VS Code OSC 633 Shell Integration](docs/VsCode-Osc633-Shell-Integration.md)
 - [OSC 777 Titled Desktop Notifications](docs/Osc777-Desktop-Notifications.md)
