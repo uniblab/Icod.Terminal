@@ -89,9 +89,9 @@ internal static class TerminalTermInfoSemanticEvidence {
 			FocusInCapability,
 			FocusOutCapability
 		) ) {
-			AdvertiseSemantic(
+			AdvertiseBackend(
 				evidence,
-				TerminalSemanticOperation.FocusReporting
+				TerminalProtocolBackend.CsiFocusReporting
 			);
 		}
 
@@ -102,19 +102,16 @@ internal static class TerminalTermInfoSemanticEvidence {
 			BracketedPasteStartCapability,
 			BracketedPasteEndCapability
 		) ) {
-			AdvertiseSemantic(
+			AdvertiseBackend(
 				evidence,
-				TerminalSemanticOperation.BracketedPaste
+				TerminalProtocolBackend.CsiBracketedPaste
 			);
 		}
 
 		if ( HasAdvertisedMouseProtocol( terminal ) ) {
-			evidence.Record(
-				TerminalCapabilitySubject.ForProtocolBackend(
-					TerminalProtocolBackend.CsiMouseReporting
-				),
-				TerminalCapabilitySupportState.Advertised,
-				TerminalCapabilityEvidenceSource.TermInfo
+			AdvertiseBackend(
+				evidence,
+				TerminalProtocolBackend.CsiMouseReporting
 			);
 		}
 	}
@@ -210,6 +207,19 @@ internal static class TerminalTermInfoSemanticEvidence {
 
 		evidence.Record(
 			TerminalCapabilitySubject.ForSemanticOperation( operation ),
+			TerminalCapabilitySupportState.Advertised,
+			TerminalCapabilityEvidenceSource.TermInfo
+		);
+	}
+
+	private static void AdvertiseBackend(
+		TerminalCapabilityEvidenceLedger evidence,
+		TerminalProtocolBackend backend
+	) {
+		ArgumentNullException.ThrowIfNull( evidence );
+
+		evidence.Record(
+			TerminalCapabilitySubject.ForProtocolBackend( backend ),
 			TerminalCapabilitySupportState.Advertised,
 			TerminalCapabilityEvidenceSource.TermInfo
 		);
