@@ -20,8 +20,6 @@
 */
 namespace Icod.Terminal;
 
-using System.Globalization;
-
 /// <summary>
 /// Encodes one D174 palette image as deterministic bounded Sixel payload segments.
 /// </summary>
@@ -36,6 +34,7 @@ internal static class SixelEncoder {
 	) {
 		ArgumentNullException.ThrowIfNull( image );
 
+		TerminalRasterColor[] palette = image.Palette.ToArray();
 		yield return SixelCodec.EncodeRasterAttributes(
 			image.Width,
 			image.Height
@@ -47,7 +46,7 @@ internal static class SixelEncoder {
 				continue;
 			}
 
-			TerminalRasterColor color = image.Palette.Span[ register ];
+			TerminalRasterColor color = palette[ register ];
 			yield return SixelCodec.EncodeRgbColorDefinition(
 				register,
 				ConvertRgb8ToPercentage( color.Red ),
@@ -56,16 +55,24 @@ internal static class SixelEncoder {
 			);
 		}
 
-		int paletteCount = image.Palette.Length;
+		int paletteCount = palette.Length;
 		byte[] bandMasks = new byte[ checked( paletteCount * image.Width ) ];
 		bool[] bandUsedRegisters = new bool[ paletteCount ];
 		int bandCount = checked( ( image.Height + 5 ) / 6 );
 		for ( int band = 0; band < bandCount; band++ ) {
 			if ( 0 != bandMasks.Length ) {
-				Array.Clear( bandMasks );
+				Array.Clear(
+					bandMasks,
+					0,
+					bandMasks.Length
+				);
 			}
 			if ( 0 != bandUsedRegisters.Length ) {
-				Array.Clear( bandUsedRegisters );
+				Array.Clear(
+					bandUsedRegisters,
+					0,
+					bandUsedRegisters.Length
+				);
 			}
 
 			PopulateBandMasks(
@@ -86,10 +93,9 @@ internal static class SixelEncoder {
 				}
 				yield return EncodeColorPass(
 					register,
-					bandMasks.AsSpan(
-						checked( register * image.Width ),
-						image.Width
-					)
+					bandMasks,
+					checked( register * image.Width ),
+					image.Width
 				);
 				emittedColorPass = true;
 			}
@@ -191,6 +197,29 @@ internal static class SixelEncoder {
 
 	private static byte[] EncodeColorPass(
 		int register,
+		byte[] masks,
+		int offset,
+		int length
+	) {
+		ArgumentNullException.ThrowIfNull( masks );
+		if ( offset is < 0 || masks.Length < offset ) {
+			throw new ArgumentOutOfRangeException( nameof( offset ) );
+		}
+		if ( length is < 1 || masks.Length - offset < length ) {
+			throw new ArgumentOutOfRangeException( nameof( length ) );
+		}
+
+		return EncodeColorPassCore(
+			register,
+			masks.AsSpan(
+				offset,
+				length
+			)
+		);
+	}
+
+	private static byte[] EncodeColorPassCore(
+		int register,
 		ReadOnlySpan<byte> masks
 	) {
 		if ( register is < 0 or > SixelCodec.MaximumColorRegister ) {
@@ -217,25 +246,20 @@ internal static class SixelEncoder {
 			);
 		}
 
-		byte[] selection = SixelCodec.EncodeColorSelection( register );
-		int dataLength = GetEncodedRunDataLength(
-			masks.Slice(
-				0,
-				lastNonZero + 1
-			)
+		ReadOnlySpan<byte> encodedMasks = masks.Slice(
+			0,
+			lastNonZero + 1
 		);
+		byte[] selection = SixelCodec.EncodeColorSelection( register );
+		int dataLength = GetEncodedRunDataLength( encodedMasks );
 		byte[] result = new byte[ checked( selection.Length + dataLength ) ];
 		selection.CopyTo(
 			result,
 			0
 		);
-		int offset = selection.Length;
 		WriteEncodedRunData(
-			masks.Slice(
-				0,
-				lastNonZero + 1
-			),
-			result.AsSpan( offset )
+			encodedMasks,
+			result.AsSpan( selection.Length )
 		);
 		return result;
 	}
@@ -354,7 +378,13 @@ internal static class SixelEncoder {
 			throw new ArgumentOutOfRangeException( nameof( value ) );
 		}
 
-		return value.ToString( CultureInfo.InvariantCulture ).Length;
+		int digits = 1;
+		while ( 10 <= value ) {
+			value /= 10;
+			digits++;
+		}
+
+		return digits;
 	}
 
 	private static int WritePositiveIntegerAscii(
@@ -365,18 +395,23 @@ internal static class SixelEncoder {
 			throw new ArgumentOutOfRangeException( nameof( value ) );
 		}
 
-		string text = value.ToString( CultureInfo.InvariantCulture );
-		if ( destination.Length < text.Length ) {
+		int digits = CountDecimalDigits( value );
+		if ( destination.Length < digits ) {
 			throw new ArgumentException(
 				"The destination is too small for the encoded integer.",
 				nameof( destination )
 			);
 		}
-		for ( int index = 0; index < text.Length; index++ ) {
-			destination[ index ] = checked( (byte)text[ index ] );
+
+		int remaining = value;
+		for ( int index = digits - 1; index >= 0; index-- ) {
+			destination[ index ] = checked(
+				(byte)( (byte)'0' + remaining % 10 )
+			);
+			remaining /= 10;
 		}
 
-		return text.Length;
+		return digits;
 	}
 
 	private static void ValidateMaskValue(
