@@ -158,9 +158,13 @@ public sealed class TerminalSessionITerm2ShellIntegrationTests {
 		await session.PublishITerm2CurrentDirectoryAsync( "/srv/repo" );
 
 		Assert.Equal( 2, output.Writes.Count );
-		Assert.StartsWith(
-			Encoding.ASCII.GetBytes( "\u001b]7;" ),
-			output.Writes[ 0 ]
+		byte[] osc7Prefix = Encoding.ASCII.GetBytes( "\u001b]7;" );
+		Assert.Equal(
+			osc7Prefix,
+			output.Writes[ 0 ].AsSpan(
+				0,
+				osc7Prefix.Length
+			).ToArray()
 		);
 		Assert.Equal(
 			Encoding.ASCII.GetBytes(
