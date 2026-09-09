@@ -29,8 +29,6 @@ internal static class TerminalDecrqssProtocol {
 	internal const int MaximumRequestIdentifierBytes = 16;
 	internal const int MaximumStatusStringBytes = 1024;
 
-	private const byte EscapeByte = 0x1B;
-
 	internal static ITerminalResponseMatcher ResponseMatcher {
 		get;
 	} = new TerminalDecrqssResponseMatcher();
@@ -45,18 +43,12 @@ internal static class TerminalDecrqssProtocol {
 			);
 		}
 
-		byte[] request = new byte[ 6 + identifier.Length ];
-		request[ 0 ] = EscapeByte;
-		request[ 1 ] = (byte)'P';
-		request[ 2 ] = (byte)'$';
-		request[ 3 ] = (byte)'q';
-		identifier.CopyTo(
-			request,
-			4
+		return DcsWriter.EncodeFrame(
+			ReadOnlySpan<byte>.Empty,
+			[ (byte)'$' ],
+			(byte)'q',
+			identifier
 		);
-		request[ ^2 ] = EscapeByte;
-		request[ ^1 ] = (byte)'\\';
-		return request;
 	}
 
 	internal static TerminalStatusStringResponse ParseResponse(
