@@ -13,9 +13,9 @@ No unreleased 1.x changes are currently recorded.
 - Adds a separate typed OSC 633 surface for VS Code shell integration rather than aliasing the vendor protocol to OSC 133.
 - Adds semantic A/B/C/D operations for prompt start, command-input start, pre-execution/command-output start, explicit signed exit-code completion, and status-less abort/cancel completion.
 - Adds explicit OSC 633 E command-line publication with the documented VS Code escaping rules and optional caller-supplied nonce.
-- Adds the documented OSC 633 P properties `Cwd`, `IsWindows`, and `HasRichCommandDetection`; current-directory publication remains explicit and does not replace OSC 7.
+- Adds the stable documented OSC 633 P properties `Cwd`, `IsWindows`, `ContinuationPrompt`, and `HasRichCommandDetection`; current-directory publication remains explicit and does not replace OSC 7.
 - Uses canonical ST termination, strict UTF-8, complete-frame prevalidation, a 65,536-byte payload ceiling, and the normal `TerminalSession` output-serialization/commit contract.
-- Does not expose a generic raw OSC 633 writer, automatic terminal-brand activation, private/unfinalized `F` continuation support, or `EnvJson` publication.
+- Does not expose a generic raw OSC 633 writer, automatic terminal-brand activation, unfinalized `F`/`G` continuation-region or `H`/`I` right-prompt markers, `SetMark`, or `EnvJson`/`EnvSingle*` environment-transfer operations.
 
 ### Compatibility and validation
 
