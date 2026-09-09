@@ -56,7 +56,7 @@ V105  package/XML/fresh-consumer validation
 V106  public-API baseline and release-documentation closure
 ```
 
-The supported 1.1 protocol surface is limited to the documented VS Code forms:
+The supported 1.1 protocol surface is limited to the stable documented/current VS Code forms:
 
 ```text
 A                  prompt start
@@ -67,10 +67,11 @@ D;<exit-code>      signed decimal completion
 E;<command>[;nonce]
 P;Cwd=<cwd>[;nonce]
 P;IsWindows=True|False
+P;ContinuationPrompt=<prompt>
 P;HasRichCommandDetection=True|False
 ```
 
-The public API uses explicitly VS Code-named semantic methods. It does not expose raw OSC 633 marker/property dispatch, the unfinalized `F` continuation marker, private/undocumented `EnvJson`, automatic shell detection, automatic command/environment capture, or shell-startup-file mutation.
+The public API uses explicitly VS Code-named semantic methods. It does not expose raw OSC 633 marker/property dispatch, the unfinalized `F`/`G` continuation-region markers, the unfinalized `H`/`I` right-prompt markers, `SetMark`, `EnvJson`/`EnvSingle*`, automatic shell detection, automatic command/environment capture, or shell-startup-file mutation.
 
 The complete OSC payload is bounded to 65,536 UTF-8 bytes. Message fields use the VS Code escaping grammar, optional nonces are explicit bounded caller input, and all operations retain the normal `TerminalSession` output serialization and pre-commit cancellation contract.
 
@@ -112,7 +113,7 @@ The stable 1.0 baseline remains retained as compatibility evidence:
 SHA-256 8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
 ```
 
-`1.1.0` intentionally adds nine public `TerminalSession` methods and therefore receives its own machine-generated fingerprint. The 1.1 baseline must be identical across net8.0/net9.0/net10.0 and is frozen only after the exact generated Staging snapshot is reviewed. Existing 1.0 public members and enum values remain unchanged.
+`1.1.0` intentionally adds ten public `TerminalSession` methods and therefore receives its own machine-generated fingerprint. The 1.1 baseline must be identical across net8.0/net9.0/net10.0 and is frozen only after the exact generated Staging snapshot is reviewed. Existing 1.0 public members and enum values remain unchanged.
 
 ## Release discipline
 
@@ -135,7 +136,7 @@ The release line retains:
 - retained stable 1.0 public-API compatibility evidence plus the current 1.1 public-API fingerprint;
 - exact NuGet artifact/XML/symbol/Source Link verification;
 - historical package-only contracts from 0.8 through 0.18;
-- the stable 1.0 release-line package contract;
+- the stable 1.x release-line package contract;
 - a fresh 1.1 OSC 633 package/XML consumer on all three TFMs;
 - current `Icod.DCurses 0.1.0` project-reference and package-boundary compatibility/ownership acceptance.
 
