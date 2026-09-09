@@ -33,7 +33,7 @@ ESC P
 ESC \
 ```
 
-It does not assign dialect meaning to parameters, intermediates, the final selector, or payload.
+It does not assign dialect meaning to parameters, intermediates, the final selector, or ordinary payload bytes.
 
 Examples remain dialect-owned:
 
@@ -61,9 +61,21 @@ The generic DCS constructor validates:
 - intermediate bytes are each in `0x20` through `0x2F`;
 - the final selector is in `0x40` through `0x7E`;
 - complete-frame length arithmetic is overflow-safe;
-- payload bytes are opaque to the DCS layer.
+- complete small frames are bounded to 4,096 bytes;
+- payload content remains dialect-opaque except for bytes that would alter the DCS frame itself.
 
-Payload-specific control restrictions, escaping rules, and size ceilings belong to the owning dialect.
+The canonical writer rejects these payload bytes structurally:
+
+```text
+CAN      0x18
+SUB      0x1A
+ESC      0x1B
+C1 ST    0x9C
+```
+
+`CAN` and `SUB` abort a control string; `ESC` can begin the seven-bit terminator; and C1 `ST` is accepted by the normalized DCS scanner as a terminator. Allowing any of those inside a complete canonical payload would make the requested frame boundary untrue.
+
+All other payload semantics, command grammar, validation, and tighter size ceilings belong to the owning dialect.
 
 ## Small-frame and streaming split
 
@@ -124,7 +136,9 @@ D170 is complete when:
 - an internal `DcsWriter` exists;
 - canonical seven-bit DCS structural encoding is byte-exact;
 - invalid parameter/intermediate/final bytes are rejected deterministically;
+- payload framing/abort controls are rejected;
 - empty and non-empty payloads are covered;
+- exact maximum complete-frame size and maximum-plus-one are covered;
 - size arithmetic is bounded/overflow-safe;
 - no public API is added;
 - existing DECRQSS/XTGETTCAP code remains unchanged until D171 byte-exact migration;
