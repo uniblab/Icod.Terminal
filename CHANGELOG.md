@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.7.0
+
+### DCS foundation and Sixel graphics
+
+- Begins the DCS/Sixel graphics release on top of the normalized 1.5 control-language model and complete 1.6 CSI foundation.
+- Adds the D170 internal canonical seven-bit `DcsWriter` for small bounded DCS frames while keeping the generic framing layer dialect-neutral.
+- Validates DCS parameter bytes, intermediate bytes, final selectors, complete-frame size, and payload bytes which could abort or prematurely terminate the DCS string.
+- Retains existing DECRQSS and XTGETTCAP request construction unchanged until D171 can migrate both paths with byte-exact regression evidence.
+- Separates small complete-frame DCS encoding from the later committed streaming transaction required for large Sixel graphics.
+- Keeps Sixel as a DCS dialect and plans a backend-neutral raw raster contract that can also support Kitty Graphics in 1.8.
+
+### Compatibility and validation
+
+- Retains the stable `1.0.0` compatibility floor and all released 1.0–1.6 public signatures and documented wire semantics.
+- Retains `net8.0`, `net9.0`, and `net10.0` plus the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+- Keeps one authoritative `TerminalSession` input reader, bounded parser/query state, and the rule that timeout is not automatically unsupported truth.
+- Introduces no generic raw public DCS/Sixel writer and no image-file decoding dependency.
+
+See `docs/releases/1.7.0.md`, `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md`, and `Icod.Terminal-1.7.0-Development-Roadmap.md` for the evolving 1.7 contract.
+
 ## 1.6.0
 
 ### Complete CSI grammar, consolidation, geometry, and hardening
