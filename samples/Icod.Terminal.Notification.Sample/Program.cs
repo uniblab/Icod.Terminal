@@ -21,25 +21,43 @@
 using Icod.Terminal;
 
 if ( 0 == args.Length ) {
-	Console.Error.WriteLine(
-		"Usage: Icod.Terminal.Notification.Sample <notification text>"
-	);
+	WriteUsage();
 	return 2;
 }
 
-string message = string.Join(
-	" ",
-	args
+bool titled = string.Equals(
+	args[ 0 ],
+	"--titled",
+	StringComparison.Ordinal
 );
+if ( titled && 3 > args.Length ) {
+	WriteUsage();
+	return 2;
+}
+
+string? title = titled
+	? args[ 1 ]
+	: null
+;
+string message = titled
+	? string.Join(
+		" ",
+		args[ 2.. ]
+	)
+	: string.Join(
+		" ",
+		args
+	)
+;
 
 Console.WriteLine(
-	"Icod.Terminal 0.16 OSC 9 notification sample."
+	"Icod.Terminal desktop notification sample."
 );
 Console.WriteLine(
-	"Warning: notification text may be visible in desktop notification history, lock screens, screen sharing, terminal logs, or remote/multiplexed sessions."
+	"Warning: notification content may be visible in desktop notification history, lock screens, screen sharing, terminal logs, or remote/multiplexed sessions."
 );
 Console.WriteLine(
-	"This sample publishes only the text supplied explicitly on the command line."
+	"This sample publishes only the title/text supplied explicitly on the command line."
 );
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
@@ -49,9 +67,28 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-await session.SendNotificationAsync( message );
+if ( titled ) {
+	await session.SendTitledNotificationAsync(
+		title!,
+		message
+	);
+	Console.WriteLine(
+		"OSC 777 titled notification request emitted. Successful completion does not prove the desktop displayed it."
+	);
+} else {
+	await session.SendNotificationAsync( message );
+	Console.WriteLine(
+		"OSC 9 notification request emitted. Successful completion does not prove the desktop displayed it."
+	);
+}
 
-Console.WriteLine(
-	"OSC 9 notification request emitted. Successful completion does not prove the desktop displayed it."
-);
 return 0;
+
+static void WriteUsage() {
+	Console.Error.WriteLine(
+		"Usage: Icod.Terminal.Notification.Sample <notification text>"
+	);
+	Console.Error.WriteLine(
+		"   or: Icod.Terminal.Notification.Sample --titled <title> <notification text>"
+	);
+}
