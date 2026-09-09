@@ -2,7 +2,7 @@
 
 **Release:** `1.7.0`  
 **Theme:** complete DCS construction, Sixel graphics, and the first common raster-display contract  
-**Status:** D170–D178 complete; D179 release closure in progress  
+**Status:** Complete — D170 through D179 accepted; final status-only head validating  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.6.0`
 
@@ -65,8 +65,9 @@ Primary Device Attributes parameter `4` is treated as positive Sixel capability 
 | D176 | `9e48c1cee4e44a0f272378ff4f60b4cabc9bed8a` | `34408371837` |
 | D177 | `2e241b6d0fcec1d68c6b6aaeaf665750ddf0a053` | `34411677303` |
 | D178 | `f9428927168524be5cc552c82ad00e2fcda70b13` | `34412478452` |
+| D179 qualification | `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` | `34414298714` |
 
-Every accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate, all four package-contract shards, and the validated package artifact.
+Every accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate, all four package-contract shards, and the validated package artifact. D179's qualification head contains the complete implementation, package metadata, hardening, package-only raster verification, and release documentation. Only status-only closure text follows that accepted qualification head.
 
 ## D170 — DCS construction contract and reference freeze
 
@@ -243,21 +244,22 @@ Public API baseline: `docs/Public-API-Baseline-1.7.md` / `.sha256`.
 
 ## D179 — hardening, package, documentation, and release closure
 
-**Status:** In progress.
+**Status:** Complete — qualification passed; status-only final-head validation pending.
 
-D179 adds no new graphics dialect or public feature. Closure work includes:
+D179 adds no new graphics dialect or public feature. Closure completed:
 
 - maximum-width high-compressibility and low-compressibility Sixel segmentation witnesses;
 - fresh NuGet-only raster consumer on `net8.0`, `net9.0`, and `net10.0`;
 - packed XML-documentation verification for the complete D178 public surface;
 - package exclusion checks proving raw DCS/Sixel writers and raster backing-memory access remain nonpublic;
-- synchronization of README, changelog, architecture, security, compatibility, release notes, package documentation, roadmap, and PR ledger;
+- synchronization of README, changelog, architecture, security, compatibility, release notes, package documentation, both roadmaps, NuGet metadata, and PR ledger;
 - retained DECRQSS/XTGETTCAP byte-exact tests;
 - retained quantizer determinism and raster bounds;
 - retained committed-output cancellation/failure/teardown tests;
 - retained capability evidence positive/absence/timeout/invalidation tests;
-- retained current `Icod.DCurses` package-boundary compatibility witness;
-- one final unchanged exact PR head passing the complete Staging matrix.
+- retained current `Icod.DCurses` package-boundary compatibility witness.
+
+The complete D179 qualification candidate `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` passed workflow #1291 / `34414298714` across the entire Staging matrix. Only status-only closure edits follow; the actual final PR head must pass the same matrix before the PR leaves draft status.
 
 Permanent closure record: `docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md`.
 
@@ -294,8 +296,6 @@ The following remain explicitly out of scope for 1.7:
 
 ## Release rule
 
-A green development PR is necessary but not sufficient to publish `1.7.0`.
-
-After D179 documentation/package closure, the exact final PR head must pass the complete Staging matrix before the PR leaves draft status. Merge remains an explicit user action/authorization.
+The 1.7 development program is complete. The final status-only PR head must pass the complete Staging matrix before PR #45 leaves draft status. Merge remains an explicit user action/authorization.
 
 After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.7.0` remain separate explicit actions after that post-merge validation succeeds.
