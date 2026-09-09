@@ -88,7 +88,7 @@ Both are required. A direct-color profile without palette mutation therefore doe
 
 ## Existing CSI input metadata
 
-N158 does not relabel focus, paste, or mouse as the generic `TermInfoCapability` backend because the implementation already has explicit CSI semantic backends. Instead, the selected TermInfo profile supplies static `Advertised` evidence for those backends.
+N158 does not relabel focus, paste, or mouse as the generic `TermInfoCapability` backend because the implementation already has explicit CSI semantic backends. Instead, the selected TermInfo profile supplies static `Advertised` evidence for those concrete backends.
 
 Complete focus contract:
 
@@ -147,15 +147,24 @@ A timeout or cancellation records nothing. This preserves the rule:
 timeout != unsupported
 ```
 
-The existing public query result and exceptions remain unchanged.
+The existing public query result and exceptions remain unchanged. A session-level regression test drives the real `QueryKittyNotificationSupportAsync(...)` request/response path and proves that the successful response upgrades desktop-notification routing to OSC 99.
 
-## Lifecycle generation
+## Live-evidence generation and invalidation
 
-Static TermInfo/profile evidence survives session lifecycle transitions because the selected `TerminalDescription` is immutable for the session.
+Static TermInfo/profile evidence survives state invalidation because the selected `TerminalDescription` is immutable for the session.
 
-Live probe/response evidence is generation-scoped. A managed lifecycle resume advances the live-evidence generation before session state is re-entered. Old live conclusions therefore cannot be used as proof after a suspend/resume boundary; new probes can repopulate the ledger.
+Live probe/response evidence is generation-scoped. `TerminalSession.InvalidateState()` advances the live-evidence generation before invalidating input/presentation state assumptions. This means an explicit out-of-band invalidation immediately discards stale live capability conclusions while preserving static TermInfo/profile evidence.
 
-This is intentionally narrower than `InvalidateState()`. Ordinary presentation-state invalidation does not by itself claim that the terminal endpoint or multiplexer changed identity.
+Managed lifecycle resume already calls `InvalidateState()` before session state is reapplied, so the same rule covers suspend/resume without introducing a second lifecycle-specific evidence path.
+
+The resulting invariant is:
+
+```text
+InvalidateState()
+    -> discard live probe/protocol-response evidence
+    -> retain immutable TermInfo/profile advertisement
+    -> require later probes to repopulate live proof
+```
 
 ## Session integration
 
@@ -166,6 +175,8 @@ Endpoint availability is also semantic:
 - active query/input semantics require interactive input and output;
 - output-only semantic operations require an interactive output endpoint;
 - endpoint unavailability remains an effective routing state, not stored capability evidence.
+
+The session tests prove that `InvalidateState()` removes a verified live choice and restores the surviving exact TermInfo choice when one exists. The OSC 99 integration test similarly proves that invalidation removes a verified Kitty notification choice and returns routing to the reviewed OSC 9 unknown-support fallback.
 
 ## Compatibility
 
@@ -189,6 +200,6 @@ N158 is complete when:
 1. exact TermInfo recipes are represented as static evidence without overclaiming partial overlaps;
 2. existing focus/paste/mouse metadata feeds the corresponding reviewed CSI backend identities;
 3. successful reviewed live probes can upgrade backend evidence;
-4. live evidence is invalidated at the managed lifecycle-generation boundary while static evidence persists;
+4. `InvalidateState()` invalidates live evidence while immutable TermInfo/profile evidence persists;
 5. existing 1.0–1.4 public protocol-specific APIs retain their released behavior;
 6. the full Staging runtime/package matrix remains green.
