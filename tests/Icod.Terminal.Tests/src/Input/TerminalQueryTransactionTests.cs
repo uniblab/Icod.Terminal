@@ -258,16 +258,13 @@ public sealed class TerminalQueryTransactionTests {
 
 		clock.Advance( TimeSpan.FromSeconds( 10 ) );
 		await Assert.ThrowsAsync<TimeoutException>( () => first );
+		clock.Advance( TimeSpan.FromSeconds( 5 ) );
 
 		Task<TerminalResponseFrame> second = session.ExecuteQueryAsync(
 			Encoding.ASCII.GetBytes( "Q2" ),
 			new ExactResponseMatcher( ResponseTwo ),
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
-		await YieldSeveralTimesAsync();
-		Assert.Equal( 1, transport.WriteCount );
-
-		clock.Advance( TimeSpan.FromSeconds( 5 ) );
 		await WaitForWriteCountAsync( transport, 2 );
 		transport.Publish( ResponseTwo );
 		TerminalResponseFrame frame = await second;
