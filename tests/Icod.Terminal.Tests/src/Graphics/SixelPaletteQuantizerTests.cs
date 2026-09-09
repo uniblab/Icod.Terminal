@@ -252,9 +252,9 @@ public sealed class SixelPaletteQuantizerTests {
 		byte[] pixels = new byte[ 64 * 64 * 3 ];
 		for ( int pixel = 0; pixel < 64 * 64; pixel++ ) {
 			int offset = pixel * 3;
-			pixels[ offset ] = checked( (byte)( pixel * 37 ) );
-			pixels[ offset + 1 ] = checked( (byte)( pixel * 73 ) );
-			pixels[ offset + 2 ] = checked( (byte)( pixel * 109 ) );
+			pixels[ offset ] = checked( (byte)( ( pixel * 37 ) % 256 ) );
+			pixels[ offset + 1 ] = checked( (byte)( ( pixel * 73 ) % 256 ) );
+			pixels[ offset + 2 ] = checked( (byte)( ( pixel * 109 ) % 256 ) );
 		}
 		TerminalRasterImage source = TerminalRasterImage.CreateRgb24(
 			64,
@@ -328,7 +328,7 @@ public sealed class SixelPaletteQuantizerTests {
 		Assert.Single( result.Palette.ToArray() );
 		Assert.All(
 			result.Indices.ToArray(),
-			value => Assert.Equal( 0, value )
+			value => Assert.Equal( (byte)0, value )
 		);
 	}
 
