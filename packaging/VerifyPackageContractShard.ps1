@@ -58,6 +58,7 @@ $scripts = switch ($Shard) {
             'VerifyOsc633Package.ps1',
             'VerifyOsc1337Package.ps1',
             'VerifyModernKeyboardPackage.ps1',
+            'VerifyRasterGraphicsPackage.ps1',
             'VerifyHardeningPackage.ps1'
         )
     }
