@@ -40,7 +40,7 @@ public sealed class TerminalControlFrameStructureTests {
 			(byte)':',
 			(byte)'3',
 			(byte)' ',
-			(byte)'$'
+			(byte)'q'
 		];
 
 		TerminalControlFrameStructure structure = TerminalControlFrameStructure.Parse(
@@ -67,7 +67,7 @@ public sealed class TerminalControlFrameStructureTests {
 			new byte[] { (byte)' ' },
 			structure.IntermediateBytes.ToArray()
 		);
-		Assert.Equal( (byte)'$', structure.FinalByte );
+		Assert.Equal( (byte)'q', structure.FinalByte );
 		Assert.Empty( structure.PayloadBytes.ToArray() );
 		Assert.Equal( TerminalStringTerminatorKind.None, structure.TerminatorKind );
 		Assert.Equal( 0, structure.TerminatorLength );
