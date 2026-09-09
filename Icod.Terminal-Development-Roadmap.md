@@ -5,7 +5,7 @@
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Current release line:** `1.6.0`  
-**Current status:** C160–C164 complete; C165 release acceptance/documentation closure in progress  
+**Current status:** Complete — C160 through C165 accepted; awaiting merge and post-merge Release validation  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -42,11 +42,11 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, curses presentation abstractions, and other higher-level semantic UI policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## 1.6.0 program — complete CSI grammar, consolidation, geometry, and hardening
+## Completed 1.6.0 program — complete CSI grammar, consolidation, geometry, and hardening
 
 `1.6.0` is the first protocol-family tranche built on the 1.5 normalization. Its purpose is to make CSI one complete shared grammar, migrate existing CSI operations onto that grammar without changing released bytes, add the internal pixel geometry needed by later raster protocols, and qualify the resulting query/parser substrate against hostile fragmentation and oversized correlated responses.
 
-The 1.6 task sequence is:
+The completed 1.6 task sequence is:
 
 ```text
 C160  complete CSI grammar foundation                  complete
@@ -54,10 +54,10 @@ C161  typed CSI parameter semantics                    complete
 C162  existing CSI consolidation                       complete
 C163  terminal/cell pixel geometry                     complete
 C164  CSI hardening, fragmentation, and recovery       complete
-C165  acceptance/package/documentation closure         in progress
+C165  acceptance/package/documentation closure         complete
 ```
 
-The detailed current program is:
+The detailed completed program is:
 
 [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md)
 
@@ -70,9 +70,9 @@ The permanent 1.6 tranche records are:
 - [`docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`](docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md)
 - [`docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`](docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md)
 
-### 1.6 result through C164
+### 1.6 implementation result
 
-The completed implementation now provides:
+The completed implementation provides:
 
 - one bounded structural CSI grammar preserving private-use bytes, semicolon parameters, colon subparameters, omitted/empty components, intermediates, final selectors, and raw parameter bytes;
 - typed bounded numeric/component semantics without conflating omitted, empty, zero, and explicit values;
@@ -92,6 +92,14 @@ The accepted C164 implementation head is:
 ```
 
 Staging workflow `34393525555` passed Windows, Linux, macOS, package candidate, all four package-contract shards, and the validated package artifact.
+
+The documentation/package-complete C165 acceptance head is:
+
+```text
+41f3fc87dba74b2f5f6db366bcbcbeca0356d216
+```
+
+Staging workflow `34394827411` passed the same complete matrix.
 
 ### 1.6 compatibility result
 
