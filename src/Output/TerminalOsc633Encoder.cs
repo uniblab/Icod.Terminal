@@ -73,7 +73,7 @@ internal static class TerminalOsc633Encoder {
 		ValidateNonce( nonce );
 
 		string serializedCommandLine = SerializeMessage( commandLine );
-		string payload = nonce is null
+		string payload = ( nonce is null )
 			? string.Concat(
 				"633;E;",
 				serializedCommandLine
@@ -102,7 +102,7 @@ internal static class TerminalOsc633Encoder {
 		ValidateNonce( nonce );
 
 		string serializedCurrentDirectory = SerializeMessage( currentDirectory );
-		string payload = nonce is null
+		string payload = ( nonce is null )
 			? string.Concat(
 				"633;P;Cwd=",
 				serializedCurrentDirectory
@@ -121,7 +121,7 @@ internal static class TerminalOsc633Encoder {
 		bool isWindows
 	) {
 		return EncodePayload(
-			isWindows
+			( isWindows )
 				? "633;P;IsWindows=True"
 				: "633;P;IsWindows=False"
 		);
@@ -131,7 +131,7 @@ internal static class TerminalOsc633Encoder {
 		bool hasRichCommandDetection
 	) {
 		return EncodePayload(
-			hasRichCommandDetection
+			( hasRichCommandDetection )
 				? "633;P;HasRichCommandDetection=True"
 				: "633;P;HasRichCommandDetection=False"
 		);
