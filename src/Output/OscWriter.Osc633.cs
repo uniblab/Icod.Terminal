@@ -76,6 +76,13 @@ internal static partial class OscWriter {
 		return TerminalOsc633Encoder.EncodeIsWindows( isWindows );
 	}
 
+	internal static byte[] EncodeOsc633ContinuationPromptFrame(
+		string continuationPrompt
+	) {
+		ArgumentNullException.ThrowIfNull( continuationPrompt );
+		return TerminalOsc633Encoder.EncodeContinuationPrompt( continuationPrompt );
+	}
+
 	internal static byte[] EncodeOsc633RichCommandDetectionFrame(
 		bool hasRichCommandDetection
 	) {
@@ -188,6 +195,21 @@ internal static partial class OscWriter {
 		return WriteOsc633FrameAsync(
 			output,
 			EncodeOsc633IsWindowsFrame( isWindows ),
+			cancellationToken
+		);
+	}
+
+	internal static ValueTask WriteOsc633ContinuationPromptAsync(
+		ITerminalOutput output,
+		string continuationPrompt,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( output );
+		ArgumentNullException.ThrowIfNull( continuationPrompt );
+		cancellationToken.ThrowIfCancellationRequested();
+		return WriteOsc633FrameAsync(
+			output,
+			EncodeOsc633ContinuationPromptFrame( continuationPrompt ),
 			cancellationToken
 		);
 	}
