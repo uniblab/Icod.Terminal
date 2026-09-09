@@ -2,13 +2,13 @@
 
 **Release:** `Icod.Terminal 1.8.0`  
 **Tranche:** A180  
-**Status:** implementation starting
+**Status:** Complete
 
 ## Purpose
 
 A180 establishes one internal canonical Application Program Command (APC) construction primitive before Kitty Graphics dialect code is added.
 
-The family layer must remain dialect-neutral. Kitty Graphics uses APC, but APC itself is an application-defined string control. Therefore A180 owns only the outer control-string framing and framing-safety validation. Kitty's `G`, comma-separated `key=value` control data, Base64 payload, actions, image identifiers, chunking, and response semantics belong to later tranches.
+The family layer remains dialect-neutral. Kitty Graphics uses APC, but APC itself is an application-defined string control. Therefore A180 owns only the outer control-string framing and framing-safety validation. Kitty's `G`, comma-separated `key=value` control data, Base64 payload, actions, image identifiers, chunking, and response semantics belong to later tranches.
 
 ## Canonical outbound framing
 
@@ -33,7 +33,7 @@ ESC     0x1B
 C1 ST   0x9C
 ```
 
-Other payload validation belongs to the dialect which owns the bytes. For Kitty Graphics, later code will generate a restricted ASCII control grammar and Base64 payload, so arbitrary caller bytes will never reach this writer through a public API.
+Other payload validation belongs to the dialect which owns the bytes. For Kitty Graphics, later code generates a restricted ASCII control grammar and Base64 payload, so arbitrary caller bytes do not reach this writer through a public API.
 
 ## Resource ceiling
 
@@ -41,11 +41,11 @@ A180 bounds one complete internally constructed APC frame to **8192 bytes**.
 
 This is an Icod construction bound, not a claim that APC itself defines an 8192-byte universal limit. It leaves room for the later Kitty direct-transfer rule of at most 4096 Base64 payload bytes plus reviewed control data and four framing bytes while preventing an unbounded complete-frame allocation.
 
-A183 will impose the stricter Kitty payload-chunk ceiling and deterministic chunking rules. Large logical images remain multi-frame streaming transactions rather than one giant APC frame.
+A183 imposes the stricter Kitty payload-chunk ceiling and deterministic chunking rules. Large logical images remain multi-frame streaming transactions rather than one giant APC frame.
 
 ## Parser relationship
 
-A canonical A180 frame must round-trip through the existing normalized `TerminalControlFrameStructure` APC path with:
+Canonical A180 frames round-trip through the existing normalized `TerminalControlFrameStructure` APC path with:
 
 - `Family == TerminalControlFamily.Apc`;
 - seven-bit introducer;
@@ -68,11 +68,11 @@ In particular it does not add:
 - a public arbitrary Kitty control-data dictionary;
 - a second terminal input reader.
 
-The intended public graphics surface remains the 1.7 backend-neutral `DisplayRasterAsync(...)` operation.
+The public graphics surface remains the 1.7 backend-neutral `DisplayRasterAsync(...)` operation.
 
 ## Tests
 
-A180 regression coverage must prove:
+A180 regression coverage proves:
 
 - canonical empty APC framing;
 - byte-exact non-empty payload framing;
@@ -82,9 +82,22 @@ A180 regression coverage must prove:
 - maximum-plus-one rejected;
 - public API baseline unchanged from 1.7.
 
-## Acceptance rule
+## Acceptance evidence
 
-A180 is accepted only on one exact PR head that passes the complete Staging matrix:
+A180 is accepted on exact head:
+
+```text
+88ac1db0a2904393622082423b8773bd8b19f121
+```
+
+Staging workflow:
+
+```text
+#1301
+34417006958
+```
+
+The exact head passed:
 
 ```text
 Runtime Windows
@@ -98,4 +111,6 @@ Package Stable 1.x release line
 Validated package artifact
 ```
 
-A green A180 checkpoint does not authorize merge or publication. The 1.8 PR remains draft while later tranches are under development.
+The package candidate also proved that the 1.7 public API fingerprint remains unchanged on the A180 1.8 development line.
+
+A green A180 checkpoint does not authorize merge or publication. PR #46 remains draft while A181–A189 are under development.
