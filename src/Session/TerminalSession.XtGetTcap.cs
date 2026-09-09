@@ -73,7 +73,7 @@ public sealed partial class TerminalSession {
 
 		TerminalResponseFrame frame = await this.ExecuteQueryAsync(
 			TerminalXtGetTcapProtocol.CreateRequest( name ),
-			TerminalXtGetTcapProtocol.ResponseMatcher,
+			TerminalXtGetTcapProtocol.CreateResponseMatcher( name ),
 			timeout,
 			cancellationToken
 		).ConfigureAwait( false );
