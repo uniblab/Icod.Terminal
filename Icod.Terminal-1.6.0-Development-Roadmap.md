@@ -2,7 +2,7 @@
 
 **Release:** `1.6.0`  
 **Theme:** complete CSI grammar, CSI consolidation, and terminal pixel/cell geometry  
-**Status:** C160–C164 complete; C165 release closure in progress  
+**Status:** Complete — C160 through C165 accepted  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.5.0`
 
@@ -36,6 +36,7 @@ The release preserves every existing stable 1.x wire-specific public contract. I
 | C162 | `fa7aeacb9f8ff6d2b719c81cba847ccda6d3f19f` | `34387272361` |
 | C163 | `c191d629e1d6347df6b6af182a9ffcdbbbfce7a5` | `34389924515` |
 | C164 | `3f5e1eccf2f655f25faf665c25262ad7a31df999` | `34393525555` |
+| C165 documentation/package closure | `41f3fc87dba74b2f5f6db366bcbcbeca0356d216` | `34394827411` |
 
 Each accepted workflow passed Windows, Linux, macOS runtime validation, package candidate, all four package-contract shards, and the validated package artifact.
 
@@ -184,25 +185,27 @@ Permanent contract: `docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`.
 
 ## C165 — acceptance, package, and documentation closure
 
-**Status:** In progress.
+**Status:** Complete.
 
 **Goal:** qualify `1.6.0` as the CSI foundation for the later DCS/Sixel and APC/Kitty Graphics releases.
 
-Required closure evidence:
+Closure evidence:
 
-- Windows/Linux/macOS Staging runtime/source validation;
-- `net8.0`, `net9.0`, and `net10.0` package/public consistency;
-- retained 1.0–1.5 public compatibility;
-- unchanged authoritative public-API baseline;
-- byte-exact regression coverage for migrated CSI public APIs;
-- complete C160/C161 grammar and semantic tests;
-- C163 geometry-query tests;
-- C164 boundary/fragmentation/recovery coverage;
-- retained `Icod.DCurses` compatibility witness;
-- README, changelog, compatibility/security review, package metadata, release notes, roadmaps, and PR summary synchronized;
-- exact documentation/package-complete PR head passes the complete Staging matrix.
+- Windows/Linux/macOS Staging runtime/source validation passed;
+- `net8.0`, `net9.0`, and `net10.0` package/public consistency passed;
+- retained 1.0–1.5 public compatibility passed;
+- authoritative public-API baseline remained unchanged;
+- byte-exact regression coverage for migrated CSI public APIs passed;
+- complete C160/C161 grammar and semantic tests passed;
+- C163 geometry-query tests passed;
+- C164 boundary/fragmentation/recovery coverage passed;
+- retained `Icod.DCurses` compatibility witness passed;
+- README, changelog, compatibility/security review, package metadata, release notes, roadmaps, and PR summary were synchronized;
+- exact documentation/package-complete head `41f3fc87dba74b2f5f6db366bcbcbeca0356d216` passed workflow `34394827411`.
 
 Permanent closure record: `docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`.
+
+The final status-only closure head is revalidated through the same complete Staging matrix before PR #44 leaves draft status.
 
 ## Public API strategy
 
@@ -224,6 +227,6 @@ A generic `WriteCsiAsync(...)`, arbitrary final-byte dispatcher, or raw paramete
 
 ## Release rule
 
-C165 completion and a green PR are necessary but not sufficient to publish `1.6.0`.
+C165 is complete, but a green pull request is necessary rather than sufficient to publish `1.6.0`.
 
 After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.6.0` remain separate explicit actions after that post-merge validation succeeds.
