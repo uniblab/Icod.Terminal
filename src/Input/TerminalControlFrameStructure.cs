@@ -128,15 +128,9 @@ internal readonly struct TerminalControlFrameStructure {
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
 
-		TerminalControlFamily family = frame.Kind switch {
-			TerminalResponseFrameKind.Csi => TerminalControlFamily.Csi,
-			TerminalResponseFrameKind.Dcs => TerminalControlFamily.Dcs,
-			TerminalResponseFrameKind.Osc => TerminalControlFamily.Osc,
-			_ => throw new InvalidOperationException(
-				"The terminal response frame kind is not recognized."
-			)
-		};
-
+		TerminalControlFamily family = TerminalResponseFrameKinds.GetControlFamily(
+			frame.Kind
+		);
 		return Parse(
 			frame.Bytes,
 			family
