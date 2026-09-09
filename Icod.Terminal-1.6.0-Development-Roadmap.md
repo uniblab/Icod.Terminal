@@ -2,7 +2,7 @@
 
 **Release:** `1.6.0`  
 **Theme:** complete CSI grammar, CSI consolidation, and terminal pixel/cell geometry  
-**Status:** C160 beginning  
+**Status:** C160 and C161 complete; C162 implemented and validating  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.5.0`
 
@@ -29,67 +29,121 @@ The release must preserve every existing stable 1.x wire-specific public contrac
 
 ## C160 — complete CSI grammar foundation
 
-**Status:** beginning.
+**Status:** Complete.
+
+Accepted checkpoint:
+
+```text
+7c54169b879a75389475570f8460fbdc8b8c7535
+```
+
+Staging workflow:
+
+```text
+34383863267
+```
 
 **Goal:** formalize one reusable internal CSI syntax model over the N153 structural frame representation.
 
-### Work
+### Completed work
 
-- define a typed internal CSI syntax view over `TerminalControlFrameStructure`;
-- retain all parameter bytes in the ECMA-48 `0x30`–`0x3F` range;
-- retain all intermediate bytes in `0x20`–`0x2F`;
-- retain exactly one final byte in `0x40`–`0x7E`;
-- distinguish leading private parameter bytes from ordinary parameter/subparameter data without losing the original raw bytes;
-- parse semicolon-separated parameters and colon-separated subparameters structurally;
-- preserve omitted/empty components rather than coercing them prematurely to zero;
-- enforce bounded component counts and bounded raw parameter bytes;
-- support both 7-bit `ESC [` and 8-bit CSI framing through the common N151/N152 scanner;
-- add focused grammar tests before existing query/mode consumers migrate.
+- defines the typed internal `TerminalCsiSyntax` view over `TerminalControlFrameStructure`;
+- retains all parameter bytes in the ECMA-48 `0x30`–`0x3F` range;
+- retains all intermediate bytes in `0x20`–`0x2F`;
+- retains exactly one final byte in `0x40`–`0x7E`;
+- distinguishes leading private parameter bytes from ordinary parameter/subparameter data without losing the original raw bytes;
+- parses semicolon-separated parameters and colon-separated subparameters structurally;
+- preserves omitted/empty components rather than coercing them prematurely to zero;
+- enforces bounded raw parameter bytes, parameter count, and subparameter count;
+- supports both 7-bit `ESC [` and 8-bit CSI framing through the common N151/N152 scanner;
+- adds focused grammar tests before existing query/mode consumers migrate.
 
-### Non-goals
+### Non-goals retained
 
 - no generic public CSI encoder/writer;
 - no broad semantic interpretation of every possible CSI final byte;
 - no public API change required by C160.
 
+Permanent contract: `docs/C160-Complete-CSI-Grammar-Foundation.md`.
+
 ## C161 — typed CSI parameter semantics
+
+**Status:** Complete.
+
+Accepted checkpoint:
+
+```text
+c5f0cd8345e6c2fea10fdb15d4ec8439443d9083
+```
+
+Staging workflow:
+
+```text
+34385272523
+```
 
 **Goal:** provide reusable bounded conversion helpers for dialects which need numeric or enum-like CSI parameters.
 
-### Work
+### Completed work
 
-- typed access to parameter/subparameter components;
-- explicit representation of omitted versus empty versus numeric zero;
-- overflow-safe numeric conversion with reviewed bounds;
-- helpers for dialects that forbid private prefixes, intermediates, empty parameters, or colon subparameters;
-- deterministic diagnostics/errors for malformed correlated responses;
-- migrate existing `TerminalCsiQueryProtocol` numeric parsing to this shared layer.
+- adds typed access to parameter/subparameter components;
+- explicitly distinguishes `Omitted`, `Empty`, and `Numeric`, including explicit numeric zero;
+- performs overflow-safe ASCII-decimal conversion with reviewed bounds;
+- adds helpers for dialects that forbid private prefixes, intermediates, empty parameters, or colon subparameters;
+- retains deterministic `FormatException` behavior for malformed correlated responses;
+- migrates `TerminalCsiQueryProtocol` numeric parsing to the shared C160/C161 stack;
+- preserves the historical DA/DSR/CPR parameter-count and numeric-value ceilings;
+- adds regressions proving the existing DA/DSR/CPR empty/subparameter rejection behavior remains unchanged.
+
+Permanent contract: `docs/C161-Typed-CSI-Parameter-Semantics.md`.
 
 ## C162 — existing CSI consolidation
 
-**Goal:** remove operation-specific CSI grammar duplication while preserving released bytes.
+**Status:** Implemented; exact-head Staging validation pending.
 
-### Candidate migration set
+**Goal:** remove operation-specific CSI grammar/construction duplication while preserving released bytes.
 
-- Primary and Secondary Device Attributes;
-- Device Status Report;
-- Cursor Position Report;
-- DEC private-mode enable/disable operations;
-- bracketed paste;
-- focus reporting;
-- mouse reporting;
-- synchronized output;
-- Kitty keyboard negotiation;
-- DECSCUSR cursor-style emission;
-- other current CSI-based query/state paths discovered by the tranche audit.
+### Implemented migration set
+
+- Primary and Secondary Device Attributes request construction;
+- Device Status Report request construction;
+- Cursor Position Report request construction;
+- DA/DSR/CPR response matching through `TerminalCsiSyntax`;
+- DEC private-mode set/reset construction;
+- synchronized output mode 2026 through the canonical DEC-private-mode helper;
+- Kitty progressive-keyboard flags query;
+- Kitty progressive-keyboard push/pop construction;
+- compound Kitty keyboard query + Primary DA barrier construction;
+- mouse tracking private modes 1000, 1002, and 1003;
+- SGR mouse encoding private mode 1006;
+- existing DECSCUSR cursor-style emission remains on `CsiWriter`.
+
+### TermInfo boundary retained
+
+Bracketed-paste and focus enable/disable output is deliberately **not** rebuilt from assumed DEC private-mode numbers. The selected terminal's exact extended capabilities remain authoritative:
+
+```text
+BracketedPaste   BE / BD
+FocusReporting   fe / fd
+```
+
+Their input markers remain `PS`/`PE` and `kxIN`/`kxOUT` respectively.
+
+Likewise `XM`, `xm`, and `kmous` continue to decide whether a supported mouse protocol is advertised before the manager emits canonical hard-coded tracking modes.
 
 ### Acceptance
 
 - existing public methods remain byte-exact;
 - query matchers use shared structural/semantic CSI parsing rather than ad-hoc slicing;
+- malformed-but-correlated query responses remain owned by the query parser rather than leaking into application input;
+- existing input-protocol lease tests retain exact mouse/Kitty transition ordering, rollback, and lifecycle restoration behavior;
 - no duplicate competing CSI scanner is introduced.
 
+Permanent contract: `docs/C162-Existing-CSI-Consolidation.md`.
+
 ## C163 — terminal and cell pixel geometry
+
+**Status:** Not started.
 
 **Goal:** expose the observations later raster backends need without coupling graphics codecs to platform-specific console APIs.
 
@@ -121,6 +175,8 @@ Review and reconcile:
 
 ## C164 — CSI hardening, fragmentation, and fuzz/property coverage
 
+**Status:** Not started.
+
 **Goal:** qualify the complete grammar against hostile and highly fragmented terminal input.
 
 ### Required cases
@@ -141,6 +197,8 @@ Review and reconcile:
 
 ## C165 — acceptance, package, and documentation closure
 
+**Status:** Not started.
+
 **Goal:** qualify `1.6.0` as the CSI foundation for the later DCS/Sixel and APC/Kitty Graphics releases.
 
 ### Required evidence
@@ -159,7 +217,7 @@ Review and reconcile:
 
 ## Public API strategy
 
-C160–C162 should remain internal wherever possible. C163 may require a reviewed public semantic geometry observation surface; if so, it must be additive, typed, bounded, and receive an intentional new 1.6 public API baseline.
+C160–C162 remain internal. C163 may require a reviewed public semantic geometry observation surface; if so, it must be additive, typed, bounded, and receive an intentional new 1.6 public API baseline.
 
 A generic `WriteCsiAsync(...)`, arbitrary final-byte dispatcher, or raw parameter/intermediate writer is explicitly outside the 1.6 public API plan.
 
