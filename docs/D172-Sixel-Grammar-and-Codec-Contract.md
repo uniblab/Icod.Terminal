@@ -2,7 +2,23 @@
 
 **Release:** `Icod.Terminal 1.7.0`  
 **Tranche:** D172  
-**Status:** implementation starting
+**Status:** complete
+
+## Accepted checkpoint
+
+Exact head:
+
+```text
+75d5562e5b1c0813a52d43f445365a228948a5f3
+```
+
+Pull-request Staging workflow:
+
+```text
+34401396507
+```
+
+That exact head passed Windows, Linux, macOS runtime validation, package candidate, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
 
 ## Purpose
 
@@ -235,17 +251,3 @@ D172 does not implement:
 - public placement semantics.
 
 Those belong to D173–D178.
-
-## Acceptance
-
-D172 is complete when:
-
-- canonical DCS Sixel parameters are encoded as `0;1;0`;
-- square-pixel raster attributes are encoded as `"1;1;width;height`;
-- data values 0 and 63 and their invalid boundaries are covered;
-- repeat syntax and bounds are covered;
-- color selection and RGB definition syntax/bounds are covered;
-- graphics carriage-return/new-line bytes are frozen;
-- a tiny generated payload composes through `DcsWriter` into the expected seven-bit Sixel DCS structure;
-- no public API is added;
-- the exact D172 head passes the complete Staging/package matrix.
