@@ -138,10 +138,10 @@ public sealed class DcsWriterTests {
 		);
 
 		Assert.Equal( DcsWriter.MaximumEncodedFrameBytes, frame.Length );
-		Assert.Equal( 0x1B, frame[ 0 ] );
+		Assert.Equal( (byte)0x1B, frame[ 0 ] );
 		Assert.Equal( (byte)'P', frame[ 1 ] );
 		Assert.Equal( (byte)'q', frame[ 2 ] );
-		Assert.Equal( 0x1B, frame[ ^2 ] );
+		Assert.Equal( (byte)0x1B, frame[ ^2 ] );
 		Assert.Equal( (byte)'\\', frame[ ^1 ] );
 	}
 
