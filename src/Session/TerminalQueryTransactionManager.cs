@@ -69,14 +69,23 @@ internal sealed class TerminalQueryTransactionManager {
 		CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull( matcher );
-		TerminalResponseFrameKind frameKind = matcher.FrameKind;
-		if ( !Enum.IsDefined( frameKind ) ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( matcher ),
-				frameKind,
-				"The terminal response matcher frame kind is not recognized."
-			);
-		}
+		return this.ExecuteSingleFamilyAsync(
+			request,
+			TerminalQueryResponsePlan.ForCompletion( matcher ),
+			timeout,
+			lateResponseOwnership,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalQueryResponseResult> ExecuteAsync(
+		ReadOnlyMemory<byte> request,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
 		if ( request.IsEmpty ) {
 			throw new ArgumentException(
 				"A terminal query request cannot be empty.",
@@ -131,7 +140,7 @@ internal sealed class TerminalQueryTransactionManager {
 			transactionGeneration = this.generation;
 			transaction = new TerminalQueryTransaction(
 				request.ToArray(),
-				matcher,
+				responsePlan,
 				timeout,
 				lateResponseOwnership,
 				this.session.Options.MonotonicClock,
@@ -151,7 +160,7 @@ internal sealed class TerminalQueryTransactionManager {
 			transaction,
 			transactionGeneration
 		);
-		return new ValueTask<TerminalResponseFrame>( transaction.CallerTask );
+		return new ValueTask<TerminalQueryResponseResult>( transaction.CallerTask );
 	}
 
 	internal void Suspend() {
@@ -220,6 +229,24 @@ internal sealed class TerminalQueryTransactionManager {
 		await idleTask.ConfigureAwait( false );
 	}
 
+	private async ValueTask<TerminalResponseFrame> ExecuteSingleFamilyAsync(
+		ReadOnlyMemory<byte> request,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
+		TerminalQueryResponseResult result = await this.ExecuteAsync(
+			request,
+			responsePlan,
+			timeout,
+			lateResponseOwnership,
+			cancellationToken
+		).ConfigureAwait( false );
+		return result.Frame;
+	}
+
 	private async Task RunTransactionAsync(
 		TerminalQueryTransaction transaction,
 		long transactionGeneration
@@ -258,7 +285,6 @@ internal sealed class TerminalQueryTransactionManager {
 					);
 					return;
 				}
-
 			}
 
 			if ( transaction.CallerTask.IsCompleted ) {
@@ -268,7 +294,7 @@ internal sealed class TerminalQueryTransactionManager {
 			coordinator = this.session.GetInputCoordinator();
 			inputDemand = coordinator.AcquireQueryDemand();
 			expectation = coordinator.RegisterResponseExpectation(
-				transaction.Matcher,
+				transaction.ResponsePlan,
 				armImmediately: false
 			);
 
@@ -365,7 +391,12 @@ internal sealed class TerminalQueryTransactionManager {
 		).ConfigureAwait( false );
 		if ( ReferenceEquals( completed, responseTask ) ) {
 			TerminalResponseFrame frame = await responseTask.ConfigureAwait( false );
-			transaction.TrySetResponse( frame );
+			transaction.TrySetResponse(
+				new TerminalQueryResponseResult(
+					frame,
+					expectation.ResponseDisposition
+				)
+			);
 			return;
 		}
 		if ( ReferenceEquals( completed, stopTask ) ) {
@@ -441,7 +472,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 	private readonly CancellationToken callerCancellationToken;
 	private readonly CancellationTokenSource callerLifetimeStop = new();
 	private readonly CancellationTokenSource preEmissionStop = new();
-	private readonly TaskCompletionSource<TerminalResponseFrame> callerCompletion = new(
+	private readonly TaskCompletionSource<TerminalQueryResponseResult> callerCompletion = new(
 		TaskCreationOptions.RunContinuationsAsynchronously
 	);
 	private readonly CancellationTokenRegistration callerCancellationRegistration;
@@ -452,7 +483,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 
 	internal TerminalQueryTransaction(
 		byte[] request,
-		ITerminalResponseMatcher matcher,
+		TerminalQueryResponsePlan responsePlan,
 		TimeSpan timeout,
 		TimeSpan lateResponseOwnership,
 		IMonotonicClock monotonicClock,
@@ -465,7 +496,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 				nameof( request )
 			);
 		}
-		ArgumentNullException.ThrowIfNull( matcher );
+		ArgumentNullException.ThrowIfNull( responsePlan );
 		ArgumentNullException.ThrowIfNull( monotonicClock );
 		if ( TimeSpan.Zero > timeout ) {
 			throw new ArgumentOutOfRangeException( nameof( timeout ) );
@@ -475,7 +506,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 		}
 
 		this.Request = request.ToArray();
-		this.Matcher = matcher;
+		this.ResponsePlan = responsePlan;
 		this.monotonicClock = monotonicClock;
 		this.lateResponseOwnership = lateResponseOwnership;
 		this.callerCancellationToken = callerCancellationToken;
@@ -490,11 +521,11 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 		get;
 	}
 
-	internal ITerminalResponseMatcher Matcher {
+	internal TerminalQueryResponsePlan ResponsePlan {
 		get;
 	}
 
-	internal Task<TerminalResponseFrame> CallerTask {
+	internal Task<TerminalQueryResponseResult> CallerTask {
 		get {
 			return this.callerCompletion.Task;
 		}
@@ -518,9 +549,9 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 	}
 
 	internal bool TrySetResponse(
-		TerminalResponseFrame frame
+		TerminalQueryResponseResult result
 	) {
-		ArgumentNullException.ThrowIfNull( frame );
+		ArgumentNullException.ThrowIfNull( result.Frame );
 
 		lock ( this.sync ) {
 			if ( this.callerCompletion.Task.IsCompleted ) {
@@ -528,7 +559,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 			}
 
 			this.callerLifetimeStop.Cancel();
-			return this.callerCompletion.TrySetResult( frame );
+			return this.callerCompletion.TrySetResult( result );
 		}
 	}
 
