@@ -39,15 +39,19 @@ internal sealed class TerminalInputProtocolManager {
 
 	private const string SgrMousePrefix = "\u001b[<";
 	private const string LegacyMousePrefix = "\u001b[M";
-	private const string EnableSgrMouseEncoding = "\u001b[?1006h";
-	private const string DisableSgrMouseEncoding = "\u001b[?1006l";
-	private const string EnableButtonEvents = "\u001b[?1000h";
-	private const string DisableButtonEvents = "\u001b[?1000l";
-	private const string EnableButtonMotion = "\u001b[?1002h";
-	private const string DisableButtonMotion = "\u001b[?1002l";
-	private const string EnableAnyMotion = "\u001b[?1003h";
-	private const string DisableAnyMotion = "\u001b[?1003l";
-	private const string KittyKeyboardPop = "\u001b[<u";
+
+	private static readonly string EnableSgrMouseEncoding =
+		CsiWriter.EncodeDecPrivateModeString(
+			1006,
+			enabled: true
+		);
+	private static readonly string DisableSgrMouseEncoding =
+		CsiWriter.EncodeDecPrivateModeString(
+			1006,
+			enabled: false
+		);
+	private static readonly string KittyKeyboardPop =
+		CsiWriter.EncodeKittyKeyboardPopString();
 
 	private readonly TerminalSession session;
 	private readonly SemaphoreSlim gate = new( 1, 1 );
@@ -835,22 +839,20 @@ internal sealed class TerminalInputProtocolManager {
 		TerminalMouseTrackingMode mode,
 		bool enabled
 	) {
-		return mode switch {
-			TerminalMouseTrackingMode.ButtonEvents => enabled
-				? EnableButtonEvents
-				: DisableButtonEvents,
-			TerminalMouseTrackingMode.ButtonMotion => enabled
-				? EnableButtonMotion
-				: DisableButtonMotion,
-			TerminalMouseTrackingMode.AnyMotion => enabled
-				? EnableAnyMotion
-				: DisableAnyMotion,
+		int privateMode = mode switch {
+			TerminalMouseTrackingMode.ButtonEvents => 1000,
+			TerminalMouseTrackingMode.ButtonMotion => 1002,
+			TerminalMouseTrackingMode.AnyMotion => 1003,
 			_ => throw new ArgumentOutOfRangeException(
 				nameof( mode ),
 				mode,
 				"The terminal mouse tracking mode is not recognized."
 			)
 		};
+		return CsiWriter.EncodeDecPrivateModeString(
+			privateMode,
+			enabled
+		);
 	}
 
 	private static int GetMouseTrackingStrength(
@@ -896,7 +898,7 @@ internal sealed class TerminalInputProtocolManager {
 				"The terminal keyboard reporting mode is not recognized."
 			)
 		};
-		return $"\u001b[>{flags}u";
+		return CsiWriter.EncodeKittyKeyboardPushString( flags );
 	}
 
 	private void MarkInvalidated() {
