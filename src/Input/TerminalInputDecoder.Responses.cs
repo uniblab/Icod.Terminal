@@ -43,6 +43,17 @@ internal sealed partial class TerminalInputDecoder {
 		bool armImmediately
 	) {
 		ArgumentNullException.ThrowIfNull( matcher );
+		return this.RegisterResponseExpectation(
+			TerminalQueryResponsePlan.ForCompletion( matcher ),
+			armImmediately
+		);
+	}
+
+	internal TerminalResponseExpectation RegisterResponseExpectation(
+		TerminalQueryResponsePlan responsePlan,
+		bool armImmediately
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
 
 		lock ( this.responseExpectationGate ) {
 			if ( this.responseExpectation is not null ) {
@@ -51,7 +62,7 @@ internal sealed partial class TerminalInputDecoder {
 				);
 			}
 
-			TerminalResponseExpectation expectation = new( matcher );
+			TerminalResponseExpectation expectation = new( responsePlan );
 			if ( armImmediately ) {
 				expectation.Arm( 0 );
 			}
@@ -108,15 +119,6 @@ internal sealed partial class TerminalInputDecoder {
 			).ConfigureAwait( false );
 		}
 
-		int framingLimit = TerminalResponseFrameKind.Osc == expectation.Matcher.FrameKind
-			? TerminalOsc52PayloadCodec.MaximumFrameBytes
-			: TerminalResponseFramer.DefaultMaximumFrameBytes
-		;
-		int maximumFrameBytes = Math.Min(
-			framingLimit,
-			this.maximumBufferedBytes
-		);
-
 		while ( true ) {
 			if ( !ReferenceEquals(
 				this.GetResponseExpectation(),
@@ -133,10 +135,10 @@ internal sealed partial class TerminalInputDecoder {
 				continue;
 			}
 
-			TerminalResponseFrameParseResult parseResult = TerminalResponseFramer.Parse(
-				this.bufferedBytes,
-				expectation.Matcher.FrameKind,
-				maximumFrameBytes
+			TerminalResponseFrameParseResult parseResult = this.ParseExpectedResponse(
+				expectation,
+				out TerminalControlFamily? family,
+				out int maximumFrameBytes
 			);
 
 			switch ( parseResult.Status ) {
@@ -146,9 +148,15 @@ internal sealed partial class TerminalInputDecoder {
 					).ConfigureAwait( false );
 
 				case TerminalResponseFrameParseStatus.Invalid:
+					if ( !family.HasValue ) {
+						return await this.TryDecodeModernKeyboardResultAsync(
+							cancellationToken
+						).ConfigureAwait( false );
+					}
 					TerminalInputDecodeResult? oversizedResponse =
 						await this.TryRouteOversizedCorrelatedResponseAsync(
 							expectation,
+							family.Value,
 							maximumFrameBytes,
 							cancellationToken
 						).ConfigureAwait( false );
@@ -177,11 +185,19 @@ internal sealed partial class TerminalInputDecoder {
 					continue;
 
 				case TerminalResponseFrameParseStatus.Complete:
+					if ( !family.HasValue ) {
+						throw new InvalidOperationException(
+							"A complete terminal query response must identify its control family."
+						);
+					}
 					TerminalResponseFrame frame = this.CreateResponseFrame(
-						expectation.Matcher.FrameKind,
+						family.Value,
 						parseResult.Length
 					);
-					if ( !expectation.Matcher.IsMatch( frame ) ) {
+					if ( !expectation.ResponsePlan.TryMatch(
+						frame,
+						out TerminalQueryResponseDisposition disposition
+					) ) {
 						return await this.TryDecodeModernKeyboardResultAsync(
 							cancellationToken
 						).ConfigureAwait( false );
@@ -198,7 +214,8 @@ internal sealed partial class TerminalInputDecoder {
 
 					return TerminalInputDecodeResult.RoutedResponse(
 						expectation,
-						frame
+						frame,
+						disposition
 					);
 
 				default:
@@ -207,6 +224,68 @@ internal sealed partial class TerminalInputDecoder {
 					);
 			}
 		}
+	}
+
+	private TerminalResponseFrameParseResult ParseExpectedResponse(
+		TerminalResponseExpectation expectation,
+		out TerminalControlFamily? family,
+		out int maximumFrameBytes
+	) {
+		ArgumentNullException.ThrowIfNull( expectation );
+
+		family = null;
+		maximumFrameBytes = TerminalResponseFramer.DefaultMaximumFrameBytes;
+		bool introducerIncomplete = false;
+		IReadOnlyList<TerminalControlFamily> families = expectation.ResponsePlan.Families;
+		for ( int index = 0; index < families.Count; index++ ) {
+			TerminalControlFamily candidateFamily = families[ index ];
+			TerminalQueryResponseRule rule = expectation.ResponsePlan.GetRule(
+				candidateFamily
+			);
+			TerminalResponseFrameParseResult candidate = TerminalResponseFramer.Parse(
+				this.bufferedBytes,
+				candidateFamily,
+				rule.MaximumFrameBytes
+			);
+
+			switch ( candidate.Status ) {
+				case TerminalResponseFrameParseStatus.Complete:
+				case TerminalResponseFrameParseStatus.Invalid:
+					family = candidateFamily;
+					maximumFrameBytes = rule.MaximumFrameBytes;
+					return candidate;
+
+				case TerminalResponseFrameParseStatus.Incomplete:
+					maximumFrameBytes = Math.Max(
+						maximumFrameBytes,
+						rule.MaximumFrameBytes
+					);
+					if ( !candidate.IntroducerIncomplete ) {
+						family = candidateFamily;
+						return candidate;
+					}
+					introducerIncomplete = true;
+					break;
+
+				case TerminalResponseFrameParseStatus.NotCandidate:
+					break;
+
+				default:
+					throw new InvalidOperationException(
+						$"Unexpected terminal response framing status '{candidate.Status}'."
+					);
+			}
+		}
+
+		return introducerIncomplete
+			? new TerminalResponseFrameParseResult(
+				TerminalResponseFrameParseStatus.Incomplete,
+				introducerIncomplete: true
+			)
+			: new TerminalResponseFrameParseResult(
+				TerminalResponseFrameParseStatus.NotCandidate
+			)
+		;
 	}
 
 	private async ValueTask<TerminalInputDecodeResult?> TryDecodeModernKeyboardResultAsync(
@@ -230,13 +309,19 @@ internal sealed partial class TerminalInputDecoder {
 
 	private async ValueTask<TerminalInputDecodeResult?> TryRouteOversizedCorrelatedResponseAsync(
 		TerminalResponseExpectation expectation,
+		TerminalControlFamily family,
 		int maximumFrameBytes,
 		CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull( expectation );
+		if ( !Enum.IsDefined( family ) ) {
+			throw new ArgumentOutOfRangeException( nameof( family ) );
+		}
 		if ( this.bufferedBytes.Count < maximumFrameBytes
-			|| expectation.Matcher is not ICorrelatedTerminalResponseMatcher correlatedMatcher
-			|| !correlatedMatcher.IsCorrelatedPrefix( this.bufferedBytes ) ) {
+			|| !expectation.ResponsePlan.IsCorrelatedPrefix(
+				family,
+				this.bufferedBytes
+			) ) {
 			return null;
 		}
 
@@ -254,7 +339,8 @@ internal sealed partial class TerminalInputDecoder {
 		}
 
 		expectation.TrySetException( exception );
-		await this.DrainOversizedOscResponseAsync(
+		await this.DrainOversizedResponseAsync(
+			family,
 			cancellationToken
 		).ConfigureAwait( false );
 
@@ -264,14 +350,19 @@ internal sealed partial class TerminalInputDecoder {
 		);
 	}
 
-	private async ValueTask DrainOversizedOscResponseAsync(
+	private async ValueTask DrainOversizedResponseAsync(
+		TerminalControlFamily family,
 		CancellationToken cancellationToken
 	) {
-		int discardedBytes = 0;
+		if ( !Enum.IsDefined( family ) ) {
+			throw new ArgumentOutOfRangeException( nameof( family ) );
+		}
 
+		int discardedBytes = 0;
 		while ( true ) {
-			int terminatorLength = FindOscDiscardTerminator(
+			int terminatorLength = FindDiscardTerminator(
 				this.bufferedBytes,
+				family,
 				out int terminatorIndex
 			);
 			if ( 0 < terminatorLength ) {
@@ -283,6 +374,7 @@ internal sealed partial class TerminalInputDecoder {
 
 			int preserveBytes = 0 < this.bufferedBytes.Count
 				&& EscapeByte == this.bufferedBytes[ ^1 ]
+				&& TerminalControlFamily.Csi != family
 					? 1
 					: 0
 			;
@@ -292,9 +384,9 @@ internal sealed partial class TerminalInputDecoder {
 					discardedBytes + consumeCount
 				);
 				this.Consume( consumeCount );
-				if ( TerminalOsc52PayloadCodec.MaximumFrameBytes < discardedBytes ) {
+				if ( TerminalResponseFramer.HardMaximumFrameBytes < discardedBytes ) {
 					throw new InvalidOperationException(
-						"The terminal input decoder could not resynchronize after an oversized OSC response within the bounded discard interval."
+						"The terminal input decoder could not resynchronize after an oversized response within the bounded discard interval."
 					);
 				}
 			}
@@ -307,15 +399,31 @@ internal sealed partial class TerminalInputDecoder {
 		}
 	}
 
-	private static int FindOscDiscardTerminator(
+	private static int FindDiscardTerminator(
 		IReadOnlyList<byte> bytes,
+		TerminalControlFamily family,
 		out int index
 	) {
 		ArgumentNullException.ThrowIfNull( bytes );
+		if ( !Enum.IsDefined( family ) ) {
+			throw new ArgumentOutOfRangeException( nameof( family ) );
+		}
 
 		for ( int current = 0; current < bytes.Count; current++ ) {
 			byte value = bytes[ current ];
-			if ( 0x07 == value || 0x9C == value ) {
+			if ( TerminalControlFamily.Csi == family ) {
+				if ( value is >= 0x40 and <= 0x7E ) {
+					index = current;
+					return 1;
+				}
+				continue;
+			}
+
+			if ( TerminalControlFamily.Osc == family && 0x07 == value ) {
+				index = current;
+				return 1;
+			}
+			if ( 0x9C == value ) {
 				index = current;
 				return 1;
 			}
@@ -338,15 +446,18 @@ internal sealed partial class TerminalInputDecoder {
 	}
 
 	private TerminalResponseFrame CreateResponseFrame(
-		TerminalResponseFrameKind kind,
+		TerminalControlFamily family,
 		int length
 	) {
+		if ( !Enum.IsDefined( family ) ) {
+			throw new ArgumentOutOfRangeException( nameof( family ) );
+		}
 		if ( 0 >= length || length > this.bufferedBytes.Count ) {
 			throw new ArgumentOutOfRangeException( nameof( length ) );
 		}
 
 		return new TerminalResponseFrame(
-			kind,
+			TerminalResponseFrameKinds.GetFrameKind( family ),
 			this.bufferedBytes.GetRange(
 				0,
 				length
