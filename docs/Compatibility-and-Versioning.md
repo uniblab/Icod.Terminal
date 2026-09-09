@@ -2,7 +2,7 @@
 
 This document defines the permanent compatibility and versioning policy for the `Icod.Terminal` 1.x line.
 
-The public API fingerprint, permanent semantic documentation, package contracts, and downstream acceptance tests together define the supported 1.x contract. Compatibility is not limited to “does it compile?”; ownership, restoration, cancellation, query routing, resource bounds, and security behavior are also part of the contract where documented as guarantees.
+The public API fingerprint, permanent semantic documentation, package contracts, and downstream acceptance tests together define the supported 1.x contract. Compatibility is not limited to “does it compile?”; ownership, restoration, cancellation, query routing, resource bounds, capability evidence, and security behavior are also part of the contract where documented as guarantees.
 
 ## 1. Versioning model
 
@@ -11,44 +11,85 @@ The public API fingerprint, permanent semantic documentation, package contracts,
 For stable 1.x releases:
 
 - a **patch** release fixes defects, strengthens tests/documentation, improves performance, or hardens implementation without intentionally breaking the documented 1.x contract;
-- a **minor** release may add compatible public APIs, semantic protocol support, or new optional behavior while preserving existing public signatures and documented guarantees;
+- a **minor** release may add compatible public APIs, semantic protocol support, or optional behavior while preserving existing public signatures and documented guarantees;
 - a **major** release is required for ordinary intentional source/binary breaks, removal or incompatible reinterpretation of public members, enum renumbering, or incompatible changes to documented ownership/security/restoration semantics.
 
-A bug fix may change observed behavior when the previous behavior violated the already-documented contract. Such a correction is not treated as permission to redefine the contract silently; release notes must identify compatibility-sensitive corrections.
+A bug fix may change observed behavior when the previous behavior violated the already-documented contract. Such corrections must still be documented when compatibility-sensitive.
 
-## 2. Machine public-API baselines
+## 2. Machine public API baselines
 
 The stable `1.0.0` exported surface remains frozen by:
 
 - `docs/Public-API-Baseline-1.0.md`;
 - `docs/Public-API-Baseline-1.0.sha256`.
 
-Stable 1.0 intentionally adopted the same fingerprint qualified by `1.0.0-rc1`; the rc1 baseline remains historical qualification evidence.
-
 Compatible minor-release additions receive separate reviewed baselines rather than overwriting earlier evidence:
 
-- `docs/Public-API-Baseline-1.1.md` / `.sha256` record the additive OSC 633 surface;
-- `docs/Public-API-Baseline-1.2.md` / `.sha256` record the additive OSC 777 titled-notification surface;
-- `docs/Public-API-Baseline-1.3.md` / `.sha256` record the additive typed iTerm2 OSC 1337 surface;
-- `docs/Public-API-Baseline-1.4.md` / `.sha256` record the additive typed Kitty OSC 99 notification/query surface.
+- `1.1` records the additive OSC 633 surface;
+- `1.2` records the additive OSC 777 titled-notification surface;
+- `1.3` records the additive typed iTerm2 OSC 1337 surface;
+- `1.4` records the additive typed Kitty OSC 99 notification/query surface;
+- `1.7` records the additive backend-neutral raster-display surface.
 
-Versions `1.5.0` and `1.6.0` intentionally add no public API. Their generated `net8.0`, `net9.0`, and `net10.0` snapshots remain identical to 1.4 and retain SHA-256:
+Versions `1.5.0` and `1.6.0` intentionally added no public API. Their generated snapshots remained identical to 1.4 at:
 
 ```text
 3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
 ```
 
-Therefore `docs/Public-API-Baseline-1.4.md` / `.sha256` remain the authoritative current machine baseline for 1.5 and 1.6. Duplicate `Public-API-Baseline-1.5.*` or `Public-API-Baseline-1.6.*` pairs are intentionally not created merely to relabel an identical exported surface.
+Version `1.7.0` intentionally advances the current public API fingerprint to:
 
-`packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint. Older baseline files remain checked in as compatibility evidence.
+```text
+847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
+```
 
-The reflection snapshot covers exported types, constructors, methods, properties, interfaces, nullability/default information represented by the generator, constants, and public enum numeric values across all supported TFMs.
+The authoritative current baseline is:
+
+- `docs/Public-API-Baseline-1.7.md`;
+- `docs/Public-API-Baseline-1.7.sha256`.
+
+Historical baselines remain checked in unchanged as compatibility evidence.
+
+`packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint.
 
 The fingerprint is a review gate, not a declaration that 1.x can never grow. An intentional compatible addition in a minor release requires an explicit new/current baseline in the same reviewed change. Accidental drift must fail CI.
 
-## 3. Source and binary compatibility
+## 3. Intentional 1.7 public additions
 
-Within the stable 1.x line, ordinary releases should preserve existing public type/member names and signatures.
+Version 1.7 adds these public raster types:
+
+```text
+TerminalRasterPixelFormat
+TerminalRasterColor
+TerminalRasterImage
+```
+
+and this additive `TerminalSession` method:
+
+```csharp
+ValueTask<TerminalControlMutationResult> DisplayRasterAsync(
+	TerminalRasterImage image,
+	CancellationToken cancellationToken = default
+);
+```
+
+`TerminalRasterPixelFormat` currently defines the closed values:
+
+```text
+Rgb24    = 0
+Rgba32   = 1
+Indexed8 = 2
+```
+
+These numeric values are part of the 1.x compatibility contract from 1.7 onward.
+
+`TerminalRasterColor` represents straight RGBA8 color. `TerminalRasterImage` represents a bounded immutable-owned snapshot of raw raster data and exposes factories for RGB24, RGBA32, and Indexed8 plus dimensions/format/pixel count and typed color inspection.
+
+The public contract does not expose mutable raster backing memory, a Sixel payload container, raw DCS construction, palette-register controls, placement identifiers, or an explicit Sixel backend selector.
+
+## 4. Source and binary compatibility
+
+Within the stable 1.x line, ordinary releases preserve existing public type/member names and signatures.
 
 The following are compatibility-sensitive and normally require a major release if they affect an existing public contract:
 
@@ -59,93 +100,119 @@ The following are compatibility-sensitive and normally require a major release i
 - tightening nullability in a way that rejects previously valid calls;
 - changing implemented public interfaces incompatibly;
 - changing public enum numeric values;
-- changing a public constant value when callers may have compiled it into their assemblies;
+- changing public constant values when callers may have compiled them into assemblies;
 - changing an existing operation from supported behavior to unconditional failure without an exceptional compatibility reason.
 
-Compatible overloads, new types, and new semantic operations may be introduced in a minor release when they do not make existing source/binary behavior ambiguous or unsafe.
+Compatible overloads, new types, and new semantic operations may be introduced in a minor release when they do not make existing behavior ambiguous or unsafe.
 
-## 4. Public enums
+## 5. Public enums
 
-Existing public enum numeric values are stable throughout 1.x.
+Existing public enum numeric values are stable throughout 1.x. An existing value must not be renumbered or reused for another meaning.
 
-An existing value must not be renumbered or reused for a different meaning.
-
-Adding an enum value is compatibility-sensitive even though it is normally binary-compatible. A new value therefore requires:
+Adding an enum value is compatibility-sensitive even when binary-compatible. It requires:
 
 - a minor release;
 - explicit compatibility review;
-- an intentional public-API baseline update;
+- an intentional public API baseline update;
 - documentation of how callers should handle previously unknown values.
 
-For flags enums, new flags must use previously unused bits and must not reinterpret existing combinations.
+This applies to `TerminalRasterPixelFormat` from version 1.7 onward just as it applies to prior stable enums.
 
-The 1.4 `KittyNotificationOccasion` and `KittyNotificationUrgency` enums are newly introduced closed semantic sets. Their numeric values are therefore part of the 1.x compatibility contract from 1.4 onward.
+## 6. Behavioral compatibility
 
-## 5. Behavioral compatibility
-
-The permanent documentation under `docs/` defines behavioral guarantees that are versioned alongside the API.
+The permanent documents under `docs/` define behavioral guarantees versioned alongside the API.
 
 Examples include:
 
 - one authoritative live-session input reader;
 - query correlation and bounded late-response ownership;
-- timeout late-response ownership measured from the logical monotonic timeout deadline rather than scheduler-continuation timing;
-- explicit cancellation/suspend/disposal late-response ownership measured from the actual interruption point;
+- timeout late-response ownership measured from the logical monotonic deadline rather than scheduler-continuation timing;
 - pre-commit versus post-commit cancellation behavior;
 - truthful `Unavailable` / `Unsupported` / failure distinctions;
-- exact restoration where an API promises exact restoration;
+- exact restoration where explicitly promised;
 - terminal-policy reset where exact restoration is not claimed;
 - session/lease ownership and disposal authority;
-- parser/query resource ceilings;
+- parser/query/raster resource ceilings;
 - output serialization boundaries;
-- explicit metadata/privacy disclosure;
-- no generic hazardous OSC 9 execution/control surface;
-- no generic raw OSC 633, OSC 777, OSC 1337, or OSC 99 dispatch replacing typed semantic APIs;
-- no generic public CSI/DCS/OSC/APC/PM/SOS writer introduced by the 1.5 normalization or 1.6 CSI consolidation;
-- no second input reader for OSC 99 unsolicited notification events or CSI query responses;
-- static TermInfo/profile capability advertisement remains distinct from generation-scoped live evidence;
-- `TerminalSession.InvalidateState()` expires live probe/protocol-response evidence while immutable selected TermInfo/profile evidence persists;
-- terminal/vendor identity and caller routing preference are not treated as capability evidence;
-- query timeout is not automatically converted into unsupported truth.
+- static TermInfo/profile advertisement remaining distinct from generation-scoped live evidence;
+- `InvalidateState()` expiring live probe/protocol-response evidence;
+- terminal/vendor identity and caller routing preference not being treated as capability evidence;
+- query timeout not being automatically converted into unsupported truth;
+- committed Sixel output not being truncated by ordinary caller cancellation after the frame commit point;
+- transport failure after partial graphics output being surfaced without automatic replay;
+- teardown draining committed graphics before output-state restoration.
 
-A minor/patch release may strengthen correctness while preserving these guarantees, but should not silently weaken or reverse them.
+A minor/patch release may strengthen correctness while preserving these guarantees, but must not silently weaken or reverse them.
 
-## 6. Protocol support is not package compatibility
+## 7. Raster compatibility contract
 
-Terminal protocol support and NuGet package compatibility are different concerns.
+The public raster model is backend-neutral. Its meaning is not “a Sixel image”; it is bounded raw image data plus semantic display intent.
 
-A successful semantic output call proves emission, not terminal recognition or visual application unless a specific query/response contract provides stronger evidence.
+This distinction is a compatibility promise. Future backends such as Kitty Graphics may implement `DisplayRasterAsync(...)` without requiring callers to change their `TerminalRasterImage` construction.
 
-Likewise:
+Version 1.7 implements the semantic operation through Sixel only and preserves these rules:
 
-- a timeout is not automatically evidence of “unsupported”;
-- a terminal brand, `TERM`, environment variable, or operating-system identity is not automatically proof of protocol support;
-- explicit negative protocol evidence may be represented as unsupported where the protocol provides such a response;
-- negotiated reversible protocols may decline acquisition when safe restoration/ownership cannot be established.
+- the raw raster object owns a snapshot of caller pixel/palette storage;
+- RGB24 is opaque;
+- RGBA32 and indexed palette colors preserve straight alpha in the model;
+- fractional alpha remains valid model data even though Sixel cannot preserve it in 1.7;
+- backend inability to preserve fractional alpha yields a controlled unsupported result rather than hidden compositing;
+- unknown/unverified graphics support does not cause blind Sixel emission;
+- a narrowly scoped Primary DA probe may be used to obtain positive Sixel evidence;
+- successful byte emission is not represented as proof that the image was visually displayed.
 
-The OSC 99 support/alive queries introduced by 1.4 are live observations through the existing response router. Silence remains a timeout and is not converted into permanent unsupported truth.
+Adding placement/scaling policy or another raster backend later must preserve the meaning of this existing semantic contract.
 
-Version 1.5 generalizes that distinction internally. A successful correlated OSC 99 support response can record verified live backend evidence, while timeout/cancellation records no false negative. Existing Kitty keyboard negotiation likewise distinguishes affirmative Kitty flags, a reviewed Primary-DA negative barrier, and silence/timeout. These internal evidence refinements do not change the released public query or lease signatures.
+## 8. Sixel protocol compatibility
 
-Version 1.6 applies the same authoritative response-router discipline to its internal terminal/cell pixel geometry observations. Selector-specific correlation, malformed-response failure, and oversized-response drain/resynchronization do not create a second reader or turn silence into capability truth.
+Sixel is an implementation backend below the public raster operation.
 
-Future minor releases may add new semantic protocol APIs without changing the meaning of existing operations.
+Version 1.7 freezes the internal canonical output behavior required by the release tests, including:
 
-## 7. Deprecation policy
+- canonical seven-bit DCS framing;
+- deterministic palette/quantization behavior;
+- bounded dimensions/pixels/palette/work state;
+- bounded streaming segments rather than a giant complete-frame allocation;
+- caller cancellation before commitment but not frame truncation after commitment;
+- session output serialization through final ST and flush;
+- no automatic retry after partial transport failure.
 
-When an existing 1.x API can be replaced compatibly, deprecation is preferred before removal.
+These are behavioral/security commitments even though the internal encoder types are not public API.
 
-Ordinary removal should:
+## 9. Capability evidence and uncertainty
 
-1. introduce or identify the supported replacement;
-2. document the migration;
-3. mark the old surface obsolete where practical;
-4. preserve it for a reasonable 1.x migration interval when doing so is safe;
-5. remove it only in a major release.
+Protocol support and NuGet package compatibility are separate concerns.
 
-Deprecation is not an absolute requirement when retaining an API would create an active security vulnerability, make the documented contract impossible to satisfy, or require an unsupportable platform/runtime dependency. Such exceptional changes require explicit release documentation and the narrowest practical compatibility break.
+A successful semantic output call proves emission, not terminal recognition or visual application unless a protocol supplies explicit acknowledged evidence.
 
-## 8. Target frameworks
+For Sixel in 1.7:
+
+- Primary DA attribute `4` may record `Verified / ProtocolResponse` evidence for `DcsSixel`;
+- a valid Primary DA response without `4` remains unknown rather than automatically unsupported;
+- a timeout remains unknown;
+- caller cancellation is not negative capability evidence;
+- terminal name, `TERM`, host OS, or emulator brand is not capability proof.
+
+Live Sixel evidence is generation-scoped and expires under the existing state-invalidation contract.
+
+## 10. Resource-bound compatibility
+
+Documented resource ceilings are part of the safety contract. Implementations may become more efficient, but minor/patch releases must not silently remove bounds and introduce unbounded work/retention.
+
+Version 1.7 raster ceilings include:
+
+```text
+maximum dimension       16,384
+maximum pixel count      16 Mi
+maximum owned pixel data 64 MiB
+maximum indexed palette  256 entries
+```
+
+The quantizer also uses a fixed `32 x 32 x 32` histogram and the streaming encoder emits bounded segments.
+
+Changing a ceiling may be compatible when it only increases accepted safe input without changing existing semantics, but decreases that reject previously supported values require explicit compatibility review.
+
+## 11. Target frameworks
 
 The stable 1.x contract targets:
 
@@ -157,11 +224,11 @@ net10.0
 
 All three are first-class package targets.
 
-Vendor end-of-support alone is not sufficient reason to remove net8.0 or net9.0 from the Icod.Terminal contract. Removal requires a concrete security alert, security-fix incompatibility, runtime/toolchain blocker, or equivalent security/maintenance constraint that prevents responsible support.
+Vendor end-of-support alone is not sufficient reason to remove net8.0 or net9.0. Removal requires a concrete security alert, security-fix incompatibility, runtime/toolchain blocker, or equivalent maintenance constraint preventing responsible support.
 
-Dropping a target framework is a compatibility-sensitive package change and must be documented explicitly.
+Dropping a target framework is compatibility-sensitive and must be documented explicitly.
 
-## 9. Operating-system support
+## 12. Operating-system support
 
 The built-in `SystemTerminalControlProvider` provides native terminal-control behavior for:
 
@@ -171,77 +238,91 @@ The built-in `SystemTerminalControlProvider` provides native terminal-control be
 
 Other operating systems receive controlled `Unsupported` results from the built-in provider rather than fabricated POSIX/Windows behavior.
 
-The public injection interfaces remain available for custom platform/transport implementations:
+Custom platform/transport implementations remain possible through:
 
 - `ITerminalControlProvider`;
 - `ITerminalInput`;
 - `ITerminalOutput`.
 
-A platform may therefore be usable through a custom provider even when the built-in system provider does not implement it.
+Sixel output itself is terminal traffic; it does not depend on a host-native graphics API.
 
-## 10. Architecture compatibility
+## 13. Architecture compatibility
 
-The permanent layer boundaries are part of the support model:
+Permanent layer boundaries remain part of the support model:
 
-- `Icod.TermInfo` remains the immutable capability authority;
-- `Icod.Terminal` owns the live terminal conversation and reversible terminal/session mechanics;
-- `Icod.DCurses` owns the higher-level virtual-screen/curses presentation model;
-- PTY/process hosting remains orthogonal rather than hidden inside `Icod.Terminal`.
+- `Icod.TermInfo` owns immutable capability information;
+- `Icod.Terminal` owns the live terminal conversation, query/evidence model, semantic protocol output, raster output, and reversible session mechanics;
+- `Icod.DCurses` owns higher-level virtual-screen/curses presentation policy;
+- PTY/process hosting remains orthogonal.
 
-Version 1.5 adds internal semantic operation/backend/evidence/control-family layers behind these boundaries without transferring ownership to higher-level consumers or requiring direct consumers to construct protocol frames.
+Version 1.7 does not move virtual-screen ownership into `Icod.Terminal`; it provides semantic raster output that higher-level consumers may use.
 
-Version 1.6 adds the internal complete CSI grammar and pixel-geometry substrate behind the same boundary. The optional POSIX pixel fields exposed by `TIOCGWINSZ` do not justify expanding `ITerminalControlProvider.GetSize(...)` in 1.6; the stable public/provider contract remains unchanged.
-
-A future release may improve implementations behind these boundaries without requiring consumers to adopt platform-native mode manipulation or a second terminal parser.
-
-## 11. Direct consumers and Icod.DCurses
+## 14. Direct consumers and Icod.DCurses
 
 Direct consumers should use `TerminalSession` when they need live terminal/session mechanics without a curses virtual-screen model.
 
-Applications that need windows, cells, virtual-screen diff/refresh, or a curses-style presentation model should normally use `Icod.DCurses` and allow that layer to own the supplied `TerminalSession` according to its documented integration contract.
+Applications needing windows/cells/diff/refresh should normally use `Icod.DCurses` and allow that layer to own the supplied session according to its integration contract.
 
-Do not create two independent state-owning sessions over the same physical terminal merely to divide responsibilities. Ownership of one physical terminal conversation should remain unambiguous.
+Do not create independent state-owning sessions over the same physical terminal merely to divide responsibilities.
 
-## 12. Security compatibility
+## 15. Security compatibility
 
 Security boundaries are compatibility commitments, not optional implementation details.
 
-In particular, 1.x does not use a minor/patch release to quietly introduce:
+Stable 1.x does not use a minor/patch release to quietly introduce:
 
-- generic raw OSC/CSI/DCS vendor dispatch as the ordinary API;
-- generic raw APC/PM/SOS dispatch as an ordinary public extension mechanism;
-- hazardous OSC 9 macro/process/environment/emulator-control operations;
-- generic OSC 633, OSC 777, OSC 1337, or OSC 99 dispatch that bypasses reviewed typed semantic surfaces;
-- invasive OSC 1337 profile/focus/browser/pasteboard/file-transfer/custom-script operations without separate security review;
+- generic raw OSC/CSI/DCS/APC/vendor dispatch as the ordinary API;
+- hazardous host-affecting OSC 9 commands;
+- generic raw OSC 633/777/1337/99 dispatch replacing reviewed semantic surfaces;
+- a public arbitrary CSI/DCS/Sixel writer merely because internal grammars exist;
+- terminal-brand-triggered activation presented as capability truth;
+- a competing protocol-specific input reader;
 - automatic clipboard reads;
-- automatic command-line or shell/environment metadata capture/redaction assumptions;
-- hidden process/network/browser/OS-clipboard/host-notification side effects;
-- terminal-brand-triggered activation of state that cannot be restored truthfully;
-- automatic notification- or shell-integration-protocol routing presented as capability truth without a negotiation contract;
-- a competing OSC 99 event reader that bypasses `TerminalSession.ReadEventAsync(...)` and the authoritative response router;
-- a public arbitrary CSI writer merely because 1.6 now has a complete internal CSI grammar.
+- hidden shell/environment metadata capture;
+- automatic image-file decoding or network/process side effects in raster display;
+- silent compositing of unsupported fractional-alpha raster data;
+- cancellation-driven truncation of already-committed control strings.
 
-Buttons and unsolicited OSC 99 activation/close reports require a future reviewed `TerminalEvent` extension rather than an ad hoc callback/raw-reader surface.
+New security-sensitive semantic features require explicit typed API, bounded validation, documentation, and tests.
 
-New security-sensitive semantic features require explicit API, bounded validation, documentation, and tests.
+## 16. Deprecation policy
 
-## 13. Compatibility evidence
+When an existing 1.x API can be replaced compatibly, deprecation is preferred before removal.
+
+Ordinary removal should identify a replacement, document migration, mark the old surface obsolete where practical, preserve it through a reasonable migration interval, and remove it only in a major release.
+
+Exceptional removal without a normal deprecation period is reserved for cases such as active security vulnerability or an impossible-to-support contract and still requires explicit release documentation.
+
+## 17. Compatibility evidence
 
 A release is not considered compatible merely because unit tests pass.
 
 The repository maintains layered evidence including:
 
-- retained historical machine public-API fingerprints plus the current release fingerprint;
-- Windows/Linux/macOS build and tests;
-- real `Icod.DCurses` acceptance paths;
-- repeated ownership/disposal soak;
-- exact NuGet artifact/XML verification;
-- fresh package-only consumers for newly added semantic APIs;
-- retained package-only consumers for historical stable contracts;
+- retained historical public API fingerprints plus the current 1.7 fingerprint;
+- Windows/Linux/macOS runtime/source validation;
+- exact multi-TFM API snapshot agreement;
+- fresh NuGet-only consumers for newly added semantic APIs;
+- generated XML documentation verification;
+- retained historical package consumers/contracts;
+- current `Icod.DCurses` package-boundary integration/ownership tests;
+- repeated ownership/disposal hardening;
+- exact protocol regression vectors;
+- resource-bound tests;
 - release/distribution validation on configured architectures.
 
-For 1.5, the full PR Staging matrix passed on N158 exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`, including all three runtime lanes, all four package-contract shards, and the validated package artifact. The package project built all three TFMs with zero warnings/errors and retained the frozen 1.4 public fingerprint exactly.
+For version 1.7, D178 passed the complete Staging matrix on exact head `f9428927168524be5cc552c82ad00e2fcda70b13`, workflow `34412478452`, including the new public API fingerprint. D179 adds package-only raster/XML qualification and requires a final documentation-complete exact head to pass the same full Staging matrix before the PR leaves draft status.
 
-For 1.6, the complete C164 implementation passed on exact head `3f5e1eccf2f655f25faf665c25262ad7a31df999`, workflow `34393525555`, including Windows/Linux/macOS runtime validation, package candidate, all four package-contract shards, the Stable 1.x/DCurses witness, and the validated package artifact. C165 requires the documentation/package-complete exact head to pass the same full Staging matrix before release closure.
+## 18. Release rule
 
-These gates may evolve or be consolidated, but equivalent coverage must exist before historical compatibility gates are removed.
+A green feature checkpoint is not publication authorization.
+
+For `1.7.0`:
+
+1. the exact final D179 PR head must pass the full Staging matrix;
+2. the PR may then leave draft status;
+3. merge requires explicit authorization/action;
+4. the resulting `main` head must pass Release distribution validation;
+5. `v1.7.0` tagging/publication requires separate explicit authorization.
+
+These gates may evolve operationally, but equivalent compatibility evidence must exist before historical checks are removed.
