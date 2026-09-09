@@ -2,7 +2,23 @@
 
 **Release:** `Icod.Terminal 1.7.0`  
 **Tranche:** D174  
-**Status:** implementation starting
+**Status:** complete — accepted on exact head `bf0542b77127a5af4d627480cb8d3797710dc93e`
+
+## Accepted checkpoint
+
+D174 passed the complete Staging/package matrix on workflow `34405392319` / run #1249:
+
+- Runtime Windows;
+- Runtime Linux;
+- Runtime macOS;
+- package candidate / public-API freeze;
+- Package Foundation;
+- Package Presentation;
+- Package Semantic and hardening;
+- Package Stable 1.x release line;
+- validated package artifact.
+
+The accepted head also carries the deterministic rewrite of `LateResponseOwnershipExpiryReleasesWireSlot`, which now advances the manual monotonic clock to the logical late-ownership deadline before queuing the next query instead of depending on a fixed number of scheduler yields. No production timeout or ownership duration changed.
 
 ## Purpose
 
@@ -216,7 +232,7 @@ D174 does not add:
 
 ## Acceptance
 
-D174 is complete when:
+D174 is complete because:
 
 - opaque Indexed8 input has an exact passthrough path;
 - exact-color input below the ceiling is lossless and deterministic;
@@ -227,5 +243,6 @@ D174 is complete when:
 - gradients/high-entropy input remain within the requested palette ceiling;
 - repeated quantization of identical input yields identical palette, indices, and transparency mask;
 - stable tie-breaking is covered;
+- the quantizer builds without nullable warnings;
 - no public API is added;
-- the exact D174 head passes the complete Staging/package matrix.
+- exact head `bf0542b77127a5af4d627480cb8d3797710dc93e` passed the complete Staging/package matrix in workflow `34405392319`.
