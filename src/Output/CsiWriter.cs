@@ -332,6 +332,7 @@ internal static class CsiWriter {
 					nameof( intermediateBytes )
 				);
 			}
+		}
 	}
 
 	private static void ValidateFinalByte(
