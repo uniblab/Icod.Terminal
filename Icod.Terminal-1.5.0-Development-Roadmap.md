@@ -2,7 +2,7 @@
 
 **Release:** `1.5.0`  
 **Theme:** semantic protocol normalization and control-language foundation  
-**Status:** N150 in progress  
+**Status:** N150 complete; N151 implemented, exact-head validation pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.4.0`
 
@@ -43,6 +43,8 @@ Every 1.5 task is constrained by these rules:
 
 ## N150 — terminology and layer-ownership freeze
 
+**Status:** complete.
+
 **Goal:** establish the shared internal vocabulary used by the remainder of 1.5 and by later CSI/DCS/APC/graphics releases.
 
 ### Deliverables
@@ -62,7 +64,11 @@ N150 is complete when later tasks can discuss routing and framing without using 
 
 No public API addition is required by N150.
 
+N150 passed the full PR Staging gate on head `03897bed254532140ed00d329723d49cd6ee6ba1`. The package candidate retained the 1.4 public API fingerprint exactly.
+
 ## N151 — generalized control-family framing
+
+**Status:** implemented; exact-head validation pending.
 
 **Goal:** evolve the current response framing abstraction beyond CSI/DCS/OSC without changing existing response behavior.
 
@@ -75,9 +81,24 @@ No public API addition is required by N150.
 - preserve OSC BEL compatibility only where already required;
 - add bounded APC/PM/SOS framing tests before any dialect uses those families.
 
+### Implemented design
+
+`TerminalResponseFramer` now accepts `TerminalControlFamily` directly. The existing `TerminalResponseFrameKind` overload remains as a temporary single-family query adapter and delegates CSI/DCS/OSC to the normalized family parser. It is intentionally retained until N154 replaces one-family query expectations with multi-family transactions.
+
+APC, PM, and SOS use strict string framing:
+
+```text
+7-bit introducer  -> ESC \\ terminator
+8-bit introducer  -> 0x9C ST terminator
+```
+
+CAN (`0x18`) and SUB (`0x1A`) abort framing as invalid. BEL is not a terminator for APC/PM/SOS. OSC retains its existing BEL/ST compatibility rules unchanged, and DCS retains its released framing behavior unchanged.
+
 ### Acceptance
 
 Existing CSI/DCS/OSC query tests remain byte-for-byte green while the family layer can identify APC/PM/SOS safely.
+
+N151 adds dedicated regression coverage proving the legacy CSI/DCS/OSC adapter produces the same framing result as the normalized family overload, plus 7-bit/8-bit APC/PM/SOS completion, malformed termination, cancellation-byte, incomplete-escape, and maximum-frame behavior.
 
 ## N152 — one incremental control-language state machine
 
@@ -278,5 +299,7 @@ The long-range contract is recorded in `docs/Control-Language-Normalization-and-
 
 - branch/version authority established for `1.5.0`;
 - long-range roadmap recorded;
-- N150 documentation and internal vocabulary implementation in progress;
-- no existing public wire behavior intentionally changed.
+- N150 terminology/layer-ownership foundation complete and fully green;
+- N151 normalized family framing implemented with compatibility adapter and focused tests;
+- no existing public wire behavior intentionally changed;
+- N152 has not started.
