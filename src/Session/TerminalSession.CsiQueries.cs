@@ -48,7 +48,10 @@ public sealed partial class TerminalSession {
 			timeout,
 			cancellationToken
 		).ConfigureAwait( false );
-		return TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( frame );
+		TerminalPrimaryDeviceAttributes attributes =
+			TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( frame );
+		this.RecordPrimaryDeviceAttributesCapabilityEvidence( attributes );
+		return attributes;
 	}
 
 	/// <summary>
