@@ -8,24 +8,30 @@ No unreleased 1.x changes are currently recorded.
 
 ## 1.6.0
 
-### Complete CSI grammar and consolidation
+### Complete CSI grammar, consolidation, geometry, and hardening
 
-- Begins the post-normalization CSI tranche on top of the completed 1.5 control-language architecture.
-- Adds the C160 internal `TerminalCsiSyntax` layer over the normalized structural frame model.
-- Preserves the complete CSI parameter/intermediate/final byte grammar without flattening private-use bytes, semicolon parameters, colon subparameters, omitted values, or empty components prematurely.
-- Supports both 7-bit and 8-bit CSI framing through the shared 1.5 scanner/structure path.
-- Bounds raw parameter bytes, parameter cardinality, and subparameter cardinality before later numeric/dialect interpretation.
-- Keeps numeric coercion and protocol-specific defaults in C161 rather than baking semantics into the framing layer.
-- Preserves all existing 1.x wire-specific API behavior; C160 adds no public raw CSI writer and no public API surface.
-- Records the C160–C165 roadmap covering typed parameter semantics, existing CSI migration, terminal/cell pixel geometry, hardening/fuzzing, and final release closure.
+- Completes the first protocol-family tranche on top of the 1.5 control-language normalization.
+- Adds the bounded internal `TerminalCsiSyntax` grammar over the normalized structural frame model, preserving seven-bit/eight-bit framing, private-use parameter bytes, semicolon parameters, colon subparameters, omitted/empty components, intermediate bytes, final selectors, and original raw parameter data.
+- Adds typed CSI parameter semantics which retain omitted/empty/zero distinctions and perform overflow-safe bounded numeric conversion without baking dialect defaults into framing.
+- Consolidates existing Primary/Secondary DA, DSR, CPR, DEC private modes, synchronized output 2026, Kitty keyboard query/push/pop, mouse modes 1000/1002/1003/1006, and cursor-style CSI construction/parsing onto the common grammar/writer path while preserving released bytes.
+- Retains TermInfo authority for exact focus/paste recipes and reviewed mouse advertisement rather than reconstructing terminal-specific control strings from assumptions.
+- Adds internal terminal-window and character-cell pixel geometry queries using `CSI 14 t` / selector-4 responses and `CSI 16 t` / selector-6 responses for later Sixel/Kitty Graphics work.
+- Adds exact-only cell-pixel derivation and deliberately defers a public geometry/provider contract until later graphics integration demonstrates the correct stable shape.
+- Hardens CSI boundary behavior at exact raw-parameter, parameter-count, subparameter-count, and numeric ceilings, including private/semicolon/colon/empty mixtures and CAN/SUB invalidation.
+- Qualifies every read split point of a representative geometry response through the authoritative `TerminalSession` input path and retains one-reader ownership.
+- Adds malformed-correlated and oversized-correlated geometry recovery regressions proving a failed query does not poison the next query on the same session.
+- Corrects late-response ownership after query timeout so it is measured from the logical monotonic timeout deadline rather than from when a scheduler happens to run the timeout continuation; cancellation/suspend/disposal keep their actual interruption-time semantics.
 
 ### Compatibility and validation
 
+- Adds no public API and retains the frozen 1.4/1.5 public surface and `1.0.0` stable compatibility floor.
 - Retains `net8.0`, `net9.0`, and `net10.0` plus the existing `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
-- Retains the frozen 1.5 public surface at the C160 stage; any later intentional C163 public geometry addition requires an explicit reviewed baseline update.
-- Keeps one authoritative terminal reader, bounded query/framing state, and the 1.5 capability/evidence architecture unchanged.
+- Keeps one authoritative terminal reader, bounded parser/query state, the 1.5 capability/evidence architecture, and the rule that timeout is not automatically unsupported truth.
+- Retains no generic raw public CSI writer and does not prematurely expose Sixel, Kitty Graphics, or the internal geometry substrate.
+- Passes the complete C164 Staging matrix on exact head `3f5e1eccf2f655f25faf665c25262ad7a31df999`, workflow `34393525555`: Windows, Linux, macOS, package candidate, all four package shards, and the validated package artifact.
+- C165 synchronizes release-facing documentation/package metadata and requires the resulting exact PR head to pass the same complete Staging matrix before the PR leaves draft status.
 
-See `docs/releases/1.6.0.md`, `docs/C160-Complete-CSI-Grammar-Foundation.md`, and `Icod.Terminal-1.6.0-Development-Roadmap.md` for the evolving 1.6 contract.
+See `docs/releases/1.6.0.md`, `docs/C160-Complete-CSI-Grammar-Foundation.md`, `docs/C161-Typed-CSI-Parameter-Semantics.md`, `docs/C162-Existing-CSI-Consolidation.md`, `docs/C163-Terminal-and-Cell-Pixel-Geometry.md`, `docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`, `docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`, and `Icod.Terminal-1.6.0-Development-Roadmap.md` for the complete 1.6 contract.
 
 ## 1.5.0
 
