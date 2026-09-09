@@ -1,0 +1,321 @@
+# Icod.Terminal 1.7.0 Development Roadmap
+
+**Release:** `1.7.0`  
+**Theme:** complete DCS construction, Sixel graphics, and the first common raster-display contract  
+**Status:** D170 foundation starting  
+**Stable compatibility floor:** `1.0.0`  
+**Prior release:** `1.6.0`
+
+## Why this release exists
+
+`1.5.0` normalized control-family framing, structural frame parsing, query transactions, capability evidence, and semantic backend routing. `1.6.0` then completed the CSI grammar, consolidated existing CSI users, added internal terminal/cell pixel observations, and hardened fragmented/oversized correlated-response recovery.
+
+Version `1.7.0` applies the same discipline to DCS and delivers the first raster graphics backend: Sixel.
+
+The release is deliberately split between three concerns which must not be conflated:
+
+```text
+DCS framing/construction
+    -> Sixel dialect codec
+        -> common semantic raster operation
+```
+
+DCS remains a control-family substrate. Sixel is one DCS dialect. The raster model is semantic image data and must not become a Sixel-specific byte container.
+
+## External protocol references
+
+The implementation is based on the DEC/xterm Sixel model in which:
+
+```text
+DCS Pa ; Pb ; Ph q <sixel data> ST
+```
+
+is the image transport, with Primary Device Attributes parameter `4` advertising Sixel graphics where that evidence is meaningful.
+
+Reference behavior is treated as protocol evidence, not as permission to infer support from terminal brand or operating system.
+
+## Release invariants
+
+1. One live `TerminalSession` remains the authoritative input reader.
+2. DCS structural parsing remains the normalized 1.5 `TerminalControlFrameStructure` path.
+3. Canonical library-generated DCS output uses seven-bit `ESC P ... ESC \\` framing unless an exact selected-terminal capability explicitly requires another representation.
+4. DCS parameter bytes, intermediate bytes, final selector, payload, and terminator remain distinct layers.
+5. No generic raw public DCS writer is introduced.
+6. Existing DECRQSS and XTGETTCAP public behavior and exact request bytes remain stable.
+7. Sixel encoding is bounded by dimensions, pixel count, palette count, work memory, and output transaction size.
+8. Large graphics must not require one giant complete encoded-frame allocation.
+9. Image-file decoding is outside `Icod.Terminal`; the core raster contract consumes raw pixel/index data.
+10. Quantization and palette construction are deterministic for identical input/options.
+11. Capability evidence distinguishes `Unavailable`, `Unsupported`, `Unknown`, `Advertised`, and `Verified`; timeout is not unsupported truth.
+12. Primary DA Sixel evidence is interpreted only within the reviewed DA capability semantics; terminal branding is not a Sixel support oracle.
+13. The first public raster surface, if frozen in 1.7, must be semantic and backend-neutral enough for Kitty Graphics to implement in 1.8 without a source break.
+14. Sixel-specific advanced controls remain separate from the common raster contract.
+15. Existing stable 1.0–1.6 APIs and documented ownership/security/restoration guarantees remain compatible.
+
+## D170 — DCS construction contract and reference freeze
+
+**Status:** Starting.
+
+**Goal:** establish one internal canonical DCS construction primitive and freeze the boundaries that later Sixel code depends on.
+
+### Required work
+
+- add an internal `DcsWriter` equivalent in role to the 1.6 `CsiWriter`;
+- encode canonical seven-bit `ESC P` introducer and `ESC \\` terminator;
+- structurally validate parameter bytes (`0x30`–`0x3F`), intermediate bytes (`0x20`–`0x2F`), and final selector (`0x40`–`0x7E`);
+- keep payload opaque at the DCS layer;
+- support bounded complete-frame encoding for small/query frames;
+- define the later streaming/committed-output seam without prematurely implementing Sixel policy in the generic writer;
+- add byte-exact tests for empty/non-empty structural fields and invalid grammar;
+- retain seven-bit canonical emission even though the normalized input path accepts reviewed eight-bit DCS forms.
+
+### Non-goals
+
+- no public raw DCS API;
+- no Sixel palette or band encoding yet;
+- no generic image-file decoder;
+- no automatic graphics routing.
+
+Permanent contract: `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md`.
+
+## D171 — existing DCS reconciliation
+
+**Goal:** move existing DCS emitters onto the canonical DCS construction substrate without changing released behavior.
+
+### Migration set
+
+- DECRQSS request construction;
+- XTGETTCAP request construction;
+- retained DECRPSS and XTGETTCAP structural response parsing;
+- exact request-byte regressions;
+- seven-bit canonical output and existing mixed-ST inbound compatibility;
+- proof that no second DCS parser/writer remains for these query families.
+
+This tranche is primarily consolidation. Any public behavior change is a defect unless separately justified by the existing 1.x contract.
+
+## D172 — Sixel grammar and codec contract
+
+**Goal:** freeze the Sixel dialect boundary above generic DCS.
+
+### Required grammar
+
+The codec owns the semantics of:
+
+```text
+DCS Pa ; Pb ; Ph q
+<sixel payload>
+ST
+```
+
+and Sixel payload commands including:
+
+- sixel data characters representing six vertical pixels;
+- carriage-return/new-line graphics controls;
+- color-register selection/definition;
+- raster attributes;
+- repeat/run-length encoding.
+
+### Contract decisions
+
+D172 must explicitly document:
+
+- chosen `Pa` pixel-aspect policy;
+- `Pb` background behavior;
+- `Ph` compatibility behavior;
+- raster-attribute emission policy;
+- palette definition lifetime assumptions;
+- whether palette registers are treated as image-local policy or terminal-global state;
+- exact command validation and integer bounds;
+- canonical output choices when multiple equivalent Sixel representations exist.
+
+No public raster API is frozen until this contract and the common raster model have exercised each other.
+
+## D173 — common raw raster model
+
+**Goal:** create the backend-neutral image representation shared by Sixel and future Kitty Graphics.
+
+### Initial pixel forms
+
+The design should support at least:
+
+```text
+RGB24
+RGBA32
+Indexed8 + palette
+```
+
+without taking a dependency on PNG/JPEG/GIF decoding libraries.
+
+### Required properties
+
+- positive bounded width/height;
+- overflow-safe pixel-count and byte-length validation;
+- explicit stride or tightly-packed rules;
+- exact channel ordering;
+- immutable/caller-borrowed lifetime rules that remain valid for asynchronous output;
+- deterministic alpha handling for a backend such as Sixel which does not provide ordinary per-pixel alpha;
+- bounded indexed palette cardinality;
+- no hidden color-profile or gamma transformation unless explicitly specified.
+
+The shape should be designed with 1.8 Kitty Graphics in mind so the public surface does not require a backend-specific rewrite one release later.
+
+## D174 — deterministic palette and quantization policy
+
+**Goal:** convert true-color raster input into a bounded Sixel palette reproducibly.
+
+### Required behavior
+
+- explicit configurable palette ceiling within reviewed Sixel/terminal bounds;
+- deterministic color reduction for identical input and options;
+- stable tie-breaking independent of thread scheduling or hash iteration order;
+- bounded work memory;
+- exact passthrough path for valid indexed input where possible;
+- transparent-pixel/background policy consistent with D173;
+- tests for tiny images, flat colors, gradients, high-entropy input, and maximum palette boundaries.
+
+A sophisticated perceptual quantizer is less important than deterministic, bounded, testable behavior for the first stable release. Quality improvements may follow compatibly later.
+
+## D175 — Sixel encoder
+
+**Goal:** encode the common raster model into correct bounded Sixel payload.
+
+### Required work
+
+- six-row band traversal;
+- per-color mask generation;
+- correct horizontal carriage and vertical band progression;
+- deterministic palette-definition order;
+- raster attributes where required by the frozen contract;
+- run-length encoding using Sixel repeat syntax only when it reduces or preserves canonical size according to the chosen policy;
+- omission of redundant commands where canonicalization permits it;
+- exact edge behavior when height is not divisible by six;
+- overflow-safe encoded-size accounting;
+- byte-exact golden tests for small hand-verifiable rasters.
+
+D175 should expose internal chunks/segments suitable for D176 rather than forcing creation of one giant byte array.
+
+## D176 — committed streaming graphics output transaction
+
+**Goal:** emit large graphics safely through the existing `TerminalSession` output-ownership model.
+
+### Required semantics
+
+- acquire the session control/output serialization boundary before the first frame byte commits;
+- observe caller cancellation before commitment;
+- once DCS transmission commits, do not allow caller cancellation to truncate the control string mid-frame;
+- stream bounded chunks without allocating the full encoded graphic;
+- guarantee exactly one final ST on successful completion;
+- define transport-failure behavior explicitly when failure occurs after commitment;
+- do not silently retry partial graphics;
+- keep flush policy explicit;
+- prevent ordinary semantic output from interleaving inside one Sixel DCS transaction;
+- retain disposal/lifecycle safety.
+
+This tranche is a security/reliability boundary, not merely a performance optimization.
+
+## D177 — Sixel capability evidence and live observation
+
+**Goal:** integrate Sixel into the normalized capability/evidence architecture without branding heuristics.
+
+### Evidence sources to review
+
+- selected TermInfo metadata where a complete, semantically relevant Sixel advertisement exists;
+- built-in profile evidence only where explicitly justified;
+- Primary Device Attributes parameter `4` as protocol-response evidence for Sixel graphics;
+- optional reviewed live probes only when they do not create destructive terminal state.
+
+### Required semantics
+
+- positive Primary DA Sixel evidence may produce `Verified / ProtocolResponse` for `DcsSixel`;
+- absence of parameter `4` in a response whose capability semantics are authoritative may produce a reviewed negative result only when that inference is protocol-correct;
+- timeout/cancellation remains unknown/no conclusion;
+- live evidence remains generation-scoped and is invalidated by the existing state-invalidation rules;
+- a terminal name, `TERM`, OS, or caller preference never becomes capability proof.
+
+## D178 — first semantic raster-display operation
+
+**Goal:** expose the smallest stable semantic raster operation that future Kitty Graphics can also implement.
+
+### Design rule
+
+The public API must describe **what image to display**, not **how to speak Sixel**.
+
+Candidate concepts include:
+
+```text
+TerminalRasterImage
+TerminalRasterPixelFormat
+TerminalRasterDisplayOptions
+TerminalSession.DisplayRasterAsync(...)
+```
+
+Names are not frozen until D173–D177 validate the shape.
+
+### Required behavior
+
+- backend-neutral raw raster input;
+- explicit placement semantics only where portable enough to preserve across Sixel and Kitty Graphics;
+- no generic Sixel command/string escape hatch;
+- truthful unsupported/unavailable behavior when no qualified backend can execute the operation;
+- 1.7 may route only to Sixel even though the semantic contract is designed for 1.8 Kitty Graphics;
+- public API baseline advances intentionally only after final review.
+
+Sixel-specific palette/register/display-mode controls that do not map cleanly to a common semantic operation stay internal or separate typed APIs.
+
+## D179 — hardening, package, documentation, and release closure
+
+**Goal:** qualify `1.7.0` as the first stable raster-capable `Icod.Terminal` release.
+
+### Required evidence
+
+- Windows/Linux/macOS Staging runtime/source validation;
+- Release validation after merge;
+- `net8.0`, `net9.0`, and `net10.0` consistency;
+- retained 1.0–1.6 compatibility gates;
+- explicit public-API baseline review/update if D178 becomes public;
+- byte-exact DCS regression coverage for DECRQSS/XTGETTCAP;
+- hand-verifiable Sixel golden vectors;
+- quantizer determinism/property coverage;
+- dimension/pixel/palette/encoded-size boundary tests;
+- fragmentation/malformed DCS response regressions retained;
+- committed-output cancellation and transport-failure tests;
+- large-raster bounded-memory tests;
+- capability-evidence positive/negative/timeout/invalidation tests;
+- current `Icod.DCurses` compatibility witness;
+- README, changelog, compatibility/security docs, package metadata, release notes, roadmaps, and PR summary synchronized.
+
+## Public API strategy
+
+D170–D177 should remain internal unless a clearly reusable semantic type is proven necessary sooner.
+
+D178 is the intended public review point. The preferred outcome is one small backend-neutral raster surface that 1.8 can implement through Kitty Graphics without changing existing callers.
+
+The following remain explicitly out of scope for 1.7:
+
+- public raw DCS writing;
+- ReGIS implementation;
+- Kitty Graphics implementation;
+- PNG/JPEG/GIF decoding;
+- terminal-brand automatic activation;
+- filesystem/shared-memory image transport;
+- animation;
+- persistent image identifiers/placements;
+- generalized graphics scene management.
+
+## Relationship to later releases
+
+```text
+1.5.0  normalized control families / evidence / routing
+    |
+1.6.0  complete CSI grammar / consolidation / geometry
+    |
+1.7.0  DCS construction / Sixel / common raster operation
+    |
+1.8.0  APC / Kitty Graphics / multi-backend raster routing
+```
+
+## Release rule
+
+A green development PR is necessary but not sufficient to publish `1.7.0`.
+
+After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.7.0` remain separate explicit actions after that post-merge validation succeeds.
