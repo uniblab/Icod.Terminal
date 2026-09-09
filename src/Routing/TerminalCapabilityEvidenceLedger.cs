@@ -183,6 +183,7 @@ internal sealed class TerminalCapabilityEvidenceLedger {
 				return this.liveGeneration;
 			}
 		}
+	}
 
 	internal void Record(
 		TerminalCapabilitySubject subject,
