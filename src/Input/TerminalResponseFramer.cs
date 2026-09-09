@@ -150,7 +150,7 @@ internal static class TerminalResponseFramer {
 	}
 
 	/// <summary>
-	/// Preserves the released single-family query matcher while N154 remains pending.
+	/// Frames one compatibility response kind through the normalized family parser.
 	/// </summary>
 	internal static TerminalResponseFrameParseResult Parse(
 		IReadOnlyList<byte> bytes,
@@ -168,14 +168,7 @@ internal static class TerminalResponseFramer {
 
 		return Parse(
 			bytes,
-			kind switch {
-				TerminalResponseFrameKind.Csi => TerminalControlFamily.Csi,
-				TerminalResponseFrameKind.Dcs => TerminalControlFamily.Dcs,
-				TerminalResponseFrameKind.Osc => TerminalControlFamily.Osc,
-				_ => throw new InvalidOperationException(
-					"The terminal response frame kind is not recognized."
-				)
-			},
+			TerminalResponseFrameKinds.GetControlFamily( kind ),
 			maximumFrameBytes
 		);
 	}
