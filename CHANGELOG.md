@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.5.0
+
+### Control-language normalization foundation
+
+- Begins the semantic protocol-normalization program required before complete CSI, DCS/Sixel, and APC/Kitty Graphics support.
+- Separates semantic operation, protocol backend, control family, support state, and evidence source as distinct internal concepts.
+- Adds the N150 internal vocabulary and complete backend-to-family classification without changing the public API surface.
+- Records Sixel as a DCS dialect and Kitty Graphics as an APC dialect while keeping APC itself application-defined rather than key/value-specific.
+- Preserves the `Icod.TermInfo` static-capability, `Icod.Terminal` live-routing, and `Icod.DCurses` semantic-consumer ownership boundary.
+- Preserves every existing stable 1.0–1.4 wire-specific API unchanged; automatic routing is not silently introduced by N150.
+- Records the N150–N159 1.5 roadmap plus the 1.6 CSI, 1.7 Sixel, and 1.8 Kitty Graphics development sequence.
+
+### Compatibility and validation
+
+- Retains `net8.0`, `net9.0`, and `net10.0` plus the existing `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+- N150 is internal, so the frozen 1.4 public API fingerprint remains unchanged at this stage of 1.5 development.
+- Adds invariant tests for vocabulary uniqueness and complete backend-family classification.
+
+See `docs/releases/1.5.0.md` and `Icod.Terminal-1.5.0-Development-Roadmap.md` for the evolving 1.5 contract.
+
 ## 1.4.0
 
 ### Kitty desktop notifications — OSC 99
@@ -131,7 +151,7 @@ See `docs/releases/1.0.0.md` for the full stable release notes.
 
 ### Breaking change
 
-- Removes public `TerminalSession.Input` from a live session so the session retains one authoritative input decoder/query router.
+- Removes public `TerminalSession.Input` from a live session so the session retains one authoritative input decoder and query router.
 - Retains public `ITerminalInput` for custom transport injection.
 - Retains `TerminalSession.Output` as an explicitly advanced borrowed output transport outside normal session serialization.
 
