@@ -2,7 +2,7 @@
 
 **Release:** `1.5.0`  
 **Theme:** semantic protocol normalization and control-language foundation  
-**Status:** N150–N158 complete; N159 acceptance/package/documentation closure in progress  
+**Status:** N150–N159 complete; final status-only PR-head validation in progress  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.4.0`
 
@@ -12,7 +12,7 @@ The 1.0–1.4 line accumulated a deliberately typed set of terminal protocols wh
 
 Version 1.5 therefore normalizes the architecture before adding another major wire family.
 
-The release is intentionally infrastructure-heavy. It should add little or no new wire protocol and should not silently reroute existing public methods.
+The release is intentionally infrastructure-heavy. It adds no new public wire protocol and does not silently reroute existing public methods.
 
 ## Naming note
 
@@ -362,7 +362,7 @@ Partial overlaps are deliberately not promoted. In particular `Cs`/`Cr` represen
 
 Successful correlated OSC 99 capability responses record `Osc99KittyNotification` as `Verified` with `ProtocolResponse` evidence. Timeout/cancellation records no negative conclusion.
 
-The existing Kitty keyboard support probe now records concrete `CsiKittyKeyboard` evidence: Kitty flags are `Verified / ProtocolResponse`, a Primary-DA barrier without Kitty flags is `Unsupported / ProtocolResponse`, and timeout remains `Unknown / LiveProbe`.
+The existing Kitty keyboard support probe records concrete `CsiKittyKeyboard` evidence: Kitty flags are `Verified / ProtocolResponse`, a Primary-DA barrier without Kitty flags is `Unsupported / ProtocolResponse`, and timeout remains `Unknown / LiveProbe`.
 
 `TerminalSession.InvalidateState()` advances the live-evidence generation. Explicit out-of-band invalidation and managed resume therefore discard stale live conclusions while preserving immutable TermInfo/profile evidence.
 
@@ -374,7 +374,7 @@ N158 passed the full PR Staging gate on exact head `50b30098ac81c9ad36ab3b9d4e09
 
 ## N159 — acceptance, package, and documentation closure
 
-**Status:** in progress.
+**Status:** complete.
 
 ### Required evidence
 
@@ -392,19 +392,20 @@ N158 passed the full PR Staging gate on exact head `50b30098ac81c9ad36ab3b9d4e09
 - DCurses acceptance showing semantic use without protocol-number knowledge;
 - release notes, changelog, README, compatibility/security docs, and API baseline closure.
 
-### Accepted evidence
+### Acceptance result
 
-N158 exact-head run `34374645658` supplies the runtime/package acceptance foundation for N159. It confirms:
+N158 exact-head run `34374645658` supplies the implementation acceptance foundation. Documentation-complete head `ea412cf4a4bac37312c0a23e1a77fcfc210b92dc` then passed the full PR Staging matrix in workflow run `34377552864`.
 
-- all three runtime operating-system lanes pass;
+Together these runs confirm:
+
+- Windows, Linux, and macOS runtime/source validation passes;
 - all four package-contract shards pass;
 - the validated package artifact is produced;
 - `net8.0`, `net9.0`, and `net10.0` public snapshots are identical;
-- the frozen 1.4 public API fingerprint remains `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27`.
+- the frozen 1.4 public API fingerprint remains `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27`;
+- all release-facing documentation and package metadata are synchronized to the completed N150–N159 program.
 
 Because 1.5 introduces no public-surface delta, N159 intentionally retains `docs/Public-API-Baseline-1.4.md` / `.sha256` as the current machine baseline rather than creating a duplicate 1.5 baseline for identical API bytes.
-
-The release-facing README, changelog, curated 1.5 release notes, package release notes, N158 permanent record, and N159 acceptance record are being synchronized on the closure head. The final documentation-complete head must pass the same PR matrix before N159 is marked complete.
 
 Permanent N159 contract: `docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md`.
 
@@ -442,6 +443,7 @@ The long-range contract is recorded in `docs/Control-Language-Normalization-and-
 - N156 semantic backend registry complete;
 - N157 deterministic backend resolver complete and fully green;
 - N158 TermInfo reconciliation, session evidence integration, OSC 99/Kitty-keyboard live evidence, and generation invalidation complete and fully green on `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`;
-- N159 release-facing synchronization and final exact-head validation are in progress;
+- N159 documentation/package/acceptance closure complete on documentation-complete head `ea412cf4a4bac37312c0a23e1a77fcfc210b92dc` / run `34377552864`;
+- final status-only PR-head validation is in progress;
 - no existing public wire behavior intentionally changed;
 - frozen 1.4 public API fingerprint retained exactly.
