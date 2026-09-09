@@ -116,13 +116,14 @@ internal static class TerminalCsiGeometryProtocol {
 		);
 	}
 
-	private sealed class GeometryResponseMatcher : ITerminalResponseMatcher {
+	private sealed class GeometryResponseMatcher : ITerminalResponseMatcher, ICorrelatedTerminalResponseMatcher {
 		private readonly int responseSelector;
 
 		internal GeometryResponseMatcher(
 			int responseSelector
 		) {
-			if ( 0 > responseSelector ) {
+			if ( responseSelector is not TerminalPixelResponseSelector
+				and not CellPixelResponseSelector ) {
 				throw new ArgumentOutOfRangeException( nameof( responseSelector ) );
 			}
 
@@ -163,10 +164,32 @@ internal static class TerminalCsiGeometryProtocol {
 						MaximumPixelDimension
 					);
 				return !selector.HasValue
-					|| this.responseSelector == selector.Value;
+					|| this.responseSelector == selector.Value
+				;
 			} catch ( FormatException ) {
 				return true;
 			}
+		}
+
+		public bool IsCorrelatedPrefix(
+			IReadOnlyList<byte> bytes
+		) {
+			ArgumentNullException.ThrowIfNull( bytes );
+
+			int parameterStart;
+			if ( 4 <= bytes.Count
+				&& 0x1B == bytes[ 0 ]
+				&& (byte)'[' == bytes[ 1 ] ) {
+				parameterStart = 2;
+			} else if ( 3 <= bytes.Count && 0x9B == bytes[ 0 ] ) {
+				parameterStart = 1;
+			} else {
+				return false;
+			}
+
+			return (byte)( '0' + this.responseSelector ) == bytes[ parameterStart ]
+				&& (byte)';' == bytes[ parameterStart + 1 ]
+			;
 		}
 	}
 }
