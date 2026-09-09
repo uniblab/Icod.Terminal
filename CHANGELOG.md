@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.2.0
+
+### Titled desktop notifications — OSC 777
+
+- Adds `TerminalSession.SendTitledNotificationAsync(title, message, ...)` for the urxvt-style OSC 777 desktop-notification protocol.
+- Emits canonical `OSC 777;notify;<title>;<message> ST` framing with strict UTF-8 and canonical ST termination.
+- Preserves the existing `SendNotificationAsync(message, ...)` OSC 9 API unchanged; OSC 777 is an additive titled-notification path rather than a silent replacement or automatic fallback.
+- Rejects semicolons in title/body because OSC 777 defines no interoperable field-escaping grammar, and rejects C0/C1/DEL controls and malformed Unicode before output commitment.
+- Bounds the complete OSC payload to 4,096 encoded bytes and uses the normal `TerminalSession` shared output-serialization/pre-commit-cancellation contract.
+- Does not infer OSC 777 support from terminal identity and does not expose a generic raw OSC 777 selector/payload writer.
+
+### Compatibility and validation
+
+- Preserves all existing stable 1.0/1.1 public members, enum values, OSC 9 behavior, OSC 633 behavior, and documented ownership/security/restoration guarantees; 1.2 is an additive minor release.
+- Retains `net8.0`, `net9.0`, and `net10.0` as first-class package targets and retains the existing `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0` dependency floor.
+- Adds byte-exact OSC 777 encoder/writer tests plus a fresh NuGet-only package consumer and XML-documentation verification on all three TFMs.
+- Intentionally advances the machine public-API baseline for the compatible 1.2 addition while retaining the frozen 1.0 and 1.1 baselines as compatibility evidence.
+
+See `docs/releases/1.2.0.md` for the full release notes.
+
 ## 1.1.0
 
 ### VS Code shell integration — OSC 633

@@ -148,13 +148,21 @@ The sample demonstrates prompt, command-input, command-output, explicit completi
 
 ### `Icod.Terminal.Notification.Sample`
 
-Bounded legacy OSC 9 desktop notification.
+Demonstrates both the bounded legacy OSC 9 notification path and the OSC 777 titled-notification path.
+
+Legacy OSC 9 example:
 
 ```text
 dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- "Build complete"
 ```
 
-Successful completion means the frame was emitted, not that the desktop displayed it. Notification text may appear in notification history, lock screens, screen sharing, multiplexed sessions, or terminal logs.
+Explicit OSC 777 titled example:
+
+```text
+dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --titled "Build" "Compilation complete"
+```
+
+The sample never chooses a notification protocol from terminal branding: the command line explicitly selects OSC 777 with `--titled`; otherwise it uses OSC 9. Successful completion means the frame was emitted, not that the desktop displayed it. Notification titles/text may appear in notification history, lock screens, screen sharing, multiplexed sessions, or terminal logs.
 
 The focused notification sample is also built by `packaging/VerifyNotificationSample.ps1` on every supported TFM during repository validation.
 

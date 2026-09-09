@@ -9,21 +9,21 @@
 
 ## Status
 
-`1.1.0` is the current 1.x release line and the first additive minor release after the stable 1.0 contract.
+`1.2.0` is the current 1.x release line and the second additive minor release after the stable 1.0 contract.
 
-Version 1.1 adds typed, bounded VS Code OSC 633 shell integration without changing the meaning of the existing 1.0 APIs. OSC 633 remains a distinct vendor-specific protocol family rather than an alias for the portable OSC 133 semantic-prompt API. The new surface covers prompt start/end, pre-execution, command completion, exact command-line publication with VS Code escaping and optional nonce, and the stable documented `Cwd`, `IsWindows`, `ContinuationPrompt`, and `HasRichCommandDetection` properties.
+Version 1.2 adds typed, bounded urxvt-style OSC 777 titled desktop notifications without changing the meaning of existing 1.0/1.1 APIs. The existing OSC 9 notification API remains unchanged; OSC 777 is a separate explicit titled-notification path.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Version 1.1's typed VS Code OSC 633 surface remains unchanged.
 
 Full release notes and concise release history:
 
-- [Icod.Terminal 1.1.0 release notes](docs/releases/1.1.0.md)
+- [Icod.Terminal 1.2.0 release notes](docs/releases/1.2.0.md)
 - [Changelog](CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.1.0
+dotnet add package Icod.Terminal --version 1.2.0
 ```
 
 The package targets:
@@ -125,12 +125,30 @@ The supported semantic surface includes:
 - terminal pointer shape (OSC 22);
 - portable semantic prompt/command metadata (OSC 133);
 - typed VS Code shell integration (OSC 633);
+- typed titled desktop notifications (OSC 777);
 - indexed palette and selected dynamic terminal colors (OSC 4/104, 10–14, 17, 19 and resets);
 - negotiated modern keyboard reporting;
 - bracketed paste, focus, and mouse input protocols;
 - bounded safe OSC 9 notification and Windows-CWD compatibility operations.
 
 The safe OSC 9 subset intentionally excludes host-affecting vendor commands for sleep/blocking UI, GUI macros, process launch, environment disclosure, and emulator mutation.
+
+### Titled desktop notifications — OSC 777
+
+The 1.2 OSC 777 API is explicit and semantic:
+
+```csharp
+await session.SendTitledNotificationAsync(
+	"Build",
+	"Compilation complete"
+);
+```
+
+It emits canonical `OSC 777;notify;<title>;<message> ST` framing using strict UTF-8 and a 4,096-byte complete OSC payload bound. Title and message may be empty, but semicolons, C0/C1/DEL controls, and malformed Unicode are rejected before output commitment because OSC 777 defines no interoperable field-escaping grammar.
+
+`SendNotificationAsync(message)` remains the existing OSC 9 compatibility path. The library does not automatically choose between OSC 9 and OSC 777, infer support from terminal identity, or expose a generic raw OSC 777 dispatcher.
+
+See [`docs/Osc777-Desktop-Notifications.md`](docs/Osc777-Desktop-Notifications.md).
 
 ### VS Code OSC 633
 
@@ -165,14 +183,14 @@ Several operations disclose caller-supplied metadata by design:
 - hyperlinks;
 - OSC 133 command-line metadata;
 - OSC 633 command-line/current-directory/continuation-prompt metadata and optional nonce;
-- desktop notification text;
+- OSC 9 and OSC 777 desktop notification text/title;
 - keyboard/mouse/focus/paste input.
 
 The library does not automatically discover or redact secrets. Applications remain responsible for deciding what data is appropriate to publish.
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Version `1.1.0` intentionally adds compatible public methods and receives its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0; the 1.0 fingerprint remains retained as historical compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
+Stable `1.0.0` remains the compatibility floor. Version `1.1.0` intentionally added the OSC 633 methods, and version `1.2.0` intentionally adds `SendTitledNotificationAsync(...)`. Each minor release has its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0 while earlier baselines remain retained as compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
 
 For the stable 1.x line:
 
@@ -205,10 +223,12 @@ The permanent 1.x authorities include:
 - [Presentation and Reversible State](docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
 - [VS Code OSC 633 Shell Integration](docs/VsCode-Osc633-Shell-Integration.md)
+- [OSC 777 Titled Desktop Notifications](docs/Osc777-Desktop-Notifications.md)
 - [Security and Privacy](docs/Security-and-Privacy.md)
 - [Licensing](docs/Licensing.md)
 - [Public API Baseline 1.0](docs/Public-API-Baseline-1.0.md)
 - [Public API Baseline 1.1](docs/Public-API-Baseline-1.1.md)
+- [Public API Baseline 1.2](docs/Public-API-Baseline-1.2.md)
 - [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
 - [Migration to 1.0](docs/Migration-to-1.0.md)
 
@@ -216,7 +236,7 @@ Historical T-series, 0.x baselines, and the rc1 baseline remain available as des
 
 ## Samples
 
-Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, and notifications.
+Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, and both legacy/titled desktop notifications.
 
 ## Build and validation
 
@@ -234,7 +254,7 @@ sh build.sh
 
 PR validation runs Windows/Linux/macOS runtime/source validation, the current machine public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining contracts from 0.8 through the stable 1.x release line. The package-candidate gate also verifies the exact project-appropriate GPL/LGPL header template for every tracked `.cs` and `.csproj` file.
 
-The 1.1 semantic package shard additionally compiles and runs a fresh NuGet-only OSC 633 consumer on `net8.0`, `net9.0`, and `net10.0` and verifies generated XML documentation for every new public member.
+The semantic package shard compiles and runs fresh NuGet-only OSC 633 and OSC 777 consumers on `net8.0`, `net9.0`, and `net10.0` and verifies generated XML documentation for the corresponding public APIs.
 
 The repository also runs current `Icod.DCurses 0.1.0` integration/ownership acceptance, including a package-boundary soak against the freshly packed Terminal artifact. Because DCurses is still an early downstream, these checks are **compatibility witnesses for the integration paths it currently exercises**, not exhaustive proof of every `Icod.Terminal` 1.x contract. Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full surface.
 
@@ -242,7 +262,7 @@ After merge, Release distribution validation runs six Windows/Linux/macOS x64/AR
 
 ## Release process
 
-`1.1.0` is publishable only after the exact 1.1 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.2.0` is publishable only after the exact 1.2 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
 The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, and current downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 

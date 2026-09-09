@@ -16,19 +16,25 @@ For stable 1.x releases:
 
 A bug fix may change observed behavior when the previous behavior violated the already-documented contract. Such a correction is not treated as permission to redefine the contract silently; release notes must identify compatibility-sensitive corrections.
 
-## 2. Machine public-API baseline
+## 2. Machine public-API baselines
 
-The stable `1.0.0` exported surface is frozen by:
+The stable `1.0.0` exported surface remains frozen by:
 
 - `docs/Public-API-Baseline-1.0.md`;
-- `docs/Public-API-Baseline-1.0.sha256`;
-- `packaging/VerifyPublicApiBaseline.ps1`.
+- `docs/Public-API-Baseline-1.0.sha256`.
 
-Stable 1.0 intentionally adopts the same fingerprint qualified by `1.0.0-rc1`; the rc1 baseline remains historical qualification evidence.
+Stable 1.0 intentionally adopted the same fingerprint qualified by `1.0.0-rc1`; the rc1 baseline remains historical qualification evidence.
 
-The reflection snapshot covers exported types, constructors, methods, properties, interfaces, nullability/default information represented by the generator, constants, and public enum numeric values across net8.0/net9.0/net10.0.
+Compatible minor-release additions receive separate reviewed baselines rather than overwriting earlier evidence:
 
-The fingerprint is a review gate, not a declaration that 1.x can never grow. An intentional compatible addition in a minor release requires an explicit baseline update in the same reviewed change. Accidental drift must fail CI.
+- `docs/Public-API-Baseline-1.1.md` / `.sha256` record the additive OSC 633 surface;
+- `docs/Public-API-Baseline-1.2.md` / `.sha256` record the additive OSC 777 titled-notification surface.
+
+`packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint. Older baseline files remain checked in as compatibility evidence.
+
+The reflection snapshot covers exported types, constructors, methods, properties, interfaces, nullability/default information represented by the generator, constants, and public enum numeric values across all supported TFMs.
+
+The fingerprint is a review gate, not a declaration that 1.x can never grow. An intentional compatible addition in a minor release requires an explicit new/current baseline in the same reviewed change. Accidental drift must fail CI.
 
 ## 3. Source and binary compatibility
 
@@ -79,7 +85,8 @@ Examples include:
 - parser/query resource ceilings;
 - output serialization boundaries;
 - explicit metadata/privacy disclosure;
-- no generic hazardous OSC 9 execution/control surface.
+- no generic hazardous OSC 9 execution/control surface;
+- no generic raw OSC 633 or OSC 777 dispatch replacing typed semantic APIs.
 
 A minor/patch release may strengthen correctness while preserving these guarantees, but should not silently weaken or reverse them.
 
@@ -114,7 +121,7 @@ Deprecation is not an absolute requirement when retaining an API would create an
 
 ## 8. Target frameworks
 
-The 1.0 contract targets:
+The stable 1.x contract targets:
 
 ```text
 net8.0
@@ -173,10 +180,12 @@ In particular, 1.x does not use a minor/patch release to quietly introduce:
 
 - generic raw OSC/CSI/DCS vendor dispatch as the ordinary API;
 - hazardous OSC 9 macro/process/environment/emulator-control operations;
+- generic OSC 633 or OSC 777 dispatch that bypasses the reviewed typed semantic surfaces;
 - automatic clipboard reads;
 - automatic command-line capture/redaction assumptions;
-- hidden process/network/browser/OS-clipboard side effects;
-- terminal-brand-triggered activation of state that cannot be restored truthfully.
+- hidden process/network/browser/OS-clipboard/host-notification side effects;
+- terminal-brand-triggered activation of state that cannot be restored truthfully;
+- automatic notification-protocol routing presented as capability truth without a negotiation contract.
 
 New security-sensitive semantic features require explicit API, bounded validation, documentation, and tests.
 
@@ -186,11 +195,12 @@ A release is not considered compatible merely because unit tests pass.
 
 The repository maintains layered evidence including:
 
-- the machine public-API fingerprint;
+- retained historical machine public-API fingerprints plus the current release fingerprint;
 - Windows/Linux/macOS build and tests;
 - real `Icod.DCurses` acceptance paths;
 - repeated ownership/disposal soak;
 - exact NuGet artifact/XML verification;
+- fresh package-only consumers for newly added semantic APIs;
 - retained package-only consumers for historical stable contracts;
 - release/distribution validation on configured architectures.
 
