@@ -74,7 +74,7 @@ public sealed class TerminalGeometrySessionTests {
 		ArgumentNullException.ThrowIfNull( transport );
 
 		return TerminalSession.OpenAsync(
-			new RecordingTerminalControlProvider(),
+			new GeometryTerminalControlProvider(),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			transport,
@@ -104,6 +104,67 @@ public sealed class TerminalGeometrySessionTests {
 			expected,
 			timeout.Token
 		);
+	}
+
+	private sealed class GeometryTerminalControlProvider : ITerminalControlProvider {
+		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
+			0,
+			0,
+			0,
+			0x0002UL,
+			new byte[ 32 ],
+			0,
+			32,
+			0,
+			new TerminalSpeed( 13, 9600 ),
+			new TerminalSpeed( 13, 9600 )
+		);
+
+		public TerminalControlResult<TerminalEndpointObservation> Observe(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalEndpointObservation>.Available(
+				new TerminalEndpointObservation(
+					true,
+					null,
+					TerminalPlatformKind.PosixTermios,
+					TerminalControlCapabilities.Attachment
+						| TerminalControlCapabilities.ModeRead
+						| TerminalControlCapabilities.ModeWrite
+				)
+			);
+		}
+
+		public TerminalControlResult<TerminalSize> GetSize(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalSize>.Available(
+				new TerminalSize( 120, 40 )
+			);
+		}
+
+		public TerminalControlResult<TerminalModeSnapshot> GetMode(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalModeSnapshot>.Available( this.baseline );
+		}
+
+		public TerminalControlMutationResult SetMode(
+			TerminalEndpoint endpoint,
+			TerminalModeSnapshot mode,
+			TerminalModeApplyTiming timing
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			ArgumentNullException.ThrowIfNull( mode );
+			if ( !Enum.IsDefined( timing ) ) {
+				throw new ArgumentOutOfRangeException( nameof( timing ) );
+			}
+
+			return TerminalControlMutationResult.Success();
+		}
 	}
 
 	private sealed class GeometryTransport : ITerminalInput, ITerminalOutput {
