@@ -201,12 +201,6 @@ internal static class TerminalOsc99NotificationEncoder {
 				nameof( options.IconDataIdentifier )
 			);
 		}
-		if ( options.IconData is not null && options.IconDataIdentifier is null ) {
-			throw new ArgumentException(
-				"Kitty OSC 99 transmitted icon data requires an IconDataIdentifier.",
-				nameof( options )
-			);
-		}
 		if ( !Enum.IsDefined( options.Occasion ) ) {
 			throw new ArgumentOutOfRangeException(
 				nameof( options ),
