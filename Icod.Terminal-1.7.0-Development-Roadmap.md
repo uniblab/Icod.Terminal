@@ -2,7 +2,7 @@
 
 **Release:** `1.7.0`  
 **Theme:** complete DCS construction, Sixel graphics, and the first common raster-display contract  
-**Status:** D170 foundation starting  
+**Status:** D170 complete; D171 implemented and validating  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.6.0`
 
@@ -52,46 +52,56 @@ Reference behavior is treated as protocol evidence, not as permission to infer s
 14. Sixel-specific advanced controls remain separate from the common raster contract.
 15. Existing stable 1.0–1.6 APIs and documented ownership/security/restoration guarantees remain compatible.
 
+## Accepted checkpoints
+
+| Tranche | Exact head | Staging workflow |
+| --- | --- | --- |
+| D170 | `7d338fe5a1de122738d4573093db90e1500003a1` | `34399549931` |
+
+D170 passed Windows, Linux, macOS runtime validation, package candidate, all four package-contract shards, and the validated artifact.
+
 ## D170 — DCS construction contract and reference freeze
 
-**Status:** Starting.
+**Status:** Complete.
 
 **Goal:** establish one internal canonical DCS construction primitive and freeze the boundaries that later Sixel code depends on.
 
-### Required work
+Completed work:
 
-- add an internal `DcsWriter` equivalent in role to the 1.6 `CsiWriter`;
-- encode canonical seven-bit `ESC P` introducer and `ESC \\` terminator;
-- structurally validate parameter bytes (`0x30`–`0x3F`), intermediate bytes (`0x20`–`0x2F`), and final selector (`0x40`–`0x7E`);
-- keep payload opaque at the DCS layer;
-- support bounded complete-frame encoding for small/query frames;
-- define the later streaming/committed-output seam without prematurely implementing Sixel policy in the generic writer;
-- add byte-exact tests for empty/non-empty structural fields and invalid grammar;
-- retain seven-bit canonical emission even though the normalized input path accepts reviewed eight-bit DCS forms.
-
-### Non-goals
-
-- no public raw DCS API;
-- no Sixel palette or band encoding yet;
-- no generic image-file decoder;
-- no automatic graphics routing.
+- added the internal `DcsWriter` construction primitive;
+- canonical seven-bit `ESC P` introducer and `ESC \\` terminator;
+- structural validation of parameter bytes (`0x30`–`0x3F`), intermediate bytes (`0x20`–`0x2F`), and final selector (`0x40`–`0x7E`);
+- opaque payload treatment at the DCS layer while rejecting CAN, SUB, ESC, and C1 ST bytes that would abort or terminate framing;
+- bounded complete-frame encoding for small/query/control frames with a 4,096-byte ceiling;
+- byte-exact tests for empty/non-empty structural fields, invalid grammar, exact maximum size, and maximum-plus-one;
+- round-trip proof through the normalized `TerminalControlFrameStructure` parser;
+- explicit separation between small complete-frame construction and the later committed streaming transaction needed by large Sixel graphics;
+- no public raw DCS API and no Sixel policy in the generic writer.
 
 Permanent contract: `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md`.
 
 ## D171 — existing DCS reconciliation
 
+**Status:** Implemented; exact-head validation pending.
+
 **Goal:** move existing DCS emitters onto the canonical DCS construction substrate without changing released behavior.
 
-### Migration set
+Completed migration set:
 
-- DECRQSS request construction;
-- XTGETTCAP request construction;
-- retained DECRPSS and XTGETTCAP structural response parsing;
-- exact request-byte regressions;
-- seven-bit canonical output and existing mixed-ST inbound compatibility;
-- proof that no second DCS parser/writer remains for these query families.
+- DECRQSS request construction now uses `DcsWriter`;
+- XTGETTCAP request construction now uses `DcsWriter`;
+- existing DECRPSS and XTGETTCAP structural response parsing remains unchanged;
+- DECRQSS retains all twelve frozen request identifiers;
+- XTGETTCAP retains printable-ASCII name validation and uppercase hexadecimal request encoding;
+- canonical request bytes remain `ESC P $ q <identifier> ESC \\` and `ESC P + q <hex-name> ESC \\` respectively;
+- existing seven-bit/eight-bit DCS and mixed-ST inbound compatibility remains unchanged;
+- query correlation, timeout/cancellation behavior, late-response ownership, and one-reader semantics remain unchanged;
+- protocol-level tests freeze all twelve DECRQSS request forms and representative XTGETTCAP names;
+- consolidated requests round-trip through `TerminalControlFrameStructure` with the expected intermediate, final selector, payload, and terminator.
 
-This tranche is primarily consolidation. Any public behavior change is a defect unless separately justified by the existing 1.x contract.
+This tranche is consolidation only. Any public behavior change is a defect unless separately justified by the existing 1.x contract.
+
+Permanent contract: `docs/D171-Existing-DCS-Reconciliation.md`.
 
 ## D172 — Sixel grammar and codec contract
 
