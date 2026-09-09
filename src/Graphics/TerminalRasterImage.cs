@@ -23,17 +23,29 @@ namespace Icod.Terminal;
 /// <summary>
 /// Identifies one tightly packed raw raster storage form.
 /// </summary>
-internal enum TerminalRasterPixelFormat {
+public enum TerminalRasterPixelFormat {
+	/// <summary>Three bytes per pixel in red, green, blue order.</summary>
 	Rgb24,
+
+	/// <summary>Four bytes per pixel in red, green, blue, alpha order.</summary>
 	Rgba32,
+
+	/// <summary>One byte per pixel indexing an RGBA8 palette.</summary>
 	Indexed8
 }
 
 /// <summary>
 /// Represents one straight/unpremultiplied RGBA8 raster color.
 /// </summary>
-internal readonly record struct TerminalRasterColor {
-	internal TerminalRasterColor(
+public readonly record struct TerminalRasterColor {
+	/// <summary>
+	/// Initializes one straight/unpremultiplied RGBA8 color.
+	/// </summary>
+	/// <param name="red">The red channel.</param>
+	/// <param name="green">The green channel.</param>
+	/// <param name="blue">The blue channel.</param>
+	/// <param name="alpha">The alpha channel.</param>
+	public TerminalRasterColor(
 		byte red,
 		byte green,
 		byte blue,
@@ -45,19 +57,23 @@ internal readonly record struct TerminalRasterColor {
 		this.Alpha = alpha;
 	}
 
-	internal byte Red {
+	/// <summary>Gets the red channel.</summary>
+	public byte Red {
 		get;
 	}
 
-	internal byte Green {
+	/// <summary>Gets the green channel.</summary>
+	public byte Green {
 		get;
 	}
 
-	internal byte Blue {
+	/// <summary>Gets the blue channel.</summary>
+	public byte Blue {
 		get;
 	}
 
-	internal byte Alpha {
+	/// <summary>Gets the alpha channel.</summary>
+	public byte Alpha {
 		get;
 	}
 }
@@ -65,7 +81,7 @@ internal readonly record struct TerminalRasterColor {
 /// <summary>
 /// Owns one bounded immutable snapshot of tightly packed raw raster data.
 /// </summary>
-internal sealed class TerminalRasterImage {
+public sealed class TerminalRasterImage {
 	internal const int MaximumDimension = 16_384;
 	internal const int MaximumPixelCount = 16 * 1024 * 1024;
 	internal const int MaximumOwnedPixelBytes = 64 * 1024 * 1024;
@@ -94,15 +110,18 @@ internal sealed class TerminalRasterImage {
 		this.palette = palette;
 	}
 
-	internal int Width {
+	/// <summary>Gets the raster width in pixels.</summary>
+	public int Width {
 		get;
 	}
 
-	internal int Height {
+	/// <summary>Gets the raster height in pixels.</summary>
+	public int Height {
 		get;
 	}
 
-	internal TerminalRasterPixelFormat PixelFormat {
+	/// <summary>Gets the raw pixel storage format.</summary>
+	public TerminalRasterPixelFormat PixelFormat {
 		get;
 	}
 
@@ -114,7 +133,8 @@ internal sealed class TerminalRasterImage {
 		get;
 	}
 
-	internal int PixelCount {
+	/// <summary>Gets the total number of pixels.</summary>
+	public int PixelCount {
 		get;
 	}
 
@@ -130,7 +150,14 @@ internal sealed class TerminalRasterImage {
 		}
 	}
 
-	internal static TerminalRasterImage CreateRgb24(
+	/// <summary>
+	/// Creates an immutable raster snapshot from tightly packed RGB24 pixels.
+	/// </summary>
+	/// <param name="width">The positive image width in pixels.</param>
+	/// <param name="height">The positive image height in pixels.</param>
+	/// <param name="pixels">Exactly three bytes per pixel in red, green, blue order.</param>
+	/// <returns>The owned raster snapshot.</returns>
+	public static TerminalRasterImage CreateRgb24(
 		int width,
 		int height,
 		ReadOnlySpan<byte> pixels
@@ -144,7 +171,14 @@ internal sealed class TerminalRasterImage {
 		);
 	}
 
-	internal static TerminalRasterImage CreateRgba32(
+	/// <summary>
+	/// Creates an immutable raster snapshot from tightly packed straight RGBA32 pixels.
+	/// </summary>
+	/// <param name="width">The positive image width in pixels.</param>
+	/// <param name="height">The positive image height in pixels.</param>
+	/// <param name="pixels">Exactly four bytes per pixel in red, green, blue, alpha order.</param>
+	/// <returns>The owned raster snapshot.</returns>
+	public static TerminalRasterImage CreateRgba32(
 		int width,
 		int height,
 		ReadOnlySpan<byte> pixels
@@ -158,7 +192,15 @@ internal sealed class TerminalRasterImage {
 		);
 	}
 
-	internal static TerminalRasterImage CreateIndexed8(
+	/// <summary>
+	/// Creates an immutable raster snapshot from one-byte palette indices and an RGBA8 palette.
+	/// </summary>
+	/// <param name="width">The positive image width in pixels.</param>
+	/// <param name="height">The positive image height in pixels.</param>
+	/// <param name="pixels">Exactly one palette index byte per pixel.</param>
+	/// <param name="palette">Between one and 256 straight RGBA8 palette entries.</param>
+	/// <returns>The owned raster snapshot.</returns>
+	public static TerminalRasterImage CreateIndexed8(
 		int width,
 		int height,
 		ReadOnlySpan<byte> pixels,
@@ -217,7 +259,13 @@ internal sealed class TerminalRasterImage {
 		);
 	}
 
-	internal TerminalRasterColor GetPixelColor(
+	/// <summary>
+	/// Gets the straight RGBA8 color of one pixel.
+	/// </summary>
+	/// <param name="x">The zero-based horizontal pixel coordinate.</param>
+	/// <param name="y">The zero-based vertical pixel coordinate.</param>
+	/// <returns>The resolved pixel color.</returns>
+	public TerminalRasterColor GetPixelColor(
 		int x,
 		int y
 	) {
