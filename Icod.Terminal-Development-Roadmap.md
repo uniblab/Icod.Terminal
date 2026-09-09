@@ -5,7 +5,7 @@
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Current release line:** `1.5.0`  
-**Current status:** N150–N158 complete; N159 acceptance/package/documentation closure in progress  
+**Current status:** N150–N159 complete; final status-only PR-head validation in progress  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -61,7 +61,7 @@ N158  existing protocol and TermInfo reconciliation
 N159  acceptance/package/documentation closure
 ```
 
-N150–N158 are complete. N159 is the active release-closure tranche.
+N150–N159 are complete. The exact final status-only PR head is revalidated before the pull request leaves draft status.
 
 The `N` prefix is intentional: historical repository documents already use T150–T157 for the old 0.15.0 OSC 133 program. N150 is the requested 1.5 terminology/layer-ownership tranche without overwriting that historical namespace.
 
@@ -146,7 +146,9 @@ iTerm2 shell-integration APIs    -> OSC 1337
 
 Version 1.5 introduces no public automatic-routing API. Internal normalization therefore does not silently reinterpret these released methods.
 
-N158 passed the full pull-request Staging matrix on exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad` in workflow run `34374645658`. The package candidate retained the frozen 1.4 public API fingerprint exactly across `net8.0`, `net9.0`, and `net10.0`.
+N158 passed the full pull-request Staging matrix on exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad` in workflow run `34374645658`.
+
+The documentation-complete N159 head `ea412cf4a4bac37312c0a23e1a77fcfc210b92dc` passed the same full Staging matrix in workflow run `34377552864`. Both acceptance points retained the frozen 1.4 public API fingerprint exactly across `net8.0`, `net9.0`, and `net10.0`.
 
 ## Planned post-1.5 control-language releases
 
