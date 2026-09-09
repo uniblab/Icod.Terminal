@@ -115,8 +115,9 @@ public sealed class KittyNotificationOptions {
 	/// Gets or initializes optional PNG, JPEG, or GIF icon bytes for transmission to the terminal.
 	/// </summary>
 	/// <remarks>
-	/// Supplying icon data also requires <see cref="IconDataIdentifier"/> so the terminal can associate/cache
-	/// the transmitted image. The bytes are copied and validated before output commitment.
+	/// Icon data can be transmitted without a cache identifier. Supplying <see cref="IconDataIdentifier"/>
+	/// additionally requests Kitty's <c>g</c>-key cache semantics so the same image may be referenced by a
+	/// later notification. The bytes are copied and validated before output commitment.
 	/// </remarks>
 	public byte[]? IconData {
 		get;
@@ -127,8 +128,10 @@ public sealed class KittyNotificationOptions {
 	/// Gets or initializes the optional Kitty icon-data cache identifier.
 	/// </summary>
 	/// <remarks>
-	/// This identifier uses the same restricted grammar as <see cref="Identifier"/>. It may be supplied
-	/// without <see cref="IconData"/> to reference icon data previously cached by the terminal.
+	/// This identifier uses the same restricted grammar as <see cref="Identifier"/>. When supplied with
+	/// <see cref="IconData"/>, it requests that the terminal cache the transmitted icon under this identity.
+	/// It may also be supplied without <see cref="IconData"/> to reference icon data previously cached by
+	/// the terminal. Applications are responsible for choosing a suitably unique identifier.
 	/// </remarks>
 	public string? IconDataIdentifier {
 		get;
