@@ -2,7 +2,7 @@
 
 **Release:** `1.5.0`  
 **Theme:** semantic protocol normalization and control-language foundation  
-**Status:** N150–N153 complete; N154 implemented, exact-head validation pending  
+**Status:** N150–N154 complete; N155 implemented, exact-head validation pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.4.0`
 
@@ -158,7 +158,7 @@ N153 passed as part of the full Staging validation on head `97982751a4024793372a
 
 ## N154 — multi-family query transactions
 
-**Status:** implemented; exact-head validation pending.
+**Status:** complete.
 
 **Goal:** allow one logical active query to correlate more than one possible control family or synchronization barrier.
 
@@ -186,9 +186,11 @@ Permanent N154 contract: `docs/N154-Multi-Family-Query-Transactions.md`.
 
 A synthetic APC-query/CSI-barrier transaction can be represented without special-casing Kitty Graphics in the input reader.
 
-The N154 implementation must pass the historical query transaction/framing suite, including the bounded eight-byte decoder fallback, in addition to the new APC/CSI compound transaction and APC/PM/SOS structural-frame tests.
+N154 passed the full PR Staging gate on exact head `39c8345a5aeb937ca437c58fa3fecfde1660ce48`: Windows, Linux, macOS, package candidate, Foundation, Presentation, Semantic/Hardening, Stable 1.x release-line, and validated package artifact all succeeded.
 
 ## N155 — capability support and evidence model
+
+**Status:** implemented; exact-head validation pending.
 
 **Goal:** separate support state from the source of the claim.
 
@@ -218,6 +220,38 @@ ProtocolResponse
 - ensure timeout remains Unknown unless the protocol defines a negative barrier/result;
 - keep explicit caller preference outside the evidence model;
 - define lifecycle/invalidation rules for live evidence.
+
+### Implemented design
+
+`TerminalCapabilitySubject` distinguishes evidence about a semantic operation from evidence about one concrete protocol backend. This allows TermInfo to advertise a semantic function without falsely asserting support for a particular hard-coded wire backend.
+
+`TerminalCapabilityEvidenceLedger` retains a bounded latest-state set for each subject. Static evidence may be `Unknown` or `Advertised`; live evidence may be `Unknown`, `Unsupported`, or `Verified`. `Unavailable` is derived from endpoint state and cannot be stored as evidence.
+
+Effective resolution order is:
+
+```text
+endpoint unavailable
+    ↓
+latest decisive live evidence
+    ↓
+TermInfo advertisement
+    ↓
+built-in profile advertisement
+    ↓
+latest inconclusive live observation
+    ↓
+Unknown
+```
+
+An `Unknown` live observation does not erase a decisive live result in the same generation and does not override stronger static advertisement. Later decisive live evidence may legitimately replace an earlier verified/unsupported conclusion.
+
+`AdvanceLiveGeneration()` invalidates live-probe/protocol-response conclusions while preserving TermInfo/profile evidence for later suspend/resume integration.
+
+Permanent N155 contract: `docs/N155-Capability-Support-and-Evidence-Model.md`.
+
+### Acceptance
+
+N155 tests cover endpoint unavailability, static-source precedence, positive/negative live precedence, inconclusive observations, subject isolation, invalid source/state combinations, and live-generation invalidation without public API or wire changes.
 
 ## N156 — semantic backend registry
 
@@ -344,6 +378,7 @@ The long-range contract is recorded in `docs/Control-Language-Normalization-and-
 - N152 shared incremental control-language scanner complete and fully green;
 - N153 structural CSI/DCS/string frame model complete and fully green;
 - XTGETTCAP correlation strengthened so late responses are matched to the requested capability rather than merely the DCS `+r` family;
-- N154 bounded multi-family transaction engine, synthetic APC/CSI acceptance, and structural string-family integration implemented; exact-head validation is pending;
+- N154 bounded multi-family transaction engine, synthetic APC/CSI acceptance, and structural string-family integration complete and fully green;
+- N155 bounded semantic/backend capability evidence model and lifecycle-generation invalidation implemented; exact-head validation is pending;
 - no existing public wire behavior intentionally changed;
-- N155 has not started.
+- N156 has not started.
