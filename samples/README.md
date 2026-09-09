@@ -166,7 +166,7 @@ The focused iTerm2 sample is built by `packaging/VerifyITerm2ShellIntegrationSam
 
 ### `Icod.Terminal.Notification.Sample`
 
-Demonstrates both the bounded legacy OSC 9 notification path and the OSC 777 titled-notification path.
+Demonstrates three explicit desktop-notification protocols. The sample never selects a protocol from terminal branding.
 
 Legacy OSC 9 example:
 
@@ -180,9 +180,15 @@ Explicit OSC 777 titled example:
 dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --titled "Build" "Compilation complete"
 ```
 
-The sample never chooses a notification protocol from terminal branding: the command line explicitly selects OSC 777 with `--titled`; otherwise it uses OSC 9. Successful completion means the frame was emitted, not that the desktop displayed it. Notification titles/text may appear in notification history, lock screens, screen sharing, multiplexed sessions, or terminal logs.
+Explicit Kitty OSC 99 example:
 
-The focused notification sample is also built by `packaging/VerifyNotificationSample.ps1` on every supported TFM during repository validation.
+```text
+dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --kitty "Build" "Compilation complete"
+```
+
+The Kitty example supplies only explicit title/body plus a fixed sample application/type label. It does not query terminal identity, read process state, or activate host-native notification APIs. Successful completion means the selected protocol frame(s) were emitted, not that the desktop displayed them. Notification content may appear in notification history, lock screens, screen sharing, multiplexed sessions, or terminal logs.
+
+The focused notification sample is built by `packaging/VerifyNotificationSample.ps1` on every supported TFM during repository validation.
 
 ## Publish interactive content
 
