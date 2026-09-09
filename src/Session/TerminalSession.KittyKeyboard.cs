@@ -91,10 +91,23 @@ public sealed partial class TerminalSession {
 					).ConfigureAwait( false )
 					;
 			} catch ( TimeoutException ) {
+				this.RecordSemanticBackendEvidence(
+					TerminalProtocolBackend.CsiKittyKeyboard,
+					TerminalCapabilitySupportState.Unknown,
+					TerminalCapabilityEvidenceSource.LiveProbe
+				);
 				return false;
 			}
 
-			return probe.Flags.HasValue;
+			bool supported = probe.Flags.HasValue;
+			this.RecordSemanticBackendEvidence(
+				TerminalProtocolBackend.CsiKittyKeyboard,
+				supported
+					? TerminalCapabilitySupportState.Verified
+					: TerminalCapabilitySupportState.Unsupported,
+				TerminalCapabilityEvidenceSource.ProtocolResponse
+			);
+			return supported;
 		} finally {
 			coordinator.RemoveKittyKeyboardFlagsProbe( probe );
 		}
