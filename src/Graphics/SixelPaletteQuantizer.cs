@@ -507,7 +507,7 @@ internal static class SixelPaletteQuantizer {
 
 		long target = ( source.PixelCount + 1L ) / 2L;
 		long cumulative = 0;
-		int splitIndex = 1;
+		int splitIndex = ordered.Count - 1;
 		for ( int index = 0; index < ordered.Count - 1; index++ ) {
 			cumulative += ordered[ index ].Count;
 			if ( cumulative >= target ) {
