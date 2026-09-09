@@ -11,7 +11,7 @@
 
 `1.1.0` is the current 1.x release line and the first additive minor release after the stable 1.0 contract.
 
-Version 1.1 adds typed, bounded VS Code OSC 633 shell integration without changing the meaning of the existing 1.0 APIs. OSC 633 remains a distinct vendor-specific protocol family rather than an alias for the portable OSC 133 semantic-prompt API. The new surface covers prompt start/end, pre-execution, command completion, exact command-line publication with VS Code escaping and optional nonce, and the documented `Cwd`, `IsWindows`, and `HasRichCommandDetection` properties.
+Version 1.1 adds typed, bounded VS Code OSC 633 shell integration without changing the meaning of the existing 1.0 APIs. OSC 633 remains a distinct vendor-specific protocol family rather than an alias for the portable OSC 133 semantic-prompt API. The new surface covers prompt start/end, pre-execution, command completion, exact command-line publication with VS Code escaping and optional nonce, and the stable documented `Cwd`, `IsWindows`, `ContinuationPrompt`, and `HasRichCommandDetection` properties.
 
 The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line.
 
@@ -134,9 +134,9 @@ The safe OSC 9 subset intentionally excludes host-affecting vendor commands for 
 
 ### VS Code OSC 633
 
-The 1.1 OSC 633 API is explicitly vendor-specific and typed. It provides semantic operations for `A`, `B`, `C`, `D`, and `E` command detection plus the documented `P` properties `Cwd`, `IsWindows`, and `HasRichCommandDetection`.
+The 1.1 OSC 633 API is explicitly vendor-specific and typed. It provides semantic operations for `A`, `B`, `C`, `D`, and `E` command detection plus the stable documented `P` properties `Cwd`, `IsWindows`, `ContinuationPrompt`, and `HasRichCommandDetection`.
 
-Command-line and `Cwd` values use VS Code's protocol escaping before strict UTF-8 framing. Optional nonces are explicit bounded caller input. The library does not expose a generic raw OSC 633 writer, does not infer VS Code support from terminal identity, and does not expose unfinalized/private `F` or `EnvJson` extensions.
+Command-line, `Cwd`, and `ContinuationPrompt` values use VS Code's protocol escaping before strict UTF-8 framing. Optional nonces are explicit bounded caller input for the command-line and current-directory forms that define them. The library does not expose a generic raw OSC 633 writer, does not infer VS Code support from terminal identity, and does not expose the unfinalized `F`/`G`, `H`/`I`, `SetMark`, or `EnvJson`/`EnvSingle*` extensions.
 
 See [`docs/VsCode-Osc633-Shell-Integration.md`](docs/VsCode-Osc633-Shell-Integration.md).
 
@@ -164,7 +164,7 @@ Several operations disclose caller-supplied metadata by design:
 - current filesystem locations;
 - hyperlinks;
 - OSC 133 command-line metadata;
-- OSC 633 command-line/current-directory metadata and optional nonce;
+- OSC 633 command-line/current-directory/continuation-prompt metadata and optional nonce;
 - desktop notification text;
 - keyboard/mouse/focus/paste input.
 
