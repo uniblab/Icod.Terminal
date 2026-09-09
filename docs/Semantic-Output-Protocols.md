@@ -175,11 +175,51 @@ The library does not inspect shell history/process arguments, parse shell syntax
 
 OSC 133 metadata is ephemeral: no automatic open marker, lifecycle replay, or synthetic finish/abort on disposal.
 
-## 12. Safe OSC 9 subset
+## 12. VS Code shell integration — OSC 633
+
+`Icod.Terminal 1.1` adds a distinct typed surface for VS Code's OSC 633 shell-integration namespace. It is not an alias for OSC 133 and is not emitted by the portable OSC 133 methods.
+
+The public marker/command surface is:
+
+```text
+BeginVsCodePromptAsync()        -> OSC 633;A ST
+BeginVsCodeCommandInputAsync()  -> OSC 633;B ST
+BeginVsCodeCommandOutputAsync() -> OSC 633;C ST
+FinishVsCodeCommandAsync(n)     -> OSC 633;D;n ST
+AbortVsCodeCommandAsync()       -> OSC 633;D ST
+PublishVsCodeCommandLineAsync() -> OSC 633;E;... ST
+```
+
+The stable typed property surface is:
+
+```text
+PublishVsCodeCurrentDirectoryAsync(...)      -> P;Cwd=...
+PublishVsCodeIsWindowsAsync(...)              -> P;IsWindows=True|False
+PublishVsCodeContinuationPromptAsync(...)     -> P;ContinuationPrompt=...
+PublishVsCodeRichCommandDetectionAsync(...)   -> P;HasRichCommandDetection=True|False
+```
+
+Command-line, `Cwd`, and `ContinuationPrompt` values use the VS Code message serializer before strict UTF-8 framing:
+
+```text
+\       -> \\
+;       -> \x3b
+U+0000 through U+0020 -> \x00 through \x20
+```
+
+Optional nonces are accepted only on the command-line and current-directory forms that define them. The complete OSC payload is bounded to 65,536 UTF-8 bytes and a supplied nonce is bounded to 512 printable ASCII characters excluding semicolon.
+
+OSC 633 operations are explicit, ephemeral metadata. They add no lifecycle participant, restoration lease, automatic resume replay, automatic shell detection, process/shell inspection, or startup-file modification. Successful completion proves only that the frame was written to an interactive terminal output endpoint.
+
+The public API deliberately excludes generic raw OSC 633 dispatch and currently unfinalized/private forms including continuation-region markers `F`/`G`, right-prompt markers `H`/`I`, `SetMark`, and `EnvJson`/`EnvSingle*` environment transfer.
+
+For the full 1.1 contract, see `VsCode-Osc633-Shell-Integration.md`.
+
+## 13. Safe OSC 9 subset
 
 The public safe OSC 9 surface is intentionally narrow:
 
-### 12.1 Notification
+### 13.1 Notification
 
 `SendNotificationAsync(message)` emits the legacy semantic notification form:
 
@@ -191,7 +231,7 @@ The message is strict UTF-8, C0/DEL/C1 controls are rejected, and the complete O
 
 Display of a desktop notification is terminal/OS policy. Emission does not prove presentation.
 
-### 12.2 Windows current-directory compatibility
+### 13.2 Windows current-directory compatibility
 
 `PublishWindowsCurrentDirectoryCompatibilityAsync(windowsPath)` emits:
 
@@ -205,7 +245,7 @@ Its payload is bounded to 32,768 bytes including the `9;9;` prefix.
 
 OSC 7 remains the preferred portable location API; the library never silently substitutes OSC 9;9 or automatically emits both.
 
-### 12.3 Deliberately excluded OSC 9 commands
+### 13.3 Deliberately excluded OSC 9 commands
 
 The public API intentionally does not expose ConEmu-family commands for:
 
@@ -231,7 +271,7 @@ There is no generic public OSC 9 selector/payload API, Kitty OSC 99 command surf
 
 These exclusions are part of the 1.x safety contract.
 
-## 13. Palette colors — OSC 4 / 104
+## 14. Palette colors — OSC 4 / 104
 
 The indexed palette uses `byte` indices `0..255` and normalized 16-bit `TerminalColor` values.
 
@@ -241,7 +281,7 @@ OSC 104 is terminal-policy reset, not exact restoration.
 
 Scoped palette ownership is separately available and performs query-before-mutate exact restoration; see `Presentation-and-Reversible-State.md`.
 
-## 14. Dynamic colors — OSC 10–14, 17, 19 / resets 110–114, 117, 119
+## 15. Dynamic colors — OSC 10–14, 17, 19 / resets 110–114, 117, 119
 
 The semantic dynamic colors are:
 
@@ -261,7 +301,7 @@ Reset operations are terminal-policy resets. Scoped color leases provide exact o
 
 Tektronix OSC 15/16/18 and resets 115/116/118 are not part of the public semantic color contract.
 
-## 15. Color grammar
+## 16. Color grammar
 
 Canonical outbound color representation is:
 
@@ -273,7 +313,7 @@ with 16-bit RGB channels.
 
 Inbound observation accepts the frozen strict `rgb:` component forms and supported hash forms. Named colors, `rgbi:`, CSS color syntax, alpha channels, mixed-width components, and arbitrary raw color strings are outside the 1.x parser contract.
 
-## 16. Ephemeral vs owned state
+## 17. Ephemeral vs owned state
 
 A semantic output method does not automatically imply lifecycle ownership.
 
@@ -281,14 +321,15 @@ Examples of ephemeral output include:
 
 - title publication;
 - current location;
-- OSC 133 markers;
+- OSC 133 markers and metadata;
+- OSC 633 VS Code shell-integration markers and metadata;
 - notification and OSC 9;9 metadata.
 
 These are not replayed on resume or synthesized on disposal.
 
 Scoped features such as hyperlinks, cursor style, synchronized output, progress, pointer shape, and colors each have their own documented ownership/restoration semantics. Consumers should not infer one lease's rules from another merely because both implement `IAsyncDisposable`.
 
-## 17. Advanced raw-output boundary
+## 18. Advanced raw-output boundary
 
 `TerminalSession.Output` exposes the borrowed `ITerminalOutput` service as an advanced escape hatch. Direct calls are outside the session output-ordering contract and can interleave with session-managed traffic unless the caller provides external coordination.
 
@@ -298,7 +339,7 @@ Likewise, `WriteTerminalStringAsync(...)` is intended for already-resolved termi
 
 Ordinary consumers should prefer semantic APIs and `WriteTextAsync(...)`.
 
-## 18. No generic protocol dispatcher
+## 19. No generic protocol dispatcher
 
 The 1.x public surface intentionally does not provide:
 
