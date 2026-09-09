@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.ITerm2ShellIntegration.Sample
-	Sample application demonstrating typed iTerm2 OSC 1337 shell-integration metadata.
+	Sample application demonstrating Icod.Terminal ITerm2ShellIntegration features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
