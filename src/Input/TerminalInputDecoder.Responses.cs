@@ -234,7 +234,10 @@ internal sealed partial class TerminalInputDecoder {
 		ArgumentNullException.ThrowIfNull( expectation );
 
 		family = null;
-		maximumFrameBytes = TerminalResponseFramer.DefaultMaximumFrameBytes;
+		maximumFrameBytes = Math.Min(
+			TerminalResponseFramer.DefaultMaximumFrameBytes,
+			this.maximumBufferedBytes
+		);
 		bool introducerIncomplete = false;
 		IReadOnlyList<TerminalControlFamily> families = expectation.ResponsePlan.Families;
 		for ( int index = 0; index < families.Count; index++ ) {
@@ -242,23 +245,27 @@ internal sealed partial class TerminalInputDecoder {
 			TerminalQueryResponseRule rule = expectation.ResponsePlan.GetRule(
 				candidateFamily
 			);
+			int effectiveMaximumFrameBytes = Math.Min(
+				rule.MaximumFrameBytes,
+				this.maximumBufferedBytes
+			);
 			TerminalResponseFrameParseResult candidate = TerminalResponseFramer.Parse(
 				this.bufferedBytes,
 				candidateFamily,
-				rule.MaximumFrameBytes
+				effectiveMaximumFrameBytes
 			);
 
 			switch ( candidate.Status ) {
 				case TerminalResponseFrameParseStatus.Complete:
 				case TerminalResponseFrameParseStatus.Invalid:
 					family = candidateFamily;
-					maximumFrameBytes = rule.MaximumFrameBytes;
+					maximumFrameBytes = effectiveMaximumFrameBytes;
 					return candidate;
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					maximumFrameBytes = Math.Max(
 						maximumFrameBytes,
-						rule.MaximumFrameBytes
+						effectiveMaximumFrameBytes
 					);
 					if ( !candidate.IntroducerIncomplete ) {
 						family = candidateFamily;
