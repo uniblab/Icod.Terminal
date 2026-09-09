@@ -213,7 +213,7 @@ OSC 633 operations are explicit, ephemeral metadata. They add no lifecycle parti
 
 The public API deliberately excludes generic raw OSC 633 dispatch and currently unfinalized/private forms including continuation-region markers `F`/`G`, right-prompt markers `H`/`I`, `SetMark`, and `EnvJson`/`EnvSingle*` environment transfer.
 
-For the full 1.1 contract, see `VsCode-Osc633-Shell-Integration.md`.
+For the full contract, see `VsCode-Osc633-Shell-Integration.md`.
 
 ## 13. Safe OSC 9 subset
 
@@ -267,11 +267,33 @@ It also omits redundant/unjustified forms:
 9;12  prompt signaling    -> OSC 133 owns prompt semantics
 ```
 
-There is no generic public OSC 9 selector/payload API, Kitty OSC 99 command surface, or OSC 777 notification-action surface.
+There is no generic public OSC 9 selector/payload API or Kitty OSC 99 command surface.
 
 These exclusions are part of the 1.x safety contract.
 
-## 14. Palette colors — OSC 4 / 104
+## 14. Titled desktop notifications — OSC 777
+
+`SendTitledNotificationAsync(title, message)` emits the bounded urxvt-style titled notification form:
+
+```text
+OSC 777;notify;<title>;<message> ST
+```
+
+The literal command is always `notify`. Both fields use strict UTF-8 and may be empty. C0, DEL, C1 controls and malformed Unicode are rejected.
+
+OSC 777 defines semicolon-delimited fields without a broadly interoperable field-escaping grammar. `Icod.Terminal` therefore rejects semicolons in `title` and `message` instead of rewriting or truncating caller data.
+
+The complete OSC payload, including `777;notify;`, both fields, and their separating semicolon, is bounded to 4,096 encoded bytes.
+
+OSC 777 uses the normal session output-serialization boundary: the complete frame is validated and encoded before waiting for the output gate, pre-commit cancellation emits nothing, and a committed frame completes in one non-cancellable write without an implicit flush.
+
+Successful completion proves only emission to an interactive terminal endpoint. The library does not infer OSC 777 support from terminal branding, does not automatically fall back to OSC 9, and does not invoke a host-native notification mechanism.
+
+OSC 777 notifications are ephemeral output metadata. They add no lifecycle participant, restoration state, resume replay, notification identity, update semantics, or disposal behavior.
+
+For the complete contract, see `Osc777-Desktop-Notifications.md`.
+
+## 15. Palette colors — OSC 4 / 104
 
 The indexed palette uses `byte` indices `0..255` and normalized 16-bit `TerminalColor` values.
 
@@ -281,7 +303,7 @@ OSC 104 is terminal-policy reset, not exact restoration.
 
 Scoped palette ownership is separately available and performs query-before-mutate exact restoration; see `Presentation-and-Reversible-State.md`.
 
-## 15. Dynamic colors — OSC 10–14, 17, 19 / resets 110–114, 117, 119
+## 16. Dynamic colors — OSC 10–14, 17, 19 / resets 110–114, 117, 119
 
 The semantic dynamic colors are:
 
@@ -301,7 +323,7 @@ Reset operations are terminal-policy resets. Scoped color leases provide exact o
 
 Tektronix OSC 15/16/18 and resets 115/116/118 are not part of the public semantic color contract.
 
-## 16. Color grammar
+## 17. Color grammar
 
 Canonical outbound color representation is:
 
@@ -313,7 +335,7 @@ with 16-bit RGB channels.
 
 Inbound observation accepts the frozen strict `rgb:` component forms and supported hash forms. Named colors, `rgbi:`, CSS color syntax, alpha channels, mixed-width components, and arbitrary raw color strings are outside the 1.x parser contract.
 
-## 17. Ephemeral vs owned state
+## 18. Ephemeral vs owned state
 
 A semantic output method does not automatically imply lifecycle ownership.
 
@@ -323,13 +345,14 @@ Examples of ephemeral output include:
 - current location;
 - OSC 133 markers and metadata;
 - OSC 633 VS Code shell-integration markers and metadata;
-- notification and OSC 9;9 metadata.
+- OSC 9 and OSC 777 notification metadata;
+- OSC 9;9 metadata.
 
 These are not replayed on resume or synthesized on disposal.
 
 Scoped features such as hyperlinks, cursor style, synchronized output, progress, pointer shape, and colors each have their own documented ownership/restoration semantics. Consumers should not infer one lease's rules from another merely because both implement `IAsyncDisposable`.
 
-## 18. Advanced raw-output boundary
+## 19. Advanced raw-output boundary
 
 `TerminalSession.Output` exposes the borrowed `ITerminalOutput` service as an advanced escape hatch. Direct calls are outside the session output-ordering contract and can interleave with session-managed traffic unless the caller provides external coordination.
 
@@ -339,7 +362,7 @@ Likewise, `WriteTerminalStringAsync(...)` is intended for already-resolved termi
 
 Ordinary consumers should prefer semantic APIs and `WriteTextAsync(...)`.
 
-## 19. No generic protocol dispatcher
+## 20. No generic protocol dispatcher
 
 The 1.x public surface intentionally does not provide:
 
