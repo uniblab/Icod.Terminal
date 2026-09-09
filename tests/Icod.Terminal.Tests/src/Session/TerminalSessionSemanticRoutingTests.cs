@@ -237,11 +237,14 @@ public sealed class TerminalSessionSemanticRoutingTests {
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
 			bool isOutput = ReferenceEquals( endpoint, TerminalEndpoint.StandardOutput );
+			TerminalPlatformKind? platform = isOutput
+				? TerminalPlatformKind.PosixTermios
+				: null;
 			return TerminalControlResult<TerminalEndpointObservation>.Available(
 				new TerminalEndpointObservation(
 					isOutput,
 					null,
-					TerminalPlatformKind.PosixTermios,
+					platform,
 					isOutput
 						? TerminalControlCapabilities.Attachment
 							| TerminalControlCapabilities.ModeRead
