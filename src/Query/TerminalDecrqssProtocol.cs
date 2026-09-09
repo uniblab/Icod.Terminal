@@ -30,8 +30,6 @@ internal static class TerminalDecrqssProtocol {
 	internal const int MaximumStatusStringBytes = 1024;
 
 	private const byte EscapeByte = 0x1B;
-	private const byte DcsByte = 0x90;
-	private const byte StringTerminatorByte = 0x9C;
 
 	internal static ITerminalResponseMatcher ResponseMatcher {
 		get;
@@ -70,28 +68,26 @@ internal static class TerminalDecrqssProtocol {
 		}
 		ArgumentNullException.ThrowIfNull( frame );
 
-		if ( !TryGetResponseLayout(
+		if ( !TryGetResponseStructure(
 			frame,
-			out int parameterStart,
-			out int parameterLength,
-			out int payloadStart,
-			out int payloadLength
+			out TerminalControlFrameStructure structure
 		) ) {
 			throw new FormatException(
 				"The terminal response is not a DECRPSS frame."
 			);
 		}
 
-		ReadOnlySpan<byte> bytes = frame.Bytes.Span;
-		if ( 1 != parameterLength ) {
+		ReadOnlySpan<byte> parameters = structure.ParameterBytes.Span;
+		if ( 1 != parameters.Length ) {
 			throw new FormatException(
 				"A DECRPSS response must contain exactly one validity parameter."
 			);
 		}
 
-		byte validity = bytes[ parameterStart ];
+		ReadOnlySpan<byte> payload = structure.PayloadBytes.Span;
+		byte validity = parameters[ 0 ];
 		if ( (byte)'0' == validity ) {
-			if ( 0 != payloadLength ) {
+			if ( !payload.IsEmpty ) {
 				throw new FormatException(
 					"A negative DECRPSS response cannot contain status-string data."
 				);
@@ -108,21 +104,17 @@ internal static class TerminalDecrqssProtocol {
 				"A DECRPSS validity parameter must be 0 or 1."
 			);
 		}
-		if ( 0 == payloadLength ) {
+		if ( payload.IsEmpty ) {
 			throw new FormatException(
 				"A positive DECRPSS response must contain status-string data."
 			);
 		}
-		if ( MaximumStatusStringBytes < payloadLength ) {
+		if ( MaximumStatusStringBytes < payload.Length ) {
 			throw new FormatException(
 				$"A DECRPSS status string cannot exceed {MaximumStatusStringBytes} bytes."
 			);
 		}
 
-		ReadOnlySpan<byte> payload = bytes.Slice(
-			payloadStart,
-			payloadLength
-		);
 		for ( int index = 0; index < payload.Length; index++ ) {
 			if ( payload[ index ] is < 0x20 or > 0x7E ) {
 				throw new FormatException(
@@ -197,100 +189,33 @@ internal static class TerminalDecrqssProtocol {
 		}
 	}
 
-	private static bool TryGetResponseLayout(
+	private static bool TryGetResponseStructure(
 		TerminalResponseFrame frame,
-		out int parameterStart,
-		out int parameterLength,
-		out int payloadStart,
-		out int payloadLength
+		out TerminalControlFrameStructure structure
 	) {
-		parameterStart = 0;
-		parameterLength = 0;
-		payloadStart = 0;
-		payloadLength = 0;
+		ArgumentNullException.ThrowIfNull( frame );
 
-		if ( TerminalResponseFrameKind.Dcs != frame.Kind ) {
+		structure = default;
+		if ( TerminalResponseFrameKind.Dcs != frame.Kind
+			|| !TerminalControlFrameStructure.TryParse(
+				frame,
+				out TerminalControlFrameStructure parsed
+			) ) {
+			return false;
+		}
+		if ( TerminalControlFamily.Dcs != parsed.Family
+			|| !parsed.FinalByte.HasValue
+			|| (byte)'r' != parsed.FinalByte.Value ) {
 			return false;
 		}
 
-		ReadOnlySpan<byte> bytes = frame.Bytes.Span;
-		if ( !TryGetDcsContentBounds(
-			bytes,
-			out int contentStart,
-			out int contentEnd
-		) ) {
+		ReadOnlySpan<byte> intermediates = parsed.IntermediateBytes.Span;
+		if ( 1 != intermediates.Length || (byte)'$' != intermediates[ 0 ] ) {
 			return false;
 		}
 
-		int index = contentStart;
-		parameterStart = index;
-		while ( index < contentEnd && IsParameterByte( bytes[ index ] ) ) {
-			++index;
-		}
-		parameterLength = index - parameterStart;
-
-		int intermediateStart = index;
-		while ( index < contentEnd && IsIntermediateByte( bytes[ index ] ) ) {
-			++index;
-		}
-		int intermediateLength = index - intermediateStart;
-		if ( 1 != intermediateLength || (byte)'$' != bytes[ intermediateStart ] ) {
-			return false;
-		}
-		if ( index >= contentEnd || (byte)'r' != bytes[ index ] ) {
-			return false;
-		}
-
-		payloadStart = index + 1;
-		payloadLength = contentEnd - payloadStart;
+		structure = parsed;
 		return true;
-	}
-
-	private static bool TryGetDcsContentBounds(
-		ReadOnlySpan<byte> bytes,
-		out int contentStart,
-		out int contentEnd
-	) {
-		contentStart = 0;
-		contentEnd = 0;
-
-		if ( 4 > bytes.Length ) {
-			return false;
-		}
-
-		if ( DcsByte == bytes[ 0 ] ) {
-			contentStart = 1;
-		} else if ( 2 <= bytes.Length
-			&& EscapeByte == bytes[ 0 ]
-			&& (byte)'P' == bytes[ 1 ] ) {
-			contentStart = 2;
-		} else {
-			return false;
-		}
-
-		if ( StringTerminatorByte == bytes[ ^1 ] ) {
-			contentEnd = bytes.Length - 1;
-		} else if ( 2 <= bytes.Length
-			&& EscapeByte == bytes[ ^2 ]
-			&& (byte)'\\' == bytes[ ^1 ] ) {
-			contentEnd = bytes.Length - 2;
-		} else {
-			return false;
-		}
-
-		return contentStart < contentEnd;
-	}
-
-	private static bool IsParameterByte(
-		byte value
-	) {
-		return value is >= 0x30 and <= 0x3F;
-	}
-
-	private static bool IsIntermediateByte(
-		byte value
-	) {
-		return value is >= 0x20 and <= 0x2F;
 	}
 
 	private sealed class TerminalDecrqssResponseMatcher : ITerminalResponseMatcher {
@@ -302,11 +227,8 @@ internal static class TerminalDecrqssProtocol {
 			TerminalResponseFrame frame
 		) {
 			ArgumentNullException.ThrowIfNull( frame );
-			return TryGetResponseLayout(
+			return TryGetResponseStructure(
 				frame,
-				out _,
-				out _,
-				out _,
 				out _
 			);
 		}
