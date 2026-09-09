@@ -85,9 +85,15 @@ RequireProperty(
 string[] forbiddenRawKeyboardMethods = typeof( TerminalSession )
 	.GetMethods( BindingFlags.Public | BindingFlags.Instance )
 	.Where(
-		method => method.Name.Contains(
-			"Kitty",
-			StringComparison.OrdinalIgnoreCase
+		method => (
+			method.Name.Contains(
+				"Kitty",
+				StringComparison.OrdinalIgnoreCase
+			)
+			&& method.Name.Contains(
+				"Keyboard",
+				StringComparison.OrdinalIgnoreCase
+			)
 		)
 		|| method.Name.Contains(
 			"ModifyOtherKeys",
