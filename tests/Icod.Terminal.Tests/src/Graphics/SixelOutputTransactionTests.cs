@@ -332,6 +332,7 @@ public sealed class SixelOutputTransactionTests {
 						.Select( write => write.ToArray() )
 						.ToArray();
 				}
+			}
 		}
 
 		public async ValueTask WriteAsync(
