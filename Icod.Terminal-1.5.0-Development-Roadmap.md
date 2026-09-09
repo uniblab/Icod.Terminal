@@ -2,7 +2,7 @@
 
 **Release:** `1.5.0`  
 **Theme:** semantic protocol normalization and control-language foundation  
-**Status:** N150–N157 complete; N158 implemented, exact-head validation pending  
+**Status:** N150–N158 complete; N159 acceptance/package/documentation closure in progress  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.4.0`
 
@@ -313,7 +313,7 @@ N157 passed the full PR Staging gate on exact head `1091a508181295ecbdf3bff59194
 
 ## N158 — existing protocol and TermInfo reconciliation
 
-**Status:** implemented; exact-head validation pending.
+**Status:** complete.
 
 **Goal:** normalize what already exists before adding new CSI/DCS/APC feature families.
 
@@ -362,17 +362,19 @@ Partial overlaps are deliberately not promoted. In particular `Cs`/`Cr` represen
 
 Successful correlated OSC 99 capability responses record `Osc99KittyNotification` as `Verified` with `ProtocolResponse` evidence. Timeout/cancellation records no negative conclusion.
 
-Managed lifecycle resume advances the live-evidence generation before session state is reapplied, preserving static TermInfo/profile evidence while preventing stale live conclusions from leaking across the suspend/resume epoch.
+The existing Kitty keyboard support probe now records concrete `CsiKittyKeyboard` evidence: Kitty flags are `Verified / ProtocolResponse`, a Primary-DA barrier without Kitty flags is `Unsupported / ProtocolResponse`, and timeout remains `Unknown / LiveProbe`.
+
+`TerminalSession.InvalidateState()` advances the live-evidence generation. Explicit out-of-band invalidation and managed resume therefore discard stale live conclusions while preserving immutable TermInfo/profile evidence.
 
 Permanent N158 contract: `docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md`.
 
 ### Acceptance
 
-N158 must prove exact/partial TermInfo distinction, session routing integration, live-evidence generation behavior, existing protocol-specific public behavior, and the complete Staging/package matrix before N159 begins.
+N158 passed the full PR Staging gate on exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad` in workflow run `34374645658`. Windows, Linux, macOS, package candidate, Foundation, Presentation, Semantic/Hardening, Stable 1.x release-line, and validated package artifact all succeeded. The generated public API remained identical to the frozen 1.4 baseline.
 
 ## N159 — acceptance, package, and documentation closure
 
-**Status:** not started.
+**Status:** in progress.
 
 ### Required evidence
 
@@ -390,9 +392,25 @@ N158 must prove exact/partial TermInfo distinction, session routing integration,
 - DCurses acceptance showing semantic use without protocol-number knowledge;
 - release notes, changelog, README, compatibility/security docs, and API baseline closure.
 
+### Accepted evidence
+
+N158 exact-head run `34374645658` supplies the runtime/package acceptance foundation for N159. It confirms:
+
+- all three runtime operating-system lanes pass;
+- all four package-contract shards pass;
+- the validated package artifact is produced;
+- `net8.0`, `net9.0`, and `net10.0` public snapshots are identical;
+- the frozen 1.4 public API fingerprint remains `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27`.
+
+Because 1.5 introduces no public-surface delta, N159 intentionally retains `docs/Public-API-Baseline-1.4.md` / `.sha256` as the current machine baseline rather than creating a duplicate 1.5 baseline for identical API bytes.
+
+The release-facing README, changelog, curated 1.5 release notes, package release notes, N158 permanent record, and N159 acceptance record are being synchronized on the closure head. The final documentation-complete head must pass the same PR matrix before N159 is marked complete.
+
+Permanent N159 contract: `docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md`.
+
 ## Public API strategy
 
-N150–N158 remain internal. Version 1.5 has not added a public automatic-routing API and therefore does not intentionally change the frozen 1.4 public surface.
+N150–N159 remain internal. Version 1.5 has not added a public automatic-routing API and therefore does not change the frozen 1.4 public surface.
 
 Existing wire-specific APIs remain valuable for deterministic advanced use and are not deprecated merely because internal semantic routing now exists.
 
@@ -423,6 +441,7 @@ The long-range contract is recorded in `docs/Control-Language-Normalization-and-
 - N155 bounded semantic/backend capability evidence model complete and fully green;
 - N156 semantic backend registry complete;
 - N157 deterministic backend resolver complete and fully green;
-- N158 TermInfo reconciliation, session evidence integration, live OSC 99 evidence, and lifecycle-generation invalidation implemented; exact-head validation pending;
+- N158 TermInfo reconciliation, session evidence integration, OSC 99/Kitty-keyboard live evidence, and generation invalidation complete and fully green on `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`;
+- N159 release-facing synchronization and final exact-head validation are in progress;
 - no existing public wire behavior intentionally changed;
-- N159 has not started.
+- frozen 1.4 public API fingerprint retained exactly.
