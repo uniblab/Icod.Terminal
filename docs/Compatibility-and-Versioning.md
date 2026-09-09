@@ -32,6 +32,14 @@ Compatible minor-release additions receive separate reviewed baselines rather th
 - `docs/Public-API-Baseline-1.3.md` / `.sha256` record the additive typed iTerm2 OSC 1337 surface;
 - `docs/Public-API-Baseline-1.4.md` / `.sha256` record the additive typed Kitty OSC 99 notification/query surface.
 
+Version `1.5.0` intentionally adds no public API. Its generated `net8.0`, `net9.0`, and `net10.0` snapshots remain identical to 1.4 and retain SHA-256:
+
+```text
+3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
+```
+
+Therefore `docs/Public-API-Baseline-1.4.md` / `.sha256` remain the authoritative current machine baseline for 1.5. A duplicate `Public-API-Baseline-1.5.*` pair is intentionally not created merely to relabel an identical exported surface.
+
 `packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint. Older baseline files remain checked in as compatibility evidence.
 
 The reflection snapshot covers exported types, constructors, methods, properties, interfaces, nullability/default information represented by the generator, constants, and public enum numeric values across all supported TFMs.
@@ -91,7 +99,12 @@ Examples include:
 - explicit metadata/privacy disclosure;
 - no generic hazardous OSC 9 execution/control surface;
 - no generic raw OSC 633, OSC 777, OSC 1337, or OSC 99 dispatch replacing typed semantic APIs;
-- no second input reader for OSC 99 unsolicited notification events.
+- no generic public CSI/DCS/OSC/APC/PM/SOS writer introduced by the 1.5 normalization;
+- no second input reader for OSC 99 unsolicited notification events;
+- static TermInfo/profile capability advertisement remains distinct from generation-scoped live evidence;
+- `TerminalSession.InvalidateState()` expires live probe/protocol-response evidence while immutable selected TermInfo/profile evidence persists;
+- terminal/vendor identity and caller routing preference are not treated as capability evidence;
+- query timeout is not automatically converted into unsupported truth.
 
 A minor/patch release may strengthen correctness while preserving these guarantees, but should not silently weaken or reverse them.
 
@@ -109,6 +122,8 @@ Likewise:
 - negotiated reversible protocols may decline acquisition when safe restoration/ownership cannot be established.
 
 The OSC 99 support/alive queries introduced by 1.4 are live observations through the existing response router. Silence remains a timeout and is not converted into permanent unsupported truth.
+
+Version 1.5 generalizes that distinction internally. A successful correlated OSC 99 support response can record verified live backend evidence, while timeout/cancellation records no false negative. Existing Kitty keyboard negotiation likewise distinguishes affirmative Kitty flags, a reviewed Primary-DA negative barrier, and silence/timeout. These internal evidence refinements do not change the released public query or lease signatures.
 
 Future minor releases may add new semantic protocol APIs without changing the meaning of existing operations.
 
@@ -169,6 +184,8 @@ The permanent layer boundaries are part of the support model:
 - `Icod.DCurses` owns the higher-level virtual-screen/curses presentation model;
 - PTY/process hosting remains orthogonal rather than hidden inside `Icod.Terminal`.
 
+Version 1.5 adds internal semantic operation/backend/evidence/control-family layers behind these boundaries without transferring ownership to higher-level consumers or requiring direct consumers to construct protocol frames.
+
 A future release may improve implementations behind these boundaries without requiring consumers to adopt platform-native mode manipulation or a second terminal parser.
 
 ## 11. Direct consumers and Icod.DCurses
@@ -186,6 +203,7 @@ Security boundaries are compatibility commitments, not optional implementation d
 In particular, 1.x does not use a minor/patch release to quietly introduce:
 
 - generic raw OSC/CSI/DCS vendor dispatch as the ordinary API;
+- generic raw APC/PM/SOS dispatch as an ordinary public extension mechanism;
 - hazardous OSC 9 macro/process/environment/emulator-control operations;
 - generic OSC 633, OSC 777, OSC 1337, or OSC 99 dispatch that bypasses reviewed typed semantic surfaces;
 - invasive OSC 1337 profile/focus/browser/pasteboard/file-transfer/custom-script operations without separate security review;
@@ -214,5 +232,7 @@ The repository maintains layered evidence including:
 - fresh package-only consumers for newly added semantic APIs;
 - retained package-only consumers for historical stable contracts;
 - release/distribution validation on configured architectures.
+
+For 1.5, the full PR Staging matrix passed on N158 exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`, including all three runtime lanes, all four package-contract shards, and the validated package artifact. The package project built all three TFMs with zero warnings/errors and retained the frozen 1.4 public fingerprint exactly.
 
 These gates may evolve or be consolidated, but equivalent coverage must exist before historical compatibility gates are removed.

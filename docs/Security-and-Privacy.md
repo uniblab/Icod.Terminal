@@ -14,6 +14,8 @@
 
 The library therefore favors typed semantic APIs, bounded parsing, pre-output validation, explicit disclosure, and one authoritative input/query path over raw generic protocol construction.
 
+Version 1.5 extends that principle internally rather than weakening it: semantic intent, concrete protocol backend, control family, support state, and evidence source are separate concepts. Terminal branding, caller routing preference, and protocol-number familiarity are not promoted into capability truth.
+
 ## 2. Control-sequence injection boundary
 
 Text-bearing semantic protocols validate their payload according to the relevant protocol before the first frame byte is committed where the protocol permits complete prevalidation.
@@ -39,6 +41,14 @@ Validation and encoding protect framing integrity. They do **not** make semantic
 
 Input decoding, paste handling, query transactions, request frames, response frames, late-response ownership, and resynchronization paths are bounded.
 
+Version 1.5 preserves those ceilings while generalizing the infrastructure:
+
+- one bounded incremental scanner recognizes CSI, DCS, OSC, APC, PM, and SOS rather than creating per-dialect unbounded scanners;
+- structural frame parsing preserves syntax without retaining unlimited input;
+- multi-family query transactions have a bounded rule set and per-family frame limits;
+- malformed, oversized, aborted, and incomplete frames recover through reviewed bounded paths;
+- capability evidence retains bounded latest static/live conclusions rather than an unbounded observation history.
+
 OSC 99 adds additional explicit bounds:
 
 - each Base64 payload chunk is limited to 4,096 encoded bytes;
@@ -60,6 +70,8 @@ The stable 1.x surface does not expose `TerminalSession.Input`. Allowing arbitra
 
 This rule is especially important for OSC 99. Capability and alive queries use the existing query router. Notification activation, button, and close reports are unsolicited terminal input, not ordinary correlated query replies. Version 1.4 therefore does **not** expose those event forms through a private OSC 99 reader. They require a separately reviewed extension of the authoritative `ReadEventAsync(...)` event path.
 
+Version 1.5 multi-family transactions reuse this same reader and query manager. APC/PM/SOS framing support does not create a second reader or protocol-family background loop.
+
 ## 5. Terminal identity is not a support oracle
 
 `TERM`, terminal names, environment variables, host OS, and known emulator brands are useful context but are not sufficient proof that a live protocol is enabled or safe to use.
@@ -69,6 +81,13 @@ This rule is especially important for OSC 99. Capability and alive queries use t
 OSC 633, OSC 777, OSC 1337, and OSC 99 operations are emitted only when explicitly called. The library never silently chooses among OSC 9, OSC 777, and OSC 99 based on terminal identity.
 
 OSC 99 additionally provides an explicit capability query. A successful correlated response is stronger evidence than branding, but it remains terminal-supplied data and must be treated as untrusted input.
+
+Version 1.5 formalizes this internally through separate support state and evidence source. Static TermInfo/profile advertisement is not equivalent to a verified live response. Likewise:
+
+- a successful correlated OSC 99 support response can be `Verified / ProtocolResponse` evidence;
+- a Primary-DA barrier without Kitty keyboard flags can be reviewed `Unsupported / ProtocolResponse` evidence for that concrete backend;
+- probe timeout remains `Unknown` or no conclusion rather than unsupported truth;
+- caller backend preference remains routing policy rather than capability evidence.
 
 ## 6. Emission is not application
 
@@ -189,17 +208,23 @@ Explicit queries can reveal terminal/environment characteristics such as device 
 
 Applications should issue only observations they need. `Icod.Terminal` does not perform broad automatic fingerprinting merely because query APIs exist.
 
+Version 1.5's internal evidence broker does not itself trigger new observations merely because a semantic backend is registered. It records evidence only from selected static descriptions or probes/queries that existing code explicitly performs.
+
 ## 18. Redirected output
 
 Semantic operations which require a live terminal reject known redirected/non-terminal output rather than blindly writing control bytes into a file or pipe.
 
 OSC 633, OSC 777, OSC 1337, and OSC 99 semantic operations require an interactive terminal output endpoint. Active queries additionally require compatible interactive input/output endpoints through the shared query contract.
 
+A `TerminalSession` itself still requires interactive input because it owns an input-mode transition. Version 1.5 routing does not redefine the session as a generic output-only transport.
+
 ## 19. Advanced raw output
 
 `TerminalSession.Output` is an advanced borrowed transport outside session serialization. Direct writes can interleave with session-managed traffic and bypass semantic validation, framing bounds, and security policy.
 
 Likewise, `WriteTerminalStringAsync(...)` exists for already-resolved terminfo strings and padding semantics; it is not the recommended way to synthesize user-controlled OSC/CSI/DCS traffic.
+
+Version 1.5 does not add a generic public raw CSI/DCS/OSC/APC/PM/SOS writer as an escape hatch around typed semantics.
 
 Consumers should use semantic APIs whenever one exists.
 
@@ -208,6 +233,8 @@ Consumers should use semantic APIs whenever one exists.
 When `Icod.Terminal` claims exact restoration, it establishes a truthful baseline first. Unknown state is not replaced by a guessed default while being described as restoration.
 
 Suspend/resume is a trust boundary for live observations. Observation-dependent state may be re-queried after resume; stale pre-resume responses cannot satisfy a new query generation.
+
+Version 1.5 extends the same epoch rule to semantic capability evidence. `TerminalSession.InvalidateState()` advances the live-evidence generation, so explicit out-of-band invalidation and managed resume discard stale live probe/protocol-response conclusions. Immutable selected TermInfo/profile advertisement remains available because it describes the session's selected static profile rather than a prior live observation.
 
 Ephemeral metadata such as OSC 133/633/1337 shell metadata and OSC 9/777/99 notifications is not automatically replayed on resume. Disposal does not synthesize notification closes, prompt completion, or other application-history events that the library does not own.
 
@@ -232,8 +259,9 @@ For the stable 1.x line, new features should preserve these principles:
 3. keep parsing and resynchronization bounded;
 4. preserve one authoritative input/query reader;
 5. do not infer support solely from brand/environment identity;
-6. distinguish emission from terminal application or acknowledgement;
-7. make metadata disclosure explicit;
-8. do not claim exact restoration without a truthful baseline;
-9. surface uncertainty and double failures rather than hiding them;
-10. avoid hidden host execution, network access, or process-global side effects.
+6. separate capability/support state from the source and lifetime of the evidence;
+7. distinguish emission from terminal application or acknowledgement;
+8. make metadata disclosure explicit;
+9. do not claim exact restoration without a truthful baseline;
+10. surface uncertainty and double failures rather than hiding them;
+11. avoid hidden host execution, network access, or process-global side effects.

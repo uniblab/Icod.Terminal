@@ -192,38 +192,45 @@ internal static class TerminalCsiQueryProtocol {
 			);
 		}
 
-		ReadOnlySpan<byte> bytes = frame.Bytes.Span;
-		int start = GetCsiContentOffset( bytes );
-		if ( 0 > start || start >= bytes.Length ) {
+		TerminalControlFrameStructure structure = TerminalControlFrameStructure.Parse(
+			frame
+		);
+		if ( TerminalControlFamily.Csi != structure.Family ) {
 			throw new FormatException(
-				"The terminal response does not contain a valid CSI introducer."
+				"The terminal response is not a CSI frame."
 			);
 		}
-		if ( finalByte != bytes[ ^1 ] ) {
+		if ( !structure.FinalByte.HasValue
+			|| finalByte != structure.FinalByte.Value ) {
 			throw new FormatException(
 				"The terminal response has an unexpected CSI final byte."
 			);
 		}
+		if ( !structure.IntermediateBytes.IsEmpty ) {
+			throw new FormatException(
+				"A CSI query response contains an unexpected intermediate byte."
+			);
+		}
 
-		int end = bytes.Length - 1;
+		ReadOnlySpan<byte> parameterBytes = structure.ParameterBytes.Span;
+		int start = 0;
 		if ( privateMarker.HasValue ) {
-			if ( start >= end || privateMarker.Value != bytes[ start ] ) {
+			if ( parameterBytes.IsEmpty
+				|| privateMarker.Value != parameterBytes[ 0 ] ) {
 				throw new FormatException(
 					"The terminal response has an unexpected CSI private marker."
 				);
 			}
-			++start;
-		} else if ( start < end && IsPrivateMarker( bytes[ start ] ) ) {
+			start = 1;
+		} else if ( !parameterBytes.IsEmpty
+			&& IsPrivateMarker( parameterBytes[ 0 ] ) ) {
 			throw new FormatException(
 				"The terminal response unexpectedly uses a CSI private marker."
 			);
 		}
 
 		return ParseNumericParameters(
-			bytes.Slice(
-				start,
-				end - start
-			)
+			parameterBytes.Slice( start )
 		);
 	}
 
@@ -298,21 +305,6 @@ internal static class TerminalCsiQueryProtocol {
 		parameters.Add( value );
 	}
 
-	private static int GetCsiContentOffset(
-		ReadOnlySpan<byte> bytes
-	) {
-		if ( 2 <= bytes.Length
-			&& 0x1B == bytes[ 0 ]
-			&& (byte)'[' == bytes[ 1 ] ) {
-			return 2;
-		}
-		if ( 1 <= bytes.Length && 0x9B == bytes[ 0 ] ) {
-			return 1;
-		}
-
-		return -1;
-	}
-
 	private static bool IsPrivateMarker(
 		byte value
 	) {
@@ -346,27 +338,26 @@ internal static class TerminalCsiQueryProtocol {
 			TerminalResponseFrame frame
 		) {
 			ArgumentNullException.ThrowIfNull( frame );
-			if ( TerminalResponseFrameKind.Csi != frame.Kind ) {
+			if ( TerminalResponseFrameKind.Csi != frame.Kind
+				|| !TerminalControlFrameStructure.TryParse(
+					frame,
+					out TerminalControlFrameStructure structure
+				) ) {
+				return false;
+			}
+			if ( !structure.FinalByte.HasValue
+				|| this.finalByte != structure.FinalByte.Value ) {
 				return false;
 			}
 
-			ReadOnlySpan<byte> bytes = frame.Bytes.Span;
-			int start = GetCsiContentOffset( bytes );
-			if ( 0 > start || start >= bytes.Length || this.finalByte != bytes[ ^1 ] ) {
-				return false;
-			}
-
-			int end = bytes.Length - 1;
+			ReadOnlySpan<byte> parameterBytes = structure.ParameterBytes.Span;
 			if ( this.privateMarker.HasValue ) {
-				if ( start >= end || this.privateMarker.Value != bytes[ start ] ) {
-					return false;
-				}
-				++start;
-			} else if ( start < end && IsPrivateMarker( bytes[ start ] ) ) {
-				return false;
+				return !parameterBytes.IsEmpty
+					&& this.privateMarker.Value == parameterBytes[ 0 ];
 			}
 
-			return start <= end;
+			return parameterBytes.IsEmpty
+				|| !IsPrivateMarker( parameterBytes[ 0 ] );
 		}
 	}
 }

@@ -26,15 +26,20 @@ namespace Icod.Terminal;
 internal readonly struct TerminalInputDecodeResult {
 	private readonly TerminalResponseExpectation? responseExpectation;
 	private readonly TerminalResponseFrame? responseFrame;
+	private readonly TerminalQueryResponseDisposition responseDisposition;
 	private readonly Exception? responseException;
 
 	private TerminalInputDecodeResult(
 		TerminalInputEvent? inputEvent,
 		TerminalResponseExpectation? responseExpectation,
 		TerminalResponseFrame? responseFrame,
+		TerminalQueryResponseDisposition responseDisposition,
 		Exception? responseException
 	) {
 		bool responseRouted = responseExpectation is not null;
+		if ( !Enum.IsDefined( responseDisposition ) ) {
+			throw new ArgumentOutOfRangeException( nameof( responseDisposition ) );
+		}
 		if ( responseRouted == ( inputEvent is not null )
 			|| !responseRouted && ( responseFrame is not null || responseException is not null )
 			|| responseRouted && ( responseFrame is null ) == ( responseException is null ) ) {
@@ -46,6 +51,7 @@ internal readonly struct TerminalInputDecodeResult {
 		this.InputEvent = inputEvent;
 		this.responseExpectation = responseExpectation;
 		this.responseFrame = responseFrame;
+		this.responseDisposition = responseDisposition;
 		this.responseException = responseException;
 	}
 
@@ -67,7 +73,10 @@ internal readonly struct TerminalInputDecodeResult {
 		}
 
 		if ( this.responseFrame is not null ) {
-			this.responseExpectation.TrySetResult( this.responseFrame );
+			this.responseExpectation.TrySetResult(
+				this.responseFrame,
+				this.responseDisposition
+			);
 			return;
 		}
 		if ( this.responseException is not null ) {
@@ -88,20 +97,26 @@ internal readonly struct TerminalInputDecodeResult {
 			inputEvent,
 			responseExpectation: null,
 			responseFrame: null,
+			TerminalQueryResponseDisposition.Completion,
 			responseException: null
 		);
 	}
 
 	internal static TerminalInputDecodeResult RoutedResponse(
 		TerminalResponseExpectation expectation,
-		TerminalResponseFrame frame
+		TerminalResponseFrame frame,
+		TerminalQueryResponseDisposition disposition = TerminalQueryResponseDisposition.Completion
 	) {
 		ArgumentNullException.ThrowIfNull( expectation );
 		ArgumentNullException.ThrowIfNull( frame );
+		if ( !Enum.IsDefined( disposition ) ) {
+			throw new ArgumentOutOfRangeException( nameof( disposition ) );
+		}
 		return new TerminalInputDecodeResult(
 			inputEvent: null,
 			expectation,
 			frame,
+			disposition,
 			responseException: null
 		);
 	}
@@ -116,6 +131,7 @@ internal readonly struct TerminalInputDecodeResult {
 			inputEvent: null,
 			expectation,
 			responseFrame: null,
+			TerminalQueryResponseDisposition.Completion,
 			exception
 		);
 	}

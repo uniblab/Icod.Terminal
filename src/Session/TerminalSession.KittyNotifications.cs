@@ -104,6 +104,8 @@ public sealed partial class TerminalSession {
 	/// <remarks>
 	/// This is an explicit active query. A timeout is not converted into a claim that OSC 99 is unsupported.
 	/// The generated query identifier is internal and unique for response correlation/multiplexer routing.
+	/// A successfully parsed correlated response is retained internally as verified OSC 99 backend evidence for
+	/// semantic routing during the current live session generation.
 	/// </remarks>
 	public async ValueTask<KittyNotificationSupport> QueryKittyNotificationSupportAsync(
 		TimeSpan timeout,
@@ -117,10 +119,16 @@ public sealed partial class TerminalSession {
 			timeout,
 			cancellationToken
 		).ConfigureAwait( false );
-		return TerminalOsc99Protocol.ParseSupportResponse(
+		KittyNotificationSupport support = TerminalOsc99Protocol.ParseSupportResponse(
 			frame,
 			identifier
 		);
+		this.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.Osc99KittyNotification,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+		return support;
 	}
 
 	/// <summary>

@@ -6,6 +6,35 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.5.0
+
+### Control-language normalization
+
+- Completes the semantic protocol-normalization program required before complete CSI, DCS/Sixel, and APC/Kitty Graphics support.
+- Separates semantic operation, protocol backend, control family, support state, and evidence source as distinct internal concepts.
+- Generalizes control-family framing across CSI, DCS, OSC, APC, PM, and SOS while preserving the released behavior of existing CSI/DCS/OSC query paths.
+- Consolidates family recognition behind one bounded incremental scanner and adds a structural control-frame model that preserves CSI parameters/intermediates/final selectors, DCS headers/payloads, and opaque string-family payloads.
+- Adds bounded multi-family query transactions with explicit completion/barrier rules while preserving one authoritative input reader, cancellation semantics, timeout behavior, and unrelated application input.
+- Adds a capability/evidence ledger separating `Unavailable`, `Unsupported`, `Unknown`, `Advertised`, and `Verified` from `TermInfo`, built-in profile, live-probe, and protocol-response evidence sources.
+- Adds a complete internal semantic backend registry and deterministic routing policy without treating registry order, caller preference, terminal brand, or protocol number as capability truth.
+- Reconciles exact TermInfo recipes for clipboard write (`Ms`), cursor style (`Ss`), and palette mutation (`can_change_color` + `initc`) while using complete TermInfo metadata only to advertise the existing CSI focus/paste/mouse backends.
+- Avoids overclaiming partial TermInfo overlap: `Cs`/`Cr` do not advertise the complete OSC 10–19 dynamic-color semantic family.
+- Feeds successful OSC 99 support responses into the evidence broker as `Verified / ProtocolResponse`; timeout/cancellation does not create false unsupported evidence.
+- Feeds existing Kitty keyboard negotiation into the same evidence broker: Kitty flags are `Verified`, a Primary-DA barrier without Kitty flags is `Unsupported`, and timeout remains `Unknown`.
+- Makes `TerminalSession.InvalidateState()` expire generation-scoped live evidence while immutable TermInfo/profile advertisement persists; managed resume inherits the same rule.
+- Records Sixel as a DCS dialect and Kitty Graphics as an APC dialect while keeping both future public feature families deferred to 1.7/1.8.
+
+### Compatibility and validation
+
+- Preserves every existing stable 1.0–1.4 wire-specific public API and its documented byte semantics; no public automatic-routing API is introduced.
+- Retains `net8.0`, `net9.0`, and `net10.0` plus the existing `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+- Retains the frozen 1.4 public API fingerprint exactly: `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27`.
+- Uses the existing 1.4 baseline as the authoritative machine freeze because 1.5 adds no public-surface delta.
+- Passes Windows, Linux, and macOS Staging runtime validation, all four package-contract shards, and the validated package artifact on N158 exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`.
+- Retains the current packaged `Icod.DCurses 0.1.0` compatibility witness and one-reader/session ownership checks.
+
+See `docs/releases/1.5.0.md`, `docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md`, `docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md`, and `Icod.Terminal-1.5.0-Development-Roadmap.md` for the complete 1.5 contract.
+
 ## 1.4.0
 
 ### Kitty desktop notifications — OSC 99
@@ -131,7 +160,7 @@ See `docs/releases/1.0.0.md` for the full stable release notes.
 
 ### Breaking change
 
-- Removes public `TerminalSession.Input` from a live session so the session retains one authoritative input decoder/query router.
+- Removes public `TerminalSession.Input` from a live session so the session retains one authoritative input decoder and query router.
 - Retains public `ITerminalInput` for custom transport injection.
 - Retains `TerminalSession.Output` as an explicitly advanced borrowed output transport outside normal session serialization.
 

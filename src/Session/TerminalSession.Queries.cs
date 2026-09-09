@@ -63,6 +63,39 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	internal ValueTask<TerminalQueryResponseResult> ExecuteQueryTransactionAsync(
+		ReadOnlyMemory<byte> request,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
+		return this.ExecuteQueryTransactionAsync(
+			request,
+			responsePlan,
+			timeout,
+			TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalQueryResponseResult> ExecuteQueryTransactionAsync(
+		ReadOnlyMemory<byte> request,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
+		return this.GetQueryTransactionManager().ExecuteAsync(
+			request,
+			responsePlan,
+			timeout,
+			lateResponseOwnership,
+			cancellationToken
+		);
+	}
+
 	internal ValueTask<TerminalResponseFrame> ExecuteLifecycleObservationQueryAsync(
 		ReadOnlyMemory<byte> request,
 		ITerminalResponseMatcher matcher,

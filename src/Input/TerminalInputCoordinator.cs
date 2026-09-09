@@ -113,6 +113,17 @@ internal sealed class TerminalInputCoordinator {
 		);
 	}
 
+	internal TerminalResponseExpectation RegisterResponseExpectation(
+		TerminalQueryResponsePlan responsePlan,
+		bool armImmediately
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
+		return this.decoder.RegisterResponseExpectation(
+			responsePlan,
+			armImmediately
+		);
+	}
+
 	internal void ArmResponseExpectation(
 		TerminalResponseExpectation expectation
 	) {
