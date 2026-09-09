@@ -10,21 +10,38 @@ No unreleased 1.x changes are currently recorded.
 
 ### DCS foundation and Sixel graphics
 
-- Begins the DCS/Sixel graphics release on top of the normalized 1.5 control-language model and complete 1.6 CSI foundation.
-- Adds the D170 internal canonical seven-bit `DcsWriter` for small bounded DCS frames while keeping the generic framing layer dialect-neutral.
-- Validates DCS parameter bytes, intermediate bytes, final selectors, complete-frame size, and payload bytes which could abort or prematurely terminate the DCS string.
-- Retains existing DECRQSS and XTGETTCAP request construction unchanged until D171 can migrate both paths with byte-exact regression evidence.
-- Separates small complete-frame DCS encoding from the later committed streaming transaction required for large Sixel graphics.
-- Keeps Sixel as a DCS dialect and plans a backend-neutral raw raster contract that can also support Kitty Graphics in 1.8.
+- Adds the internal canonical seven-bit `DcsWriter` for bounded small DCS frames while keeping DCS framing separate from dialect semantics.
+- Migrates DECRQSS and XTGETTCAP request construction onto the common DCS writer without changing their released bytes, response parsing, correlation, or seven/eight-bit input compatibility.
+- Adds the canonical internal Sixel dialect contract using `DCS 0;1;0 q`, explicit square-pixel raster attributes, self-contained RGB palette definitions, sixel data values, repeat syntax, and graphics movement commands.
+- Adds a bounded immutable-owned raw raster model for RGB24, RGBA32, and Indexed8+RGBA8 palette input.
+- Adds deterministic Sixel palette conversion with exact indexed passthrough where possible, lossless exact-color mapping where possible, binary transparency, a fixed 32×32×32 RGB histogram, deterministic weighted median cut, and stable nearest-palette remapping.
+- Adds a deterministic six-row Sixel encoder with stable palette/register order, correct partial-band handling, strict-size repeat selection, transparent-band progression, and bounded lazy payload segments.
+- Adds committed streaming Sixel output through the existing session-output gate, honoring caller cancellation before commitment while preventing ordinary cancellation from truncating an already-committed DCS control string.
+- Surfaces transport failure after commitment without automatic retry or speculative terminator recovery, and drains committed graphics output before teardown continues into output-state restoration.
+- Integrates Sixel capability evidence through Primary Device Attributes parameter `4`: affirmative evidence becomes `Verified / ProtocolResponse`; a valid response without `4` and probe timeout remain `Unknown`, not automatic `Unsupported`.
+- Keeps terminal name, `TERM`, operating system, emulator brand, registry order, and caller preference out of the capability-proof model.
 
-### Compatibility and validation
+### Public raster API
 
-- Retains the stable `1.0.0` compatibility floor and all released 1.0–1.6 public signatures and documented wire semantics.
+- Adds public `TerminalRasterPixelFormat` with `Rgb24`, `Rgba32`, and `Indexed8`.
+- Adds public straight-RGBA8 `TerminalRasterColor`.
+- Adds public bounded immutable-owned `TerminalRasterImage` factories for RGB24, RGBA32, and Indexed8 data plus dimensions/format/pixel-count and typed color inspection.
+- Adds `TerminalSession.DisplayRasterAsync(...)` as the first backend-neutral semantic raster-display operation.
+- Requires verified raster capability evidence before Sixel output; unresolved graphics support returns a controlled unavailable result rather than blindly emitting protocol bytes.
+- Keeps fractional alpha representable by the common raster model while returning controlled unsupported when the 1.7 Sixel backend cannot preserve it.
+- Deliberately excludes public raw DCS/Sixel dispatch, Sixel palette-register controls, explicit backend selection, image-file decoding, placement/scaling policy, animation, and persistent image identifiers.
+
+### Hardening, package, and compatibility
+
+- Retains explicit raster ceilings of 16,384 per dimension, 16 Mi pixels, 64 MiB owned pixel data, and 256 indexed palette entries.
+- Adds both highly-compressible and deliberately low-compressibility maximum-width Sixel segmentation tests to prove bounded payload segments independently of RLE effectiveness.
+- Adds a fresh NuGet-only raster consumer on `net8.0`, `net9.0`, and `net10.0` plus packed XML-documentation verification for the complete public raster surface.
+- Adds package exclusion checks proving raw DCS/Sixel writers and direct mutable raster backing-memory access remain outside the shipped public API.
+- Intentionally advances the current public API fingerprint to `847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700` while retaining all historical baselines unchanged.
+- Retains the stable `1.0.0` compatibility floor, all released 1.0–1.6 public members and documented wire semantics, one authoritative input reader, bounded query/resource behavior, and current `Icod.DCurses` package-boundary compatibility witnesses.
 - Retains `net8.0`, `net9.0`, and `net10.0` plus the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
-- Keeps one authoritative `TerminalSession` input reader, bounded parser/query state, and the rule that timeout is not automatically unsupported truth.
-- Introduces no generic raw public DCS/Sixel writer and no image-file decoding dependency.
 
-See `docs/releases/1.7.0.md`, `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md`, and `Icod.Terminal-1.7.0-Development-Roadmap.md` for the evolving 1.7 contract.
+See `docs/releases/1.7.0.md`, `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md` through `docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md`, `docs/Public-API-Baseline-1.7.md`, and `Icod.Terminal-1.7.0-Development-Roadmap.md` for the complete 1.7 contract.
 
 ## 1.6.0
 
@@ -174,7 +191,7 @@ See `docs/releases/1.1.0.md` for the full release notes.
 ### Compatibility
 
 - Keeps the rc1 public API fingerprint unchanged: `8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5`.
-- Carries the one pre-1.0 breaking correction forward: public `TerminalSession.Input` remains removed so a live session has one authoritative input/query-routing path.
+- Carries the one pre-1.0 breaking correction forward: public `TerminalSession.Input` remains removed so a live session has one authoritative input decoder and query router.
 - Retains public `ITerminalInput`, `ITerminalOutput`, and `ITerminalControlProvider` injection seams.
 - Retains `TerminalSession.Output` as the documented advanced borrowed output transport outside session serialization.
 
