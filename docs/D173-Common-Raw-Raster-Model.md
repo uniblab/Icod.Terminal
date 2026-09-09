@@ -2,7 +2,21 @@
 
 **Release:** `Icod.Terminal 1.7.0`  
 **Tranche:** D173  
-**Status:** implementation starting
+**Status:** complete — accepted on exact head `b2674f6cb356ca49a0b2564721c12f2eae9b9265`
+
+## Accepted checkpoint
+
+D173 passed the complete Staging/package matrix on workflow `34402697961` / run #1239:
+
+- Runtime Windows;
+- Runtime Linux;
+- Runtime macOS;
+- package candidate / public-API freeze;
+- Package Foundation;
+- Package Presentation;
+- Package Semantic and hardening;
+- Package Stable 1.x release line;
+- validated package artifact.
 
 ## Purpose
 
@@ -166,7 +180,7 @@ Applications or higher layers may decode image files into the raw raster represe
 
 ## Acceptance
 
-D173 is complete when:
+D173 is complete because:
 
 - RGB24, RGBA32, and Indexed8 images are represented internally;
 - rows are tightly packed with exact-length validation;
@@ -176,5 +190,5 @@ D173 is complete when:
 - RGB24 observes alpha 255;
 - RGBA32/indexed alpha is preserved exactly;
 - deterministic coordinate and row observation are covered;
-- no image-file dependency or public API is added;
-- the exact D173 head passes the complete Staging/package matrix.
+- no image-file dependency or public API was added;
+- exact head `b2674f6cb356ca49a0b2564721c12f2eae9b9265` passed the complete Staging/package matrix in workflow `34402697961`.
