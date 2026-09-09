@@ -44,6 +44,7 @@ $requiredMembers = @(
     'M:Icod.Terminal.TerminalSession.PublishVsCodeCommandLineAsync(System.String,System.String,System.Threading.CancellationToken)',
     'M:Icod.Terminal.TerminalSession.PublishVsCodeCurrentDirectoryAsync(System.String,System.String,System.Threading.CancellationToken)',
     'M:Icod.Terminal.TerminalSession.PublishVsCodeIsWindowsAsync(System.Boolean,System.Threading.CancellationToken)',
+    'M:Icod.Terminal.TerminalSession.PublishVsCodeContinuationPromptAsync(System.String,System.Threading.CancellationToken)',
     'M:Icod.Terminal.TerminalSession.PublishVsCodeRichCommandDetectionAsync(System.Boolean,System.Threading.CancellationToken)'
 )
 
