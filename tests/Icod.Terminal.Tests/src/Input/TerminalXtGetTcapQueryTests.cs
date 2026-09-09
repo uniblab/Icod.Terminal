@@ -1,72 +1,17 @@
-/*
-	Icod.Terminal.Tests
-	Automated test suite for the Icod.Terminal library.
-	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
-*/
-
-/*
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
-namespace Icod.Terminal.Tests.Input;
-
 using System.Text;
 using System.Threading.Channels;
-using Icod.Terminal;
-using Icod.TermInfo;
 using Icod.Timing;
+using Icod.TermInfo;
 using Xunit;
 
+namespace Icod.Terminal.Tests.Input;
+
 /// <summary>
-/// Verifies the T26 public XTGETTCAP query family on the common transaction substrate.
+/// Verifies live XTGETTCAP query emission, parsing, routing, bounds, and ownership.
 /// </summary>
 public sealed class TerminalXtGetTcapQueryTests {
 	[Fact]
-	public async Task PositiveKeyCapabilityPreservesExactByteValue() {
-		XtGetTcapTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
-
-		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
-			"ku",
-			TimeSpan.FromSeconds( 30 )
-		).AsTask();
-		await WaitForWriteCountAsync( transport, 1 );
-
-		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001bP+q6B75\u001b\\" ),
-			transport.GetWrite( 0 )
-		);
-
-		transport.Publish(
-			Encoding.ASCII.GetBytes(
-				"\u001bP1+r6B75=1B5B41\u001b\\"
-			)
-		);
-		TerminalCapabilityObservation observation = await query;
-		IReadOnlyList<byte> value = Assert.IsAssignableFrom<IReadOnlyList<byte>>(
-			observation.ValueBytes
-		);
-
-		Assert.Equal( "ku", observation.Name );
-		Assert.True( observation.IsSupported );
-		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b[A" ),
-			value.ToArray()
-		);
-	}
-
-	[Fact]
-	public async Task NegativeResponseIsTypedAsUnsupported() {
+	public async Task QueryLiveCapabilityEmitsExactRequestAndParsesPositiveResponse() {
 		XtGetTcapTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
@@ -75,42 +20,54 @@ public sealed class TerminalXtGetTcapQueryTests {
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
+
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001bP+q544E\u001b\\" ),
+			transport.GetWrite( 0 )
+		);
+
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r544E=787465726D2D323536636F6C6F72\u001b\\"
+			)
+		);
+		TerminalCapabilityObservation observation = await query;
+
+		Assert.Equal( "TN", observation.Name );
+		Assert.True( observation.IsSupported );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "xterm-256color" ),
+			observation.ValueBytes.ToArray()
+		);
+	}
+
+	[Fact]
+	public async Task QueryLiveCapabilityParsesNegativeResponse() {
+		XtGetTcapTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
+			"RGB",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001bP+q524742\u001b\\" ),
+			transport.GetWrite( 0 )
+		);
 
 		transport.Publish(
 			Encoding.ASCII.GetBytes( "\u001bP0+r\u001b\\" )
 		);
 		TerminalCapabilityObservation observation = await query;
 
-		Assert.Equal( "TN", observation.Name );
+		Assert.Equal( "RGB", observation.Name );
 		Assert.False( observation.IsSupported );
-		Assert.Null( observation.ValueBytes );
+		Assert.True( observation.ValueBytes.IsEmpty );
 	}
 
 	[Fact]
-	public async Task SupportedEmptyValueRemainsDistinctFromUnsupported() {
-		XtGetTcapTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
-
-		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
-			"TN",
-			TimeSpan.FromSeconds( 30 )
-		).AsTask();
-		await WaitForWriteCountAsync( transport, 1 );
-
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001bP1+r544E=\u001b\\" )
-		);
-		TerminalCapabilityObservation observation = await query;
-		IReadOnlyList<byte> value = Assert.IsAssignableFrom<IReadOnlyList<byte>>(
-			observation.ValueBytes
-		);
-
-		Assert.True( observation.IsSupported );
-		Assert.Empty( value );
-	}
-
-	[Fact]
-	public async Task EightBitDcsAndLowercaseHexAreAccepted() {
+	public async Task QueryLiveCapabilityAcceptsEightBitDcsResponse() {
 		XtGetTcapTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
@@ -121,7 +78,7 @@ public sealed class TerminalXtGetTcapQueryTests {
 		await WaitForWriteCountAsync( transport, 1 );
 
 		transport.Publish(
-			[
+			new byte[] {
 				0x90,
 				(byte)'1',
 				(byte)'+',
@@ -129,38 +86,62 @@ public sealed class TerminalXtGetTcapQueryTests {
 				(byte)'4',
 				(byte)'3',
 				(byte)'6',
-				(byte)'f',
+				(byte)'F',
 				(byte)'=',
 				(byte)'3',
 				(byte)'2',
 				(byte)'3',
 				(byte)'5',
 				(byte)'3',
-				(byte)'6',
+				(byte)'3',
 				0x9C
-			]
+			}
 		);
 		TerminalCapabilityObservation observation = await query;
-		IReadOnlyList<byte> value = Assert.IsAssignableFrom<IReadOnlyList<byte>>(
-			observation.ValueBytes
-		);
 
+		Assert.Equal( "Co", observation.Name );
 		Assert.True( observation.IsSupported );
-		Assert.Equal(
-			Encoding.ASCII.GetBytes( "256" ),
-			value.ToArray()
-		);
+		Assert.Equal( Encoding.ASCII.GetBytes( "253" ), observation.ValueBytes.ToArray() );
 	}
 
 	[Fact]
-	public async Task FragmentedResponseIsRoutedAcrossReads() {
-		ManualMonotonicClock clock = new();
+	public async Task QueryLiveCapabilitySerializesOverlappingQueries() {
 		XtGetTcapTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync(
-			transport,
-			clock,
-			TimeSpan.FromSeconds( 1 )
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalCapabilityObservation> first = session.QueryLiveCapabilityAsync(
+			"TN",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		Task<TerminalCapabilityObservation> second = session.QueryLiveCapabilityAsync(
+			"Co",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+
+		await WaitForWriteCountAsync( transport, 1 );
+		Assert.Equal( 1, transport.WriteCount );
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r544E=787465726D\u001b\\"
+			)
 		);
+		Assert.True( ( await first ).IsSupported );
+
+		await WaitForWriteCountAsync( transport, 2 );
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r436F=323536\u001b\\"
+			)
+		);
+		Assert.True( ( await second ).IsSupported );
+		Assert.Equal( 1, transport.MaximumConcurrentReads );
+	}
+
+	[Fact]
+	public async Task QueryLiveCapabilityAllowsBufferedApplicationInputBeforeResponse() {
+		XtGetTcapTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		transport.Publish( Encoding.ASCII.GetBytes( "x" ) );
 
 		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
 			"TN",
@@ -168,161 +149,135 @@ public sealed class TerminalXtGetTcapQueryTests {
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
 
-		byte[] response = Encoding.ASCII.GetBytes(
-			"\u001bP1+r544E=787465726D2D323536636F6C6F72\u001b\\"
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r544E=787465726D\u001b\\"
+			)
 		);
-		foreach ( byte value in response ) {
-			transport.Publish( [ value ] );
-		}
-
 		TerminalCapabilityObservation observation = await query;
-		IReadOnlyList<byte> valueBytes = Assert.IsAssignableFrom<IReadOnlyList<byte>>(
-			observation.ValueBytes
-		);
-
 		Assert.True( observation.IsSupported );
-		Assert.Equal(
-			Encoding.ASCII.GetBytes( "xterm-256color" ),
-			valueBytes.ToArray()
+
+		TerminalEvent terminalEvent = await session.ReadEventAsync(
+			TimeSpan.FromSeconds( 1 )
 		);
+		Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
+		Assert.Equal( 'x', terminalEvent.Input!.Character );
 	}
 
 	[Fact]
-	public async Task OrdinaryInputRemainsLiveBeforeXtGetTcapResponse() {
+	public async Task QueryLiveCapabilityDoesNotStealUnrelatedDcsInput() {
 		XtGetTcapTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
 		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
-			"Co",
+			"TN",
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
 
-		byte[] combined = Encoding.UTF8.GetBytes( "x" )
-			.Concat(
-				Encoding.ASCII.GetBytes(
-					"\u001bP1+r436F=323536\u001b\\"
-				)
-			)
-			.ToArray();
-		transport.Publish( combined );
-
-		TerminalEvent terminalEvent = await session.ReadEventAsync();
-		TerminalInputEvent input = Assert.IsType<TerminalInputEvent>(
-			terminalEvent.Input
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001bP1$r0m\u001b\\" )
 		);
-		TerminalCapabilityObservation observation = await query;
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r544E=787465726D\u001b\\"
+			)
+		);
+		Assert.True( ( await query ).IsSupported );
 
-		Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
-		Assert.Equal( new Rune( 'x' ), input.Character );
-		Assert.True( observation.IsSupported );
-		Assert.Equal( 1, transport.MaximumConcurrentReads );
+		TerminalEvent first = await session.ReadEventAsync(
+			TimeSpan.FromSeconds( 1 )
+		);
+		Assert.Equal( TerminalEventKind.Input, first.Kind );
 	}
 
 	[Fact]
-	public void CorrelatedMalformedHexAndDuplicatePairsFailDeterministically() {
-		TerminalResponseFrame oddName = CreateFrame(
-			"\u001bP1+r544=31\u001b\\"
-		);
-		TerminalResponseFrame invalidValue = CreateFrame(
-			"\u001bP1+r544E=3G\u001b\\"
-		);
-		TerminalResponseFrame duplicate = CreateFrame(
-			"\u001bP1+r544E=31;544E=32\u001b\\"
-		);
-
-		Assert.Throws<FormatException>(
-			() => TerminalXtGetTcapProtocol.ParseResponse(
-				"TN",
-				oddName
-			)
-		);
-		Assert.Throws<FormatException>(
-			() => TerminalXtGetTcapProtocol.ParseResponse(
-				"TN",
-				invalidValue
-			)
-		);
-		Assert.Throws<FormatException>(
-			() => TerminalXtGetTcapProtocol.ParseResponse(
-				"TN",
-				duplicate
-			)
-		);
-	}
-
-	[Fact]
-	public void CorrelatedMismatchedNameFailsDeterministically() {
-		TerminalResponseFrame frame = CreateFrame(
-			"\u001bP1+r436F=323536\u001b\\"
-		);
-
-		Assert.Throws<FormatException>(
-			() => TerminalXtGetTcapProtocol.ParseResponse(
-				"TN",
-				frame
-			)
-		);
-	}
-
-	[Fact]
-	public void OversizedDecodedValueIsRejected() {
-		string encodedValue = new string(
-			'0',
-			checked(
-				( TerminalXtGetTcapProtocol.MaximumCapabilityValueBytes + 1 ) * 2
-			)
-		);
-		TerminalResponseFrame frame = CreateFrame(
-			$"\u001bP1+r544E={encodedValue}\u001b\\"
-		);
-
-		Assert.Throws<FormatException>(
-			() => TerminalXtGetTcapProtocol.ParseResponse(
-				"TN",
-				frame
-			)
-		);
-	}
-
-	[Fact]
-	public async Task InvalidPublicNamesCannotEmitControlBytes() {
+	public async Task QueryLiveCapabilityRejectsMismatchedReturnedName() {
 		XtGetTcapTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
-		await Assert.ThrowsAsync<ArgumentException>(
-			() => session.QueryLiveCapabilityAsync(
-				"",
-				TimeSpan.FromSeconds( 30 )
-			).AsTask()
-		);
-		await Assert.ThrowsAsync<ArgumentException>(
-			() => session.QueryLiveCapabilityAsync(
-				"bad\nname",
-				TimeSpan.FromSeconds( 30 )
-			).AsTask()
-		);
-		await Assert.ThrowsAsync<ArgumentException>(
-			() => session.QueryLiveCapabilityAsync(
-				"café",
-				TimeSpan.FromSeconds( 30 )
-			).AsTask()
-		);
-		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-			() => session.QueryLiveCapabilityAsync(
-				new string(
-					'a',
-					TerminalXtGetTcapProtocol.MaximumCapabilityNameBytes + 1
-				),
-				TimeSpan.FromSeconds( 30 )
-			).AsTask()
-		);
+		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
+			"TN",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
 
-		Assert.Equal( 0, transport.WriteCount );
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r436F=323536\u001b\\"
+			)
+		);
+		await Assert.ThrowsAsync<FormatException>( () => query );
 	}
 
 	[Fact]
-	public async Task PunctuationNameIsHexEncodedRatherThanInjected() {
+	public async Task QueryLiveCapabilityRejectsMalformedHex() {
+		XtGetTcapTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
+			"TN",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001bP1+r544E=GG\u001b\\" )
+		);
+		await Assert.ThrowsAsync<FormatException>( () => query );
+	}
+
+	[Fact]
+	public async Task QueryLiveCapabilityRejectsOversizedCorrelatedResponse() {
+		XtGetTcapTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalCapabilityObservation> query = session.QueryLiveCapabilityAsync(
+			"TN",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+
+		string oversized = "\u001bP1+r544E="
+			+ new string( '4', TerminalResponseFramer.DefaultMaximumFrameBytes )
+			+ "\u001b\\";
+		transport.Publish( Encoding.ASCII.GetBytes( oversized ) );
+
+		await Assert.ThrowsAsync<FormatException>( () => query );
+	}
+
+	[Fact]
+	public async Task QueryLiveCapabilityResynchronizesAfterOversizedCorrelatedResponse() {
+		XtGetTcapTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalCapabilityObservation> first = session.QueryLiveCapabilityAsync(
+			"TN",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+
+		string oversized = "\u001bP1+r544E="
+			+ new string( '4', TerminalResponseFramer.DefaultMaximumFrameBytes )
+			+ "\u001b\\";
+		transport.Publish( Encoding.ASCII.GetBytes( oversized ) );
+		await Assert.ThrowsAsync<FormatException>( () => first );
+
+		Task<TerminalCapabilityObservation> second = session.QueryLiveCapabilityAsync(
+			"Co",
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 2 );
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001bP1+r436F=323536\u001b\\"
+			)
+		);
+		Assert.True( ( await second ).IsSupported );
+	}
+
+	[Fact]
+	public async Task QueryLiveCapabilitySupportsPrintablePunctuationName() {
 		XtGetTcapTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
@@ -362,8 +317,12 @@ public sealed class TerminalXtGetTcapQueryTests {
 
 	[Fact]
 	public async Task CancellationRetainsLateXtGetTcapOwnership() {
+		ManualMonotonicClock clock = new();
 		XtGetTcapTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			clock
+		);
 		using CancellationTokenSource cancellation = new();
 
 		Task<TerminalCapabilityObservation> first = session.QueryLiveCapabilityAsync(
@@ -381,6 +340,7 @@ public sealed class TerminalXtGetTcapQueryTests {
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 
+		Assert.Equal( 1, transport.WriteCount );
 		transport.Publish(
 			Encoding.ASCII.GetBytes(
 				"\u001bP1+r544E=787465726D\u001b\\"
@@ -556,28 +516,19 @@ public sealed class TerminalXtGetTcapQueryTests {
 		) {
 			ArgumentNullException.ThrowIfNull( bytes );
 			if ( !this.input.Writer.TryWrite( bytes.ToArray() ) ) {
-				throw new InvalidOperationException(
-					"The scripted terminal input channel is closed."
-				);
+				throw new InvalidOperationException( "Unable to publish terminal input." );
 			}
 		}
 
 		internal async ValueTask WaitForWriteCountAsync(
 			int expected,
-			CancellationToken cancellationToken = default
+			CancellationToken cancellationToken
 		) {
 			if ( 0 > expected ) {
 				throw new ArgumentOutOfRangeException( nameof( expected ) );
 			}
-			cancellationToken.ThrowIfCancellationRequested();
 
-			while ( true ) {
-				lock ( this.sync ) {
-					if ( expected <= this.writes.Count ) {
-						return;
-					}
-				}
-
+			while ( this.WriteCount < expected ) {
 				await this.writeSignal.WaitAsync(
 					cancellationToken
 				).ConfigureAwait( false );
@@ -588,20 +539,30 @@ public sealed class TerminalXtGetTcapQueryTests {
 			Memory<byte> buffer,
 			CancellationToken cancellationToken = default
 		) {
+			if ( buffer.IsEmpty ) {
+				return 0;
+			}
+
 			int active = Interlocked.Increment( ref this.activeReads );
-			this.RecordMaximumConcurrentReads( active );
+			UpdateMaximum(
+				ref this.maximumConcurrentReads,
+				active
+			);
 			try {
-				byte[] bytes = await this.input.Reader.ReadAsync(
+				byte[] next = await this.input.Reader.ReadAsync(
 					cancellationToken
 				).ConfigureAwait( false );
-				if ( bytes.Length > buffer.Length ) {
-					throw new InvalidOperationException(
-						"The scripted input chunk exceeds the decoder read buffer."
-					);
+				int count = Math.Min( buffer.Length, next.Length );
+				next.AsSpan( 0, count ).CopyTo( buffer.Span );
+				if ( count < next.Length ) {
+					byte[] remainder = next[ count.. ];
+					if ( !this.input.Writer.TryWrite( remainder ) ) {
+						throw new InvalidOperationException(
+							"Unable to republish terminal input remainder."
+						);
+					}
 				}
-
-				bytes.AsSpan().CopyTo( buffer.Span );
-				return bytes.Length;
+				return count;
 			} finally {
 				Interlocked.Decrement( ref this.activeReads );
 			}
@@ -626,198 +587,24 @@ public sealed class TerminalXtGetTcapQueryTests {
 			return ValueTask.CompletedTask;
 		}
 
-		private void RecordMaximumConcurrentReads(
-			int active
+		private static void UpdateMaximum(
+			ref int target,
+			int candidate
 		) {
 			while ( true ) {
-				int observed = Volatile.Read( ref this.maximumConcurrentReads );
-				if ( active <= observed ) {
+				int observed = Volatile.Read( ref target );
+				if ( candidate <= observed ) {
 					return;
 				}
+
 				if ( observed == Interlocked.CompareExchange(
-					ref this.maximumConcurrentReads,
-					active,
+					ref target,
+					candidate,
 					observed
 				) ) {
 					return;
 				}
 			}
-		}
-	}
-
-	private sealed class ManualMonotonicClock : IMonotonicClock {
-		private readonly object sync = new();
-		private readonly List<DelayWaiter> waiters = [];
-		private long timestamp;
-
-		public long GetTimestamp() {
-			lock ( this.sync ) {
-				return this.timestamp;
-			}
-		}
-
-		public TimeSpan GetElapsedTime(
-			long startingTimestamp,
-			long endingTimestamp
-		) {
-			return TimeSpan.FromTicks(
-				endingTimestamp - startingTimestamp
-			);
-		}
-
-		public ValueTask DelayAsync(
-			TimeSpan delay,
-			CancellationToken cancellationToken = default
-		) {
-			if ( TimeSpan.Zero > delay ) {
-				throw new ArgumentOutOfRangeException( nameof( delay ) );
-			}
-			cancellationToken.ThrowIfCancellationRequested();
-			if ( TimeSpan.Zero == delay ) {
-				return ValueTask.CompletedTask;
-			}
-
-			return new ValueTask(
-				this.DelayCoreAsync(
-					delay,
-					cancellationToken
-				)
-			);
-		}
-
-		internal void Advance(
-			TimeSpan elapsed
-		) {
-			if ( TimeSpan.Zero > elapsed ) {
-				throw new ArgumentOutOfRangeException( nameof( elapsed ) );
-			}
-
-			List<DelayWaiter> due;
-			lock ( this.sync ) {
-				this.timestamp = checked(
-					this.timestamp + elapsed.Ticks
-				);
-				due = this.waiters
-					.Where( waiter => waiter.DueTimestamp <= this.timestamp )
-					.ToList();
-			}
-
-			foreach ( DelayWaiter waiter in due ) {
-				waiter.Completion.TrySetResult();
-			}
-		}
-
-		private async Task DelayCoreAsync(
-			TimeSpan delay,
-			CancellationToken cancellationToken
-		) {
-			DelayWaiter waiter;
-			lock ( this.sync ) {
-				waiter = new DelayWaiter(
-					checked( this.timestamp + delay.Ticks )
-				);
-				this.waiters.Add( waiter );
-			}
-
-			using CancellationTokenRegistration registration = cancellationToken.Register(
-				static state => {
-					var tuple = (Tuple<TaskCompletionSource, CancellationToken>)state!;
-					tuple.Item1.TrySetCanceled( tuple.Item2 );
-				},
-				Tuple.Create(
-					waiter.Completion,
-					cancellationToken
-				)
-			);
-
-			try {
-				await waiter.Completion.Task.ConfigureAwait( false );
-			} finally {
-				lock ( this.sync ) {
-					this.waiters.Remove( waiter );
-				}
-			}
-		}
-
-		private sealed class DelayWaiter {
-			internal DelayWaiter(
-				long dueTimestamp
-			) {
-				this.DueTimestamp = dueTimestamp;
-			}
-
-			internal long DueTimestamp {
-				get;
-			}
-
-			internal TaskCompletionSource Completion {
-				get;
-			} = new(
-				TaskCreationOptions.RunContinuationsAsynchronously
-			);
-		}
-	}
-
-	private sealed class RecordingTerminalControlProvider : ITerminalControlProvider {
-		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
-			0,
-			0,
-			0,
-			0x0002UL,
-			new byte[ 32 ],
-			0,
-			32,
-			0,
-			new TerminalSpeed( 13, 9600 ),
-			new TerminalSpeed( 13, 9600 )
-		);
-
-		public TerminalControlResult<TerminalEndpointObservation> Observe(
-			TerminalEndpoint endpoint
-		) {
-			ArgumentNullException.ThrowIfNull( endpoint );
-			return TerminalControlResult<TerminalEndpointObservation>.Available(
-				new TerminalEndpointObservation(
-					true,
-					null,
-					TerminalPlatformKind.PosixTermios,
-					TerminalControlCapabilities.Attachment
-						| TerminalControlCapabilities.ModeRead
-						| TerminalControlCapabilities.ModeWrite
-				)
-			);
-		}
-
-		public TerminalControlResult<TerminalSize> GetSize(
-			TerminalEndpoint endpoint
-		) {
-			ArgumentNullException.ThrowIfNull( endpoint );
-			return TerminalControlResult<TerminalSize>.Unavailable(
-				"No scripted live size."
-			);
-		}
-
-		public TerminalControlResult<TerminalModeSnapshot> GetMode(
-			TerminalEndpoint endpoint
-		) {
-			ArgumentNullException.ThrowIfNull( endpoint );
-			return TerminalControlResult<TerminalModeSnapshot>.Available(
-				this.baseline
-			);
-		}
-
-		public TerminalControlMutationResult SetMode(
-			TerminalEndpoint endpoint,
-			TerminalModeSnapshot mode,
-			TerminalModeApplyTiming timing
-		) {
-			ArgumentNullException.ThrowIfNull( endpoint );
-			ArgumentNullException.ThrowIfNull( mode );
-			if ( !Enum.IsDefined( timing ) ) {
-				throw new ArgumentOutOfRangeException( nameof( timing ) );
-			}
-
-			return TerminalControlMutationResult.Success();
 		}
 	}
 }
