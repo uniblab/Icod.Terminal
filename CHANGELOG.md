@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.1.0
+
+### VS Code shell integration — OSC 633
+
+- Adds a separate typed OSC 633 surface for VS Code shell integration rather than aliasing the vendor protocol to OSC 133.
+- Adds semantic A/B/C/D operations for prompt start, command-input start, pre-execution/command-output start, explicit signed exit-code completion, and status-less abort/cancel completion.
+- Adds explicit OSC 633 E command-line publication with the documented VS Code escaping rules and optional caller-supplied nonce.
+- Adds the documented OSC 633 P properties `Cwd`, `IsWindows`, and `HasRichCommandDetection`; current-directory publication remains explicit and does not replace OSC 7.
+- Uses canonical ST termination, strict UTF-8, complete-frame prevalidation, a 65,536-byte payload ceiling, and the normal `TerminalSession` output-serialization/commit contract.
+- Does not expose a generic raw OSC 633 writer, automatic terminal-brand activation, private/unfinalized `F` continuation support, or `EnvJson` publication.
+
+### Compatibility and validation
+
+- Preserves all existing stable 1.0 public members and documented ownership/security/restoration guarantees; 1.1 is an additive minor release.
+- Retains `net8.0`, `net9.0`, and `net10.0` as first-class package targets and retains the existing `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0` dependency floor.
+- Adds byte-exact encoder/writer tests, public-session integration tests, fresh NuGet-only package consumers on all three TFMs, and XML-documentation verification for every new public OSC 633 member.
+- Intentionally advances the machine public-API baseline for the compatible 1.1 additions while retaining the frozen 1.0 baseline as historical compatibility evidence.
+
+See `docs/releases/1.1.0.md` for the full release notes.
+
 ## 1.0.0
 
 ### Stable contract
