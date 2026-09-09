@@ -468,7 +468,9 @@ internal sealed class TerminalQueryTransactionManager {
 internal sealed class TerminalQueryTransaction : IDisposable {
 	private readonly object sync = new();
 	private readonly IMonotonicClock monotonicClock;
+	private readonly TimeSpan timeout;
 	private readonly TimeSpan lateResponseOwnership;
+	private readonly long timeoutStartedTimestamp;
 	private readonly CancellationToken callerCancellationToken;
 	private readonly CancellationTokenSource callerLifetimeStop = new();
 	private readonly CancellationTokenSource preEmissionStop = new();
@@ -478,6 +480,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 	private readonly CancellationTokenRegistration callerCancellationRegistration;
 
 	private long? callerStoppedTimestamp;
+	private bool callerTimedOut;
 	private bool emitted;
 	private int disposed;
 
@@ -508,7 +511,9 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 		this.Request = request.ToArray();
 		this.ResponsePlan = responsePlan;
 		this.monotonicClock = monotonicClock;
+		this.timeout = timeout;
 		this.lateResponseOwnership = lateResponseOwnership;
+		this.timeoutStartedTimestamp = monotonicClock.GetTimestamp();
 		this.callerCancellationToken = callerCancellationToken;
 		this.callerCancellationRegistration = callerCancellationToken.Register(
 			static state => ( (TerminalQueryTransaction)state! ).CancelCaller(),
@@ -584,14 +589,28 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 
 	internal TimeSpan GetRemainingLateResponseOwnership() {
 		lock ( this.sync ) {
-			if ( !this.callerStoppedTimestamp.HasValue ) {
-				return this.lateResponseOwnership;
+			TimeSpan elapsed;
+			long currentTimestamp = this.monotonicClock.GetTimestamp();
+			if ( this.callerTimedOut ) {
+				TimeSpan elapsedFromTimeoutStart = this.monotonicClock.GetElapsedTime(
+					this.timeoutStartedTimestamp,
+					currentTimestamp
+				);
+				elapsed = elapsedFromTimeoutStart <= this.timeout
+					? TimeSpan.Zero
+					: elapsedFromTimeoutStart - this.timeout
+				;
+			} else {
+				if ( !this.callerStoppedTimestamp.HasValue ) {
+					return this.lateResponseOwnership;
+				}
+
+				elapsed = this.monotonicClock.GetElapsedTime(
+					this.callerStoppedTimestamp.Value,
+					currentTimestamp
+				);
 			}
 
-			TimeSpan elapsed = this.monotonicClock.GetElapsedTime(
-				this.callerStoppedTimestamp.Value,
-				this.monotonicClock.GetTimestamp()
-			);
 			return elapsed >= this.lateResponseOwnership
 				? TimeSpan.Zero
 				: this.lateResponseOwnership - elapsed
@@ -643,7 +662,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 				return;
 			}
 
-			this.callerStoppedTimestamp = this.monotonicClock.GetTimestamp();
+			this.callerTimedOut = true;
 			this.callerCompletion.TrySetException(
 				new TimeoutException( "The terminal query deadline expired." )
 			);
