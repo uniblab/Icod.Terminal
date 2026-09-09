@@ -5,7 +5,7 @@
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Current release line:** `1.6.0`  
-**Current status:** C160 complete-CSI grammar foundation implemented; validation in progress  
+**Current status:** C160–C164 complete; C165 release acceptance/documentation closure in progress  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -42,46 +42,64 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, curses presentation abstractions, and other higher-level semantic UI policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## 1.6.0 program — complete CSI grammar, consolidation, and geometry
+## 1.6.0 program — complete CSI grammar, consolidation, geometry, and hardening
 
-`1.6.0` is the first protocol-family tranche built on the 1.5 normalization. Its purpose is to make CSI one complete shared grammar and then migrate existing CSI operations onto that grammar without changing their released bytes.
+`1.6.0` is the first protocol-family tranche built on the 1.5 normalization. Its purpose is to make CSI one complete shared grammar, migrate existing CSI operations onto that grammar without changing released bytes, add the internal pixel geometry needed by later raster protocols, and qualify the resulting query/parser substrate against hostile fragmentation and oversized correlated responses.
 
 The 1.6 task sequence is:
 
 ```text
-C160  complete CSI grammar foundation
-C161  typed CSI parameter semantics
-C162  existing CSI consolidation
-C163  terminal/cell pixel geometry
-C164  CSI hardening, fragmentation, and fuzz/property coverage
-C165  acceptance/package/documentation closure
+C160  complete CSI grammar foundation                  complete
+C161  typed CSI parameter semantics                    complete
+C162  existing CSI consolidation                       complete
+C163  terminal/cell pixel geometry                     complete
+C164  CSI hardening, fragmentation, and recovery       complete
+C165  acceptance/package/documentation closure         in progress
 ```
 
 The detailed current program is:
 
 [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md)
 
-The C160 grammar contract is:
+The permanent 1.6 tranche records are:
 
-[`docs/C160-Complete-CSI-Grammar-Foundation.md`](docs/C160-Complete-CSI-Grammar-Foundation.md)
+- [`docs/C160-Complete-CSI-Grammar-Foundation.md`](docs/C160-Complete-CSI-Grammar-Foundation.md)
+- [`docs/C161-Typed-CSI-Parameter-Semantics.md`](docs/C161-Typed-CSI-Parameter-Semantics.md)
+- [`docs/C162-Existing-CSI-Consolidation.md`](docs/C162-Existing-CSI-Consolidation.md)
+- [`docs/C163-Terminal-and-Cell-Pixel-Geometry.md`](docs/C163-Terminal-and-Cell-Pixel-Geometry.md)
+- [`docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`](docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md)
+- [`docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`](docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md)
 
-### C160 foundation
+### 1.6 result through C164
 
-C160 adds one internal syntax layer above the 1.5 structural frame representation. It preserves:
+The completed implementation now provides:
+
+- one bounded structural CSI grammar preserving private-use bytes, semicolon parameters, colon subparameters, omitted/empty components, intermediates, final selectors, and raw parameter bytes;
+- typed bounded numeric/component semantics without conflating omitted, empty, zero, and explicit values;
+- shared construction/parsing for DA/DSR/CPR, DEC private modes, synchronized output, Kitty keyboard CSI, mouse tracking/encoding, and cursor-style output;
+- TermInfo authority retained for exact focus/paste recipes and reviewed mouse advertisement;
+- internal `CSI 14 t` terminal-window pixel and `CSI 16 t` character-cell pixel observations;
+- exact-only cell-pixel derivation without rounding;
+- every-split-point geometry response qualification through one authoritative session reader;
+- exact parser resource-boundary qualification and CAN/SUB invalidation;
+- malformed and oversized correlated geometry recovery without poisoning the next query;
+- timeout late-response ownership anchored to the logical monotonic timeout deadline rather than scheduler-continuation timing.
+
+The accepted C164 implementation head is:
 
 ```text
-parameter bytes      0x30–0x3F
-intermediate bytes   0x20–0x2F
-final byte           0x40–0x7E
+3f5e1eccf2f655f25faf665c25262ad7a31df999
 ```
 
-and distinguishes leading private-use parameter bytes, semicolon-delimited parameters, colon-delimited subparameters, and empty components without premature numeric coercion.
+Staging workflow `34393525555` passed Windows, Linux, macOS, package candidate, all four package-contract shards, and the validated package artifact.
 
-The grammar remains bounded and accepts both normalized 7-bit and supported 8-bit CSI framing. C160 does not introduce a public raw CSI writer.
+### 1.6 compatibility result
 
-### 1.6 compatibility rule
+Version 1.6 adds no public API. The internal geometry substrate remains deliberately private until later Sixel/Kitty Graphics integration demonstrates the correct stable semantic shape.
 
-Existing stable 1.x CSI-based APIs retain their documented wire meaning. C160–C162 should remain internal wherever practical. If C163 adds a public terminal/cell geometry observation API, it must be additive, typed, bounded, and receive an intentional 1.6 public API baseline.
+Existing stable 1.x CSI-based APIs retain their documented wire meaning. The authoritative public surface therefore remains the frozen 1.4 baseline carried unchanged by 1.5 and 1.6; no duplicate `Public-API-Baseline-1.6` file is required for an identical surface.
+
+A generic raw public CSI writer remains explicitly outside the 1.6 contract.
 
 ## Completed 1.5.0 program — semantic protocol normalization and control-language foundation
 
@@ -242,6 +260,11 @@ Consumers and maintainers should treat these documents as the current contract a
 - `docs/Semantic-Output-Protocols.md`
 - `docs/Control-Language-Normalization-and-Graphics-Roadmap.md`
 - `docs/C160-Complete-CSI-Grammar-Foundation.md`
+- `docs/C161-Typed-CSI-Parameter-Semantics.md`
+- `docs/C162-Existing-CSI-Consolidation.md`
+- `docs/C163-Terminal-and-Cell-Pixel-Geometry.md`
+- `docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`
+- `docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`
 - `docs/N150-Control-Language-Terminology-and-Layer-Ownership-Freeze.md`
 - `docs/N151-Generalized-Control-Family-Framing.md`
 - `docs/N152-Incremental-Control-Language-State-Machine.md`
@@ -286,9 +309,10 @@ The stable 1.x baseline history is:
 1.3  0d3d05cc3100f39efde730c05b4d1c91dccbf0c8f510f2465f10ca082bf6bb53
 1.4  3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
 1.5  unchanged from 1.4
+1.6  unchanged from 1.4/1.5
 ```
 
-C160–C162 are internal and should continue to match the frozen 1.4/1.5 public fingerprint. If C163 intentionally adds an additive geometry observation surface, a new reviewed 1.6 baseline is required before release closure.
+C160–C164 are internal and retain the frozen 1.4/1.5 public fingerprint. C165 therefore does not create a duplicate 1.6 baseline file for an identical surface.
 
 ## Release discipline
 
