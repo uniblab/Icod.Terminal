@@ -5,7 +5,7 @@
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Current release line:** `1.7.0`  
-**Current status:** D170–D178 complete; D179 release closure in progress  
+**Current status:** Complete — D170 through D179 accepted; final status-only head validating before PR readiness  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -38,7 +38,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Current 1.7.0 program — DCS and Sixel raster graphics
+## Completed 1.7.0 program — DCS and Sixel raster graphics
 
 The 1.7 release applies the normalized 1.5 control-language architecture and 1.6 CSI foundation to DCS/Sixel graphics.
 
@@ -46,7 +46,7 @@ The detailed program is:
 
 [`Icod.Terminal-1.7.0-Development-Roadmap.md`](Icod.Terminal-1.7.0-Development-Roadmap.md)
 
-The tranche sequence is:
+The tranche sequence is complete:
 
 ```text
 D170  DCS construction contract and reference freeze   complete
@@ -58,7 +58,7 @@ D175  Sixel encoder                                    complete
 D176  committed streaming graphics output              complete
 D177  Sixel capability evidence/live observation       complete
 D178  first semantic raster-display operation          complete
-D179  hardening/package/documentation closure           in progress
+D179  hardening/package/documentation closure           complete
 ```
 
 ### 1.7 architectural result
@@ -90,7 +90,7 @@ The implementation provides:
 
 The public raster contract is intentionally smaller than the internal Sixel implementation. It does not expose raw DCS/Sixel writing, Sixel palette-register controls, an explicit backend selector, image-file decoding, generalized placement/scaling, animation, or persistent image identifiers.
 
-### Accepted 1.7 feature checkpoints
+### Accepted 1.7 checkpoints
 
 | Tranche | Exact head | Staging workflow |
 | --- | --- | --- |
@@ -103,8 +103,9 @@ The public raster contract is intentionally smaller than the internal Sixel impl
 | D176 | `9e48c1cee4e44a0f272378ff4f60b4cabc9bed8a` | `34408371837` |
 | D177 | `2e241b6d0fcec1d68c6b6aaeaf665750ddf0a053` | `34411677303` |
 | D178 | `f9428927168524be5cc552c82ad00e2fcda70b13` | `34412478452` |
+| D179 qualification | `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` | `34414298714` |
 
-Each accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate, all four package-contract shards, and the validated package artifact.
+Each accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate, all four package-contract shards, and the validated package artifact. The D179 qualification head contains the complete implementation, hardening, release metadata, package-only raster qualification, and synchronized documentation. Only status-only closure edits follow it.
 
 ### 1.7 public API baseline
 
@@ -121,17 +122,18 @@ The current baseline is:
 
 Historical stable baselines remain checked in unchanged.
 
-### D179 closure requirements
+### D179 closure result
 
-D179 adds no new public feature. It must close the release with:
+D179 added no new public feature. It closed the release with:
 
 - maximum-width high- and low-compressibility Sixel segment-bound tests;
 - fresh package-only raster/XML qualification on all three TFMs;
 - current 1.7 public API fingerprint verification;
 - retained historical stable package contracts;
 - current `Icod.DCurses` package-boundary compatibility witness;
-- synchronized README/changelog/architecture/security/compatibility/release notes/roadmaps/PR ledger;
-- one final unchanged PR head passing the complete Staging matrix.
+- synchronized README, changelog, architecture, security, compatibility, release notes, package documentation, both roadmaps, NuGet metadata, and PR ledger.
+
+The complete qualification candidate `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` passed Staging workflow #1291 / `34414298714` across the full matrix. The subsequent status-only closure head must pass the same matrix before PR #45 is marked ready.
 
 Closure authority:
 
@@ -265,8 +267,8 @@ Pull requests validate Staging on Windows, Linux, and macOS runtime/source paths
 
 For 1.7:
 
-1. D179 must finish on one unchanged exact PR head that passes the complete Staging matrix;
-2. only then may PR #45 leave draft status;
+1. the complete D179 qualification candidate has passed the full Staging matrix;
+2. the status-only final head must pass the same matrix before PR #45 leaves draft status;
 3. merge remains explicit;
 4. the merged `main` head must pass Release distribution validation;
 5. `v1.7.0` tagging/publication remains a separate explicit authorization.
