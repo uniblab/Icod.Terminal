@@ -82,7 +82,7 @@ jobs:
           - shard: semantic
             name: Semantic and hardening
           - shard: release
-            name: 1.0 release line
+            name: Stable 1.x release line
     name: Package ${{ matrix.name }}
     runs-on: ubuntu-latest
     steps:

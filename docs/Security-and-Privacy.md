@@ -26,6 +26,7 @@ Different protocols use different safe encodings:
 - OSC 8 accepts validated already-percent-encoded URI text and separately validates the `id` parameter;
 - OSC 52 binary payload is Base64 encoded;
 - OSC 133 `cmdline_url` metadata is strict UTF-8 then percent-encoded byte-by-byte;
+- OSC 633 command-line, `Cwd`, and `ContinuationPrompt` values use VS Code's message serializer, escaping backslash, semicolon, and ASCII U+0000 through U+0020 before strict UTF-8 framing;
 - title/notification/OSC 9;9 text rejects framing controls directly;
 - color/pointer/keyboard APIs use closed semantic enums/types rather than arbitrary protocol strings.
 
@@ -45,7 +46,7 @@ This protects integrity and resource use; it does not turn an untrusted terminal
 
 A live `TerminalSession` owns the authoritative input decoder/query router.
 
-The public 1.0 surface intentionally does not expose `TerminalSession.Input`. Allowing arbitrary concurrent raw reads could steal bytes from UTF-8 scalars, key sequences, paste frames, or active query responses and would undermine parser/correlation integrity.
+The stable 1.x surface does not expose `TerminalSession.Input`. Allowing arbitrary concurrent raw reads could steal bytes from UTF-8 scalars, key sequences, paste frames, or active query responses and would undermine parser/correlation integrity.
 
 `ITerminalInput` remains public for custom transport injection. A caller that supplied the transport must not create a competing reader while the session owns it.
 
@@ -59,6 +60,8 @@ Where exact reversible ownership depends on observation, the library queries/obs
 
 A prominent example is xterm `modifyOtherKeys`: it is accepted for decode compatibility but is not blindly enabled/disabled because arbitrary prior state cannot be restored truthfully.
 
+OSC 633 follows the same rule: the library does not infer VS Code shell-integration support from `TERM`, `TERM_PROGRAM`, host OS, process name, or version strings. Its APIs emit only when explicitly called.
+
 ## 6. Emission is not application
 
 For unacknowledged output protocols, successful completion normally means only that the complete requested bytes were written to the output service.
@@ -70,7 +73,8 @@ It does not prove that the terminal:
 - applied the requested state;
 - displayed a notification;
 - activated or decorated a hyperlink;
-- accepted clipboard content.
+- accepted clipboard content;
+- accepted or trusted OSC 633 shell-integration metadata.
 
 Consumer logic must not treat emission as negotiated capability proof unless the specific API documents a correlated observation/query result.
 
@@ -86,7 +90,7 @@ Terminal security policy may disable clipboard reads or writes. A timeout is not
 
 Sensitive application data should not be copied to terminal clipboard state unless that disclosure is intentional.
 
-## 8. Current-location disclosure — OSC 7 and OSC 9;9
+## 8. Current-location disclosure — OSC 7, OSC 9;9, and OSC 633 Cwd
 
 Publishing a working directory can reveal:
 
@@ -100,6 +104,8 @@ Publishing a working directory can reveal:
 `Icod.Terminal` therefore does not automatically read or publish `Environment.CurrentDirectory`, monitor directory changes, or infer an OSC 7 authority.
 
 OSC 9;9 Windows current-directory compatibility is likewise explicit caller intent. It is not emitted automatically and does not replace OSC 7 silently.
+
+`PublishVsCodeCurrentDirectoryAsync(...)` is also explicit caller intent. It emits the VS Code OSC 633 `Cwd` property only when supplied a value, does not read or normalize the process current directory, and does not silently emit OSC 7 or OSC 9;9 alongside it.
 
 ## 9. Hyperlink security — OSC 8
 
@@ -136,7 +142,28 @@ Percent encoding prevents terminal framing injection. It does not encrypt, redac
 
 `Icod.Terminal` does not inspect process arguments, shell history, shell syntax, or secret patterns automatically. The caller decides whether publication is appropriate.
 
-## 11. Notification privacy — OSC 9
+## 11. VS Code OSC 633 metadata
+
+OSC 633 adds explicit caller-supplied shell-integration metadata. The public 1.1 surface can disclose:
+
+- the exact command line through `PublishVsCodeCommandLineAsync(...)`;
+- the current working directory through `PublishVsCodeCurrentDirectoryAsync(...)`;
+- continuation-prompt text through `PublishVsCodeContinuationPromptAsync(...)`;
+- whether the shell/backend is Windows through `PublishVsCodeIsWindowsAsync(...)`;
+- whether the caller claims rich command detection through `PublishVsCodeRichCommandDetectionAsync(...)`;
+- an optional caller-supplied nonce on the command-line and current-directory forms.
+
+Command lines and paths can contain credentials, tokens, customer/project names, host information, filenames, or other sensitive material. Continuation prompts can also contain application-controlled terminal metadata.
+
+The VS Code serializer protects OSC field boundaries by escaping backslash, semicolon, and ASCII U+0000 through U+0020. It does not encrypt or redact the published value.
+
+A nonce is trust evidence for the receiving terminal only to the extent that the caller obtained and protects it correctly. `Icod.Terminal` does not generate, discover, persist, rotate, or validate a nonce against VS Code process state, and nonce transport does not provide confidentiality.
+
+The library does not automatically inspect shell history, process arguments, environment variables, or the process current directory to populate OSC 633. It also does not modify shell startup files or install shell integration.
+
+Unfinalized/private OSC 633 forms are deliberately excluded from the public API, including `F`/`G`, `H`/`I`, `SetMark`, and `EnvJson`/`EnvSingle*` environment transfer. There is no generic public raw OSC 633 dispatcher that bypasses these decisions.
+
+## 12. Notification privacy — OSC 9
 
 Notification text may leave the terminal window and appear in:
 
@@ -150,7 +177,7 @@ Applications should not publish secrets in notification text unless that exposur
 
 The library does not automatically redact notification content.
 
-## 12. Safe OSC 9 exclusion boundary
+## 13. Safe OSC 9 exclusion boundary
 
 The public OSC 9 surface intentionally excludes vendor commands that can execute/block/control host-side behavior or disclose environment data.
 
@@ -170,7 +197,7 @@ The library also does not expose a generic `WriteOsc9Async(command, payload)` es
 
 These omissions are security boundaries, not missing convenience APIs.
 
-## 13. Modern keyboard privacy
+## 14. Modern keyboard privacy
 
 Modern keyboard protocols can expose more context than traditional terminal keys, including:
 
@@ -185,7 +212,7 @@ Applications should collect/log/transmit only the fields they actually need.
 
 See `Modern-Keyboard-Security-and-Compatibility.md` for negotiation and lifecycle details.
 
-## 14. Focus, mouse, and paste
+## 15. Focus, mouse, and paste
 
 Focus reports can reveal when the terminal gains/loses focus. Mouse reports expose user interaction coordinates. Bracketed-paste data can contain arbitrary user-provided text.
 
@@ -193,7 +220,7 @@ Bracketed paste marks provenance/boundaries; it does not make the pasted text sa
 
 Applications remain responsible for context-appropriate escaping/confirmation of pasted content.
 
-## 15. Terminal observations can fingerprint the environment
+## 16. Terminal observations can fingerprint the environment
 
 Explicit queries can reveal terminal/environment characteristics such as:
 
@@ -206,13 +233,15 @@ Explicit queries can reveal terminal/environment characteristics such as:
 
 Applications should issue only observations they need. `Icod.Terminal` does not perform broad automatic fingerprinting merely because query APIs exist.
 
-## 16. Redirected output
+## 17. Redirected output
 
 Semantic operations which require a live terminal reject known redirected/non-terminal output rather than blindly writing terminal control bytes into a file/pipe.
 
 A caller may explicitly configure a session to allow redirected output for workflows where terminal input remains interactive but application output is redirected; the session continues to report endpoint truthfully and semantic terminal-only operations enforce their own endpoint requirements.
 
-## 17. Advanced raw output
+OSC 633 operations require an interactive terminal output endpoint and reject known redirected output before committing a frame.
+
+## 18. Advanced raw output
 
 `TerminalSession.Output` is intentionally an advanced borrowed transport outside session serialization.
 
@@ -227,7 +256,7 @@ The same caution applies to using `WriteTerminalStringAsync(...)` with caller-cr
 
 Consumers should use semantic APIs whenever one exists.
 
-## 18. Restoration and uncertainty
+## 19. Restoration and uncertainty
 
 Security includes state integrity.
 
@@ -237,27 +266,31 @@ If a state transition fails and rollback also fails, both failures are preserved
 
 When a protocol only supports terminal-policy reset rather than exact restoration, the API documents that weaker contract explicitly.
 
-## 19. Lifecycle
+## 20. Lifecycle
 
 Suspend/resume is treated as a trust boundary for live terminal observations.
 
 Observation-dependent ownership may re-query after resume rather than trusting pre-suspend values. Old query generations cannot emit after resume, and late pre-suspend response ownership is honored before post-resume observation traffic.
 
-Ephemeral metadata such as OSC 133 markers, notifications, and current-location publication is not automatically replayed on resume because the library is not the application-history authority for that metadata.
+Ephemeral metadata such as OSC 133 markers, OSC 633 shell-integration metadata, notifications, and current-location publication is not automatically replayed on resume because the library is not the application-history authority for that metadata.
 
-## 20. Dependencies and native boundaries
+OSC 633 likewise has no restoration lease or synthetic disposal behavior. Disposal does not invent a missing command-finished/abort marker.
+
+## 21. Dependencies and native boundaries
 
 `Icod.Terminal` uses native platform APIs only for the narrow terminal-control/lifecycle operations that require them. Native state is normalized into managed contracts and restored according to the session ownership model.
 
 The package does not include PTY process hosting, shell execution, browser/network access, or OS clipboard integration as hidden side effects of terminal semantic APIs.
 
-## 21. Reporting security issues
+OSC 633 adds no process launch, shell execution, environment capture, or shell-startup mutation side effect.
+
+## 22. Reporting security issues
 
 Security defects should be reported through the repository/owner's supported private security-reporting channel when available rather than by publishing exploitable details before a fix can be prepared.
 
 Compatibility or missing-feature requests should remain distinct from security reports; not every unsupported terminal vendor command is a security defect.
 
-## 22. Permanent security principles
+## 23. Permanent security principles
 
 For 1.x, new terminal features should preserve these principles:
 

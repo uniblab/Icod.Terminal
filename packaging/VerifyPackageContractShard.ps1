@@ -53,6 +53,7 @@ $scripts = switch ($Shard) {
         @(
             'VerifySemanticMetadataPackage.ps1',
             'VerifySafeOsc9Package.ps1',
+            'VerifyOsc633Package.ps1',
             'VerifyModernKeyboardPackage.ps1',
             'VerifyHardeningPackage.ps1'
         )
