@@ -2,7 +2,7 @@
 
 **Release:** `1.5.0`  
 **Theme:** semantic protocol normalization and control-language foundation  
-**Status:** N150–N154 complete; N155 implemented, exact-head validation pending  
+**Status:** N150–N157 complete; N158 implemented, exact-head validation pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.4.0`
 
@@ -190,7 +190,7 @@ N154 passed the full PR Staging gate on exact head `39c8345a5aeb937ca437c58fa3fe
 
 ## N155 — capability support and evidence model
 
-**Status:** implemented; exact-head validation pending.
+**Status:** complete.
 
 **Goal:** separate support state from the source of the claim.
 
@@ -213,21 +213,13 @@ LiveProbe
 ProtocolResponse
 ```
 
-### Work
-
-- define composition/precedence rules;
-- ensure known negative live evidence overrides weaker advertisement;
-- ensure timeout remains Unknown unless the protocol defines a negative barrier/result;
-- keep explicit caller preference outside the evidence model;
-- define lifecycle/invalidation rules for live evidence.
-
 ### Implemented design
 
-`TerminalCapabilitySubject` distinguishes evidence about a semantic operation from evidence about one concrete protocol backend. This allows TermInfo to advertise a semantic function without falsely asserting support for a particular hard-coded wire backend.
+`TerminalCapabilitySubject` distinguishes evidence about a semantic operation from evidence about one concrete protocol backend. This permits exact TermInfo recipe evidence without falsely asserting a hard-coded wire backend.
 
-`TerminalCapabilityEvidenceLedger` retains a bounded latest-state set for each subject. Static evidence may be `Unknown` or `Advertised`; live evidence may be `Unknown`, `Unsupported`, or `Verified`. `Unavailable` is derived from endpoint state and cannot be stored as evidence.
+`TerminalCapabilityEvidenceLedger` retains bounded latest evidence. Static evidence may be `Unknown` or `Advertised`; live evidence may be `Unknown`, `Unsupported`, or `Verified`. `Unavailable` is derived from endpoint state and cannot be stored as evidence.
 
-Effective resolution order is:
+Effective evidence resolution is:
 
 ```text
 endpoint unavailable
@@ -243,59 +235,87 @@ latest inconclusive live observation
 Unknown
 ```
 
-An `Unknown` live observation does not erase a decisive live result in the same generation and does not override stronger static advertisement. Later decisive live evidence may legitimately replace an earlier verified/unsupported conclusion.
-
-`AdvanceLiveGeneration()` invalidates live-probe/protocol-response conclusions while preserving TermInfo/profile evidence for later suspend/resume integration.
+An inconclusive live observation does not erase stronger static or decisive live evidence. Live evidence is generation-scoped while selected TermInfo/profile evidence persists.
 
 Permanent N155 contract: `docs/N155-Capability-Support-and-Evidence-Model.md`.
 
 ### Acceptance
 
-N155 tests cover endpoint unavailability, static-source precedence, positive/negative live precedence, inconclusive observations, subject isolation, invalid source/state combinations, and live-generation invalidation without public API or wire changes.
+N155 passed the full PR Staging gate on exact head `c1e84579421563e9bce7b1094b4f76734bb7c35b`.
 
 ## N156 — semantic backend registry
 
-**Goal:** map semantic operations to reviewed candidate implementations.
+**Status:** complete.
 
-Initial reconciliation targets include:
+**Goal:** map every reviewed semantic operation to explicit implementation candidates without encoding preference or capability truth in registry declaration order.
+
+### Implemented design
+
+`TerminalSemanticBackendRegistry` contains at least one unique candidate for every `TerminalSemanticOperation`. Representative mappings include:
 
 ```text
 DesktopNotification
+    OSC 9
+    OSC 777
+    OSC 99
+
 CurrentLocation
-ShellCurrentDirectoryMetadata
+    OSC 7
+    OSC 9;9
+
 ClipboardWrite
+    TermInfo capability
+    OSC 52
+
 CursorStyle
-PaletteMutation
-DynamicColor
-SemanticPromptLifecycle
+    TermInfo capability
+    DECSCUSR
+
 RasterGraphics
+    Sixel / DCS
+    Kitty Graphics / APC
 ```
 
-Candidate backends include existing explicit OSC operations, exact TermInfo capabilities where semantically equivalent, CSI/DCS implementations, and future Sixel/Kitty Graphics entries.
+Mode-based operations have specific semantic backend identities (`CsiSynchronizedOutput`, `CsiMouseReporting`, `CsiFocusReporting`, and `CsiBracketedPaste`) rather than a generic DEC-private-mode bucket. `TermInfoCapability` remains outside the raw control-family taxonomy.
 
-The registry is internal first. Public routing APIs are not frozen until registry behavior is proven.
+Permanent N156 contract: `docs/N156-Semantic-Backend-Registry.md`.
+
+### Acceptance
+
+The registry is internal, complete for the current semantic-operation vocabulary, and carries no implicit support or preference evidence. N156 is included in the fully green N157 checkpoint below.
 
 ## N157 — deterministic routing policy
 
-**Goal:** select among candidate backends without conflating evidence and preference.
+**Status:** complete.
 
-### Internal preference order
+**Goal:** select among reviewed N156 candidates without conflating capability evidence, declaration order, and caller preference.
 
-The default resolver should consider, in order:
+### Implemented design
 
-1. endpoint availability/incompatibility;
-2. explicit negative protocol evidence;
-3. verified live backend;
-4. exact TermInfo implementation;
-5. advertised built-in/profile backend;
-6. explicitly documented safe fallback;
-7. Unknown/Unsupported result.
+Automatic routing evaluates:
 
-Explicit caller backend selection may bypass automatic preference but never bypass framing, validation, security, or endpoint requirements.
+1. endpoint availability;
+2. verified live backend evidence;
+3. exact TermInfo implementation evidence;
+4. advertised backend evidence;
+5. an explicitly reviewed safe fallback for otherwise unknown support;
+6. aggregate `Unknown` or `Unsupported`.
 
-## N158 — existing protocol reconciliation
+Explicit internal backend selection is routing policy rather than evidence. It may select a reviewed `Unknown` candidate but cannot override `Unsupported` or `Unavailable`.
 
-**Goal:** normalize what already exists before adding new families.
+Preference tables are explicit. Examples include OSC 99 > OSC 777 > OSC 9 for notifications, Kitty Graphics > Sixel for raster graphics, and exact TermInfo recipes ahead of weaker advertised wire alternatives for clipboard write and cursor style.
+
+Permanent N157 contract: `docs/N157-Deterministic-Semantic-Backend-Routing-Policy.md`.
+
+### Acceptance
+
+N157 passed the full PR Staging gate on exact head `1091a508181295ecbdf3bff591948e251c307dac`.
+
+## N158 — existing protocol and TermInfo reconciliation
+
+**Status:** implemented; exact-head validation pending.
+
+**Goal:** normalize what already exists before adding new CSI/DCS/APC feature families.
 
 ### Mandatory audit
 
@@ -316,22 +336,43 @@ Explicit caller backend selection may bypass automatic preference but never bypa
 - DECRQSS;
 - XTGETTCAP.
 
-### TermInfo reconciliation
+### Implemented TermInfo reconciliation
 
-Audit exact semantic equivalents such as extended capabilities conventionally used for clipboard, cursor style, cursor color, mouse, and other modern functions. Prefer an exact selected TermInfo recipe where equivalence is proven, while retaining existing explicit public methods unchanged.
+Exact reviewed TermInfo implementation candidates are seeded for:
 
-### Routing candidates
+```text
+ClipboardWrite   Ms
+CursorStyle      Ss
+PaletteColor     can_change_color + initc
+```
 
-The first high-level semantic routing candidates are:
+Existing CSI semantic backends receive TermInfo `Advertised` evidence when complete metadata contracts exist:
 
-- desktop notifications;
-- current-location compatibility;
-- clipboard write;
-- cursor style.
+```text
+FocusReporting   fe + fd + kxIN + kxOUT
+BracketedPaste   BE + BD + PS + PE
+MouseReporting   XM + xm + recognized KeyMouse/kmous prefix
+```
 
-Any public auto-routing API requires separate compatibility/security review before baseline freeze.
+Partial overlaps are deliberately not promoted. In particular `Cs`/`Cr` represent text-cursor color only and therefore do not advertise the whole OSC 10–19 `DynamicColor` semantic family.
+
+### Session integration
+
+`TerminalSession` owns a lazily created N155 evidence ledger seeded from the selected immutable `TerminalDescription`. Internal semantic resolution combines that static evidence with later live evidence and N157 policy.
+
+Successful correlated OSC 99 capability responses record `Osc99KittyNotification` as `Verified` with `ProtocolResponse` evidence. Timeout/cancellation records no negative conclusion.
+
+Managed lifecycle resume advances the live-evidence generation before session state is reapplied, preserving static TermInfo/profile evidence while preventing stale live conclusions from leaking across the suspend/resume epoch.
+
+Permanent N158 contract: `docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md`.
+
+### Acceptance
+
+N158 must prove exact/partial TermInfo distinction, session routing integration, live-evidence generation behavior, existing protocol-specific public behavior, and the complete Staging/package matrix before N159 begins.
 
 ## N159 — acceptance, package, and documentation closure
+
+**Status:** not started.
 
 ### Required evidence
 
@@ -351,9 +392,9 @@ Any public auto-routing API requires separate compatibility/security review befo
 
 ## Public API strategy
 
-N150–N156 should remain internal wherever practical.
+N150–N158 remain internal. Version 1.5 has not added a public automatic-routing API and therefore does not intentionally change the frozen 1.4 public surface.
 
-Public additions should occur only after the semantic registry and routing policy are proven. Existing wire-specific APIs remain valuable for advanced callers and for deterministic compatibility; they are not deprecated merely because a new routed semantic API is added later.
+Existing wire-specific APIs remain valuable for deterministic advanced use and are not deprecated merely because internal semantic routing now exists.
 
 ## Relationship to later releases
 
@@ -379,6 +420,9 @@ The long-range contract is recorded in `docs/Control-Language-Normalization-and-
 - N153 structural CSI/DCS/string frame model complete and fully green;
 - XTGETTCAP correlation strengthened so late responses are matched to the requested capability rather than merely the DCS `+r` family;
 - N154 bounded multi-family transaction engine, synthetic APC/CSI acceptance, and structural string-family integration complete and fully green;
-- N155 bounded semantic/backend capability evidence model and lifecycle-generation invalidation implemented; exact-head validation is pending;
+- N155 bounded semantic/backend capability evidence model complete and fully green;
+- N156 semantic backend registry complete;
+- N157 deterministic backend resolver complete and fully green;
+- N158 TermInfo reconciliation, session evidence integration, live OSC 99 evidence, and lifecycle-generation invalidation implemented; exact-head validation pending;
 - no existing public wire behavior intentionally changed;
-- N156 has not started.
+- N159 has not started.
