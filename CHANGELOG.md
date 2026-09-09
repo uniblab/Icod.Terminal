@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.4.0
+
+### Kitty desktop notifications — OSC 99
+
+- Adds typed Kitty OSC 99 notification emission through `SendKittyNotificationAsync(...)` with stable identifiers/update semantics, filtering metadata, focus policy, occasion, urgency, expiration, sound, icon-name lookup, and bounded PNG/JPEG/GIF icon transfer/cache identifiers.
+- Adds `CloseKittyNotificationAsync(...)` for explicit close-by-identifier without adding a raw OSC 99 selector/metadata API.
+- Encodes title/body and protocol-defined text metadata as strict UTF-8 plus Base64, automatically splits payloads into Kitty-compatible 4,096-byte encoded chunks, and validates the complete frame sequence before output commitment.
+- Adds explicit correlated `QueryKittyNotificationSupportAsync(...)` and `QueryKittyAliveNotificationsAsync(...)` through the existing authoritative terminal response router; timeout remains an unanswered query rather than unsupported proof.
+- Keeps OSC 9 and OSC 777 notification APIs unchanged and independent; no terminal-brand routing or host-native fallback is introduced.
+- Deliberately defers buttons plus unsolicited activation/close reports until the authoritative `TerminalEvent` path has a reviewed OSC 99 event-routing contract.
+
+### Compatibility and validation
+
+- Preserves all existing stable 1.0–1.3 public members and OSC 7/9/133/633/777/1337 behavior; 1.4 is additive.
+- Retains `net8.0`, `net9.0`, and `net10.0` and the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+- Adds byte-exact/chunking/query-parser/public-session tests plus a fresh NuGet-only OSC 99 package/XML consumer on all three TFMs.
+- Intentionally advances the machine public-API baseline to `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27` while retaining the 1.0–1.3 baselines unchanged.
+
+See `docs/releases/1.4.0.md` for the full release notes.
+
 ## 1.3.0
 
 ### iTerm2 shell integration and semantic history — OSC 1337

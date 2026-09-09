@@ -30,16 +30,21 @@ bool titled = string.Equals(
 	"--titled",
 	StringComparison.Ordinal
 );
-if ( titled && 3 > args.Length ) {
+bool kitty = string.Equals(
+	args[ 0 ],
+	"--kitty",
+	StringComparison.Ordinal
+);
+if ( ( titled || kitty ) && 3 > args.Length ) {
 	WriteUsage();
 	return 2;
 }
 
-string? title = titled
+string? title = titled || kitty
 	? args[ 1 ]
 	: null
 ;
-string message = titled
+string message = titled || kitty
 	? string.Join(
 		" ",
 		args[ 2.. ]
@@ -57,7 +62,7 @@ Console.WriteLine(
 	"Warning: notification content may be visible in desktop notification history, lock screens, screen sharing, terminal logs, or remote/multiplexed sessions."
 );
 Console.WriteLine(
-	"This sample publishes only the title/text supplied explicitly on the command line."
+	"This sample publishes only the title/text supplied explicitly on the command line and never chooses a protocol from terminal branding."
 );
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
@@ -67,7 +72,19 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-if ( titled ) {
+if ( kitty ) {
+	await session.SendKittyNotificationAsync(
+		title!,
+		message,
+		new KittyNotificationOptions {
+			ApplicationName = "Icod.Terminal.Notification.Sample",
+			NotificationTypes = [ "sample" ]
+		}
+	);
+	Console.WriteLine(
+		"Kitty OSC 99 notification request emitted. Successful completion does not prove the desktop displayed it."
+	);
+} else if ( titled ) {
 	await session.SendTitledNotificationAsync(
 		title!,
 		message
@@ -90,5 +107,8 @@ static void WriteUsage() {
 	);
 	Console.Error.WriteLine(
 		"   or: Icod.Terminal.Notification.Sample --titled <title> <notification text>"
+	);
+	Console.Error.WriteLine(
+		"   or: Icod.Terminal.Notification.Sample --kitty <title> <notification text>"
 	);
 }

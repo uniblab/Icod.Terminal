@@ -9,21 +9,21 @@
 
 ## Status
 
-`1.3.0` is the current development release line and the third additive minor release after the stable 1.0 contract.
+`1.4.0` is the current development release line and the fourth additive minor release after the stable 1.0 contract.
 
-Version 1.3 adds typed, bounded iTerm2 OSC 1337 shell-integration and semantic-history metadata without changing the meaning of existing 1.0/1.1/1.2 APIs. The new surface covers marks, current directory, remote host identity, Base64-backed user variables, the current shell-integration version form, and explicit captured-output clearing.
+Version 1.4 adds a typed, bounded Kitty OSC 99 desktop-notification surface without changing the meaning of existing 1.0–1.3 APIs. The release adds notification creation/update, explicit close, correlated capability discovery, alive-notification queries, bounded icon transfer/cache IDs, filtering metadata, urgency/expiry/sound options, and automatic protocol chunking.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Versions 1.1 and 1.2 retain their typed OSC 633 and OSC 777 surfaces unchanged.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Versions 1.1, 1.2, and 1.3 retain their OSC 633, OSC 777, and OSC 1337 surfaces unchanged.
 
 Full release notes and concise release history:
 
-- [Icod.Terminal 1.3.0 release notes](docs/releases/1.3.0.md)
+- [Icod.Terminal 1.4.0 release notes](docs/releases/1.4.0.md)
 - [Changelog](CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.3.0
+dotnet add package Icod.Terminal --version 1.4.0
 ```
 
 The package targets:
@@ -123,6 +123,7 @@ The supported semantic surface includes:
 - synchronized output (DEC private mode 2026);
 - terminal progress (OSC 9;4);
 - terminal pointer shape (OSC 22);
+- typed Kitty desktop notifications and notification queries (OSC 99);
 - portable semantic prompt/command metadata (OSC 133);
 - typed VS Code shell integration (OSC 633);
 - typed titled desktop notifications (OSC 777);
@@ -133,6 +134,50 @@ The supported semantic surface includes:
 - bounded safe OSC 9 notification and Windows-CWD compatibility operations.
 
 The safe OSC 9 subset intentionally excludes host-affecting vendor commands for sleep/blocking UI, GUI macros, process launch, environment disclosure, and emulator mutation.
+
+### Kitty desktop notifications — OSC 99
+
+The 1.4 OSC 99 API is explicitly Kitty-specific and typed:
+
+```csharp
+KittyNotificationOptions options = new() {
+	Identifier = "build-42",
+	Urgency = KittyNotificationUrgency.Normal,
+	Expiration = TimeSpan.FromSeconds( 30 )
+};
+
+await session.SendKittyNotificationAsync(
+	"Build",
+	"Compilation complete",
+	options
+);
+```
+
+The same identifier can be supplied later to update or explicitly close a notification. The options surface also supports application/type filtering, activation focus policy, occasion, sound, icon names, transmitted PNG/JPEG/GIF icon data, and icon-cache identifiers.
+
+Title, body, and transmitted icon data are Base64 encoded. Encoded payload chunks are automatically limited to 4,096 bytes and multi-frame notifications are serialized as one logical session-output transaction. When chunking requires an identifier and the caller did not supply one, `Icod.Terminal` creates an internal bounded identifier rather than exposing raw OSC 99 framing.
+
+The active-query surface reuses the existing authoritative response router:
+
+```csharp
+KittyNotificationSupport support =
+	await session.QueryKittyNotificationSupportAsync(
+		TimeSpan.FromSeconds( 1 )
+	);
+
+IReadOnlyList<string> alive =
+	await session.QueryKittyAliveNotificationsAsync(
+		TimeSpan.FromSeconds( 1 )
+	);
+```
+
+A query timeout is not converted into proof that OSC 99 is unsupported. Query IDs are generated internally and responses are correlated to the exact active request.
+
+Version 1.4 deliberately does not expose notification buttons or unsolicited activation/close reports. Those terminal-originated events belong on the session's authoritative `ReadEventAsync(...)` path and require a separately reviewed event-routing contract; OSC 99 does not get a competing input reader.
+
+The library also does not automatically choose among OSC 9, OSC 777, or OSC 99 from terminal branding and exposes no generic raw `WriteOsc99Async(...)` dispatcher.
+
+See [`docs/Kitty-Osc99-Desktop-Notifications.md`](docs/Kitty-Osc99-Desktop-Notifications.md).
 
 ### iTerm2 OSC 1337
 
@@ -215,15 +260,18 @@ Several operations disclose caller-supplied metadata by design:
 - hyperlinks;
 - OSC 133 command-line metadata;
 - OSC 633 command-line/current-directory/continuation-prompt metadata and optional nonce;
+- OSC 99 notification title/body, filtering metadata, sound/icon choices, and optional icon bytes;
 - OSC 1337 current-directory, remote-host, user-variable, and shell-integration metadata;
 - OSC 9 and OSC 777 desktop notification text/title;
 - keyboard/mouse/focus/paste input.
 
-The library does not automatically discover or redact secrets. Applications remain responsible for deciding what data is appropriate to publish. Base64 used by OSC 1337 user variables is an encoding, not encryption.
+The library does not automatically discover or redact secrets. Applications remain responsible for deciding what data is appropriate to publish. Base64 used by OSC 99 and OSC 1337 is an encoding, not encryption.
+
+OSC 99 capability/alive queries disclose that the application is probing notification functionality and may return terminal-maintained notification identifiers. Callers should treat query responses as untrusted terminal input.
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, and `1.3.0` intentionally add compatible OSC 633, OSC 777, and OSC 1337 public methods respectively. Each minor release has its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0 while earlier baselines remain retained as compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
+Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally add compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Each minor release has its own machine-frozen public-API fingerprint across net8.0/net9.0/net10.0 while earlier baselines remain retained as compatibility evidence. Existing public enum numeric values remain part of the stable 1.x contract.
 
 For the stable 1.x line:
 
@@ -255,6 +303,7 @@ The permanent 1.x authorities include:
 - [Modern Keyboard Security and Compatibility](docs/Modern-Keyboard-Security-and-Compatibility.md)
 - [Presentation and Reversible State](docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
+- [Kitty OSC 99 Desktop Notifications](docs/Kitty-Osc99-Desktop-Notifications.md)
 - [VS Code OSC 633 Shell Integration](docs/VsCode-Osc633-Shell-Integration.md)
 - [OSC 777 Titled Desktop Notifications](docs/Osc777-Desktop-Notifications.md)
 - [iTerm2 OSC 1337 Shell Integration](docs/ITerm2-Osc1337-Shell-Integration.md)
@@ -264,6 +313,7 @@ The permanent 1.x authorities include:
 - [Public API Baseline 1.1](docs/Public-API-Baseline-1.1.md)
 - [Public API Baseline 1.2](docs/Public-API-Baseline-1.2.md)
 - [Public API Baseline 1.3](docs/Public-API-Baseline-1.3.md)
+- [Public API Baseline 1.4](docs/Public-API-Baseline-1.4.md)
 - [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
 - [Migration to 1.0](docs/Migration-to-1.0.md)
 
@@ -271,7 +321,7 @@ Historical T-series, 0.x baselines, and the rc1 baseline remain available as des
 
 ## Samples
 
-Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, desktop notifications, and iTerm2 shell metadata.
+Repository samples are indexed by task in [`samples/README.md`](samples/README.md). They cover session basics, rich input, queries, scoped presentation/state, colors, titles, location, hyperlinks, clipboard, semantic prompt metadata, OSC 9/777/99 desktop notifications, and iTerm2 shell metadata.
 
 ## Build and validation
 
@@ -289,7 +339,7 @@ sh build.sh
 
 PR validation runs Windows/Linux/macOS runtime/source validation, the current machine public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining contracts from 0.8 through the stable 1.x release line. The package-candidate gate also verifies the exact project-appropriate GPL/LGPL header template for every tracked `.cs` and `.csproj` file.
 
-The semantic package shard compiles and runs fresh NuGet-only OSC 633, OSC 777, and OSC 1337 consumers on `net8.0`, `net9.0`, and `net10.0` and verifies generated XML documentation for the corresponding public APIs.
+The semantic package shard compiles and runs fresh NuGet-only OSC 633, OSC 777, OSC 1337, and OSC 99 consumers on `net8.0`, `net9.0`, and `net10.0` and verifies generated XML documentation for the corresponding public APIs.
 
 The repository also runs current `Icod.DCurses 0.1.0` integration/ownership acceptance, including a package-boundary soak against the freshly packed Terminal artifact. Because DCurses is still an early downstream, these checks are **compatibility witnesses for the integration paths it currently exercises**, not exhaustive proof of every `Icod.Terminal` 1.x contract. Terminal's own API, invariant, unit/hardening, and package gates remain the primary release evidence for the full surface.
 
@@ -297,9 +347,9 @@ After merge, Release distribution validation runs six Windows/Linux/macOS x64/AR
 
 ## Release process
 
-`1.3.0` is publishable only after the exact 1.3 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.4.0` is publishable only after the exact 1.4 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
-The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, and current downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
+The tag-triggered workflow requires curated `docs/releases/<version>.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 
@@ -309,7 +359,7 @@ Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Ic
 
 ## Authors
 
-Inspired by original work from Bill Joy, author of the original `termcap`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and `ncurses`.
+Inspired by original work from Bill Joy, author of the original `termcap`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and ncurses.
 
 Managed .NET implementation by Timothy J. Bruce <uniblab@hotmail.com>.
 

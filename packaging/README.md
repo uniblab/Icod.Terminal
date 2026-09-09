@@ -63,10 +63,10 @@ These checks run on every OS/architecture claimed by the relevant workflow.
 | --- | --- |
 | `foundation` | exact package structure/Source Link/XML plus 0.8–0.10 package foundations |
 | `presentation` | pointer shape, semantic prompt, colors, and lifecycle-safe color ownership |
-| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, modern keyboard, and hardening |
+| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, OSC 99, modern keyboard, and hardening |
 | `release` | stable 1.x release-line package contract and packaged `Icod.DCurses` compatibility witness |
 
-The semantic shard includes fresh package-only consumers and generated XML-documentation checks for the additive 1.x protocol APIs, including OSC 633, OSC 777, and OSC 1337.
+The semantic shard includes fresh package-only consumers and generated XML-documentation checks for the additive 1.x protocol APIs, including OSC 633, OSC 777, OSC 1337, and OSC 99. OSC 99 package validation binds the typed send/close/support/alive APIs and their new public option/support types on `net8.0`, `net9.0`, and `net10.0`, while also enforcing the absence of a generic raw public OSC 99 dispatcher.
 
 The shards have no ordering dependency on one another once the package candidate exists, so GitHub Actions executes them in parallel. `VerifyPackageDistribution.ps1` runs the same shards sequentially when a single-process local distribution check is desired.
 

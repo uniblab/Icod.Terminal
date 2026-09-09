@@ -82,12 +82,21 @@ RequireProperty(
 	nameof( TerminalInputProtocolLease.KeyboardReportingMode )
 );
 
+// Kitty is a vendor namespace shared by multiple protocol families.  The
+// keyboard contract forbids raw Kitty keyboard controls, not every future
+// semantic API whose name truthfully identifies another Kitty protocol.
 string[] forbiddenRawKeyboardMethods = typeof( TerminalSession )
 	.GetMethods( BindingFlags.Public | BindingFlags.Instance )
 	.Where(
-		method => method.Name.Contains(
-			"Kitty",
-			StringComparison.OrdinalIgnoreCase
+		method => (
+			method.Name.Contains(
+				"Kitty",
+				StringComparison.OrdinalIgnoreCase
+			)
+			&& method.Name.Contains(
+				"Keyboard",
+				StringComparison.OrdinalIgnoreCase
+			)
 		)
 		|| method.Name.Contains(
 			"ModifyOtherKeys",
