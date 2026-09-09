@@ -68,14 +68,19 @@ internal enum TerminalProtocolBackend {
 	Osc633VsCodeShellIntegration,
 	Osc777TitledNotification,
 	Osc1337ITerm2ShellIntegration,
+	OscDynamicColor,
 	CsiPrimaryDeviceAttributes,
 	CsiSecondaryDeviceAttributes,
 	CsiDeviceStatusReport,
 	CsiCursorPositionReport,
 	CsiDecPrivateMode,
 	CsiDecscusrCursorStyle,
+	CsiSynchronizedOutput,
 	CsiKittyKeyboard,
 	CsiXtermModifyOtherKeys,
+	CsiMouseReporting,
+	CsiFocusReporting,
+	CsiBracketedPaste,
 	DcsDecrqss,
 	DcsXtgetTcap,
 	DcsSixel,
@@ -153,6 +158,7 @@ internal static class TerminalControlLanguageVocabulary {
 				or TerminalProtocolBackend.Osc633VsCodeShellIntegration
 				or TerminalProtocolBackend.Osc777TitledNotification
 				or TerminalProtocolBackend.Osc1337ITerm2ShellIntegration
+				or TerminalProtocolBackend.OscDynamicColor
 					=> TerminalControlFamily.Osc,
 
 			TerminalProtocolBackend.CsiPrimaryDeviceAttributes
@@ -161,8 +167,12 @@ internal static class TerminalControlLanguageVocabulary {
 				or TerminalProtocolBackend.CsiCursorPositionReport
 				or TerminalProtocolBackend.CsiDecPrivateMode
 				or TerminalProtocolBackend.CsiDecscusrCursorStyle
+				or TerminalProtocolBackend.CsiSynchronizedOutput
 				or TerminalProtocolBackend.CsiKittyKeyboard
 				or TerminalProtocolBackend.CsiXtermModifyOtherKeys
+				or TerminalProtocolBackend.CsiMouseReporting
+				or TerminalProtocolBackend.CsiFocusReporting
+				or TerminalProtocolBackend.CsiBracketedPaste
 					=> TerminalControlFamily.Csi,
 
 			TerminalProtocolBackend.DcsDecrqss
