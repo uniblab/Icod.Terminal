@@ -33,7 +33,18 @@ internal static class SixelEncoder {
 		SixelPaletteImage image
 	) {
 		ArgumentNullException.ThrowIfNull( image );
+		return EncodePayloadSegmentsCore( image );
+	}
 
+	internal static int ConvertRgb8ToPercentage(
+		byte channel
+	) {
+		return ( channel * 100 + 127 ) / 255;
+	}
+
+	private static IEnumerable<ReadOnlyMemory<byte>> EncodePayloadSegmentsCore(
+		SixelPaletteImage image
+	) {
 		TerminalRasterColor[] palette = image.Palette.ToArray();
 		yield return SixelCodec.EncodeRasterAttributes(
 			image.Width,
@@ -104,12 +115,6 @@ internal static class SixelEncoder {
 				yield return GraphicsNewLineSegment;
 			}
 		}
-	}
-
-	internal static int ConvertRgb8ToPercentage(
-		byte channel
-	) {
-		return ( channel * 100 + 127 ) / 255;
 	}
 
 	private static bool[] GetGloballyUsedRegisters(
