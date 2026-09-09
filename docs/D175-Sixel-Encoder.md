@@ -2,7 +2,9 @@
 
 **Release:** `Icod.Terminal 1.7.0`  
 **Tranche:** D175  
-**Status:** implementation starting
+**Status:** complete and accepted  
+**Accepted exact head:** `005992b27c95fd5c0142d23922aee40e929237e8`  
+**Accepted Staging workflow:** `34407124131`
 
 ## Purpose
 
@@ -33,6 +35,8 @@ optional transparent mask
 ```
 
 Because D174 owns and validates the source arrays, D175 can enumerate output segments asynchronously later without observing caller mutation.
+
+`SixelEncoder.EncodePayloadSegments(...)` performs its internal argument validation eagerly before returning the lazy enumerable, preserving the repository rule that internal method arguments are validated at method entry rather than only when enumeration begins.
 
 ## Palette-register policy
 
@@ -168,6 +172,8 @@ count >= 4   repeat form when representable by one D172 repeat command
 
 A count of 3 is not repeated because `!3X` and `XXX` have equal length and the canonical rule prefers the simpler raw representation on ties.
 
+The repeat writer performs integer digit counting and ASCII emission directly; it does not allocate a decimal string for each run.
+
 Runs larger than the D172 repeat-command ceiling would be split deterministically, although D173's width ceiling is currently much smaller than that limit.
 
 ## Payload segmentation
@@ -211,9 +217,9 @@ This preserves the declared raster extent and deterministic vertical band progre
 
 ## Small-frame composition
 
-Tests may concatenate D175 payload segments and wrap them with the D170 `DcsWriter` when the complete vector remains below the 4,096-byte small-frame ceiling.
+Tests concatenate D175 payload segments and wrap them with the D170 `DcsWriter` when the complete vector remains below the 4,096-byte small-frame ceiling.
 
-Production D175 does not require the payload to fit that ceiling. D176 will emit the DCS introducer/header, enumerate D175 segments, and terminate the committed transaction with one ST.
+Production D175 does not require the payload to fit that ceiling. D176 emits the DCS introducer/header, enumerates D175 segments, and terminates the committed transaction with one ST.
 
 ## Security and ownership
 
@@ -231,6 +237,23 @@ No payload segment can inject ESC, CAN, SUB, C1 ST, or arbitrary terminal contro
 
 D175 adds no public API and no input path.
 
+## Test evidence
+
+The D175 regression suite freezes:
+
+- RGB8 percentage boundaries including 0, 127/128, 254, and 255;
+- used-register-only definitions;
+- ascending multi-color passes with `$` separation;
+- leading/interior zero preservation and trailing-zero omission;
+- full six-row masks and partial final bands;
+- empty middle-band and all-transparent vertical progression;
+- repeat counts 1, 3, and 4;
+- a maximum-width 16,384-column bounded segment;
+- deterministic repeated enumeration;
+- a tiny complete seven-bit DCS Sixel golden frame.
+
+The accepted exact head passed Windows, Linux, macOS, package candidate, all four package shards, and the validated package artifact.
+
 ## Deliberately deferred
 
 D175 does not implement:
@@ -247,17 +270,4 @@ Those belong to D176–D178.
 
 ## Acceptance
 
-D175 is complete when:
-
-- palette definitions are emitted for used registers only, in ascending order;
-- RGB8-to-0..100 conversion is byte-exact at representative boundaries;
-- six-row and partial-final-band traversal is byte-exact;
-- leading/interior zero columns are retained and trailing zeros are omitted;
-- multi-color passes use `$` correctly;
-- inter-band progression uses exactly one `-` and no trailing newline;
-- all-transparent bands/images remain deterministic;
-- repeat counts 1, 3, and 4 freeze the strict-size canonical rule;
-- deterministic payload segmentation is covered;
-- tiny hand-verifiable payloads compose through `DcsWriter` into expected DCS frames;
-- no public API is added;
-- the exact D175 head passes the complete Staging/package matrix.
+D175 is accepted on exact head `005992b27c95fd5c0142d23922aee40e929237e8`, workflow `34407124131`.
