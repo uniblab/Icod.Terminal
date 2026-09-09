@@ -37,36 +37,10 @@ internal readonly record struct TerminalCapabilitySubject {
 		TerminalSemanticOperation? semanticOperation,
 		TerminalProtocolBackend? protocolBackend
 	) {
-		if ( !Enum.IsDefined( kind ) ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( kind ),
-				kind,
-				"The terminal capability subject kind is not recognized."
-			);
-		}
-		if ( TerminalCapabilitySubjectKind.SemanticOperation == kind ) {
-			if ( !semanticOperation.HasValue || protocolBackend.HasValue ) {
-				throw new ArgumentException(
-					"A semantic-operation capability subject must identify exactly one semantic operation."
-				);
-			}
-			if ( !Enum.IsDefined( semanticOperation.Value ) ) {
-				throw new ArgumentOutOfRangeException( nameof( semanticOperation ) );
-			}
-		} else {
-			if ( !protocolBackend.HasValue || semanticOperation.HasValue ) {
-				throw new ArgumentException(
-					"A protocol-backend capability subject must identify exactly one protocol backend."
-				);
-			}
-			if ( !Enum.IsDefined( protocolBackend.Value ) ) {
-				throw new ArgumentOutOfRangeException( nameof( protocolBackend ) );
-			}
-		}
-
 		this.Kind = kind;
 		this.SemanticOperation = semanticOperation;
 		this.ProtocolBackend = protocolBackend;
+		this.Validate();
 	}
 
 	internal TerminalCapabilitySubjectKind Kind {
@@ -116,6 +90,36 @@ internal readonly record struct TerminalCapabilitySubject {
 			backend
 		);
 	}
+
+	internal void Validate() {
+		if ( !Enum.IsDefined( this.Kind ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( this.Kind ),
+				this.Kind,
+				"The terminal capability subject kind is not recognized."
+			);
+		}
+		if ( TerminalCapabilitySubjectKind.SemanticOperation == this.Kind ) {
+			if ( !this.SemanticOperation.HasValue || this.ProtocolBackend.HasValue ) {
+				throw new ArgumentException(
+					"A semantic-operation capability subject must identify exactly one semantic operation."
+				);
+			}
+			if ( !Enum.IsDefined( this.SemanticOperation.Value ) ) {
+				throw new ArgumentOutOfRangeException( nameof( this.SemanticOperation ) );
+			}
+			return;
+		}
+
+		if ( !this.ProtocolBackend.HasValue || this.SemanticOperation.HasValue ) {
+			throw new ArgumentException(
+				"A protocol-backend capability subject must identify exactly one protocol backend."
+			);
+		}
+		if ( !Enum.IsDefined( this.ProtocolBackend.Value ) ) {
+			throw new ArgumentOutOfRangeException( nameof( this.ProtocolBackend ) );
+		}
+	}
 }
 
 /// <summary>
@@ -127,6 +131,7 @@ internal readonly record struct TerminalCapabilityResolution {
 		TerminalCapabilitySupportState state,
 		TerminalCapabilityEvidenceSource? evidenceSource
 	) {
+		subject.Validate();
 		if ( !Enum.IsDefined( state ) ) {
 			throw new ArgumentOutOfRangeException(
 				nameof( state ),
@@ -184,6 +189,7 @@ internal sealed class TerminalCapabilityEvidenceLedger {
 		TerminalCapabilitySupportState state,
 		TerminalCapabilityEvidenceSource source
 	) {
+		subject.Validate();
 		ValidateEvidence(
 			state,
 			source
@@ -218,6 +224,7 @@ internal sealed class TerminalCapabilityEvidenceLedger {
 		TerminalCapabilitySubject subject,
 		bool endpointAvailable = true
 	) {
+		subject.Validate();
 		if ( !endpointAvailable ) {
 			return new TerminalCapabilityResolution(
 				subject,
