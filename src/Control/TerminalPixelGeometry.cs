@@ -59,8 +59,6 @@ internal static class TerminalPixelGeometry {
 		TerminalPixelSize terminalPixelSize,
 		out TerminalPixelSize cellPixelSize
 	) {
-		ArgumentNullException.ThrowIfNull( characterSize );
-
 		cellPixelSize = default;
 		if ( 0 >= characterSize.Columns || 0 >= characterSize.Rows ) {
 			return false;
