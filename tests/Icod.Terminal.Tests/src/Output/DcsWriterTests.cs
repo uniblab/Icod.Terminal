@@ -54,6 +54,44 @@ public sealed class DcsWriterTests {
 		);
 	}
 
+	[Fact]
+	public void CanonicalFrameRoundTripsThroughNormalizedDcsStructure() {
+		byte[] frameBytes = DcsWriter.EncodeFrame(
+			Encoding.ASCII.GetBytes( "1;2" ),
+			[ (byte)'$' ],
+			(byte)'r',
+			Encoding.ASCII.GetBytes( "status" )
+		);
+		TerminalControlFrameStructure structure = TerminalControlFrameStructure.Parse(
+			new TerminalResponseFrame(
+				TerminalResponseFrameKind.Dcs,
+				frameBytes
+			)
+		);
+
+		Assert.Equal( TerminalControlFamily.Dcs, structure.Family );
+		Assert.False( structure.UsesEightBitIntroducer );
+		Assert.Equal( 2, structure.IntroducerLength );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "1;2" ),
+			structure.ParameterBytes.ToArray()
+		);
+		Assert.Equal(
+			new byte[] { (byte)'$' },
+			structure.IntermediateBytes.ToArray()
+		);
+		Assert.Equal( (byte)'r', structure.FinalByte );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "status" ),
+			structure.PayloadBytes.ToArray()
+		);
+		Assert.Equal(
+			TerminalStringTerminatorKind.SevenBitSt,
+			structure.TerminatorKind
+		);
+		Assert.Equal( 2, structure.TerminatorLength );
+	}
+
 	[Theory]
 	[InlineData( 0x2F )]
 	[InlineData( 0x40 )]
