@@ -26,7 +26,63 @@ namespace Icod.Terminal;
 internal enum TerminalResponseFrameKind {
 	Csi,
 	Dcs,
-	Osc
+	Osc,
+	Apc,
+	Pm,
+	Sos
+}
+
+/// <summary>
+/// Maps response-frame compatibility kinds to the normalized control-family vocabulary.
+/// </summary>
+internal static class TerminalResponseFrameKinds {
+	internal static TerminalControlFamily GetControlFamily(
+		TerminalResponseFrameKind kind
+	) {
+		if ( !Enum.IsDefined( kind ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( kind ),
+				kind,
+				"The terminal response frame kind is not recognized."
+			);
+		}
+
+		return kind switch {
+			TerminalResponseFrameKind.Csi => TerminalControlFamily.Csi,
+			TerminalResponseFrameKind.Dcs => TerminalControlFamily.Dcs,
+			TerminalResponseFrameKind.Osc => TerminalControlFamily.Osc,
+			TerminalResponseFrameKind.Apc => TerminalControlFamily.Apc,
+			TerminalResponseFrameKind.Pm => TerminalControlFamily.Pm,
+			TerminalResponseFrameKind.Sos => TerminalControlFamily.Sos,
+			_ => throw new InvalidOperationException(
+				"The terminal response frame kind is not recognized."
+			)
+		};
+	}
+
+	internal static TerminalResponseFrameKind GetFrameKind(
+		TerminalControlFamily family
+	) {
+		if ( !Enum.IsDefined( family ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( family ),
+				family,
+				"The terminal control family is not recognized."
+			);
+		}
+
+		return family switch {
+			TerminalControlFamily.Csi => TerminalResponseFrameKind.Csi,
+			TerminalControlFamily.Dcs => TerminalResponseFrameKind.Dcs,
+			TerminalControlFamily.Osc => TerminalResponseFrameKind.Osc,
+			TerminalControlFamily.Apc => TerminalResponseFrameKind.Apc,
+			TerminalControlFamily.Pm => TerminalResponseFrameKind.Pm,
+			TerminalControlFamily.Sos => TerminalResponseFrameKind.Sos,
+			_ => throw new InvalidOperationException(
+				"The terminal control family is not recognized."
+			)
+		};
+	}
 }
 
 /// <summary>
@@ -97,6 +153,9 @@ internal sealed class TerminalResponseFrame {
 				TerminalResponseFrameKind.Csi => 0x9B == this.bytes[ 0 ],
 				TerminalResponseFrameKind.Dcs => 0x90 == this.bytes[ 0 ],
 				TerminalResponseFrameKind.Osc => 0x9D == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Apc => 0x9F == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Pm => 0x9E == this.bytes[ 0 ],
+				TerminalResponseFrameKind.Sos => 0x98 == this.bytes[ 0 ],
 				_ => throw new InvalidOperationException(
 					"The terminal response frame kind is not recognized."
 				)
@@ -114,22 +173,36 @@ internal sealed class TerminalResponseExpectation {
 	);
 
 	private int protectedBufferedBytes;
+	private int responseDisposition = (int)TerminalQueryResponseDisposition.Completion;
 	private int armed;
 
 	internal TerminalResponseExpectation(
 		ITerminalResponseMatcher matcher
-	) {
-		ArgumentNullException.ThrowIfNull( matcher );
-		this.Matcher = matcher;
+	) : this( TerminalQueryResponsePlan.ForCompletion( matcher ) ) {
 	}
 
-	internal ITerminalResponseMatcher Matcher {
+	internal TerminalResponseExpectation(
+		TerminalQueryResponsePlan responsePlan
+	) {
+		ArgumentNullException.ThrowIfNull( responsePlan );
+		this.ResponsePlan = responsePlan;
+	}
+
+	internal TerminalQueryResponsePlan ResponsePlan {
 		get;
 	}
 
 	internal Task<TerminalResponseFrame> Response {
 		get {
 			return this.completion.Task;
+		}
+	}
+
+	internal TerminalQueryResponseDisposition ResponseDisposition {
+		get {
+			return (TerminalQueryResponseDisposition)Volatile.Read(
+				ref this.responseDisposition
+			);
 		}
 	}
 
@@ -187,7 +260,25 @@ internal sealed class TerminalResponseExpectation {
 	internal bool TrySetResult(
 		TerminalResponseFrame frame
 	) {
+		return this.TrySetResult(
+			frame,
+			TerminalQueryResponseDisposition.Completion
+		);
+	}
+
+	internal bool TrySetResult(
+		TerminalResponseFrame frame,
+		TerminalQueryResponseDisposition disposition
+	) {
 		ArgumentNullException.ThrowIfNull( frame );
+		if ( !Enum.IsDefined( disposition ) ) {
+			throw new ArgumentOutOfRangeException( nameof( disposition ) );
+		}
+
+		Volatile.Write(
+			ref this.responseDisposition,
+			(int)disposition
+		);
 		return this.completion.TrySetResult( frame );
 	}
 
