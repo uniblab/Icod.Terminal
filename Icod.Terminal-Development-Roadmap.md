@@ -4,8 +4,8 @@
 **Package:** `Icod.Terminal`  
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Current release line:** `1.5.0`  
-**Current status:** N150–N159 complete; final status-only PR-head validation in progress  
+**Current release line:** `1.6.0`  
+**Current status:** C160 complete-CSI grammar foundation implemented; validation in progress  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -42,11 +42,52 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, curses presentation abstractions, and other higher-level semantic UI policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## 1.5.0 program — semantic protocol normalization and control-language foundation
+## 1.6.0 program — complete CSI grammar, consolidation, and geometry
 
-`1.5.0` normalizes the architecture before complete CSI, DCS/Sixel, and APC/Kitty Graphics support is added.
+`1.6.0` is the first protocol-family tranche built on the 1.5 normalization. Its purpose is to make CSI one complete shared grammar and then migrate existing CSI operations onto that grammar without changing their released bytes.
 
-The 1.5 task sequence is:
+The 1.6 task sequence is:
+
+```text
+C160  complete CSI grammar foundation
+C161  typed CSI parameter semantics
+C162  existing CSI consolidation
+C163  terminal/cell pixel geometry
+C164  CSI hardening, fragmentation, and fuzz/property coverage
+C165  acceptance/package/documentation closure
+```
+
+The detailed current program is:
+
+[`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md)
+
+The C160 grammar contract is:
+
+[`docs/C160-Complete-CSI-Grammar-Foundation.md`](docs/C160-Complete-CSI-Grammar-Foundation.md)
+
+### C160 foundation
+
+C160 adds one internal syntax layer above the 1.5 structural frame representation. It preserves:
+
+```text
+parameter bytes      0x30–0x3F
+intermediate bytes   0x20–0x2F
+final byte           0x40–0x7E
+```
+
+and distinguishes leading private-use parameter bytes, semicolon-delimited parameters, colon-delimited subparameters, and empty components without premature numeric coercion.
+
+The grammar remains bounded and accepts both normalized 7-bit and supported 8-bit CSI framing. C160 does not introduce a public raw CSI writer.
+
+### 1.6 compatibility rule
+
+Existing stable 1.x CSI-based APIs retain their documented wire meaning. C160–C162 should remain internal wherever practical. If C163 adds a public terminal/cell geometry observation API, it must be additive, typed, bounded, and receive an intentional 1.6 public API baseline.
+
+## Completed 1.5.0 program — semantic protocol normalization and control-language foundation
+
+`1.5.0` normalized the architecture before complete CSI, DCS/Sixel, and APC/Kitty Graphics support.
+
+The completed 1.5 task sequence is:
 
 ```text
 N150  terminology and layer-ownership freeze
@@ -61,11 +102,7 @@ N158  existing protocol and TermInfo reconciliation
 N159  acceptance/package/documentation closure
 ```
 
-N150–N159 are complete. The exact final status-only PR head is revalidated before the pull request leaves draft status.
-
-The `N` prefix is intentional: historical repository documents already use T150–T157 for the old 0.15.0 OSC 133 program. N150 is the requested 1.5 terminology/layer-ownership tranche without overwriting that historical namespace.
-
-The detailed 1.5 program is maintained in:
+The completed 1.5 program is preserved in:
 
 [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md)
 
@@ -83,7 +120,7 @@ The longer path through CSI, Sixel, and Kitty Graphics is maintained in:
 
 ### 1.5 normalization result
 
-Version 1.5 separates five layers which had previously been easy to conflate:
+Version 1.5 separated five layers which had previously been easy to conflate:
 
 ```text
 semantic intent
@@ -131,36 +168,22 @@ The completed 1.5 implementation provides:
 - Kitty keyboard live protocol evidence integration;
 - generation-scoped live evidence invalidation through `InvalidateState()`.
 
-### 1.5 compatibility rule
+### 1.5 compatibility result
 
-Existing stable 1.x explicit methods keep their exact documented wire meaning. For example:
+Existing stable 1.x explicit methods retain their exact documented wire meaning. Version 1.5 introduced no public automatic-routing API and retained the frozen 1.4 public API fingerprint.
 
-```text
-SendNotificationAsync            -> OSC 9
-SendTitledNotificationAsync      -> OSC 777
-SendKittyNotificationAsync       -> OSC 99
-PublishCurrentLocationAsync      -> OSC 7
-VS Code shell-integration APIs   -> OSC 633
-iTerm2 shell-integration APIs    -> OSC 1337
-```
+The final 1.5 PR, merged `main` validation, and `v1.5.0` tag-triggered release workflow all completed successfully.
 
-Version 1.5 introduces no public automatic-routing API. Internal normalization therefore does not silently reinterpret these released methods.
+## Planned post-1.6 control-language releases
 
-N158 passed the full pull-request Staging matrix on exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad` in workflow run `34374645658`.
-
-The documentation-complete N159 head `ea412cf4a4bac37312c0a23e1a77fcfc210b92dc` passed the same full Staging matrix in workflow run `34377552864`. Both acceptance points retained the frozen 1.4 public API fingerprint exactly across `net8.0`, `net9.0`, and `net10.0`.
-
-## Planned post-1.5 control-language releases
-
-The current normalized development order is:
+The normalized development order is:
 
 ```text
-1.6.0  complete CSI grammar / CSI consolidation / pixel and cell geometry
 1.7.0  DCS foundation / Sixel / common raster model and output transaction
 1.8.0  APC foundation / Kitty Graphics / graphics backend routing
 ```
 
-This ordering allows later graphics protocols to reuse one authoritative input path, one family scanner, one query transaction model, one capability/evidence broker, and one semantic backend resolver.
+This ordering lets graphics protocols reuse one authoritative input path, one family scanner, one query transaction model, one capability/evidence broker, one semantic backend resolver, and the complete CSI grammar established by 1.6.
 
 ## Completed 1.4.0 program — Kitty OSC 99 desktop notifications
 
@@ -218,6 +241,7 @@ Consumers and maintainers should treat these documents as the current contract a
 - `docs/Presentation-and-Reversible-State.md`
 - `docs/Semantic-Output-Protocols.md`
 - `docs/Control-Language-Normalization-and-Graphics-Roadmap.md`
+- `docs/C160-Complete-CSI-Grammar-Foundation.md`
 - `docs/N150-Control-Language-Terminology-and-Layer-Ownership-Freeze.md`
 - `docs/N151-Generalized-Control-Family-Framing.md`
 - `docs/N152-Incremental-Control-Language-State-Machine.md`
@@ -246,6 +270,7 @@ Consumers and maintainers should treat these documents as the current contract a
 - `docs/releases/1.3.0.md`
 - `docs/releases/1.4.0.md`
 - `docs/releases/1.5.0.md`
+- `docs/releases/1.6.0.md`
 - `CHANGELOG.md`
 
 Historical T-series, 0.x public API baselines, and `Public-API-Baseline-1.0-rc1.*` remain design/release evidence.
@@ -263,9 +288,7 @@ The stable 1.x baseline history is:
 1.5  unchanged from 1.4
 ```
 
-Version 1.5 intentionally adds no public API. The generated public surface continues to match the frozen 1.4 fingerprint across `net8.0`, `net9.0`, and `net10.0`.
-
-Because no public bytes changed, the authoritative current machine baseline remains `docs/Public-API-Baseline-1.4.md` / `.sha256`. A duplicate 1.5 baseline file is intentionally not created merely to relabel the same surface.
+C160–C162 are internal and should continue to match the frozen 1.4/1.5 public fingerprint. If C163 intentionally adds an additive geometry observation surface, a new reviewed 1.6 baseline is required before release closure.
 
 ## Release discipline
 
@@ -285,11 +308,11 @@ and separately validates one RID-independent package candidate through the four 
 The release line retains:
 
 - full build/test coverage on `net8.0`, `net9.0`, and `net10.0`;
-- stable 1.0–1.4 baseline evidence, with 1.5 deliberately retaining the 1.4 public fingerprint;
+- retained stable 1.x public baseline evidence;
 - exact NuGet artifact/XML/symbol/Source Link verification;
 - historical package-only contracts from 0.8 through 0.18;
 - the stable 1.x release-line package contract;
-- fresh OSC 633, OSC 777, OSC 1337, and OSC 99 package/XML consumers on all three TFMs;
+- current semantic package/XML consumers on all three TFMs;
 - current `Icod.DCurses` integration/ownership acceptance.
 
-Tags trigger publication. A `v1.5.0` tag is created only after the exact final 1.5 PR head and resulting `main` commit pass the required gates and publication is explicitly authorized. The tag workflow requires curated `docs/releases/1.5.0.md` notes.
+Tags trigger publication. A `v1.6.0` tag is created only after the exact final 1.6 PR head and resulting `main` commit pass the required gates and publication is explicitly authorized. The tag workflow requires curated `docs/releases/1.6.0.md` notes.
