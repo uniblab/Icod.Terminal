@@ -195,7 +195,7 @@ internal static class TerminalOsc1337ShellIntegrationEncoder {
 			parameterName
 		);
 		foreach ( char character in forbiddenCharacters ) {
-			if ( value.Contains( character, StringComparison.Ordinal ) ) {
+			if ( value.Contains( character ) ) {
 				throw new ArgumentException(
 					$"OSC 1337 field '{parameterName}' cannot contain '{character}'.",
 					parameterName
