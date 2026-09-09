@@ -164,7 +164,7 @@ internal static class SixelPaletteQuantizer {
 			maximumColors,
 			out SixelPaletteImage? passthrough
 		) ) {
-			return passthrough;
+			return passthrough!;
 		}
 
 		int[] histogramCounts = new int[ HistogramBinCount ];
