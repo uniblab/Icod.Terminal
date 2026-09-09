@@ -6,7 +6,7 @@ OSC 633 is a vendor-specific protocol namespace. It is related to terminal comma
 
 ## Supported wire forms
 
-`Icod.Terminal 1.1` emits the documented VS Code forms:
+`Icod.Terminal 1.1` emits the stable documented/current VS Code forms:
 
 ```text
 OSC 633 ; A ST
@@ -17,6 +17,7 @@ OSC 633 ; D ; exit-code ST
 OSC 633 ; E ; command-line [ ; nonce ] ST
 OSC 633 ; P ; Cwd=current-directory [ ; nonce ] ST
 OSC 633 ; P ; IsWindows=True|False ST
+OSC 633 ; P ; ContinuationPrompt=prompt ST
 OSC 633 ; P ; HasRichCommandDetection=True|False ST
 ```
 
@@ -27,7 +28,7 @@ The semantic meanings are:
 - `C` — command pre-execution / command-output start;
 - `D` — command finished, optionally with a signed decimal exit code;
 - `E` — exact caller-supplied command line;
-- `P` — a documented shell-integration property.
+- `P` — one of the four stable known shell-integration properties supported by this release.
 
 All emitted frames use canonical ST termination (`ESC \\`).
 
@@ -74,6 +75,11 @@ ValueTask PublishVsCodeIsWindowsAsync(
 	CancellationToken cancellationToken = default
 );
 
+ValueTask PublishVsCodeContinuationPromptAsync(
+	string continuationPrompt,
+	CancellationToken cancellationToken = default
+);
+
 ValueTask PublishVsCodeRichCommandDetectionAsync(
 	bool hasRichCommandDetection,
 	CancellationToken cancellationToken = default
@@ -99,9 +105,11 @@ FinishVsCodeCommandAsync(exitCode)
 
 `PublishVsCodeRichCommandDetectionAsync(true)` is an explicit assertion by the caller that it can provide rich command boundaries. The library does not infer that capability itself.
 
-## Command-line and Cwd serialization
+`PublishVsCodeContinuationPromptAsync(...)` reports the prompt text used for continued multi-line input. It does not enable or emit VS Code's separate unfinalized continuation-region markers.
 
-VS Code OSC 633 message values use a protocol-specific escaping scheme before UTF-8 framing.
+## Message serialization
+
+VS Code OSC 633 command-line, `Cwd`, and `ContinuationPrompt` values use a protocol-specific escaping scheme before UTF-8 framing.
 
 `Icod.Terminal` applies these rules:
 
@@ -113,7 +121,7 @@ U+0000 through U+0020 -> \x00 through \x20
 
 The hexadecimal digits are lowercase, matching the VS Code serializer. Other well-formed Unicode is encoded as strict UTF-8.
 
-This escaping protects protocol field boundaries. It is not encryption and does not make command lines or paths confidential.
+This escaping protects protocol field boundaries. It is not encryption and does not make command lines, paths, or prompt text confidential.
 
 ## Nonce handling
 
@@ -128,6 +136,8 @@ This escaping protects protocol field boundaries. It is not encryption and does 
 - transmits it only as the documented final OSC 633 field.
 
 A nonce can be used by a VS Code terminal implementation as protocol trust evidence, but it does not provide confidentiality for the published metadata.
+
+`ContinuationPrompt`, `IsWindows`, and `HasRichCommandDetection` do not take a nonce because their stable property forms do not define one.
 
 ## Payload bounds
 
@@ -175,7 +185,7 @@ OSC 7 remains the preferred portable current-location publication protocol. `Pub
 
 ## Security and privacy
 
-Command lines and current directories may contain credentials, access tokens, hostnames, usernames, filenames, repository locations, or other sensitive information.
+Command lines and current directories may contain credentials, access tokens, hostnames, usernames, filenames, repository locations, or other sensitive information. Continuation prompt text can also contain caller-controlled terminal metadata.
 
 `Icod.Terminal` therefore publishes those values only when explicitly supplied by the caller. It does not:
 
@@ -193,9 +203,10 @@ Applications remain responsible for deciding whether the metadata is appropriate
 `Icod.Terminal 1.1` does not expose:
 
 - a generic `WriteOsc633Async(...)`, arbitrary marker, or arbitrary property API;
-- the unfinalized `F` continuation marker;
-- private or undocumented `EnvJson` publication;
-- arbitrary environment transfer;
+- the unfinalized `F`/`G` continuation-region markers;
+- the unfinalized `H`/`I` right-prompt markers;
+- the unfinalized `SetMark` form;
+- unfinalized `EnvJson` or `EnvSingle*` environment transfer;
 - automatic shell integration installation or startup-file mutation.
 
 These exclusions prevent an additive semantic API from becoming an unbounded vendor-command escape hatch and leave unfinalized protocol extensions available for later dedicated review.
