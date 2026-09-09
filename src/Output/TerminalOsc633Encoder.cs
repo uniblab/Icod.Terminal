@@ -127,6 +127,18 @@ internal static class TerminalOsc633Encoder {
 		);
 	}
 
+	internal static byte[] EncodeContinuationPrompt(
+		string continuationPrompt
+	) {
+		ArgumentNullException.ThrowIfNull( continuationPrompt );
+		return EncodePayload(
+			string.Concat(
+				"633;P;ContinuationPrompt=",
+				SerializeMessage( continuationPrompt )
+			)
+		);
+	}
+
 	internal static byte[] EncodeRichCommandDetection(
 		bool hasRichCommandDetection
 	) {
