@@ -2,7 +2,7 @@
 
 **Release:** `1.7.0`  
 **Theme:** complete DCS construction, Sixel graphics, and the first common raster-display contract  
-**Status:** D170 complete; D171 implemented and validating  
+**Status:** D170–D173 complete; D174 implemented and validating  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.6.0`
 
@@ -57,8 +57,11 @@ Reference behavior is treated as protocol evidence, not as permission to infer s
 | Tranche | Exact head | Staging workflow |
 | --- | --- | --- |
 | D170 | `7d338fe5a1de122738d4573093db90e1500003a1` | `34399549931` |
+| D171 | `277db7da8a586dda44966fa77990b4a9f32e953a` | `34400644772` |
+| D172 | `75d5562e5b1c0813a52d43f445365a228948a5f3` | `34401396507` |
+| D173 | `b2674f6cb356ca49a0b2564721c12f2eae9b9265` | `34402697961` |
 
-D170 passed Windows, Linux, macOS runtime validation, package candidate, all four package-contract shards, and the validated artifact.
+Every accepted checkpoint passed Windows, Linux, macOS runtime validation, package candidate, all four package-contract shards, and the validated artifact.
 
 ## D170 — DCS construction contract and reference freeze
 
@@ -82,7 +85,7 @@ Permanent contract: `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md
 
 ## D171 — existing DCS reconciliation
 
-**Status:** Implemented; exact-head validation pending.
+**Status:** Complete.
 
 **Goal:** move existing DCS emitters onto the canonical DCS construction substrate without changing released behavior.
 
@@ -99,91 +102,81 @@ Completed migration set:
 - protocol-level tests freeze all twelve DECRQSS request forms and representative XTGETTCAP names;
 - consolidated requests round-trip through `TerminalControlFrameStructure` with the expected intermediate, final selector, payload, and terminator.
 
-This tranche is consolidation only. Any public behavior change is a defect unless separately justified by the existing 1.x contract.
-
 Permanent contract: `docs/D171-Existing-DCS-Reconciliation.md`.
 
 ## D172 — Sixel grammar and codec contract
 
+**Status:** Complete.
+
 **Goal:** freeze the Sixel dialect boundary above generic DCS.
 
-### Required grammar
+Completed contract:
 
-The codec owns the semantics of:
+- canonical explicit DCS parameters `0;1;0`;
+- `Pa=0` with explicit raster attributes owning pixel shape;
+- `Pb=1` background-preserving zero-bit semantics;
+- ignored historical `Ph=0`;
+- square-pixel raster attributes `"1;1;<width>;<height>`;
+- sixel values `0..63` mapped to `?`..`~`;
+- bounded repeat command construction;
+- graphics carriage return/new line (`$` / `-`);
+- RGB-only color-register selection/definition over registers `0..255` and components `0..100`;
+- self-contained image palette rule: every image defines every register it uses;
+- no claim of exact restoration of external Sixel palette state;
+- no silent xterm private-color-register mode 1070 ownership;
+- no public raw Sixel API.
 
-```text
-DCS Pa ; Pb ; Ph q
-<sixel payload>
-ST
-```
-
-and Sixel payload commands including:
-
-- sixel data characters representing six vertical pixels;
-- carriage-return/new-line graphics controls;
-- color-register selection/definition;
-- raster attributes;
-- repeat/run-length encoding.
-
-### Contract decisions
-
-D172 must explicitly document:
-
-- chosen `Pa` pixel-aspect policy;
-- `Pb` background behavior;
-- `Ph` compatibility behavior;
-- raster-attribute emission policy;
-- palette definition lifetime assumptions;
-- whether palette registers are treated as image-local policy or terminal-global state;
-- exact command validation and integer bounds;
-- canonical output choices when multiple equivalent Sixel representations exist.
-
-No public raster API is frozen until this contract and the common raster model have exercised each other.
+Permanent contract: `docs/D172-Sixel-Grammar-and-Codec-Contract.md`.
 
 ## D173 — common raw raster model
 
+**Status:** Complete.
+
 **Goal:** create the backend-neutral image representation shared by Sixel and future Kitty Graphics.
 
-### Initial pixel forms
-
-The design should support at least:
+Completed model:
 
 ```text
-RGB24
-RGBA32
-Indexed8 + palette
+Rgb24      tightly packed R G B
+Rgba32     tightly packed R G B A
+Indexed8   one-byte palette indices + RGBA8 palette
 ```
 
-without taking a dependency on PNG/JPEG/GIF decoding libraries.
+The model:
 
-### Required properties
+- owns immutable copies of caller pixel/palette data;
+- uses exact tight-packed row lengths with no implicit stride/padding;
+- preserves straight/unpremultiplied RGBA alpha exactly;
+- treats RGB24 as implicitly opaque;
+- validates every Indexed8 palette reference;
+- bounds dimensions to 16,384, total pixels to 16 Mi, owned pixel storage to 64 MiB, and palettes to 256 entries;
+- performs no gamma, color-profile, premultiplication, compositing, or image-file decoding;
+- remains internal pending D178 public review.
 
-- positive bounded width/height;
-- overflow-safe pixel-count and byte-length validation;
-- explicit stride or tightly-packed rules;
-- exact channel ordering;
-- immutable/caller-borrowed lifetime rules that remain valid for asynchronous output;
-- deterministic alpha handling for a backend such as Sixel which does not provide ordinary per-pixel alpha;
-- bounded indexed palette cardinality;
-- no hidden color-profile or gamma transformation unless explicitly specified.
-
-The shape should be designed with 1.8 Kitty Graphics in mind so the public surface does not require a backend-specific rewrite one release later.
+Permanent contract: `docs/D173-Common-Raw-Raster-Model.md`.
 
 ## D174 — deterministic palette and quantization policy
 
+**Status:** Implemented; exact-head validation pending.
+
 **Goal:** convert true-color raster input into a bounded Sixel palette reproducibly.
 
-### Required behavior
+Completed implementation:
 
-- explicit configurable palette ceiling within reviewed Sixel/terminal bounds;
-- deterministic color reduction for identical input and options;
-- stable tie-breaking independent of thread scheduling or hash iteration order;
-- bounded work memory;
-- exact passthrough path for valid indexed input where possible;
-- transparent-pixel/background policy consistent with D173;
-- tests for tiny images, flat colors, gradients, high-entropy input, and maximum palette boundaries.
+- internal `SixelPaletteQuantizer` with configurable palette ceiling `1..256`;
+- exact byte-for-byte Indexed8 passthrough when the existing palette fits and is fully opaque;
+- lossless exact-color path when distinct opaque colors fit the requested ceiling, ordered by first row-major appearance;
+- explicit Sixel alpha policy: alpha `0` is transparent/untouched, alpha `255` is opaque, fractional alpha `1..254` is rejected rather than silently composited;
+- transparent pixels use a separate mask and consume no Sixel color register;
+- all-transparent rasters are valid and produce an empty palette;
+- fixed 5-bit-per-channel `32 x 32 x 32` histogram for bounded high-entropy work memory;
+- deterministic weighted median-cut reduction with explicit channel, box-selection, sort, and palette-order tie-breaking;
+- rounded weighted RGB representatives;
+- deterministic nearest-palette remapping using squared RGB distance and lower-index ties;
+- no dithering, gamma conversion, color management, or hidden matte policy;
+- regression coverage for exact indexed input, exact RGB color order, transparent and all-transparent input, fractional-alpha rejection, palette ceilings 1/256, high-entropy reduction, repeated-run determinism, and coordinate bounds.
 
-A sophisticated perceptual quantizer is less important than deterministic, bounded, testable behavior for the first stable release. Quality improvements may follow compatibly later.
+Permanent contract: `docs/D174-Deterministic-Sixel-Palette-and-Quantization.md`.
 
 ## D175 — Sixel encoder
 
