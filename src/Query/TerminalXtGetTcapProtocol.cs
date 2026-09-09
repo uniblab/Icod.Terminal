@@ -29,8 +29,6 @@ internal static class TerminalXtGetTcapProtocol {
 		MaximumCapabilityNameBytes * 2;
 	internal const int MaximumCapabilityValueBytes = 1024;
 
-	private const byte EscapeByte = 0x1B;
-
 	internal static ITerminalResponseMatcher ResponseMatcher {
 		get;
 	} = new TerminalXtGetTcapResponseMatcher(
@@ -66,18 +64,12 @@ internal static class TerminalXtGetTcapProtocol {
 			);
 		}
 
-		byte[] request = new byte[ 6 + encodedName.Length ];
-		request[ 0 ] = EscapeByte;
-		request[ 1 ] = (byte)'P';
-		request[ 2 ] = (byte)'+';
-		request[ 3 ] = (byte)'q';
-		encodedName.CopyTo(
-			request,
-			4
+		return DcsWriter.EncodeFrame(
+			ReadOnlySpan<byte>.Empty,
+			[ (byte)'+' ],
+			(byte)'q',
+			encodedName
 		);
-		request[ ^2 ] = EscapeByte;
-		request[ ^1 ] = (byte)'\\';
-		return request;
 	}
 
 	internal static TerminalCapabilityObservation ParseResponse(
