@@ -2,7 +2,7 @@
 
 **Release:** `1.7.0`  
 **Theme:** complete DCS construction, Sixel graphics, and the first common raster-display contract  
-**Status:** D170–D173 complete; D174 implemented and validating  
+**Status:** D170–D176 complete; D177 implemented and validating  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.6.0`
 
@@ -60,6 +60,9 @@ Reference behavior is treated as protocol evidence, not as permission to infer s
 | D171 | `277db7da8a586dda44966fa77990b4a9f32e953a` | `34400644772` |
 | D172 | `75d5562e5b1c0813a52d43f445365a228948a5f3` | `34401396507` |
 | D173 | `b2674f6cb356ca49a0b2564721c12f2eae9b9265` | `34402697961` |
+| D174 | `bf0542b77127a5af4d627480cb8d3797710dc93e` | `34405392319` |
+| D175 | `005992b27c95fd5c0142d23922aee40e929237e8` | `34407124131` |
+| D176 | `9e48c1cee4e44a0f272378ff4f60b4cabc9bed8a` | `34408371837` |
 
 Every accepted checkpoint passed Windows, Linux, macOS runtime validation, package candidate, all four package-contract shards, and the validated artifact.
 
@@ -157,7 +160,7 @@ Permanent contract: `docs/D173-Common-Raw-Raster-Model.md`.
 
 ## D174 — deterministic palette and quantization policy
 
-**Status:** Implemented; exact-head validation pending.
+**Status:** Complete.
 
 **Goal:** convert true-color raster input into a bounded Sixel palette reproducibly.
 
@@ -180,60 +183,69 @@ Permanent contract: `docs/D174-Deterministic-Sixel-Palette-and-Quantization.md`.
 
 ## D175 — Sixel encoder
 
+**Status:** Complete.
+
 **Goal:** encode the common raster model into correct bounded Sixel payload.
 
-### Required work
+Completed implementation:
 
-- six-row band traversal;
-- per-color mask generation;
-- correct horizontal carriage and vertical band progression;
-- deterministic palette-definition order;
-- raster attributes where required by the frozen contract;
-- run-length encoding using Sixel repeat syntax only when it reduces or preserves canonical size according to the chosen policy;
-- omission of redundant commands where canonicalization permits it;
-- exact edge behavior when height is not divisible by six;
-- overflow-safe encoded-size accounting;
-- byte-exact golden tests for small hand-verifiable rasters.
+- deterministic six-row band traversal and partial-final-band handling;
+- per-register mask generation using low-bit-as-top-row semantics;
+- used-register-only palette definitions in ascending register order;
+- deterministic RGB8-to-protocol-percentage conversion;
+- explicit register selection on every color pass;
+- leading/interior zero columns retained and trailing zero columns omitted;
+- `$` between color passes and exactly one `-` between bands;
+- deterministic empty/all-transparent band progression;
+- repeat syntax used only when strictly shorter than raw run data;
+- bounded reusable band workspace and bounded lazy payload segments;
+- tiny hand-verifiable complete DCS golden vectors;
+- no public Sixel API.
 
-D175 should expose internal chunks/segments suitable for D176 rather than forcing creation of one giant byte array.
+Permanent contract: `docs/D175-Sixel-Encoder.md`.
 
 ## D176 — committed streaming graphics output transaction
 
+**Status:** Complete.
+
 **Goal:** emit large graphics safely through the existing `TerminalSession` output-ownership model.
 
-### Required semantics
+Completed semantics:
 
-- acquire the session control/output serialization boundary before the first frame byte commits;
-- observe caller cancellation before commitment;
-- once DCS transmission commits, do not allow caller cancellation to truncate the control string mid-frame;
-- stream bounded chunks without allocating the full encoded graphic;
-- guarantee exactly one final ST on successful completion;
-- define transport-failure behavior explicitly when failure occurs after commitment;
-- do not silently retry partial graphics;
-- keep flush policy explicit;
-- prevent ordinary semantic output from interleaving inside one Sixel DCS transaction;
-- retain disposal/lifecycle safety.
+- acquires the existing session-output serialization gate before the first frame byte commits;
+- honors caller cancellation while waiting for that gate and immediately before commitment;
+- treats the first canonical Sixel DCS prefix write as the commit boundary;
+- ignores ordinary caller cancellation after commitment so the control string cannot be truncated mid-frame;
+- streams D175 bounded payload segments without allocating a complete encoded graphic;
+- emits exactly one seven-bit ST on successful completion;
+- surfaces transport failures without retry or speculative terminator recovery;
+- flushes once after the successful final ST;
+- prevents ordinary session output from interleaving inside the committed frame;
+- drains committed session output before teardown proceeds into output-state restoration;
+- includes deterministic tests for pre-commit cancellation, post-commit cancellation, interleaving, transport failure, small-frame byte equivalence, and disposal ordering.
 
-This tranche is a security/reliability boundary, not merely a performance optimization.
+Permanent contract: `docs/D176-Committed-Streaming-Graphics-Output.md`.
 
 ## D177 — Sixel capability evidence and live observation
 
+**Status:** Implemented; exact-head validation pending.
+
 **Goal:** integrate Sixel into the normalized capability/evidence architecture without branding heuristics.
 
-### Evidence sources to review
+Completed implementation:
 
-- selected TermInfo metadata where a complete, semantically relevant Sixel advertisement exists;
-- built-in profile evidence only where explicitly justified;
-- Primary Device Attributes parameter `4` as protocol-response evidence for Sixel graphics;
-- optional reviewed live probes only when they do not create destructive terminal state.
+- Primary DA attribute `4` records `Verified / ProtocolResponse` evidence for `DcsSixel`;
+- successful existing `QueryPrimaryDeviceAttributesAsync(...)` calls opportunistically update Sixel evidence after typed parsing;
+- valid Primary DA responses without attribute `4` record only `Unknown / ProtocolResponse`, not `Unsupported`;
+- the internal bounded Sixel probe records `Unknown / LiveProbe` on timeout and returns false only as “not verified by this probe”;
+- caller cancellation propagates and is not translated into negative evidence;
+- malformed correlated Primary DA responses fail before Sixel evidence changes;
+- existing live-generation invalidation expires Sixel protocol-response/live-probe evidence;
+- verified `DcsSixel` evidence selects Sixel for `RasterGraphics` through the existing deterministic resolver;
+- no TermInfo, built-in-profile, terminal-name, `TERM`, OS, vendor, registry-order, or caller-preference heuristic is added;
+- no public API or Primary DA wire-byte change is introduced.
 
-### Required semantics
-
-- positive Primary DA Sixel evidence may produce `Verified / ProtocolResponse` for `DcsSixel`;
-- absence of parameter `4` in a response whose capability semantics are authoritative may produce a reviewed negative result only when that inference is protocol-correct;
-- timeout/cancellation remains unknown/no conclusion;
-- live evidence remains generation-scoped and is invalidated by the existing state-invalidation rules;
-- a terminal name, `TERM`, OS, or caller preference never becomes capability proof.
+Permanent contract: `docs/D177-Sixel-Capability-Evidence-and-Live-Observation.md`.
 
 ## D178 — first semantic raster-display operation
 
