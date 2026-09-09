@@ -27,7 +27,8 @@ Different protocols use different safe encodings:
 - OSC 52 binary payload is Base64 encoded;
 - OSC 133 `cmdline_url` metadata is strict UTF-8 then percent-encoded byte-by-byte;
 - OSC 633 command-line, `Cwd`, and `ContinuationPrompt` values use VS Code's message serializer, escaping backslash, semicolon, and ASCII U+0000 through U+0020 before strict UTF-8 framing;
-- title/notification/OSC 9;9 text rejects framing controls directly;
+- OSC 777 title/body fields are strict UTF-8 and reject semicolon plus C0/DEL/C1 controls because the protocol defines no interoperable field-escaping grammar;
+- title/legacy-notification/OSC 9;9 text rejects framing controls directly;
 - color/pointer/keyboard APIs use closed semantic enums/types rather than arbitrary protocol strings.
 
 Validation/escaping prevents framing injection. It does **not** make the semantic content trustworthy or confidential.
@@ -62,6 +63,8 @@ A prominent example is xterm `modifyOtherKeys`: it is accepted for decode compat
 
 OSC 633 follows the same rule: the library does not infer VS Code shell-integration support from `TERM`, `TERM_PROGRAM`, host OS, process name, or version strings. Its APIs emit only when explicitly called.
 
+OSC 777 also follows this rule. `SendTitledNotificationAsync(...)` does not infer notification support from `TERM`, emulator brand, OS, environment variables, or process identity and does not automatically fall back to OSC 9 or another protocol.
+
 ## 6. Emission is not application
 
 For unacknowledged output protocols, successful completion normally means only that the complete requested bytes were written to the output service.
@@ -72,6 +75,7 @@ It does not prove that the terminal:
 - recognized the frame;
 - applied the requested state;
 - displayed a notification;
+- displayed an OSC 777 title/body exactly as supplied;
 - activated or decorated a hyperlink;
 - accepted clipboard content;
 - accepted or trusted OSC 633 shell-integration metadata.
@@ -163,19 +167,24 @@ The library does not automatically inspect shell history, process arguments, env
 
 Unfinalized/private OSC 633 forms are deliberately excluded from the public API, including `F`/`G`, `H`/`I`, `SetMark`, and `EnvJson`/`EnvSingle*` environment transfer. There is no generic public raw OSC 633 dispatcher that bypasses these decisions.
 
-## 12. Notification privacy — OSC 9
+## 12. Notification privacy — OSC 9 and OSC 777
 
-Notification text may leave the terminal window and appear in:
+Desktop notification content may leave the terminal window and appear in:
 
 - desktop notification services;
 - notification history;
 - lock-screen UI;
 - screen sharing/recording;
-- remote/multiplexed terminal logs.
+- remote/multiplexed terminal logs;
+- other OS or desktop-shell surfaces.
 
-Applications should not publish secrets in notification text unless that exposure is intended.
+`SendNotificationAsync(message)` publishes one caller-supplied legacy OSC 9 notification message.
 
-The library does not automatically redact notification content.
+`SendTitledNotificationAsync(title, message)` publishes two caller-supplied OSC 777 fields. Both the title and message may therefore expose secrets, repository/customer names, host information, build results, command output, or other application data.
+
+OSC 777 validation protects field/framing integrity by rejecting semicolons, controls, malformed Unicode, and oversized payloads. It does not encrypt, redact, or make the title/body confidential.
+
+Applications should not publish secrets in either notification protocol unless that exposure is intended. The library does not automatically redact notification content or synthesize notifications from process state.
 
 ## 13. Safe OSC 9 exclusion boundary
 
@@ -239,7 +248,7 @@ Semantic operations which require a live terminal reject known redirected/non-te
 
 A caller may explicitly configure a session to allow redirected output for workflows where terminal input remains interactive but application output is redirected; the session continues to report endpoint truthfully and semantic terminal-only operations enforce their own endpoint requirements.
 
-OSC 633 operations require an interactive terminal output endpoint and reject known redirected output before committing a frame.
+OSC 633 and OSC 777 operations require an interactive terminal output endpoint and reject known redirected output before committing a frame.
 
 ## 18. Advanced raw output
 
@@ -272,9 +281,11 @@ Suspend/resume is treated as a trust boundary for live terminal observations.
 
 Observation-dependent ownership may re-query after resume rather than trusting pre-suspend values. Old query generations cannot emit after resume, and late pre-suspend response ownership is honored before post-resume observation traffic.
 
-Ephemeral metadata such as OSC 133 markers, OSC 633 shell-integration metadata, notifications, and current-location publication is not automatically replayed on resume because the library is not the application-history authority for that metadata.
+Ephemeral metadata such as OSC 133 markers, OSC 633 shell-integration metadata, OSC 9/OSC 777 notifications, and current-location publication is not automatically replayed on resume because the library is not the application-history authority for that metadata.
 
-OSC 633 likewise has no restoration lease or synthetic disposal behavior. Disposal does not invent a missing command-finished/abort marker.
+OSC 633 has no restoration lease or synthetic disposal behavior. Disposal does not invent a missing command-finished/abort marker.
+
+OSC 777 likewise has no persistent notification identity, restoration state, resume replay, or synthetic disposal notification.
 
 ## 21. Dependencies and native boundaries
 
@@ -282,7 +293,7 @@ OSC 633 likewise has no restoration lease or synthetic disposal behavior. Dispos
 
 The package does not include PTY process hosting, shell execution, browser/network access, or OS clipboard integration as hidden side effects of terminal semantic APIs.
 
-OSC 633 adds no process launch, shell execution, environment capture, or shell-startup mutation side effect.
+OSC 633 adds no process launch, shell execution, environment capture, or shell-startup mutation side effect. OSC 777 adds no invocation of host-native notification commands, desktop APIs, IPC, or network access; it only writes the validated terminal frame.
 
 ## 22. Reporting security issues
 
