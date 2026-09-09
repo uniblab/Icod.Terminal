@@ -24,9 +24,11 @@ namespace Icod.Terminal;
 /// Identifies caller intent independently from a concrete terminal protocol backend.
 /// </summary>
 internal enum TerminalSemanticOperation {
+	TerminalTitle,
 	DesktopNotification,
 	CurrentLocation,
 	ShellCurrentDirectoryMetadata,
+	Hyperlink,
 	ClipboardWrite,
 	ClipboardRead,
 	CursorStyle,
@@ -175,30 +177,5 @@ internal static class TerminalControlLanguageVocabulary {
 				"The terminal protocol backend does not have an N150 control-family classification."
 			)
 		};
-	}
-
-	/// <summary>
-	/// Returns whether a backend is intentionally vendor-specific rather than a portable/general terminal form.
-	/// </summary>
-	internal static bool IsVendorSpecific(
-		TerminalProtocolBackend backend
-	) {
-		if ( !Enum.IsDefined( backend ) ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( backend ),
-				backend,
-				"The terminal protocol backend is not recognized."
-			);
-		}
-
-		return backend is TerminalProtocolBackend.Osc9WindowsCurrentDirectory
-			or TerminalProtocolBackend.Osc99KittyNotification
-			or TerminalProtocolBackend.Osc633VsCodeShellIntegration
-			or TerminalProtocolBackend.Osc777TitledNotification
-			or TerminalProtocolBackend.Osc1337ITerm2ShellIntegration
-			or TerminalProtocolBackend.CsiKittyKeyboard
-			or TerminalProtocolBackend.CsiXtermModifyOtherKeys
-			or TerminalProtocolBackend.DcsSixel
-			or TerminalProtocolBackend.ApcKittyGraphics;
 	}
 }
