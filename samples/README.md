@@ -14,7 +14,7 @@ The examples follow the permanent 1.x ownership contract:
 - use `await using` / `DisposeAsync()` for scoped terminal-state leases so cleanup and restoration remain deterministic;
 - exact restoration is used only where the library first observed or captured a truthful baseline;
 - terminal-policy reset is not described as exact restoration;
-- metadata publication is explicit because paths, clipboard contents, notifications, command lines, and hyperlinks may disclose information outside the application.
+- metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, and hyperlinks may disclose information outside the application.
 
 ## Start here — open a live terminal session
 
@@ -145,6 +145,24 @@ dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.S
 ```
 
 The sample demonstrates prompt, command-input, command-output, explicit completion, abort, typed prompt metadata, and explicit command-line metadata. Command lines can contain secrets; publication is caller policy and is not automatically redacted.
+
+### `Icod.Terminal.ITerm2ShellIntegration.Sample`
+
+Typed iTerm2 OSC 1337 shell-integration and semantic-history metadata. All metadata is supplied explicitly; the sample does not read process current directory, user name, host name, shell environment, or shell startup files.
+
+```text
+dotnet run --project samples/Icod.Terminal.ITerm2ShellIntegration.Sample/Icod.Terminal.ITerm2ShellIntegration.Sample.csproj -f net10.0 -- /srv/repo alice host.example.test bash 20 branch main
+```
+
+To demonstrate the explicitly destructive `ClearCapturedOutput` operation, add the opt-in flag:
+
+```text
+dotnet run --project samples/Icod.Terminal.ITerm2ShellIntegration.Sample/Icod.Terminal.ITerm2ShellIntegration.Sample.csproj -f net10.0 -- /srv/repo alice host.example.test bash 20 branch main --clear-captured-output
+```
+
+OSC 7 remains the preferred portable current-location API; this sample demonstrates the separate iTerm2-specific metadata path. User-variable Base64 encoding is wire framing, not confidentiality.
+
+The focused iTerm2 sample is built by `packaging/VerifyITerm2ShellIntegrationSample.ps1` on every supported TFM during repository validation.
 
 ### `Icod.Terminal.Notification.Sample`
 
