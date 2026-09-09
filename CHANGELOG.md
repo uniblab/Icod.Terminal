@@ -6,6 +6,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.8.0
+
+### APC foundation and Kitty Graphics
+
+- Begins the APC/Kitty Graphics release on the completed 1.7 backend-neutral raster API and DCS/Sixel implementation.
+- Adds the A180 internal canonical seven-bit APC writer for bounded small application-defined control strings while keeping APC framing separate from Kitty dialect semantics.
+- Retains the 1.7 public `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` contract as the shared semantic raster surface.
+- Plans direct Kitty Graphics transmission first, using raw RGB24/RGBA32 data and bounded Base64 chunks, while deferring file/temp-file/shared-memory media and advanced placement/animation ownership.
+- Keeps Kitty capability discovery on the existing multi-family query/evidence architecture using the protocol-defined Kitty query plus Primary DA barrier rather than terminal-brand or `TERM` heuristics.
+- Targets deterministic evidence-driven raster routing which prefers verified Kitty Graphics and retains verified Sixel as a fallback without retrying another backend after committed output fails.
+
+### Compatibility and validation
+
+- Retains the stable `1.0.0` compatibility floor and all released 1.0–1.7 public signatures and documented wire/ownership/security semantics.
+- Retains the 1.7 public API fingerprint unless a later 1.8 tranche demonstrates a necessary reviewed additive public change.
+- Retains `net8.0`, `net9.0`, and `net10.0` plus the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+- Introduces no generic public APC/Kitty Graphics dispatcher and no hidden filesystem/shared-memory graphics side effects.
+
+See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md`, and `Icod.Terminal-1.8.0-Development-Roadmap.md` for the evolving 1.8 contract.
+
 ## 1.7.0
 
 ### DCS foundation and Sixel graphics
@@ -146,7 +166,7 @@ See `docs/releases/1.3.0.md` for the full release notes.
 - Adds `TerminalSession.SendTitledNotificationAsync(title, message, ...)` for the urxvt-style OSC 777 desktop-notification protocol.
 - Emits canonical `OSC 777;notify;<title>;<message> ST` framing with strict UTF-8 and canonical ST termination.
 - Preserves the existing `SendNotificationAsync(message, ...)` OSC 9 API unchanged; OSC 777 is an additive titled-notification path rather than a silent replacement or automatic fallback.
-- Rejects semicolons in title/body because OSC 777 defines no interoperable field-escaping grammar, and rejects C0/C1/DEL controls and malformed Unicode before output commitment.
+- Rejects semicolons in title/body because OSC 777 defines no interoperable field-escaping grammar, and rejects C0/C1/DEL controls and malformed Unicode before output commitment because OSC 777 defines no interoperable field-escaping grammar.
 - Bounds the complete OSC payload to 4,096 encoded bytes and uses the normal `TerminalSession` shared output-serialization/pre-commit-cancellation contract.
 - Does not infer OSC 777 support from terminal identity and does not expose a generic raw OSC 777 selector/payload writer.
 
