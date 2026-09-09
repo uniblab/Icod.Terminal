@@ -1,0 +1,129 @@
+/*
+	Icod.Terminal.Tests
+	Automated test suite for the Icod.Terminal library.
+	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
+*/
+
+/*
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+namespace Icod.Terminal.Tests.Output;
+
+using System.Text;
+using Icod.Terminal;
+using Xunit;
+
+/// <summary>
+/// Verifies the A180 canonical small-frame APC construction substrate.
+/// </summary>
+public sealed class ApcWriterTests {
+	[Fact]
+	public void EmptyPayloadUsesCanonicalSevenBitFraming() {
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b_\u001b\\" ),
+			ApcWriter.EncodeFrame(
+				ReadOnlySpan<byte>.Empty
+			)
+		);
+	}
+
+	[Fact]
+	public void ApplicationPayloadRemainsByteExact() {
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b_Gf=24,s=1,v=1;AAAA\u001b\\"
+			),
+			ApcWriter.EncodeFrame(
+				Encoding.ASCII.GetBytes( "Gf=24,s=1,v=1;AAAA" )
+			)
+		);
+	}
+
+	[Fact]
+	public void CanonicalFrameRoundTripsThroughNormalizedApcStructure() {
+		byte[] payload = Encoding.ASCII.GetBytes(
+			"Ga=q,t=d,f=24,s=1,v=1;AAAA"
+		);
+		byte[] frameBytes = ApcWriter.EncodeFrame( payload );
+		TerminalControlFrameStructure structure = TerminalControlFrameStructure.Parse(
+			new TerminalResponseFrame(
+				TerminalResponseFrameKind.Apc,
+				frameBytes
+			)
+		);
+
+		Assert.Equal( TerminalControlFamily.Apc, structure.Family );
+		Assert.False( structure.UsesEightBitIntroducer );
+		Assert.Equal( 2, structure.IntroducerLength );
+		Assert.Empty( structure.ParameterBytes.ToArray() );
+		Assert.Empty( structure.IntermediateBytes.ToArray() );
+		Assert.Null( structure.FinalByte );
+		Assert.Equal(
+			payload,
+			structure.PayloadBytes.ToArray()
+		);
+		Assert.Equal(
+			TerminalStringTerminatorKind.SevenBitSt,
+			structure.TerminatorKind
+		);
+		Assert.Equal( 2, structure.TerminatorLength );
+	}
+
+	[Theory]
+	[InlineData( 0x18 )]
+	[InlineData( 0x1A )]
+	[InlineData( 0x1B )]
+	[InlineData( 0x9C )]
+	public void PayloadCannotContainFramingOrAbortControls(
+		int value
+	) {
+		byte[] payload = [
+			(byte)'a',
+			checked( (byte)value ),
+			(byte)'b'
+		];
+
+		Assert.Throws<ArgumentException>(
+			() => ApcWriter.EncodeFrame( payload )
+		);
+	}
+
+	[Fact]
+	public void ExactMaximumSmallFrameSizeIsAccepted() {
+		byte[] payload = Enumerable.Repeat(
+			(byte)'A',
+			ApcWriter.MaximumEncodedFrameBytes - 4
+		).ToArray();
+
+		byte[] frame = ApcWriter.EncodeFrame( payload );
+
+		Assert.Equal( ApcWriter.MaximumEncodedFrameBytes, frame.Length );
+		Assert.Equal( (byte)0x1B, frame[ 0 ] );
+		Assert.Equal( (byte)'_', frame[ 1 ] );
+		Assert.Equal( (byte)0x1B, frame[ ^2 ] );
+		Assert.Equal( (byte)'\\', frame[ ^1 ] );
+	}
+
+	[Fact]
+	public void MaximumSmallFrameSizePlusOneIsRejected() {
+		byte[] payload = Enumerable.Repeat(
+			(byte)'A',
+			ApcWriter.MaximumEncodedFrameBytes - 3
+		).ToArray();
+
+		Assert.Throws<ArgumentOutOfRangeException>(
+			() => ApcWriter.EncodeFrame( payload )
+		);
+	}
+}
