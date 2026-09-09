@@ -28,6 +28,7 @@ Different protocols use different safe encodings:
 - OSC 133 `cmdline_url` metadata is strict UTF-8 then percent-encoded byte-by-byte;
 - OSC 633 command-line, `Cwd`, and `ContinuationPrompt` values use VS Code's message serializer, escaping backslash, semicolon, and ASCII U+0000 through U+0020 before strict UTF-8 framing;
 - OSC 777 title/body fields are strict UTF-8 and reject semicolon plus C0/DEL/C1 controls because the protocol defines no interoperable field-escaping grammar;
+- OSC 1337 shell-integration text uses strict UTF-8, bounded delimited fields, and Base64 for user-variable values;
 - title/legacy-notification/OSC 9;9 text rejects framing controls directly;
 - color/pointer/keyboard APIs use closed semantic enums/types rather than arbitrary protocol strings.
 
@@ -65,6 +66,8 @@ OSC 633 follows the same rule: the library does not infer VS Code shell-integrat
 
 OSC 777 also follows this rule. `SendTitledNotificationAsync(...)` does not infer notification support from `TERM`, emulator brand, OS, environment variables, or process identity and does not automatically fall back to OSC 9 or another protocol.
 
+OSC 1337 follows the same rule. iTerm2-specific methods do not activate automatically from `TERM_PROGRAM`, terminal brand, host OS, process identity, or version strings.
+
 ## 6. Emission is not application
 
 For unacknowledged output protocols, successful completion normally means only that the complete requested bytes were written to the output service.
@@ -78,7 +81,8 @@ It does not prove that the terminal:
 - displayed an OSC 777 title/body exactly as supplied;
 - activated or decorated a hyperlink;
 - accepted clipboard content;
-- accepted or trusted OSC 633 shell-integration metadata.
+- accepted or trusted OSC 633 shell-integration metadata;
+- accepted, retained, or acted on OSC 1337 semantic-history metadata.
 
 Consumer logic must not treat emission as negotiated capability proof unless the specific API documents a correlated observation/query result.
 
@@ -94,7 +98,7 @@ Terminal security policy may disable clipboard reads or writes. A timeout is not
 
 Sensitive application data should not be copied to terminal clipboard state unless that disclosure is intentional.
 
-## 8. Current-location disclosure — OSC 7, OSC 9;9, and OSC 633 Cwd
+## 8. Current-location disclosure — OSC 7, OSC 9;9, OSC 633 Cwd, and OSC 1337 CurrentDir
 
 Publishing a working directory can reveal:
 
@@ -110,6 +114,8 @@ Publishing a working directory can reveal:
 OSC 9;9 Windows current-directory compatibility is likewise explicit caller intent. It is not emitted automatically and does not replace OSC 7 silently.
 
 `PublishVsCodeCurrentDirectoryAsync(...)` is also explicit caller intent. It emits the VS Code OSC 633 `Cwd` property only when supplied a value, does not read or normalize the process current directory, and does not silently emit OSC 7 or OSC 9;9 alongside it.
+
+`PublishITerm2CurrentDirectoryAsync(...)` likewise publishes only the caller-supplied OSC 1337 `CurrentDir` value. It does not inspect process state, normalize the path, or emit OSC 7/OSC 633 alongside it.
 
 ## 9. Hyperlink security — OSC 8
 
@@ -167,7 +173,26 @@ The library does not automatically inspect shell history, process arguments, env
 
 Unfinalized/private OSC 633 forms are deliberately excluded from the public API, including `F`/`G`, `H`/`I`, `SetMark`, and `EnvJson`/`EnvSingle*` environment transfer. There is no generic public raw OSC 633 dispatcher that bypasses these decisions.
 
-## 12. Notification privacy — OSC 9 and OSC 777
+## 12. iTerm2 OSC 1337 metadata
+
+The public 1.3 OSC 1337 surface can disclose or alter terminal-side semantic-history metadata:
+
+- `PublishITerm2CurrentDirectoryAsync(...)` publishes a caller-supplied path;
+- `PublishITerm2RemoteHostAsync(...)` publishes a caller-supplied user and host identity;
+- `SetITerm2UserVariableAsync(...)` publishes arbitrary caller-supplied user-variable data;
+- `PublishITerm2ShellIntegrationVersionAsync(...)` publishes a shell identity and integration version;
+- `SetITerm2MarkAsync(...)` creates a semantic-history mark;
+- `ClearITerm2CapturedOutputAsync(...)` explicitly clears the current captured-output record.
+
+Paths, user/host identities, and user-variable values may contain customer/project names, infrastructure details, repository names, tokens, or other private application state. The library does not populate these values from `Environment.CurrentDirectory`, `Environment.UserName`, DNS/host APIs, process arguments, shell history, environment variables, or shell startup files automatically.
+
+User-variable values are converted to strict UTF-8 and Base64. Base64 protects the OSC field grammar; it is not encryption, redaction, authentication, or confidentiality.
+
+`ClearITerm2CapturedOutputAsync(...)` is deliberately destructive metadata behavior. It is never called automatically by session open, probing, lifecycle transitions, resume, or disposal.
+
+The public API excludes the broader OSC 1337 host-affecting namespace: profile mutation, focus stealing, URL opening, pasteboard/file transfer, custom script control, arbitrary color/cursor mutation, Unicode-version mutation, Touch Bar labels, and generic variable-reporting queries. There is no generic raw OSC 1337 dispatcher that bypasses those exclusions.
+
+## 13. Notification privacy — OSC 9 and OSC 777
 
 Desktop notification content may leave the terminal window and appear in:
 
@@ -186,7 +211,7 @@ OSC 777 validation protects field/framing integrity by rejecting semicolons, con
 
 Applications should not publish secrets in either notification protocol unless that exposure is intended. The library does not automatically redact notification content or synthesize notifications from process state.
 
-## 13. Safe OSC 9 exclusion boundary
+## 14. Safe OSC 9 exclusion boundary
 
 The public OSC 9 surface intentionally excludes vendor commands that can execute/block/control host-side behavior or disclose environment data.
 
@@ -206,7 +231,7 @@ The library also does not expose a generic `WriteOsc9Async(command, payload)` es
 
 These omissions are security boundaries, not missing convenience APIs.
 
-## 14. Modern keyboard privacy
+## 15. Modern keyboard privacy
 
 Modern keyboard protocols can expose more context than traditional terminal keys, including:
 
@@ -221,7 +246,7 @@ Applications should collect/log/transmit only the fields they actually need.
 
 See `Modern-Keyboard-Security-and-Compatibility.md` for negotiation and lifecycle details.
 
-## 15. Focus, mouse, and paste
+## 16. Focus, mouse, and paste
 
 Focus reports can reveal when the terminal gains/loses focus. Mouse reports expose user interaction coordinates. Bracketed-paste data can contain arbitrary user-provided text.
 
@@ -229,7 +254,7 @@ Bracketed paste marks provenance/boundaries; it does not make the pasted text sa
 
 Applications remain responsible for context-appropriate escaping/confirmation of pasted content.
 
-## 16. Terminal observations can fingerprint the environment
+## 17. Terminal observations can fingerprint the environment
 
 Explicit queries can reveal terminal/environment characteristics such as:
 
@@ -242,15 +267,15 @@ Explicit queries can reveal terminal/environment characteristics such as:
 
 Applications should issue only observations they need. `Icod.Terminal` does not perform broad automatic fingerprinting merely because query APIs exist.
 
-## 17. Redirected output
+## 18. Redirected output
 
 Semantic operations which require a live terminal reject known redirected/non-terminal output rather than blindly writing terminal control bytes into a file/pipe.
 
 A caller may explicitly configure a session to allow redirected output for workflows where terminal input remains interactive but application output is redirected; the session continues to report endpoint truthfully and semantic terminal-only operations enforce their own endpoint requirements.
 
-OSC 633 and OSC 777 operations require an interactive terminal output endpoint and reject known redirected output before committing a frame.
+OSC 633, OSC 777, and OSC 1337 semantic operations require an interactive terminal output endpoint and reject known redirected output before committing a frame.
 
-## 18. Advanced raw output
+## 19. Advanced raw output
 
 `TerminalSession.Output` is intentionally an advanced borrowed transport outside session serialization.
 
@@ -265,7 +290,7 @@ The same caution applies to using `WriteTerminalStringAsync(...)` with caller-cr
 
 Consumers should use semantic APIs whenever one exists.
 
-## 19. Restoration and uncertainty
+## 20. Restoration and uncertainty
 
 Security includes state integrity.
 
@@ -275,33 +300,35 @@ If a state transition fails and rollback also fails, both failures are preserved
 
 When a protocol only supports terminal-policy reset rather than exact restoration, the API documents that weaker contract explicitly.
 
-## 20. Lifecycle
+## 21. Lifecycle
 
 Suspend/resume is treated as a trust boundary for live terminal observations.
 
 Observation-dependent ownership may re-query after resume rather than trusting pre-suspend values. Old query generations cannot emit after resume, and late pre-suspend response ownership is honored before post-resume observation traffic.
 
-Ephemeral metadata such as OSC 133 markers, OSC 633 shell-integration metadata, OSC 9/OSC 777 notifications, and current-location publication is not automatically replayed on resume because the library is not the application-history authority for that metadata.
+Ephemeral metadata such as OSC 133 markers, OSC 633 shell-integration metadata, OSC 1337 shell/semantic-history metadata, OSC 9/OSC 777 notifications, and current-location publication is not automatically replayed on resume because the library is not the application-history authority for that metadata.
 
 OSC 633 has no restoration lease or synthetic disposal behavior. Disposal does not invent a missing command-finished/abort marker.
 
 OSC 777 likewise has no persistent notification identity, restoration state, resume replay, or synthetic disposal notification.
 
-## 21. Dependencies and native boundaries
+OSC 1337 likewise adds no restoration lease. Disposal does not invent marks or metadata updates, and it does not clear captured output automatically.
+
+## 22. Dependencies and native boundaries
 
 `Icod.Terminal` uses native platform APIs only for the narrow terminal-control/lifecycle operations that require them. Native state is normalized into managed contracts and restored according to the session ownership model.
 
 The package does not include PTY process hosting, shell execution, browser/network access, or OS clipboard integration as hidden side effects of terminal semantic APIs.
 
-OSC 633 adds no process launch, shell execution, environment capture, or shell-startup mutation side effect. OSC 777 adds no invocation of host-native notification commands, desktop APIs, IPC, or network access; it only writes the validated terminal frame.
+OSC 633 adds no process launch, shell execution, environment capture, or shell-startup mutation side effect. OSC 777 adds no invocation of host-native notification commands, desktop APIs, IPC, or network access; it only writes the validated terminal frame. The supported OSC 1337 surface similarly writes only bounded metadata frames and does not install shell integration, mutate profiles, open URLs, or perform file/pasteboard transfers.
 
-## 22. Reporting security issues
+## 23. Reporting security issues
 
 Security defects should be reported through the repository/owner's supported private security-reporting channel when available rather than by publishing exploitable details before a fix can be prepared.
 
 Compatibility or missing-feature requests should remain distinct from security reports; not every unsupported terminal vendor command is a security defect.
 
-## 23. Permanent security principles
+## 24. Permanent security principles
 
 For 1.x, new terminal features should preserve these principles:
 
