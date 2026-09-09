@@ -2,7 +2,23 @@
 
 **Release:** `Icod.Terminal 1.7.0`  
 **Tranche:** D171  
-**Status:** implemented; exact-head validation pending
+**Status:** complete
+
+## Accepted checkpoint
+
+Exact head:
+
+```text
+277db7da8a586dda44966fa77990b4a9f32e953a
+```
+
+Pull-request Staging workflow:
+
+```text
+34400644772
+```
+
+That exact head passed Windows, Linux, macOS runtime validation, package candidate, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
 
 ## Purpose
 
@@ -136,16 +152,3 @@ This leaves Sixel free to reuse the same DCS family framing without inheriting q
 D171 does not add Sixel syntax, raster types, streaming output, or graphics capability probing. Those begin in D172 and later tranches.
 
 It also does not broaden the generic DCS writer into a public raw-control API.
-
-## Acceptance
-
-D171 is complete when:
-
-- DECRQSS request construction uses `DcsWriter`;
-- XTGETTCAP request construction uses `DcsWriter`;
-- all twelve DECRQSS request forms remain byte-exact;
-- representative XTGETTCAP request forms remain byte-exact;
-- consolidated requests round-trip through the normalized DCS structural parser;
-- existing DECRQSS and XTGETTCAP end-to-end tests remain green;
-- no public API changes;
-- Windows/Linux/macOS Staging, package candidate, all package shards, and validated artifact pass on the exact D171 head.
