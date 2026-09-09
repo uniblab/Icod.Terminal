@@ -1,7 +1,7 @@
 param(
 	[string]$Configuration = 'Staging',
 	[string]$OutputDirectory = 'artifacts/public-api',
-	[string]$BaselinePath = 'docs/Public-API-Baseline-1.0.sha256'
+	[string]$BaselinePath = 'docs/Public-API-Baseline-1.1.sha256'
 )
 
 Set-StrictMode -Version Latest
@@ -66,9 +66,9 @@ foreach ( $hash in $actualHashes | Select-Object -Skip 1 ) {
 }
 
 if ( $referenceHash -ne $expectedHash.ToLowerInvariant() ) {
-	$message = "The Icod.Terminal public API does not match the frozen stable 1.0 baseline. Expected $expectedHash but generated $referenceHash. Inspect artifacts/public-api before changing the baseline intentionally."
+	$message = "The Icod.Terminal public API does not match the frozen current baseline '$BaselinePath'. Expected $expectedHash but generated $referenceHash. Inspect artifacts/public-api before changing the baseline intentionally."
 	throw $message
 }
 
-Write-Host 'Verified the frozen Icod.Terminal stable 1.0 public API baseline.'
+Write-Host "Verified the frozen Icod.Terminal public API baseline '$BaselinePath'."
 Write-Host "SHA256: $referenceHash"
