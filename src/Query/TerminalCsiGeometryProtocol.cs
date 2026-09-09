@@ -97,7 +97,7 @@ internal static class TerminalCsiGeometryProtocol {
 		int[] parameters = TerminalCsiParameterSemantics.GetRequiredNumericParameters(
 			syntax,
 			maximumCount: 3,
-			MaximumPixelDimension
+			maximumValue: MaximumPixelDimension
 		);
 		if ( 3 != parameters.Length || expectedSelector != parameters[ 0 ] ) {
 			throw new FormatException(
