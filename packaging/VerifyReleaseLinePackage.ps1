@@ -42,11 +42,9 @@ if ( -not ( Test-Path -LiteralPath $curatedReleaseNotesPath -PathType Leaf ) ) {
 $curatedReleaseNotes = [System.IO.File]::ReadAllText( $curatedReleaseNotesPath )
 foreach ( $requiredText in @(
 	$ExpectedVersion,
-	'TerminalSession.Input',
 	'net8.0',
 	'net9.0',
 	'net10.0',
-	'Migration-to-1.0.md',
 	'Compatibility-and-Versioning.md'
 ) ) {
 	$curatedHasText = $curatedReleaseNotes.Contains(
@@ -116,9 +114,8 @@ try {
 	$releaseNotes = $releaseNotesNode.InnerText
 	foreach ( $requiredText in @(
 		$ExpectedVersion,
-		'TerminalSession.Input',
 		"docs/releases/$ExpectedVersion.md",
-		'Migration-to-1.0.md'
+		'Compatibility-and-Versioning.md'
 	) ) {
 		$releaseNotesHaveText = $releaseNotes.Contains(
 			$requiredText,
@@ -142,12 +139,11 @@ try {
 
 	foreach ( $requiredText in @(
 		$ExpectedVersion,
-		'TerminalSession.Input',
 		'Compatibility-and-Versioning.md',
 		'Migration-to-1.0.md',
 		"docs/releases/$ExpectedVersion.md",
 		'CHANGELOG.md',
-		"blob/v$ExpectedVersion/docs/Architecture.md"
+		'docs/Architecture.md'
 	) ) {
 		$readmeHasText = $readme.Contains(
 			$requiredText,
@@ -190,7 +186,7 @@ try {
 				Where-Object { $_ -notin $documentedMembers }
 		)
 		if ( 0 -ne $missingMembers.Count ) {
-			throw "$entryPath is missing required 1.0 documentation: $($missingMembers -join ', ')."
+			throw "$entryPath is missing required stable 1.x documentation: $($missingMembers -join ', ')."
 		}
 		if ( $forbiddenMember -in $documentedMembers ) {
 			throw "$entryPath unexpectedly documents removed public member $forbiddenMember."
@@ -202,7 +198,7 @@ try {
 
 $smokeRoot = Join-Path (
 	[System.IO.Path]::GetTempPath()
-) ( "Icod.Terminal-1.0-package-smoke-{0}" -f [Guid]::NewGuid().ToString( 'N' ) )
+) ( "Icod.Terminal-1.x-package-smoke-{0}" -f [Guid]::NewGuid().ToString( 'N' ) )
 New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
 try {
 	Copy-Item `
@@ -245,7 +241,7 @@ try {
 
 		foreach ( $framework in @('net8.0', 'net9.0', 'net10.0') ) {
 			Write-Host ''
-			Write-Host "=== Fresh package 1.0 release-line consumer: $framework ==="
+			Write-Host "=== Fresh package stable 1.x release-line consumer: $framework ==="
 			Invoke-DotNet -Arguments @(
 				'run',
 				'--project',
@@ -267,4 +263,4 @@ try {
 	}
 }
 
-Write-Host "1.0 release-line package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Stable 1.x release-line package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
