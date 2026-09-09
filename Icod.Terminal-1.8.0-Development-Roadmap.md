@@ -2,7 +2,7 @@
 
 **Release:** `1.8.0`  
 **Theme:** APC foundation, Kitty Graphics, and verified multi-backend raster routing  
-**Status:** A180 starting  
+**Status:** A180 complete; A181 starting  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.7.0`
 
@@ -71,52 +71,51 @@ The protocol's recommended support test combines a Kitty Graphics query action (
 ## Tranche plan
 
 ```text
-A180  APC construction contract and reference freeze
-A181  Kitty Graphics control-data and response grammar
-A182  backend-neutral raster-to-Kitty raw adaptation
-A183  direct Base64 chunk encoder
-A184  committed multi-frame APC graphics transaction
-A185  Kitty Graphics live capability probe and response correlation
-A186  multi-backend raster routing and fallback
-A187  raster semantic parity, alpha, geometry, and cursor behavior
-A188  APC/Kitty hardening, fragmentation, and resource closure
-A189  package, documentation, compatibility, and release closure
+A180  APC construction contract and reference freeze           complete
+A181  Kitty Graphics control-data and response grammar         starting
+A182  backend-neutral raster-to-Kitty raw adaptation           planned
+A183  direct Base64 chunk encoder                              planned
+A184  committed multi-frame APC graphics transaction           planned
+A185  Kitty Graphics live capability probe and correlation     planned
+A186  multi-backend raster routing and fallback                planned
+A187  raster semantic parity, alpha, geometry, and cursor      planned
+A188  APC/Kitty hardening, fragmentation, and resource closure planned
+A189  package, documentation, compatibility, and release closure planned
 ```
+
+## Accepted checkpoints
+
+| Tranche | Exact head | Staging workflow |
+| --- | --- | --- |
+| A180 | `88ac1db0a2904393622082423b8773bd8b19f121` | `34417006958` |
+
+A180 passed Windows, Linux, macOS runtime/source validation, package candidate/public-API freeze, all four package-contract shards, and the validated package artifact. The 1.7 public API fingerprint remained unchanged.
 
 ## A180 — APC construction contract and reference freeze
 
-**Status:** Starting.
+**Status:** Complete.
 
 **Goal:** establish one canonical internal APC construction primitive while keeping Kitty-specific syntax out of the family layer.
 
-### Required contract
+Completed implementation:
 
-A canonical small APC frame is:
+- internal `ApcWriter`;
+- canonical seven-bit `ESC _` introducer and `ESC \\` terminator;
+- opaque application payload at the family layer;
+- rejection of `CAN`, `SUB`, `ESC`, and C1 ST where they would alter framing;
+- 8,192-byte complete small-frame ceiling;
+- normalized APC round-trip through `TerminalControlFrameStructure`;
+- no public API and no Kitty grammar in the family writer.
 
-```text
-ESC _ <application-defined payload> ESC \
-```
-
-A180 should:
-
-- add one internal `ApcWriter` (name subject to implementation review);
-- emit seven-bit `ESC _` and seven-bit ST exactly;
-- treat the application payload as opaque at the family layer;
-- reject bytes which would abort or prematurely terminate APC framing (`CAN`, `SUB`, `ESC`, and C1 ST);
-- impose an explicit small-frame bound large enough for later reviewed Kitty direct-transfer control/payload framing while remaining independent of Kitty semantics;
-- round-trip canonical frames through the existing normalized APC `TerminalControlFrameStructure` parser;
-- preserve existing inbound APC 7/8-bit recognition and resource bounds;
-- add no public API and no Kitty `key=value` parser yet.
-
-### Acceptance
-
-A180 is accepted only on one exact PR head passing Windows/Linux/macOS Staging runtime validation, package candidate/API baseline, all package shards, and validated artifact.
+Permanent contract: `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md`.
 
 ## A181 — Kitty Graphics control-data and response grammar
 
+**Status:** Starting.
+
 **Goal:** define the Kitty dialect above generic APC.
 
-The codec/parser should recognize only the reviewed subset needed by 1.8 common raster display and capability probing.
+The codec/parser recognizes only the reviewed subset needed by 1.8 common raster display and capability probing.
 
 Initial command keys include the subset required for:
 
@@ -131,15 +130,15 @@ q   response quietness
 I/i response/query identity where needed
 ```
 
-The exact identity key strategy must be frozen after reviewing protocol correlation requirements and collision behavior.
-
 Requirements:
 
 - ASCII-only control grammar;
 - deterministic key ordering for generated commands;
 - duplicate/unknown-key policy explicitly defined;
-- bounded key/value/control-data lengths and numeric magnitude;
-- strict response grammar for `OK` and protocol error payloads;
+- bounded key/value/control-data lengths and 32-bit numeric magnitude;
+- strict response grammar for `OK` and printable protocol error messages;
+- support-query identity via non-zero `i` in the reviewed probe form;
+- response parsing able to recover `i`, `I`, and `p` without exposing a generic dictionary;
 - no generic arbitrary public Kitty metadata dictionary;
 - no placement/deletion/animation controls in the common raster path.
 
