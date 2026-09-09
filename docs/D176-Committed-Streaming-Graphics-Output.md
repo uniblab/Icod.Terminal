@@ -2,7 +2,9 @@
 
 **Release:** `Icod.Terminal 1.7.0`  
 **Tranche:** D176  
-**Status:** implementation starting
+**Status:** complete and accepted  
+**Accepted exact head:** `9e48c1cee4e44a0f272378ff4f60b4cabc9bed8a`  
+**Accepted Staging workflow:** `34408371837`
 
 ## Purpose
 
@@ -25,8 +27,8 @@ D176 receives an already-quantized `SixelPaletteImage`.
 
 Before acquiring output ownership it:
 
-- validates the image through the D175 encoder boundary;
-- creates the lazy bounded payload-segment enumerable;
+- validates the complete palette-image invariant set;
+- creates the lazy bounded D175 payload-segment enumerable;
 - observes caller cancellation.
 
 It then acquires the existing `TerminalSession` session-output gate with the caller token.
@@ -43,7 +45,7 @@ The transaction commits when D176 begins the first transport write containing th
 ESC P 0;1;0 q
 ```
 
-The prefix is derived from the same internal `DcsWriter` framing contract used by D170–D175 rather than from a public raw escape-string surface.
+The prefix and terminator are derived from the same internal `DcsWriter` framing contract used by the earlier DCS work rather than from a public raw escape-string surface.
 
 Once this first write begins, caller cancellation no longer participates in the transaction.
 
@@ -144,7 +146,9 @@ A caller must not automatically retry the same image after an in-flight transpor
 
 ## Encoder failures after commitment
 
-D176 asks D175 to validate image invariants before output ownership and commitment. Generated segment bytes therefore do not depend on unchecked caller protocol strings or dangling palette references.
+D176 validates all `SixelPaletteImage` dimensions, storage lengths, palette alpha, transparency-mask values, and opaque palette references before output ownership and commitment.
+
+Generated segment bytes therefore do not depend on unchecked caller protocol strings or dangling palette references.
 
 Catastrophic runtime failures such as allocation failure cannot be made recoverable after commitment; as with transport failure, D176 does not retry a partial control string.
 
@@ -152,11 +156,9 @@ Catastrophic runtime failures such as allocation failure cannot be made recovera
 
 `TerminalSession.DisposeAsync()` first stops accepting new public session output.
 
-D176 additionally requires final session restoration to drain the shared output gate before the final transport flush and host-mode restoration. This guarantees that an already-committed Sixel transaction cannot race the session's final restore/flush phase.
+D176 hardens presentation/output teardown by draining the shared control-output gate before presentation restoration proceeds. An already-committed Sixel transaction must therefore release its session-output lease before final output-state cleanup and the later restoration flush can run.
 
-Existing cleanup managers remain free to acquire the control-output gate during disposal. The final drain occurs after those manager closures and immediately before `RestoreCoreAsync()`.
-
-This is a general session-output ordering hardening, not a Sixel-specific second ownership mechanism.
+Existing cleanup managers remain free to acquire the control-output gate during disposal. The drain uses that same ownership mechanism rather than a graphics-specific second lock.
 
 ## Lifecycle interruption
 
@@ -174,6 +176,21 @@ The prefix and ST are fixed internal framing bytes, and all payload bytes come f
 
 The output gate prevents unrelated session-owned control traffic from being injected inside the DCS frame.
 
+## Acceptance evidence
+
+The D176 transaction suite proves:
+
+- a pre-canceled transaction emits no bytes;
+- cancellation while waiting for the shared output gate emits no bytes;
+- cancellation after the first prefix write still produces the complete frame;
+- successful streaming bytes are identical to the equivalent small `DcsWriter` frame;
+- ordinary session text cannot interleave inside a paused committed Sixel transaction;
+- transport failure is surfaced without retry, flush, or speculative ST;
+- disposal waits behind a committed graphics transaction before restoration flush;
+- the successful transaction emits one final ST and one transaction flush.
+
+The accepted exact head passed Windows, Linux, macOS, package candidate, all four package shards, and the validated package artifact.
+
 ## Deliberately deferred
 
 D176 does not implement:
@@ -190,15 +207,4 @@ Those belong to D177, D178, and later releases.
 
 ## Acceptance
 
-D176 is complete when tests prove:
-
-- pre-canceled output emits no bytes;
-- cancellation while waiting for the shared output gate emits no bytes;
-- cancellation after the first DCS-prefix write does not truncate the frame;
-- DCS prefix, D175 segments, one ST, and one flush are emitted in order;
-- ordinary session output cannot interleave inside a paused committed Sixel transaction;
-- a transport failure is surfaced without retry or speculative recovery writes;
-- disposal cannot perform its final restoration flush through an active Sixel output lease;
-- successful small output is byte-identical to the equivalent complete `DcsWriter` frame;
-- no public API is added;
-- the exact D176 head passes the complete Staging/package matrix.
+D176 is accepted on exact head `9e48c1cee4e44a0f272378ff4f60b4cabc9bed8a`, workflow `34408371837`.
