@@ -2,7 +2,7 @@
 
 **Release:** `1.5.0`  
 **Theme:** semantic protocol normalization and control-language foundation  
-**Status:** N150 complete; N151 implemented, exact-head validation pending  
+**Status:** N150–N153 complete; N154 implemented, exact-head validation pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.4.0`
 
@@ -68,7 +68,7 @@ N150 passed the full PR Staging gate on head `03897bed254532140ed00d329723d49cd6
 
 ## N151 — generalized control-family framing
 
-**Status:** implemented; exact-head validation pending.
+**Status:** complete.
 
 **Goal:** evolve the current response framing abstraction beyond CSI/DCS/OSC without changing existing response behavior.
 
@@ -83,7 +83,7 @@ N150 passed the full PR Staging gate on head `03897bed254532140ed00d329723d49cd6
 
 ### Implemented design
 
-`TerminalResponseFramer` now accepts `TerminalControlFamily` directly. The existing `TerminalResponseFrameKind` overload remains as a temporary single-family query adapter and delegates CSI/DCS/OSC to the normalized family parser. It is intentionally retained until N154 replaces one-family query expectations with multi-family transactions.
+`TerminalResponseFramer` accepts `TerminalControlFamily` directly. The compatibility `TerminalResponseFrameKind` adapter delegates to the normalized family parser and remains available to existing query matchers.
 
 APC, PM, and SOS use strict string framing:
 
@@ -100,7 +100,11 @@ Existing CSI/DCS/OSC query tests remain byte-for-byte green while the family lay
 
 N151 adds dedicated regression coverage proving the legacy CSI/DCS/OSC adapter produces the same framing result as the normalized family overload, plus 7-bit/8-bit APC/PM/SOS completion, malformed termination, cancellation-byte, incomplete-escape, and maximum-frame behavior.
 
+N151 passed the full PR Staging gate on exact head `9ae77d5b2d5870f69d8e1b561e813cb35d14f17c`.
+
 ## N152 — one incremental control-language state machine
+
+**Status:** complete.
 
 **Goal:** prevent separate protocol implementations from creating duplicate ad-hoc scanners.
 
@@ -112,11 +116,21 @@ N151 adds dedicated regression coverage proving the legacy CSI/DCS/OSC adapter p
 - add mixed-stream and malformed-frame recovery tests;
 - keep dialect parsing outside the framing state machine.
 
+### Implemented design
+
+`TerminalResponseFramer` now delegates byte-at-a-time control-family recognition to one reusable `TerminalControlSequenceScanner`. The scanner retains explicit state for Ground/Escape, CSI header progress, DCS header/payload progress, and string-family payload/ST progress.
+
+The scanner is resettable, bounded, and unaware of OSC numbers, Sixel, Kitty Graphics, or any other dialect grammar.
+
 ### Acceptance
 
 No individual Sixel, Kitty Graphics, OSC, or CSI implementation requires its own competing transport scanner.
 
+N152 passed as part of the full Staging validation on head `97982751a4024793372a6becb9807b59692f579e`.
+
 ## N153 — structural CSI/DCS/string frame model
+
+**Status:** complete.
 
 **Goal:** preserve enough syntax for complete future dialects without lossy early parsing.
 
@@ -128,11 +142,23 @@ No individual Sixel, Kitty Graphics, OSC, or CSI implementation requires its own
 - represent OSC/APC/PM/SOS payload bytes without assuming a dialect grammar;
 - add helpers for typed dialect parsers without exposing raw control construction publicly.
 
+### Implemented design
+
+`TerminalControlFrameStructure` retains the normalized family, introducer form, raw parameter and intermediate regions, optional final selector, opaque payload, and exact terminator kind/length.
+
+Existing CSI DA/DSR/CPR, DECRQSS, and XTGETTCAP parsing now consume the shared structural model rather than duplicating frame-layout parsing.
+
+N154 subsequently extended routed frame-kind mapping so APC, PM, and SOS `TerminalResponseFrame` instances also flow through the same N153 structural parser.
+
 ### Acceptance
 
 The structural model can represent current queries plus future Sixel and Kitty Graphics without changing the framing layer.
 
+N153 passed as part of the full Staging validation on head `97982751a4024793372a6becb9807b59692f579e`.
+
 ## N154 — multi-family query transactions
+
+**Status:** implemented; exact-head validation pending.
 
 **Goal:** allow one logical active query to correlate more than one possible control family or synchronization barrier.
 
@@ -144,9 +170,23 @@ The structural model can represent current queries plus future Sixel and Kitty G
 - preserve the single authoritative reader;
 - prove no unrelated frame is stolen from application input.
 
+### Implemented design
+
+`TerminalQueryResponsePlan` supplies a bounded internal set of response rules. Each rule has one family-specific matcher, one reviewed frame bound, and a `Completion` or `Barrier` disposition. Version 1.5 permits at most six rules, at most one rule per family, and requires at least one completion rule.
+
+Existing matcher-based `ExecuteQueryAsync(...)` calls are adapters over a one-rule completion plan. The new internal `ExecuteQueryTransactionAsync(...)` path uses the same `TerminalQueryTransactionManager`, ambiguity gate, output serialization, cancellation, timeout, suspension, disposal, and late-response ownership implementation.
+
+The decoder tests the bounded set of accepted families through `TerminalResponseFramer`, then invokes only the matcher for the family actually framed. Rule frame bounds are always clamped to the decoder's configured maximum buffered bytes, preserving the historical small-buffer fallback contract.
+
+The synthetic acceptance transaction uses an APC completion response and a CSI DA-style barrier response without any Kitty-specific branch in the input decoder. Ordinary application input remains live while the compound query is pending.
+
+Permanent N154 contract: `docs/N154-Multi-Family-Query-Transactions.md`.
+
 ### Acceptance
 
 A synthetic APC-query/CSI-barrier transaction can be represented without special-casing Kitty Graphics in the input reader.
+
+The N154 implementation must pass the historical query transaction/framing suite, including the bounded eight-byte decoder fallback, in addition to the new APC/CSI compound transaction and APC/PM/SOS structural-frame tests.
 
 ## N155 — capability support and evidence model
 
@@ -300,6 +340,10 @@ The long-range contract is recorded in `docs/Control-Language-Normalization-and-
 - branch/version authority established for `1.5.0`;
 - long-range roadmap recorded;
 - N150 terminology/layer-ownership foundation complete and fully green;
-- N151 normalized family framing implemented with compatibility adapter and focused tests;
+- N151 generalized family framing complete and fully green;
+- N152 shared incremental control-language scanner complete and fully green;
+- N153 structural CSI/DCS/string frame model complete and fully green;
+- XTGETTCAP correlation strengthened so late responses are matched to the requested capability rather than merely the DCS `+r` family;
+- N154 bounded multi-family transaction engine, synthetic APC/CSI acceptance, and structural string-family integration implemented; exact-head validation is pending;
 - no existing public wire behavior intentionally changed;
-- N152 has not started.
+- N155 has not started.
