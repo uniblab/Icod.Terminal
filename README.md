@@ -9,26 +9,29 @@
 
 ## Status
 
-`1.5.0` is the current development release line. It is the normalization/control-language foundation for complete CSI, DCS/Sixel, and APC/Kitty Graphics work planned for the following releases.
+`1.6.0` is the current development release line. C160–C164 are complete and C165 release acceptance/documentation closure is in progress. The release builds on the completed/published 1.5 control-language normalization and establishes the complete shared CSI grammar, migrates existing CSI paths onto that grammar, adds internal terminal/cell pixel geometry for later graphics work, and hardens fragmentation and oversized correlated-response recovery.
 
-N150–N158 are complete. The release now has shared control-family framing, one bounded incremental scanner, structural CSI/DCS/string frames, multi-family query transactions, capability/evidence state, a semantic backend registry, deterministic routing, exact TermInfo reconciliation, OSC 99 live evidence integration, Kitty keyboard live evidence integration, and generation-scoped invalidation. N159 is the acceptance/package/documentation closure tranche.
+The 1.6 CSI foundation preserves 7-bit and 8-bit framing, private-use parameter bytes, semicolon-delimited parameters, colon-delimited subparameters, omitted/empty components, intermediate bytes, final selectors, and bounded raw parameter data without prematurely assigning dialect-specific numeric defaults. Existing DA/DSR/CPR, DEC private-mode, synchronized-output, Kitty keyboard, mouse, and cursor-style CSI paths now share that foundation. Version 1.6 adds no public API.
 
-The public surface remains intentionally unchanged from 1.4. Generated `net8.0`, `net9.0`, and `net10.0` snapshots retain SHA-256 `3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27`.
-
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Existing OSC 633, OSC 777, OSC 1337, and OSC 99 APIs retain their exact wire semantics.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Existing OSC 633, OSC 777, OSC 1337, OSC 99, and all released CSI-based APIs retain their exact wire semantics.
 
 Full release notes and concise release history:
 
-- [Icod.Terminal 1.5.0 release notes](docs/releases/1.5.0.md)
-- [1.5.0 development roadmap](Icod.Terminal-1.5.0-Development-Roadmap.md)
-- [N159 acceptance/package/documentation closure](docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md)
+- [Icod.Terminal 1.6.0 release notes](docs/releases/1.6.0.md)
+- [1.6.0 development roadmap](Icod.Terminal-1.6.0-Development-Roadmap.md)
+- [C160 complete CSI grammar foundation](docs/C160-Complete-CSI-Grammar-Foundation.md)
+- [C161 typed CSI parameter semantics](docs/C161-Typed-CSI-Parameter-Semantics.md)
+- [C162 existing CSI consolidation](docs/C162-Existing-CSI-Consolidation.md)
+- [C163 terminal and cell pixel geometry](docs/C163-Terminal-and-Cell-Pixel-Geometry.md)
+- [C164 CSI hardening, fragmentation, and recovery](docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md)
+- [C165 1.6.0 acceptance/package/documentation closure](docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md)
 - [Control-language normalization and graphics roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
 - [Changelog](CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.5.0
+dotnet add package Icod.Terminal --version 1.6.0
 ```
 
 The package targets:
@@ -321,7 +324,7 @@ OSC 99 capability/alive queries disclose that the application is probing notific
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` is an internal normalization release and intentionally retains the frozen 1.4 public surface. Earlier machine-frozen baselines remain retained as compatibility evidence.
+Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` is an internal normalization release and intentionally retains the frozen 1.4 public surface. Version `1.6.0` completes the internal CSI grammar/consolidation and geometry foundation while preserving the same public surface and all released 1.0–1.5 contracts.
 
 For the stable 1.x line:
 
@@ -354,6 +357,12 @@ The permanent 1.x authorities include:
 - [Presentation and Reversible State](docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
 - [Control-Language Normalization and Graphics Roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
+- [C160 Complete CSI Grammar Foundation](docs/C160-Complete-CSI-Grammar-Foundation.md)
+- [C161 Typed CSI Parameter Semantics](docs/C161-Typed-CSI-Parameter-Semantics.md)
+- [C162 Existing CSI Consolidation](docs/C162-Existing-CSI-Consolidation.md)
+- [C163 Terminal and Cell Pixel Geometry](docs/C163-Terminal-and-Cell-Pixel-Geometry.md)
+- [C164 CSI Hardening, Fragmentation, and Recovery](docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md)
+- [C165 1.6.0 Acceptance, Package, and Documentation Closure](docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md)
 - [N150 Terminology and Layer-Ownership Freeze](docs/N150-Control-Language-Terminology-and-Layer-Ownership-Freeze.md)
 - [N151 Generalized Control-Family Framing](docs/N151-Generalized-Control-Family-Framing.md)
 - [N152 Incremental Control-Language State Machine](docs/N152-Incremental-Control-Language-State-Machine.md)
@@ -408,15 +417,15 @@ After merge, Release distribution validation runs six Windows/Linux/macOS x64/AR
 
 ## Release process
 
-`1.5.0` is publishable only after the exact final 1.5 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.6.0` is publishable only after the exact final 1.6 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
-The tag-triggered workflow requires curated `docs/releases/1.5.0.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
+The tag-triggered workflow requires curated `docs/releases/1.6.0.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 
 ## Development roadmap
 
-Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current tranche is [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md). The completed rc1 program remains preserved in `Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`.
+Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current tranche is [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md). The completed 1.5 program remains preserved in [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md), and the completed rc1 program remains preserved in `Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`.
 
 ## Authors
 

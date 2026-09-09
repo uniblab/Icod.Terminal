@@ -32,13 +32,13 @@ Compatible minor-release additions receive separate reviewed baselines rather th
 - `docs/Public-API-Baseline-1.3.md` / `.sha256` record the additive typed iTerm2 OSC 1337 surface;
 - `docs/Public-API-Baseline-1.4.md` / `.sha256` record the additive typed Kitty OSC 99 notification/query surface.
 
-Version `1.5.0` intentionally adds no public API. Its generated `net8.0`, `net9.0`, and `net10.0` snapshots remain identical to 1.4 and retain SHA-256:
+Versions `1.5.0` and `1.6.0` intentionally add no public API. Their generated `net8.0`, `net9.0`, and `net10.0` snapshots remain identical to 1.4 and retain SHA-256:
 
 ```text
 3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
 ```
 
-Therefore `docs/Public-API-Baseline-1.4.md` / `.sha256` remain the authoritative current machine baseline for 1.5. A duplicate `Public-API-Baseline-1.5.*` pair is intentionally not created merely to relabel an identical exported surface.
+Therefore `docs/Public-API-Baseline-1.4.md` / `.sha256` remain the authoritative current machine baseline for 1.5 and 1.6. Duplicate `Public-API-Baseline-1.5.*` or `Public-API-Baseline-1.6.*` pairs are intentionally not created merely to relabel an identical exported surface.
 
 `packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint. Older baseline files remain checked in as compatibility evidence.
 
@@ -89,6 +89,8 @@ Examples include:
 
 - one authoritative live-session input reader;
 - query correlation and bounded late-response ownership;
+- timeout late-response ownership measured from the logical monotonic timeout deadline rather than scheduler-continuation timing;
+- explicit cancellation/suspend/disposal late-response ownership measured from the actual interruption point;
 - pre-commit versus post-commit cancellation behavior;
 - truthful `Unavailable` / `Unsupported` / failure distinctions;
 - exact restoration where an API promises exact restoration;
@@ -99,8 +101,8 @@ Examples include:
 - explicit metadata/privacy disclosure;
 - no generic hazardous OSC 9 execution/control surface;
 - no generic raw OSC 633, OSC 777, OSC 1337, or OSC 99 dispatch replacing typed semantic APIs;
-- no generic public CSI/DCS/OSC/APC/PM/SOS writer introduced by the 1.5 normalization;
-- no second input reader for OSC 99 unsolicited notification events;
+- no generic public CSI/DCS/OSC/APC/PM/SOS writer introduced by the 1.5 normalization or 1.6 CSI consolidation;
+- no second input reader for OSC 99 unsolicited notification events or CSI query responses;
 - static TermInfo/profile capability advertisement remains distinct from generation-scoped live evidence;
 - `TerminalSession.InvalidateState()` expires live probe/protocol-response evidence while immutable selected TermInfo/profile evidence persists;
 - terminal/vendor identity and caller routing preference are not treated as capability evidence;
@@ -124,6 +126,8 @@ Likewise:
 The OSC 99 support/alive queries introduced by 1.4 are live observations through the existing response router. Silence remains a timeout and is not converted into permanent unsupported truth.
 
 Version 1.5 generalizes that distinction internally. A successful correlated OSC 99 support response can record verified live backend evidence, while timeout/cancellation records no false negative. Existing Kitty keyboard negotiation likewise distinguishes affirmative Kitty flags, a reviewed Primary-DA negative barrier, and silence/timeout. These internal evidence refinements do not change the released public query or lease signatures.
+
+Version 1.6 applies the same authoritative response-router discipline to its internal terminal/cell pixel geometry observations. Selector-specific correlation, malformed-response failure, and oversized-response drain/resynchronization do not create a second reader or turn silence into capability truth.
 
 Future minor releases may add new semantic protocol APIs without changing the meaning of existing operations.
 
@@ -186,6 +190,8 @@ The permanent layer boundaries are part of the support model:
 
 Version 1.5 adds internal semantic operation/backend/evidence/control-family layers behind these boundaries without transferring ownership to higher-level consumers or requiring direct consumers to construct protocol frames.
 
+Version 1.6 adds the internal complete CSI grammar and pixel-geometry substrate behind the same boundary. The optional POSIX pixel fields exposed by `TIOCGWINSZ` do not justify expanding `ITerminalControlProvider.GetSize(...)` in 1.6; the stable public/provider contract remains unchanged.
+
 A future release may improve implementations behind these boundaries without requiring consumers to adopt platform-native mode manipulation or a second terminal parser.
 
 ## 11. Direct consumers and Icod.DCurses
@@ -212,7 +218,8 @@ In particular, 1.x does not use a minor/patch release to quietly introduce:
 - hidden process/network/browser/OS-clipboard/host-notification side effects;
 - terminal-brand-triggered activation of state that cannot be restored truthfully;
 - automatic notification- or shell-integration-protocol routing presented as capability truth without a negotiation contract;
-- a competing OSC 99 event reader that bypasses `TerminalSession.ReadEventAsync(...)` and the authoritative response router.
+- a competing OSC 99 event reader that bypasses `TerminalSession.ReadEventAsync(...)` and the authoritative response router;
+- a public arbitrary CSI writer merely because 1.6 now has a complete internal CSI grammar.
 
 Buttons and unsolicited OSC 99 activation/close reports require a future reviewed `TerminalEvent` extension rather than an ad hoc callback/raw-reader surface.
 
@@ -234,5 +241,7 @@ The repository maintains layered evidence including:
 - release/distribution validation on configured architectures.
 
 For 1.5, the full PR Staging matrix passed on N158 exact head `50b30098ac81c9ad36ab3b9d4e0907efe3c883ad`, including all three runtime lanes, all four package-contract shards, and the validated package artifact. The package project built all three TFMs with zero warnings/errors and retained the frozen 1.4 public fingerprint exactly.
+
+For 1.6, the complete C164 implementation passed on exact head `3f5e1eccf2f655f25faf665c25262ad7a31df999`, workflow `34393525555`, including Windows/Linux/macOS runtime validation, package candidate, all four package-contract shards, the Stable 1.x/DCurses witness, and the validated package artifact. C165 requires the documentation/package-complete exact head to pass the same full Staging matrix before release closure.
 
 These gates may evolve or be consolidated, but equivalent coverage must exist before historical compatibility gates are removed.

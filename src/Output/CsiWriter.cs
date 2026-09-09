@@ -20,6 +20,8 @@
 */
 namespace Icod.Terminal;
 
+using System.Text;
+
 /// <summary>
 /// Builds and emits structurally validated seven-bit CSI frames for internal
 /// semantic terminal operations.
@@ -57,6 +59,23 @@ internal static class CsiWriter {
 	}
 
 	/// <summary>
+	/// Encodes one complete canonical seven-bit CSI frame as a Latin-1 terminal string.
+	/// </summary>
+	internal static string EncodeFrameString(
+		ReadOnlySpan<byte> parameterBytes,
+		ReadOnlySpan<byte> intermediateBytes,
+		byte finalByte
+	) {
+		return Encoding.Latin1.GetString(
+			EncodeFrame(
+				parameterBytes,
+				intermediateBytes,
+				finalByte
+			)
+		);
+	}
+
+	/// <summary>
 	/// Encodes one DECSCUSR cursor-style frame for a frozen 0.8 parameter.
 	/// </summary>
 	internal static byte[] EncodeCursorStyleFrame(
@@ -71,13 +90,108 @@ internal static class CsiWriter {
 	}
 
 	/// <summary>
+	/// Encodes one canonical DEC private-mode set/reset frame.
+	/// </summary>
+	internal static byte[] EncodeDecPrivateModeFrame(
+		int mode,
+		bool enabled
+	) {
+		if ( 0 >= mode ) {
+			throw new ArgumentOutOfRangeException( nameof( mode ) );
+		}
+
+		byte[] parameterBytes = EncodePrefixedDecimalParameter(
+			(byte)'?',
+			mode
+		);
+		return EncodeFrame(
+			parameterBytes,
+			ReadOnlySpan<byte>.Empty,
+			enabled ? (byte)'h' : (byte)'l'
+		);
+	}
+
+	/// <summary>
+	/// Encodes one canonical DEC private-mode set/reset frame as a terminal string.
+	/// </summary>
+	internal static string EncodeDecPrivateModeString(
+		int mode,
+		bool enabled
+	) {
+		return Encoding.Latin1.GetString(
+			EncodeDecPrivateModeFrame(
+				mode,
+				enabled
+			)
+		);
+	}
+
+	/// <summary>
+	/// Encodes Kitty's progressive-keyboard flags query.
+	/// </summary>
+	internal static byte[] EncodeKittyKeyboardQueryFrame() {
+		return EncodeFrame(
+			[ (byte)'?' ],
+			ReadOnlySpan<byte>.Empty,
+			(byte)'u'
+		);
+	}
+
+	/// <summary>
+	/// Encodes one Kitty progressive-keyboard push frame.
+	/// </summary>
+	internal static byte[] EncodeKittyKeyboardPushFrame(
+		int flags
+	) {
+		if ( 0 > flags ) {
+			throw new ArgumentOutOfRangeException( nameof( flags ) );
+		}
+
+		byte[] parameterBytes = EncodePrefixedDecimalParameter(
+			(byte)'>',
+			flags
+		);
+		return EncodeFrame(
+			parameterBytes,
+			ReadOnlySpan<byte>.Empty,
+			(byte)'u'
+		);
+	}
+
+	/// <summary>
+	/// Encodes one Kitty progressive-keyboard push frame as a terminal string.
+	/// </summary>
+	internal static string EncodeKittyKeyboardPushString(
+		int flags
+	) {
+		return Encoding.Latin1.GetString( EncodeKittyKeyboardPushFrame( flags ) );
+	}
+
+	/// <summary>
+	/// Encodes Kitty's progressive-keyboard stack pop frame.
+	/// </summary>
+	internal static byte[] EncodeKittyKeyboardPopFrame() {
+		return EncodeFrame(
+			[ (byte)'<' ],
+			ReadOnlySpan<byte>.Empty,
+			(byte)'u'
+		);
+	}
+
+	/// <summary>
+	/// Encodes Kitty's progressive-keyboard stack pop frame as a terminal string.
+	/// </summary>
+	internal static string EncodeKittyKeyboardPopString() {
+		return Encoding.Latin1.GetString( EncodeKittyKeyboardPopFrame() );
+	}
+
+	/// <summary>
 	/// Encodes the canonical seven-bit synchronized-output begin frame.
 	/// </summary>
 	internal static byte[] EncodeSynchronizedOutputBeginFrame() {
-		return EncodeFrame(
-			[ (byte)'?', (byte)'2', (byte)'0', (byte)'2', (byte)'6' ],
-			ReadOnlySpan<byte>.Empty,
-			(byte)'h'
+		return EncodeDecPrivateModeFrame(
+			2026,
+			enabled: true
 		);
 	}
 
@@ -85,10 +199,9 @@ internal static class CsiWriter {
 	/// Encodes the canonical seven-bit synchronized-output end frame.
 	/// </summary>
 	internal static byte[] EncodeSynchronizedOutputEndFrame() {
-		return EncodeFrame(
-			[ (byte)'?', (byte)'2', (byte)'0', (byte)'2', (byte)'6' ],
-			ReadOnlySpan<byte>.Empty,
-			(byte)'l'
+		return EncodeDecPrivateModeFrame(
+			2026,
+			enabled: false
 		);
 	}
 
@@ -162,6 +275,36 @@ internal static class CsiWriter {
 			frame,
 			CancellationToken.None
 		);
+	}
+
+	private static byte[] EncodePrefixedDecimalParameter(
+		byte prefix,
+		int value
+	) {
+		if ( prefix is < 0x3C or > 0x3F ) {
+			throw new ArgumentOutOfRangeException( nameof( prefix ) );
+		}
+		if ( 0 > value ) {
+			throw new ArgumentOutOfRangeException( nameof( value ) );
+		}
+
+		Span<byte> digits = stackalloc byte[ 10 ];
+		int index = digits.Length;
+		int remaining = value;
+		do {
+			int digit = remaining % 10;
+			digits[ --index ] = checked( (byte)( (byte)'0' + digit ) );
+			remaining /= 10;
+		} while ( 0 < remaining );
+
+		int digitCount = digits.Length - index;
+		byte[] result = new byte[ digitCount + 1 ];
+		result[ 0 ] = prefix;
+		digits.Slice(
+			index,
+			digitCount
+		).CopyTo( result.AsSpan( 1 ) );
+		return result;
 	}
 
 	private static void ValidateParameterBytes(

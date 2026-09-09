@@ -65,15 +65,15 @@ public sealed partial class TerminalSession {
 		KittyKeyboardFlagsProbe probe = coordinator.RegisterKittyKeyboardFlagsProbe();
 
 		try {
-			byte[] request = [
-				0x1b,
-				(byte)'[',
-				(byte)'?',
-				(byte)'u',
-				0x1b,
-				(byte)'[',
-				(byte)'c'
-			];
+			byte[] kittyQuery = CsiWriter.EncodeKittyKeyboardQueryFrame();
+			ReadOnlyMemory<byte> primaryDa =
+				TerminalCsiQueryProtocol.PrimaryDeviceAttributesRequest;
+			byte[] request = new byte[ checked( kittyQuery.Length + primaryDa.Length ) ];
+			kittyQuery.CopyTo(
+				request,
+				0
+			);
+			primaryDa.Span.CopyTo( request.AsSpan( kittyQuery.Length ) );
 
 			try {
 				_ = lifecycleObservation
