@@ -29,6 +29,7 @@ Func<TerminalSession, CancellationToken, ValueTask> abortCommand = BindAbortComm
 Func<TerminalSession, string, string?, CancellationToken, ValueTask> publishCommandLine = BindPublishCommandLine;
 Func<TerminalSession, string, string?, CancellationToken, ValueTask> publishCwd = BindPublishCwd;
 Func<TerminalSession, bool, CancellationToken, ValueTask> publishIsWindows = BindPublishIsWindows;
+Func<TerminalSession, string, CancellationToken, ValueTask> publishContinuationPrompt = BindPublishContinuationPrompt;
 Func<TerminalSession, bool, CancellationToken, ValueTask> publishRichDetection = BindPublishRichDetection;
 
 _ = beginPrompt;
@@ -39,6 +40,7 @@ _ = abortCommand;
 _ = publishCommandLine;
 _ = publishCwd;
 _ = publishIsWindows;
+_ = publishContinuationPrompt;
 _ = publishRichDetection;
 
 MethodInfo[] publicMethods = typeof( TerminalSession ).GetMethods(
@@ -53,6 +55,7 @@ string[] requiredNames = [
 	nameof( TerminalSession.PublishVsCodeCommandLineAsync ),
 	nameof( TerminalSession.PublishVsCodeCurrentDirectoryAsync ),
 	nameof( TerminalSession.PublishVsCodeIsWindowsAsync ),
+	nameof( TerminalSession.PublishVsCodeContinuationPromptAsync ),
 	nameof( TerminalSession.PublishVsCodeRichCommandDetectionAsync )
 ];
 foreach ( string requiredName in requiredNames ) {
@@ -73,8 +76,16 @@ string[] forbiddenNames = [
 	"WriteOsc633Async",
 	"WriteRawOsc633Async",
 	"SendOsc633Async",
+	"BeginVsCodeContinuationAsync",
+	"EndVsCodeContinuationAsync",
+	"BeginVsCodeRightPromptAsync",
+	"EndVsCodeRightPromptAsync",
+	"SetVsCodeMarkAsync",
 	"PublishVsCodeEnvironmentJsonAsync",
-	"BeginVsCodeContinuationAsync"
+	"BeginVsCodeEnvironmentCollectionAsync",
+	"PublishVsCodeEnvironmentEntryAsync",
+	"DeleteVsCodeEnvironmentEntryAsync",
+	"EndVsCodeEnvironmentCollectionAsync"
 ];
 foreach ( string forbiddenName in forbiddenNames ) {
 	if ( publicMethods.Any(
@@ -176,6 +187,19 @@ static ValueTask BindPublishIsWindows(
 	ArgumentNullException.ThrowIfNull( session );
 	return session.PublishVsCodeIsWindowsAsync(
 		isWindows,
+		cancellationToken
+	);
+}
+
+static ValueTask BindPublishContinuationPrompt(
+	TerminalSession session,
+	string continuationPrompt,
+	CancellationToken cancellationToken
+) {
+	ArgumentNullException.ThrowIfNull( session );
+	ArgumentNullException.ThrowIfNull( continuationPrompt );
+	return session.PublishVsCodeContinuationPromptAsync(
+		continuationPrompt,
 		cancellationToken
 	);
 }
