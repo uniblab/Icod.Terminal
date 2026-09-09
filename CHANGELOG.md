@@ -6,6 +6,27 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.6.0
+
+### Complete CSI grammar and consolidation
+
+- Begins the post-normalization CSI tranche on top of the completed 1.5 control-language architecture.
+- Adds the C160 internal `TerminalCsiSyntax` layer over the normalized structural frame model.
+- Preserves the complete CSI parameter/intermediate/final byte grammar without flattening private-use bytes, semicolon parameters, colon subparameters, omitted values, or empty components prematurely.
+- Supports both 7-bit and 8-bit CSI framing through the shared 1.5 scanner/structure path.
+- Bounds raw parameter bytes, parameter cardinality, and subparameter cardinality before later numeric/dialect interpretation.
+- Keeps numeric coercion and protocol-specific defaults in C161 rather than baking semantics into the framing layer.
+- Preserves all existing 1.x wire-specific API behavior; C160 adds no public raw CSI writer and no public API surface.
+- Records the C160–C165 roadmap covering typed parameter semantics, existing CSI migration, terminal/cell pixel geometry, hardening/fuzzing, and final release closure.
+
+### Compatibility and validation
+
+- Retains `net8.0`, `net9.0`, and `net10.0` plus the existing `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+- Retains the frozen 1.5 public surface at the C160 stage; any later intentional C163 public geometry addition requires an explicit reviewed baseline update.
+- Keeps one authoritative terminal reader, bounded query/framing state, and the 1.5 capability/evidence architecture unchanged.
+
+See `docs/releases/1.6.0.md`, `docs/C160-Complete-CSI-Grammar-Foundation.md`, and `Icod.Terminal-1.6.0-Development-Roadmap.md` for the evolving 1.6 contract.
+
 ## 1.5.0
 
 ### Control-language normalization
@@ -97,7 +118,7 @@ See `docs/releases/1.2.0.md` for the full release notes.
 
 ## 1.1.0
 
-### VS Code shell integration — OSC 633
+### VS Code OSC 633
 
 - Adds a separate typed OSC 633 surface for VS Code shell integration rather than aliasing the vendor protocol to OSC 133.
 - Adds semantic A/B/C/D operations for prompt start, command-input start, pre-execution/command-output start, explicit signed exit-code completion, and status-less abort/cancel completion.
