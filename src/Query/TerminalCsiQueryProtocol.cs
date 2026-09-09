@@ -29,65 +29,62 @@ internal static class TerminalCsiQueryProtocol {
 
 	internal static ReadOnlyMemory<byte> PrimaryDeviceAttributesRequest {
 		get;
-	} = new byte[] {
-		0x1B,
-		(byte)'[',
+	} = CsiWriter.EncodeFrame(
+		ReadOnlySpan<byte>.Empty,
+		ReadOnlySpan<byte>.Empty,
 		(byte)'c'
-	};
+	);
 
 	internal static ReadOnlyMemory<byte> SecondaryDeviceAttributesRequest {
 		get;
-	} = new byte[] {
-		0x1B,
-		(byte)'[',
-		(byte)'>',
+	} = CsiWriter.EncodeFrame(
+		[ (byte)'>' ],
+		ReadOnlySpan<byte>.Empty,
 		(byte)'c'
-	};
+	);
 
 	internal static ReadOnlyMemory<byte> DeviceStatusRequest {
 		get;
-	} = new byte[] {
-		0x1B,
-		(byte)'[',
-		(byte)'5',
+	} = CsiWriter.EncodeFrame(
+		[ (byte)'5' ],
+		ReadOnlySpan<byte>.Empty,
 		(byte)'n'
-	};
+	);
 
 	internal static ReadOnlyMemory<byte> CursorPositionRequest {
 		get;
-	} = new byte[] {
-		0x1B,
-		(byte)'[',
-		(byte)'6',
+	} = CsiWriter.EncodeFrame(
+		[ (byte)'6' ],
+		ReadOnlySpan<byte>.Empty,
 		(byte)'n'
-	};
+	);
 
 	internal static ITerminalResponseMatcher PrimaryDeviceAttributesMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-			(byte)'c',
-			(byte)'?'
+		(byte)'c',
+		(byte)'?'
 	);
 
 	internal static ITerminalResponseMatcher SecondaryDeviceAttributesMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-			(byte)'c',
-			(byte)'>'
+		(byte)'c',
+		(byte)'>'
 	);
 
 	internal static ITerminalResponseMatcher DeviceStatusMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-			(byte)'n',
-			privateMarker: null
+		(byte)'n',
+		privateMarker: null
 	);
 
 	internal static ITerminalResponseMatcher CursorPositionMatcher {
 		get;
 	} = new TerminalCsiResponseMatcher(
-			(byte)'R',
-			privateMarker: null
+		(byte)'R',
+		privateMarker: null
 	);
 
 	internal static TerminalPrimaryDeviceAttributes ParsePrimaryDeviceAttributes(
@@ -246,19 +243,22 @@ internal static class TerminalCsiQueryProtocol {
 			TerminalResponseFrame frame
 		) {
 			ArgumentNullException.ThrowIfNull( frame );
-			if ( TerminalResponseFrameKind.Csi != frame.Kind
-				|| !TerminalControlFrameStructure.TryParse(
-					frame,
-					out TerminalControlFrameStructure structure
-				) ) {
-				return false;
-			}
-			if ( !structure.FinalByte.HasValue
-				|| this.finalByte != structure.FinalByte.Value ) {
+			if ( TerminalResponseFrameKind.Csi != frame.Kind ) {
 				return false;
 			}
 
-			ReadOnlySpan<byte> parameterBytes = structure.ParameterBytes.Span;
+			TerminalCsiSyntax syntax;
+			try {
+				syntax = TerminalCsiSyntax.Parse( frame );
+			} catch ( FormatException ) {
+				return false;
+			}
+
+			if ( this.finalByte != syntax.FinalByte ) {
+				return false;
+			}
+
+			ReadOnlySpan<byte> parameterBytes = syntax.RawParameterBytes.Span;
 			if ( this.privateMarker.HasValue ) {
 				return !parameterBytes.IsEmpty
 					&& this.privateMarker.Value == parameterBytes[ 0 ];
