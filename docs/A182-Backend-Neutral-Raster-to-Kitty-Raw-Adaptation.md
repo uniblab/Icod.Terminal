@@ -2,7 +2,7 @@
 
 **Release:** `Icod.Terminal 1.8.0`  
 **Tranche:** A182  
-**Status:** implemented / validating
+**Status:** complete — accepted on exact head `d9a02336aa2fd61b294064f526ade6021d9d35d2`, Staging workflow #1310 / `34418298756`
 
 ## Purpose
 
@@ -95,7 +95,7 @@ The Kitty raw format and adapted byte representation remain internal backend det
 
 ## Tests
 
-A182 coverage must prove:
+A182 coverage proves:
 
 - RGB24 dimensions/format/bytes remain exact;
 - RGB24 adaptation does not create another complete pixel copy;
@@ -109,8 +109,20 @@ A182 coverage must prove:
 - null input is rejected at method entry;
 - the 1.7 public API fingerprint remains unchanged.
 
-## Acceptance rule
+## Accepted checkpoint
 
-A182 is accepted only on one exact PR head passing the complete Staging matrix: Windows, Linux, macOS, package candidate/public-API freeze, all four package shards, and the validated package artifact.
+Exact head:
+
+```text
+d9a02336aa2fd61b294064f526ade6021d9d35d2
+```
+
+Staging workflow:
+
+```text
+#1310 / 34418298756
+```
+
+The checkpoint passed Runtime Windows, Runtime Linux, Runtime macOS, package candidate/public-API freeze, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
 
 A green A182 checkpoint does not authorize merge or publication. PR #46 remains draft while A183–A189 are developed.
