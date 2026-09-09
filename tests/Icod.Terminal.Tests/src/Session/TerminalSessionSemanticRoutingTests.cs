@@ -49,7 +49,7 @@ public sealed class TerminalSessionSemanticRoutingTests {
 	}
 
 	[Fact]
-	public async Task VerifiedWireEvidenceOverridesStaticTermInfoAndGenerationRestoresStaticChoice() {
+	public async Task InvalidateStateExpiresLiveEvidenceAndRestoresStaticChoice() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "semantic-routing-live" )
 			.SetExtendedString( "Ms", "\u001b]52;%p1%s;%p2%s\u001b\\" )
 			.Build();
@@ -70,7 +70,7 @@ public sealed class TerminalSessionSemanticRoutingTests {
 		);
 		Assert.Equal( TerminalBackendSelectionReason.Verified, live.SelectionReason );
 
-		session.AdvanceSemanticLiveEvidenceGeneration();
+		session.InvalidateState();
 		TerminalSemanticBackendResolution nextGeneration = session.ResolveSemanticBackend(
 			TerminalSemanticOperation.ClipboardWrite
 		);
