@@ -131,7 +131,7 @@ public sealed class TerminalTermInfoSemanticEvidenceTests {
 	}
 
 	[Fact]
-	public void ExactImplementationClassifierRejectsPartialOrUnrelatedContracts() {
+	public void ExactImplementationClassifierExcludesMetadataBackedCsiContracts() {
 		TerminalDescription complete = CreateCompleteTerminal();
 		TerminalDescription partial = new TerminalDescriptionBuilder( "partial" )
 			.SetExtendedString( "Ms", "clipboard" )
@@ -147,7 +147,25 @@ public sealed class TerminalTermInfoSemanticEvidenceTests {
 		Assert.True(
 			TerminalTermInfoSemanticEvidence.HasExactImplementation(
 				complete,
+				TerminalSemanticOperation.CursorStyle
+			)
+		);
+		Assert.True(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				complete,
+				TerminalSemanticOperation.PaletteColor
+			)
+		);
+		Assert.False(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				complete,
 				TerminalSemanticOperation.FocusReporting
+			)
+		);
+		Assert.False(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				complete,
+				TerminalSemanticOperation.BracketedPaste
 			)
 		);
 		Assert.False(
