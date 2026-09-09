@@ -54,6 +54,7 @@ $scripts = switch ($Shard) {
             'VerifySemanticMetadataPackage.ps1',
             'VerifySafeOsc9Package.ps1',
             'VerifyOsc777Package.ps1',
+            'VerifyOsc99Package.ps1',
             'VerifyOsc633Package.ps1',
             'VerifyOsc1337Package.ps1',
             'VerifyModernKeyboardPackage.ps1',
