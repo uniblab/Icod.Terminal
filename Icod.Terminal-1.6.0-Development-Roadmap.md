@@ -2,7 +2,7 @@
 
 **Release:** `1.6.0`  
 **Theme:** complete CSI grammar, CSI consolidation, and terminal pixel/cell geometry  
-**Status:** C160 and C161 complete; C162 implemented and validating  
+**Status:** C160–C162 complete; C163 implemented and validating  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.5.0`
 
@@ -99,11 +99,23 @@ Permanent contract: `docs/C161-Typed-CSI-Parameter-Semantics.md`.
 
 ## C162 — existing CSI consolidation
 
-**Status:** Implemented; exact-head Staging validation pending.
+**Status:** Complete.
+
+Accepted checkpoint:
+
+```text
+fa7aeacb9f8ff6d2b719c81cba847ccda6d3f19f
+```
+
+Staging workflow:
+
+```text
+34387272361
+```
 
 **Goal:** remove operation-specific CSI grammar/construction duplication while preserving released bytes.
 
-### Implemented migration set
+### Completed migration set
 
 - Primary and Secondary Device Attributes request construction;
 - Device Status Report request construction;
@@ -137,41 +149,61 @@ Likewise `XM`, `xm`, and `kmous` continue to decide whether a supported mouse pr
 - query matchers use shared structural/semantic CSI parsing rather than ad-hoc slicing;
 - malformed-but-correlated query responses remain owned by the query parser rather than leaking into application input;
 - existing input-protocol lease tests retain exact mouse/Kitty transition ordering, rollback, and lifecycle restoration behavior;
-- no duplicate competing CSI scanner is introduced.
+- no duplicate competing CSI scanner is introduced;
+- Windows/Linux/macOS runtime, all four package shards, and the validated package artifact passed on the accepted exact head.
 
 Permanent contract: `docs/C162-Existing-CSI-Consolidation.md`.
 
 ## C163 — terminal and cell pixel geometry
 
-**Status:** Not started.
+**Status:** Implemented; exact-head Staging validation pending.
 
-**Goal:** expose the observations later raster backends need without coupling graphics codecs to platform-specific console APIs.
+**Goal:** establish the observations later raster backends need without coupling graphics codecs to platform-specific console APIs.
 
-### Geometry model
+### Implemented geometry model
 
-The internal observation should distinguish at least:
+C163 distinguishes:
 
 ```text
-rows / columns
-terminal pixel width / height
-cell pixel width / height
+character grid        columns x rows
+terminal pixels       width x height
+character-cell pixels width x height
 ```
 
-### Evidence sources
+The new pixel geometry substrate remains internal in 1.6 while later graphics tranches exercise it.
 
-Review and reconcile:
+### Implemented active-query evidence
 
-- existing native terminal-size observations where pixel dimensions are available;
-- CSI `14t` terminal-window pixel-size query;
-- CSI `16t` character-cell pixel-size query;
-- derived values only when division is exact and the source evidence is trustworthy.
+- `CSI 14 t` requests terminal-window pixel dimensions;
+- correlated `CSI 4 ; height ; width t` responses become `TerminalPixelSize(width, height)`;
+- `CSI 16 t` requests character-cell pixel dimensions;
+- correlated `CSI 6 ; height ; width t` responses become `TerminalPixelSize(width, height)`;
+- response matchers distinguish selector `4` from selector `6` so a valid stale response for one query does not satisfy the other;
+- malformed but plausibly correlated geometry responses remain owned by the query parser and fail deterministically;
+- both seven-bit and eight-bit CSI response forms use the C160/C161 grammar stack;
+- reported dimensions are positive and bounded to `1,000,000`.
 
-### Rules
+### Authoritative session path
 
-- zero/negative or inconsistent terminal responses are malformed, not valid geometry;
-- timeout remains unanswered rather than unsupported truth;
-- query correlation remains on the authoritative transaction path;
-- geometry observations do not mutate immutable `TerminalDescription`.
+Internal `TerminalSession` geometry queries execute through the existing query transaction manager. Tests cover exact `14t`/`16t` emission and preserve one-reader ownership.
+
+Timeout remains an unanswered query rather than unsupported proof.
+
+### Native evidence audit
+
+POSIX `TIOCGWINSZ` already provides `Rows`, `Columns`, `PixelWidth`, and `PixelHeight`. The existing `ITerminalControlProvider.GetSize(...)` contract exposes only `TerminalSize(columns, rows)`, so the pixel fields are currently discarded by the public/native path.
+
+C163 records that fact but does not add a mandatory provider member or public geometry aggregate merely to surface optional native pixel fields. The portable active-query path remains the qualified pixel observation mechanism for 1.6.
+
+### Exact derivation
+
+`TerminalPixelGeometry.TryDeriveCellPixelSize(...)` derives a cell size from character-grid and terminal-pixel observations only when width and height divide exactly. It never rounds or truncates fractional geometry.
+
+### Public API decision
+
+C163 adds no public API. This avoids freezing a provider or aggregate geometry contract before the DCS/Sixel and APC/Kitty Graphics tranches exercise the internal substrate.
+
+Permanent contract: `docs/C163-Terminal-and-Cell-Pixel-Geometry.md`.
 
 ## C164 — CSI hardening, fragmentation, and fuzz/property coverage
 
@@ -217,7 +249,7 @@ Review and reconcile:
 
 ## Public API strategy
 
-C160–C162 remain internal. C163 may require a reviewed public semantic geometry observation surface; if so, it must be additive, typed, bounded, and receive an intentional new 1.6 public API baseline.
+C160–C163 remain internal. A public semantic geometry surface is intentionally deferred until later graphics integration demonstrates the correct stable shape.
 
 A generic `WriteCsiAsync(...)`, arbitrary final-byte dispatcher, or raw parameter/intermediate writer is explicitly outside the 1.6 public API plan.
 
