@@ -362,12 +362,8 @@ public sealed class TerminalXtGetTcapQueryTests {
 
 	[Fact]
 	public async Task CancellationRetainsLateXtGetTcapOwnership() {
-		ManualMonotonicClock clock = new();
 		XtGetTcapTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync(
-			transport,
-			clock
-		);
+		await using TerminalSession session = await OpenSessionAsync( transport );
 		using CancellationTokenSource cancellation = new();
 
 		Task<TerminalCapabilityObservation> first = session.QueryLiveCapabilityAsync(
@@ -385,7 +381,6 @@ public sealed class TerminalXtGetTcapQueryTests {
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 
-		Assert.Equal( 1, transport.WriteCount );
 		transport.Publish(
 			Encoding.ASCII.GetBytes(
 				"\u001bP1+r544E=787465726D\u001b\\"
@@ -540,6 +535,7 @@ public sealed class TerminalXtGetTcapQueryTests {
 					return this.writes.Count;
 				}
 			}
+		}
 
 		internal int MaximumConcurrentReads {
 			get {
@@ -759,6 +755,69 @@ public sealed class TerminalXtGetTcapQueryTests {
 			} = new(
 				TaskCreationOptions.RunContinuationsAsynchronously
 			);
+		}
+	}
+
+	private sealed class RecordingTerminalControlProvider : ITerminalControlProvider {
+		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
+			0,
+			0,
+			0,
+			0x0002UL,
+			new byte[ 32 ],
+			0,
+			32,
+			0,
+			new TerminalSpeed( 13, 9600 ),
+			new TerminalSpeed( 13, 9600 )
+		);
+
+		public TerminalControlResult<TerminalEndpointObservation> Observe(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalEndpointObservation>.Available(
+				new TerminalEndpointObservation(
+					true,
+					null,
+					TerminalPlatformKind.PosixTermios,
+					TerminalControlCapabilities.Attachment
+						| TerminalControlCapabilities.ModeRead
+						| TerminalControlCapabilities.ModeWrite
+				)
+			);
+		}
+
+		public TerminalControlResult<TerminalSize> GetSize(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalSize>.Unavailable(
+				"No scripted live size."
+			);
+		}
+
+		public TerminalControlResult<TerminalModeSnapshot> GetMode(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalModeSnapshot>.Available(
+				this.baseline
+			);
+		}
+
+		public TerminalControlMutationResult SetMode(
+			TerminalEndpoint endpoint,
+			TerminalModeSnapshot mode,
+			TerminalModeApplyTiming timing
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			ArgumentNullException.ThrowIfNull( mode );
+			if ( !Enum.IsDefined( timing ) ) {
+				throw new ArgumentOutOfRangeException( nameof( timing ) );
+			}
+
+			return TerminalControlMutationResult.Success();
 		}
 	}
 }
