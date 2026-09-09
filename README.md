@@ -9,23 +9,25 @@
 
 ## Status
 
-`1.7.0` is the current development release line. It builds on the 1.5 control-language normalization and 1.6 complete-CSI foundation and adds the first raster graphics backend: **Sixel over DCS**.
+`1.8.0` is the current development release line. It builds on the completed 1.7 DCS/Sixel raster release and develops **Kitty Graphics over APC** as the second backend beneath the existing backend-neutral raster API.
 
-The 1.7 program now provides:
+The 1.8 program is designed to preserve the 1.7 public raster surface while adding:
 
-- canonical internal DCS construction shared by existing DCS query families;
-- byte-stable DECRQSS and XTGETTCAP request construction;
-- a bounded deterministic Sixel grammar, quantizer, and encoder;
-- committed streaming Sixel output through the existing session-output serialization boundary;
-- evidence-based Sixel capability detection using Primary DA attribute `4` without terminal-brand heuristics;
-- the first public backend-neutral raw raster model;
-- `TerminalSession.DisplayRasterAsync(...)` as the first semantic raster-display operation;
-- a new reviewed public API baseline shared identically by `net8.0`, `net9.0`, and `net10.0`.
+- a canonical bounded APC construction layer;
+- a typed Kitty Graphics control-data and response grammar;
+- direct raw RGB24/RGBA32 transfer with bounded Base64 chunks;
+- internal Indexed8 adaptation without changing the public raster model;
+- committed multi-frame APC graphics output through the existing session-output boundary;
+- protocol-defined Kitty capability probing through the authoritative multi-family query path;
+- deterministic evidence-driven routing which prefers verified Kitty Graphics and retains verified Sixel as fallback.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the floor for the 1.x line. Existing OSC, CSI, DCS-query, presentation, color, input-protocol, and notification APIs retain their documented behavior.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the floor for the 1.x line. The public `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` contract introduced by 1.7 remains the compatibility anchor.
 
 Release and design documents:
 
+- [Icod.Terminal 1.8.0 release notes](docs/releases/1.8.0.md)
+- [1.8.0 development roadmap](Icod.Terminal-1.8.0-Development-Roadmap.md)
+- [A180 APC construction contract](docs/A180-APC-Construction-Contract-and-Reference-Freeze.md)
 - [Icod.Terminal 1.7.0 release notes](docs/releases/1.7.0.md)
 - [1.7.0 development roadmap](Icod.Terminal-1.7.0-Development-Roadmap.md)
 - [D170 DCS construction contract](docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md)
@@ -39,13 +41,16 @@ Release and design documents:
 - [D178 first semantic raster-display operation](docs/D178-First-Semantic-Raster-Display-Operation.md)
 - [D179 1.7.0 hardening/package/documentation closure](docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md)
 - [Public API Baseline 1.7](docs/Public-API-Baseline-1.7.md)
+- [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
+- [Migration to 1.0](docs/Migration-to-1.0.md)
+- [Architecture](docs/Architecture.md)
 - [Control-language normalization and graphics roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
 - [Changelog](CHANGELOG.md)
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.7.0
+dotnet add package Icod.Terminal --version 1.8.0
 ```
 
 The package targets:
@@ -170,7 +175,7 @@ Version 1.7 deliberately does not expose:
 - PNG/JPEG/GIF decoding;
 - animation or persistent image identifiers.
 
-Kitty Graphics is planned as a later backend behind the same semantic raster intent rather than as a replacement public image model.
+Version 1.8 develops Kitty Graphics behind this same semantic raster intent rather than replacing the public image model.
 
 ## Core 1.x guarantees
 
@@ -230,7 +235,7 @@ SOS  ESC X
 ST   ESC \
 ```
 
-Version 1.7 uses that architecture directly: Sixel is classified as a DCS dialect, while `RasterGraphics` is the semantic operation. The library does not conflate the two or expose generic control-family framing merely because internal normalization exists.
+Version 1.7 uses that architecture directly: Sixel is classified as a DCS dialect, while `RasterGraphics` is the semantic operation. Version 1.8 applies the same separation to Kitty Graphics as an APC dialect. The library does not expose generic control-family framing merely because internal normalization exists.
 
 Examples:
 
@@ -241,8 +246,8 @@ DesktopNotification
     -> OSC 99
 
 RasterGraphics
-    -> Sixel / DCS       (1.7)
-    -> Kitty Graphics / APC (planned later)
+    -> Kitty Graphics / APC (1.8 in development)
+    -> Sixel / DCS
 ```
 
 A terminal/vendor name is not itself a capability. Static TermInfo advertisement and generation-scoped live evidence are distinct. `InvalidateState()` expires live probe/protocol-response conclusions while retaining immutable selected profile/TermInfo evidence.
@@ -294,19 +299,21 @@ Terminal traffic and query responses are untrusted external input. Successful by
 
 Raster-specific security properties include bounded dimensions/storage/work state, verified capability gating, deterministic quantization, pre-commit validation, committed-frame integrity, no silent retry of partial output, and no automatic image-file decoding.
 
+For 1.8, Kitty Graphics direct transfer is preferred specifically to avoid introducing hidden filesystem, temporary-file, or shared-memory side effects merely for performance. Those transmission modes remain outside the initial release contract.
+
 Several existing operations disclose caller-supplied metadata by design, including clipboard contents, filesystem locations, hyperlinks, shell metadata, notification text/metadata, and rich input events. The library does not automatically discover or redact secrets; applications decide what is appropriate to publish.
 
 See [Security and Privacy](docs/Security-and-Privacy.md).
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces. Versions 1.5 and 1.6 were internal architecture releases and retained the 1.4 public fingerprint. Version 1.7 intentionally adds the compatible raster surface and advances the current public API baseline to:
+Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces. Versions 1.5 and 1.6 were internal architecture releases and retained the 1.4 public fingerprint. Version 1.7 intentionally added the compatible raster surface and advanced the current public API baseline to:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
 
-Historical baselines remain checked in unchanged. See [Public API Baseline 1.7](docs/Public-API-Baseline-1.7.md) and [Compatibility and Versioning](docs/Compatibility-and-Versioning.md).
+Version 1.8 begins from that public surface and is intended to implement Kitty Graphics beneath it without source-breaking changes. Historical baselines remain checked in unchanged. See [Public API Baseline 1.7](docs/Public-API-Baseline-1.7.md) and [Compatibility and Versioning](docs/Compatibility-and-Versioning.md).
 
 For stable 1.x:
 
@@ -338,6 +345,7 @@ Primary permanent authorities include:
 - [Presentation and Reversible State](docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
 - [Control-Language Normalization and Graphics Roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
+- [A180–A189 1.8 roadmap](Icod.Terminal-1.8.0-Development-Roadmap.md)
 - [D170–D179 1.7 contracts](Icod.Terminal-1.7.0-Development-Roadmap.md)
 - [Security and Privacy](docs/Security-and-Privacy.md)
 - [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
@@ -374,20 +382,20 @@ After merge, Release distribution validation runs Windows/Linux/macOS x64/ARM64 
 
 ## Release process
 
-`1.7.0` is publishable only after:
+`1.8.0` is publishable only after:
 
-1. the exact final 1.7 PR head passes the complete Staging matrix;
+1. the exact final 1.8 PR head passes the complete Staging matrix;
 2. the PR is explicitly merged;
 3. the resulting `main` head passes Release distribution validation;
 4. tagging/publication is explicitly authorized.
 
-The tag-triggered workflow requires curated `docs/releases/1.7.0.md` release notes and re-runs public API, hardening, historical package, stable release-line package, semantic package consumers, and downstream compatibility gates before publication.
+The tag-triggered workflow requires curated `docs/releases/1.8.0.md` release notes and re-runs public API, hardening, historical package, stable release-line package, semantic package consumers, and downstream compatibility gates before publication.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 
 ## Development roadmap
 
-Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current release program is [`Icod.Terminal-1.7.0-Development-Roadmap.md`](Icod.Terminal-1.7.0-Development-Roadmap.md). Completed 1.6 and 1.5 programs remain preserved in their versioned roadmaps.
+Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current release program is [`Icod.Terminal-1.8.0-Development-Roadmap.md`](Icod.Terminal-1.8.0-Development-Roadmap.md). Completed 1.7, 1.6, and 1.5 programs remain preserved in their versioned roadmaps.
 
 ## Authors
 
