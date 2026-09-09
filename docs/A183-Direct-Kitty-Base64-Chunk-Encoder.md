@@ -2,7 +2,7 @@
 
 **Release:** `Icod.Terminal 1.8.0`  
 **Tranche:** A183  
-**Status:** implemented / validating
+**Status:** complete — accepted on exact head `6f160610bf2df3c666e7d3350e7051475aceca36`, Staging workflow #1314 / `34418863405`
 
 ## Purpose
 
@@ -99,7 +99,7 @@ The public operation remains `TerminalSession.DisplayRasterAsync(...)`.
 
 ## Tests
 
-A183 coverage must prove:
+A183 coverage proves:
 
 - one RGB24 pixel exact golden vector;
 - one RGBA32 pixel exact golden vector;
@@ -115,8 +115,20 @@ A183 coverage must prove:
 - null input is rejected before lazy enumeration begins;
 - the 1.7 public API fingerprint remains unchanged.
 
-## Acceptance rule
+## Accepted checkpoint
 
-A183 is accepted only on one exact PR head passing the complete Staging matrix: Runtime Windows, Runtime Linux, Runtime macOS, package candidate/public-API freeze, all four package shards, and the validated package artifact.
+Exact head:
+
+```text
+6f160610bf2df3c666e7d3350e7051475aceca36
+```
+
+Staging workflow:
+
+```text
+#1314 / 34418863405
+```
+
+The checkpoint passed Runtime Windows, Runtime Linux, Runtime macOS, package candidate/public-API freeze, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
 
 A green A183 checkpoint does not authorize merge or publication. PR #46 remains draft while A184–A189 are developed.
