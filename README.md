@@ -9,14 +9,17 @@
 
 ## Status
 
-`1.6.0` is the current development release line. C160–C164 are complete and C165 release acceptance/documentation closure is in progress. The release builds on the completed/published 1.5 control-language normalization and establishes the complete shared CSI grammar, migrates existing CSI paths onto that grammar, adds internal terminal/cell pixel geometry for later graphics work, and hardens fragmentation and oversized correlated-response recovery.
+`1.7.0` is the current development release line. It builds on the completed 1.5 control-language normalization and 1.6 complete-CSI foundation, and develops the DCS/Sixel graphics layer while preserving the stable 1.x ownership and compatibility contract.
 
-The 1.6 CSI foundation preserves 7-bit and 8-bit framing, private-use parameter bytes, semicolon-delimited parameters, colon-delimited subparameters, omitted/empty components, intermediate bytes, final selectors, and bounded raw parameter data without prematurely assigning dialect-specific numeric defaults. Existing DA/DSR/CPR, DEC private-mode, synchronized-output, Kitty keyboard, mouse, and cursor-style CSI paths now share that foundation. Version 1.6 adds no public API.
+D170 introduces the internal canonical seven-bit DCS construction substrate for small bounded frames. It validates parameter bytes, intermediate bytes, final selectors, payload framing controls, and complete-frame size while keeping DCS framing separate from Sixel dialect semantics. Existing DECRQSS and XTGETTCAP bytes remain frozen until D171 migrates them with byte-exact regressions. Large Sixel output will use a later committed streaming transaction rather than one giant encoded frame allocation.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Existing OSC 633, OSC 777, OSC 1337, OSC 99, and all released CSI-based APIs retain their exact wire semantics.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the compatibility floor for the 1.x line. Existing OSC 633, OSC 777, OSC 1337, OSC 99, and all released CSI/DCS query APIs retain their documented wire semantics.
 
 Full release notes and concise release history:
 
+- [Icod.Terminal 1.7.0 release notes](docs/releases/1.7.0.md)
+- [1.7.0 development roadmap](Icod.Terminal-1.7.0-Development-Roadmap.md)
+- [D170 DCS construction contract and reference freeze](docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md)
 - [Icod.Terminal 1.6.0 release notes](docs/releases/1.6.0.md)
 - [1.6.0 development roadmap](Icod.Terminal-1.6.0-Development-Roadmap.md)
 - [C160 complete CSI grammar foundation](docs/C160-Complete-CSI-Grammar-Foundation.md)
@@ -31,7 +34,7 @@ Full release notes and concise release history:
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.6.0
+dotnet add package Icod.Terminal --version 1.7.0
 ```
 
 The package targets:
@@ -257,7 +260,7 @@ The six supported operations are `SetMark`, `CurrentDir`, `RemoteHost`, `SetUser
 
 User-variable values are encoded as strict UTF-8 followed by Base64. Other text is strictly validated and UTF-8 encoded. Frames use canonical ST termination, a 65,536-byte payload ceiling, the shared session output gate, and pre-commit cancellation.
 
-OSC 7 remains the preferred portable current-location API and OSC 133 remains the portable prompt/command-region API. The library never silently aliases those protocols to OSC 1337 and does not infer iTerm2 support from terminal identity.
+OSC 7 remains the preferred portable current-location API and OSC 133 remains the prompt/command-region API. The library never silently aliases those protocols to OSC 1337 and does not infer iTerm2 support from terminal identity.
 
 The public API deliberately excludes generic raw OSC 1337 dispatch and invasive/overlapping operations for profile mutation, focus stealing, URL opening, pasteboard/file transfer, custom script control, arbitrary color/cursor mutation, Unicode-version changes, or Touch Bar key labels.
 
@@ -324,7 +327,7 @@ OSC 99 capability/alive queries disclose that the application is probing notific
 
 ## Compatibility policy
 
-Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` is an internal normalization release and intentionally retains the frozen 1.4 public surface. Version `1.6.0` completes the internal CSI grammar/consolidation and geometry foundation while preserving the same public surface and all released 1.0–1.5 contracts.
+Stable `1.0.0` remains the compatibility floor. Versions `1.1.0`, `1.2.0`, `1.3.0`, and `1.4.0` intentionally added compatible OSC 633, OSC 777, OSC 1337, and OSC 99 surfaces respectively. Version `1.5.0` is an internal normalization release, and `1.6.0` completes the internal CSI grammar/consolidation and geometry foundation. Version `1.7.0` develops the DCS/Sixel graphics foundation while preserving all released 1.0–1.6 contracts; any eventual public raster surface must be additive and receive an intentional reviewed baseline.
 
 For the stable 1.x line:
 
@@ -357,6 +360,7 @@ The permanent 1.x authorities include:
 - [Presentation and Reversible State](docs/Presentation-and-Reversible-State.md)
 - [Semantic Output Protocols](docs/Semantic-Output-Protocols.md)
 - [Control-Language Normalization and Graphics Roadmap](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
+- [D170 DCS Construction Contract and Reference Freeze](docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md)
 - [C160 Complete CSI Grammar Foundation](docs/C160-Complete-CSI-Grammar-Foundation.md)
 - [C161 Typed CSI Parameter Semantics](docs/C161-Typed-CSI-Parameter-Semantics.md)
 - [C162 Existing CSI Consolidation](docs/C162-Existing-CSI-Consolidation.md)
@@ -417,15 +421,15 @@ After merge, Release distribution validation runs six Windows/Linux/macOS x64/AR
 
 ## Release process
 
-`1.6.0` is publishable only after the exact final 1.6 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
+`1.7.0` is publishable only after the exact final 1.7 PR head is green, the merge result passes Release distribution validation, and publication is explicitly authorized.
 
-The tag-triggered workflow requires curated `docs/releases/1.6.0.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
+The tag-triggered workflow requires curated `docs/releases/1.7.0.md` release notes and re-runs the public API, hardening, historical package, stable release-line package, current semantic package consumers, and downstream compatibility gates before publication. It does not fall back to generic auto-generated GitHub notes.
 
 Tagging triggers publication; no release tag should be created merely because a PR is green.
 
 ## Development roadmap
 
-Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current tranche is [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md). The completed 1.5 program remains preserved in [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md), and the completed rc1 program remains preserved in `Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`.
+Current release status is tracked in [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md). The detailed current tranche is [`Icod.Terminal-1.7.0-Development-Roadmap.md`](Icod.Terminal-1.7.0-Development-Roadmap.md). The completed 1.6 program remains preserved in [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md), and the completed 1.5 and rc1 programs remain preserved in their versioned roadmaps.
 
 ## Authors
 
