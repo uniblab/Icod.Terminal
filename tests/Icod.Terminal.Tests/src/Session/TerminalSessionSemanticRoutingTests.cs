@@ -83,10 +83,10 @@ public sealed class TerminalSessionSemanticRoutingTests {
 	}
 
 	[Fact]
-	public async Task OutputOnlyIntentDoesNotRequireInteractiveInputEndpoint() {
+	public async Task RedirectedOutputMakesSemanticOperationsUnavailable() {
 		TerminalDescription terminal = TerminalProfiles.Dumb;
 		TerminalSession session = await TerminalSession.OpenAsync(
-			new OutputOnlyControlProvider(),
+			new RedirectedOutputControlProvider(),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			new EmptyTerminalInput(),
@@ -94,7 +94,8 @@ public sealed class TerminalSessionSemanticRoutingTests {
 			new TerminalSessionOptions {
 				TerminalOverride = terminal,
 				ConfigureOutput = false,
-				ObserveLifecycleEvents = false
+				ObserveLifecycleEvents = false,
+				RequireInteractiveOutput = false
 			}
 		);
 		await using ( session ) {
@@ -105,8 +106,9 @@ public sealed class TerminalSessionSemanticRoutingTests {
 				TerminalSemanticOperation.ClipboardRead
 			);
 
-			Assert.NotNull( notification.SelectedCandidate );
-			Assert.Equal( TerminalBackendSelectionReason.SafeFallback, notification.SelectionReason );
+			Assert.Null( notification.SelectedCandidate );
+			Assert.Equal( TerminalCapabilitySupportState.Unavailable, notification.State );
+			Assert.Null( clipboardRead.SelectedCandidate );
 			Assert.Equal( TerminalCapabilitySupportState.Unavailable, clipboardRead.State );
 		}
 	}
@@ -218,7 +220,7 @@ public sealed class TerminalSessionSemanticRoutingTests {
 		}
 	}
 
-	private sealed class OutputOnlyControlProvider : ITerminalControlProvider {
+	private sealed class RedirectedOutputControlProvider : ITerminalControlProvider {
 		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
 			0,
 			0,
@@ -236,16 +238,16 @@ public sealed class TerminalSessionSemanticRoutingTests {
 			TerminalEndpoint endpoint
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
-			bool isOutput = ReferenceEquals( endpoint, TerminalEndpoint.StandardOutput );
-			TerminalPlatformKind? platform = isOutput
+			bool isInput = ReferenceEquals( endpoint, TerminalEndpoint.StandardInput );
+			TerminalPlatformKind? platform = isInput
 				? TerminalPlatformKind.PosixTermios
 				: null;
 			return TerminalControlResult<TerminalEndpointObservation>.Available(
 				new TerminalEndpointObservation(
-					isOutput,
+					isInput,
 					null,
 					platform,
-					isOutput
+					isInput
 						? TerminalControlCapabilities.Attachment
 							| TerminalControlCapabilities.ModeRead
 							| TerminalControlCapabilities.ModeWrite
