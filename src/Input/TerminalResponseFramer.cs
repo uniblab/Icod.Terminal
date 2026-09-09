@@ -89,7 +89,7 @@ internal readonly struct TerminalResponseFrameParseResult {
 }
 
 /// <summary>
-/// Performs strict, bounded framing for CSI, DCS, and OSC terminal responses.
+/// Performs strict, bounded framing for normalized terminal control families.
 /// </summary>
 internal static class TerminalResponseFramer {
 	internal const int DefaultMaximumFrameBytes = 4096;
@@ -97,11 +97,70 @@ internal static class TerminalResponseFramer {
 
 	private const byte BellByte = 0x07;
 	private const byte EscapeByte = 0x1B;
+	private const byte SosByte = 0x98;
 	private const byte CsiByte = 0x9B;
 	private const byte DcsByte = 0x90;
 	private const byte OscByte = 0x9D;
+	private const byte PmByte = 0x9E;
+	private const byte ApcByte = 0x9F;
 	private const byte StringTerminatorByte = 0x9C;
 
+	/// <summary>
+	/// Frames one normalized control family without interpreting its dialect payload.
+	/// </summary>
+	internal static TerminalResponseFrameParseResult Parse(
+		IReadOnlyList<byte> bytes,
+		TerminalControlFamily family,
+		int maximumFrameBytes
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		if ( !Enum.IsDefined( family ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( family ),
+				family,
+				"The terminal control family is not recognized."
+			);
+		}
+		if ( 4 > maximumFrameBytes || HardMaximumFrameBytes < maximumFrameBytes ) {
+			throw new ArgumentOutOfRangeException( nameof( maximumFrameBytes ) );
+		}
+		if ( 0 == bytes.Count ) {
+			return new TerminalResponseFrameParseResult(
+				TerminalResponseFrameParseStatus.NotCandidate
+			);
+		}
+
+		return family switch {
+			TerminalControlFamily.Csi => ParseCsi( bytes, maximumFrameBytes ),
+			TerminalControlFamily.Dcs => ParseDcs( bytes, maximumFrameBytes ),
+			TerminalControlFamily.Osc => ParseOsc( bytes, maximumFrameBytes ),
+			TerminalControlFamily.Apc => ParseStrictString(
+				bytes,
+				(byte)'_',
+				ApcByte,
+				maximumFrameBytes
+			),
+			TerminalControlFamily.Pm => ParseStrictString(
+				bytes,
+				(byte)'^',
+				PmByte,
+				maximumFrameBytes
+			),
+			TerminalControlFamily.Sos => ParseStrictString(
+				bytes,
+				(byte)'X',
+				SosByte,
+				maximumFrameBytes
+			),
+			_ => throw new InvalidOperationException(
+				"The terminal control family is not recognized."
+			)
+		};
+	}
+
+	/// <summary>
+	/// Preserves the released single-family query matcher while N154 remains pending.
+	/// </summary>
 	internal static TerminalResponseFrameParseResult Parse(
 		IReadOnlyList<byte> bytes,
 		TerminalResponseFrameKind kind,
@@ -115,23 +174,19 @@ internal static class TerminalResponseFramer {
 				"The terminal response frame kind is not recognized."
 			);
 		}
-		if ( 4 > maximumFrameBytes || HardMaximumFrameBytes < maximumFrameBytes ) {
-			throw new ArgumentOutOfRangeException( nameof( maximumFrameBytes ) );
-		}
-		if ( 0 == bytes.Count ) {
-			return new TerminalResponseFrameParseResult(
-				TerminalResponseFrameParseStatus.NotCandidate
-			);
-		}
 
-		return kind switch {
-			TerminalResponseFrameKind.Csi => ParseCsi( bytes, maximumFrameBytes ),
-			TerminalResponseFrameKind.Dcs => ParseDcs( bytes, maximumFrameBytes ),
-			TerminalResponseFrameKind.Osc => ParseOsc( bytes, maximumFrameBytes ),
-			_ => throw new InvalidOperationException(
-				"The terminal response frame kind is not recognized."
-			)
-		};
+		return Parse(
+			bytes,
+			kind switch {
+				TerminalResponseFrameKind.Csi => TerminalControlFamily.Csi,
+				TerminalResponseFrameKind.Dcs => TerminalControlFamily.Dcs,
+				TerminalResponseFrameKind.Osc => TerminalControlFamily.Osc,
+				_ => throw new InvalidOperationException(
+					"The terminal response frame kind is not recognized."
+				)
+			},
+			maximumFrameBytes
+		);
 	}
 
 	private static TerminalResponseFrameParseResult ParseCsi(
@@ -236,7 +291,7 @@ internal static class TerminalResponseFramer {
 
 				return Invalid();
 			}
-			if ( 0x18 == value || 0x1A == value ) {
+			if ( IsCancellationByte( value ) ) {
 				return Invalid();
 			}
 
@@ -299,7 +354,65 @@ internal static class TerminalResponseFramer {
 
 				return Invalid();
 			}
-			if ( 0x18 == value || 0x1A == value ) {
+			if ( IsCancellationByte( value ) ) {
+				return Invalid();
+			}
+
+			++index;
+		}
+
+		return bytes.Count >= maximumFrameBytes
+			? Invalid()
+			: Incomplete()
+		;
+	}
+
+	private static TerminalResponseFrameParseResult ParseStrictString(
+		IReadOnlyList<byte> bytes,
+		byte sevenBitFinal,
+		byte eightBitIntroducer,
+		int maximumFrameBytes
+	) {
+		TerminalResponseFrameParseResult introducer = ParseIntroducer(
+			bytes,
+			sevenBitFinal,
+			eightBitIntroducer
+		);
+		if ( TerminalResponseFrameParseStatus.Complete != introducer.Status ) {
+			return introducer;
+		}
+
+		bool usesEightBitIntroducer = eightBitIntroducer == bytes[ 0 ];
+		int index = introducer.Length;
+
+		while ( index < bytes.Count ) {
+			if ( index >= maximumFrameBytes ) {
+				return Invalid();
+			}
+
+			byte value = bytes[ index ];
+			if ( StringTerminatorByte == value ) {
+				return usesEightBitIntroducer
+					? Complete( index + 1 )
+					: Invalid()
+				;
+			}
+			if ( EscapeByte == value ) {
+				if ( usesEightBitIntroducer ) {
+					return Invalid();
+				}
+				if ( index + 1 >= maximumFrameBytes ) {
+					return Invalid();
+				}
+				if ( index + 1 >= bytes.Count ) {
+					return Incomplete();
+				}
+				return '\\' == bytes[ index + 1 ]
+					? Complete( index + 2 )
+					: Invalid()
+				;
+			}
+			if ( IsCancellationByte( value ) ) {
 				return Invalid();
 			}
 
@@ -356,6 +469,12 @@ internal static class TerminalResponseFramer {
 		byte value
 	) {
 		return value is >= 0x40 and <= 0x7E;
+	}
+
+	private static bool IsCancellationByte(
+		byte value
+	) {
+		return value is 0x18 or 0x1A;
 	}
 
 	private static TerminalResponseFrameParseResult Incomplete() {
