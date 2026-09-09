@@ -21,7 +21,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Safe OSC 9 notification integration for <see cref="TerminalSession"/>.
+/// Safe semantic desktop-notification integration for <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
 	/// <summary>
@@ -57,6 +57,47 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	/// <summary>
+	/// Emits one urxvt-style OSC 777 desktop-notification request with separate title and message fields.
+	/// </summary>
+	/// <param name="title">The notification title. Empty text is allowed.</param>
+	/// <param name="message">The notification body/message. Empty text is allowed.</param>
+	/// <param name="cancellationToken">Cancellation observed before transmission is committed.</param>
+	/// <returns>A value task representing notification emission.</returns>
+	/// <exception cref="ArgumentNullException">
+	/// <paramref name="title"/> or <paramref name="message"/> is <see langword="null"/>.
+	/// </exception>
+	/// <exception cref="ArgumentException">
+	/// A field contains malformed Unicode, a semicolon, C0/C1/DEL controls, or the complete encoded OSC payload exceeds 4,096 bytes.
+	/// </exception>
+	/// <exception cref="InvalidOperationException">The output endpoint is not an interactive terminal.</exception>
+	/// <exception cref="ObjectDisposedException">The terminal session is closing or has been disposed.</exception>
+	/// <exception cref="OperationCanceledException">The caller cancels before transmission is committed.</exception>
+	/// <remarks>
+	/// This method emits exactly <c>OSC 777;notify;&lt;title&gt;;&lt;message&gt; ST</c> using strict UTF-8 and
+	/// canonical ST termination. OSC 777 defines no interoperable escaping grammar for semicolon-delimited fields,
+	/// so semicolons are rejected rather than rewritten. Successful completion proves only complete frame emission;
+	/// terminal/user policy may suppress display. The library does not infer OSC 777 support from terminal identity.
+	/// </remarks>
+	public ValueTask SendTitledNotificationAsync(
+		string title,
+		string message,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( title );
+		ArgumentNullException.ThrowIfNull( message );
+		cancellationToken.ThrowIfCancellationRequested();
+		byte[] frame = OscWriter.EncodeOsc777NotificationFrame(
+			title,
+			message
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.WriteNotificationAsync(
+			frame,
+			cancellationToken
+		);
+	}
+
 	private async ValueTask WriteNotificationAsync(
 		byte[] frame,
 		CancellationToken cancellationToken
@@ -65,7 +106,7 @@ public sealed partial class TerminalSession {
 		cancellationToken.ThrowIfCancellationRequested();
 		if ( !this.OutputObservation.IsTerminal ) {
 			throw new InvalidOperationException(
-				"OSC 9 desktop notifications require an interactive terminal output endpoint."
+				"Desktop notification protocols require an interactive terminal output endpoint."
 			);
 		}
 
