@@ -2,7 +2,7 @@
 
 **Release:** `Icod.Terminal 1.8.0`  
 **Tranche:** A181  
-**Status:** implementation starting
+**Status:** complete — accepted on exact head `6b5abbdda8ac3ef57bf4c99054a65946e0f13b3a`, Staging workflow #1306 / `34417741619`
 
 ## Purpose
 
@@ -118,7 +118,7 @@ The public raster API remains the 1.7 `TerminalRasterImage` / `DisplayRasterAsyn
 
 ## Tests
 
-A181 regression coverage must include:
+A181 regression coverage includes:
 
 - exact documented support-query payload for id `31`;
 - `UInt32.MaxValue` query id;
@@ -137,8 +137,20 @@ A181 regression coverage must include:
 - control/message bound enforcement;
 - public API fingerprint unchanged from 1.7.
 
-## Acceptance rule
+## Accepted checkpoint
 
-A181 is accepted only on an exact PR head passing Windows, Linux, macOS, package candidate/public-API freeze, all four package shards, and the validated package artifact.
+Exact head:
+
+```text
+6b5abbdda8ac3ef57bf4c99054a65946e0f13b3a
+```
+
+Staging workflow:
+
+```text
+#1306 / 34417741619
+```
+
+The checkpoint passed Runtime Windows, Runtime Linux, Runtime macOS, package candidate/public-API freeze, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
 
 PR #46 remains draft after A181; A182–A189 remain required for release closure.
