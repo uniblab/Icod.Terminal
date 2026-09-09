@@ -1,6 +1,8 @@
 # Security and Privacy
 
-`Icod.Terminal` mediates a bidirectional terminal conversation. Terminal control sequences are not merely visual formatting: some operations publish metadata, request external state, alter terminal-owned presentation state, or influence desktop integration. This document defines the permanent 1.x security and privacy boundary.
+`Icod.Terminal` mediates a bidirectional terminal conversation. Terminal control sequences are not merely visual formatting: some operations publish metadata, request external state, alter terminal-owned presentation state, or influence desktop integration. Raster graphics add another large-output path that must preserve the same bounded, typed, evidence-driven design.
+
+This document defines the permanent 1.x security and privacy boundary.
 
 ## 1. Trust model
 
@@ -10,258 +12,273 @@
 - terminal input and query responses are external input and may be malformed or adversarial;
 - the attached terminal, multiplexer, or remote session may not implement a protocol exactly as expected;
 - successful byte transmission does not prove terminal-side support or application;
-- terminal metadata may be logged, persisted, forwarded, surfaced to the desktop, or visible to other software depending on the environment.
+- terminal metadata may be logged, persisted, forwarded, surfaced to the desktop, or visible to other software depending on the environment;
+- large raster inputs may be accidental or adversarial resource pressure.
 
-The library therefore favors typed semantic APIs, bounded parsing, pre-output validation, explicit disclosure, and one authoritative input/query path over raw generic protocol construction.
-
-Version 1.5 extends that principle internally rather than weakening it: semantic intent, concrete protocol backend, control family, support state, and evidence source are separate concepts. Terminal branding, caller routing preference, and protocol-number familiarity are not promoted into capability truth.
+The library therefore favors typed semantic APIs, bounded parsing/encoding, pre-output validation, explicit capability evidence, and one authoritative input/query path over raw generic protocol construction.
 
 ## 2. Control-sequence injection boundary
 
-Text-bearing semantic protocols validate their payload according to the relevant protocol before the first frame byte is committed where the protocol permits complete prevalidation.
+Text-bearing semantic protocols validate payloads according to their relevant protocol before commitment where possible.
 
 Where raw control characters are not meaningful semantic data, the library rejects C0, DEL, and C1 controls so caller text cannot inject BEL, ESC, OSC/ST, or another terminal sequence.
 
-Different protocols use different safe encodings:
+Different protocols use different safe encodings. Examples include:
 
-- OSC 7 path data is strict UTF-8 percent-encoded into a canonical `file:` URI;
-- OSC 8 accepts validated already-percent-encoded URI text and separately validates the `id` parameter;
-- OSC 52 binary payload is Base64 encoded;
-- OSC 99 title, body, and transmitted icon data are encoded with RFC 4648 Base64, while metadata fields use a closed validated grammar;
-- OSC 133 `cmdline_url` metadata is strict UTF-8 then percent-encoded byte-by-byte;
-- OSC 633 command-line, `Cwd`, and `ContinuationPrompt` values use VS Code's message serializer before strict UTF-8 framing;
-- OSC 777 title/body fields are strict UTF-8 and reject semicolon plus C0/DEL/C1 controls because that protocol defines no interoperable field-escaping grammar;
-- OSC 1337 user-variable values are strict UTF-8 followed by Base64, while delimited metadata fields are validated before framing;
-- title, legacy-notification, and OSC 9;9 text reject framing controls directly;
-- color, pointer, keyboard, and other closed semantic APIs avoid arbitrary protocol strings.
+- OSC 7 path data uses strict UTF-8 percent encoding;
+- OSC 52 binary payloads use Base64;
+- OSC 99 text/icon data uses protocol-defined Base64 and closed metadata grammar;
+- OSC 133 and OSC 633 metadata use their reviewed serializers/escaping;
+- OSC 777 rejects delimiters/control bytes for which the protocol defines no interoperable escape;
+- OSC 1337 user-variable values use strict UTF-8 plus Base64;
+- closed color, pointer, keyboard, and raster APIs avoid arbitrary caller-supplied protocol strings.
 
-Validation and encoding protect framing integrity. They do **not** make semantic content trustworthy or confidential. Base64 is an encoding, not encryption.
+Validation protects framing integrity. It does not make semantic content confidential or trustworthy.
 
 ## 3. Bounded resources
 
-Input decoding, paste handling, query transactions, request frames, response frames, late-response ownership, and resynchronization paths are bounded.
+Input decoding, paste handling, query transactions, request/response frames, late-response ownership, resynchronization, and graphics processing are bounded.
 
-Version 1.5 preserves those ceilings while generalizing the infrastructure:
+The normalized control-language layer uses one bounded scanner for CSI, DCS, OSC, APC, PM, and SOS rather than separate unbounded per-dialect accumulators.
 
-- one bounded incremental scanner recognizes CSI, DCS, OSC, APC, PM, and SOS rather than creating per-dialect unbounded scanners;
-- structural frame parsing preserves syntax without retaining unlimited input;
-- multi-family query transactions have a bounded rule set and per-family frame limits;
-- malformed, oversized, aborted, and incomplete frames recover through reviewed bounded paths;
-- capability evidence retains bounded latest static/live conclusions rather than an unbounded observation history.
+Version 1.7 adds explicit raster/Sixel ceilings:
 
-OSC 99 adds additional explicit bounds:
+```text
+maximum raster dimension       16,384
+maximum raster pixels          16 Mi
+maximum owned pixel bytes      64 MiB
+maximum indexed palette        256 entries
+small complete DCS frame       4,096 bytes
+quantizer histogram            32 x 32 x 32 bins
+```
 
-- each Base64 payload chunk is limited to 4,096 encoded bytes;
-- notification metadata is bounded;
-- notification identifiers and cache identifiers are bounded validated ASCII;
-- transmitted icon data is bounded before Base64 expansion;
-- support/alive responses are bounded before semantic parsing;
-- alive-result cardinality is bounded.
+Sixel payload output is generated as bounded lazy segments. Large graphics do not require one complete encoded DCS frame in memory.
 
-Malformed input is not allowed to accumulate indefinitely merely because it resembles a recognized response prefix.
+Both highly compressible and deliberately low-compressibility maximum-width test cases verify that segmentation remains bounded independently of how effective repeat encoding is.
 
 ## 4. One authoritative input reader
 
 A live `TerminalSession` owns the authoritative input decoder and query router.
 
-The stable 1.x surface does not expose `TerminalSession.Input`. Allowing arbitrary concurrent raw reads could steal bytes from UTF-8 scalars, key sequences, paste frames, or active query responses and would undermine parser/correlation integrity.
+The stable 1.x surface does not expose a session raw-input property. A competing raw read could steal bytes from UTF-8 scalars, key sequences, paste frames, lifecycle traffic, or active query responses.
 
-`ITerminalInput` remains public for custom transport injection. A caller that supplied the transport must not create a competing reader while the session owns it.
+`ITerminalInput` remains public for custom transport injection, but a caller supplying the transport must not create a competing reader while the session owns it.
 
-This rule is especially important for OSC 99. Capability and alive queries use the existing query router. Notification activation, button, and close reports are unsolicited terminal input, not ordinary correlated query replies. Version 1.4 therefore does **not** expose those event forms through a private OSC 99 reader. They require a separately reviewed extension of the authoritative `ReadEventAsync(...)` event path.
+Version 1.7 Sixel capability probing reuses the same Primary Device Attributes query path and authoritative response router. It does not add a graphics-specific input loop.
 
-Version 1.5 multi-family transactions reuse this same reader and query manager. APC/PM/SOS framing support does not create a second reader or protocol-family background loop.
+## 5. Capability evidence is not terminal identity
 
-## 5. Terminal identity is not a support oracle
+`TERM`, terminal names, environment variables, host operating system, known emulator brands, registry membership, and caller backend preference are useful context but are not sufficient proof that a live protocol is supported.
 
-`TERM`, terminal names, environment variables, host OS, and known emulator brands are useful context but are not sufficient proof that a live protocol is enabled or safe to use.
+The internal evidence model separates support state from evidence source:
 
-`Icod.Terminal` therefore does not generally manufacture `SupportsX` truth from branding.
+```text
+Unavailable
+Unsupported
+Unknown
+Advertised
+Verified
 
-OSC 633, OSC 777, OSC 1337, and OSC 99 operations are emitted only when explicitly called. The library never silently chooses among OSC 9, OSC 777, and OSC 99 based on terminal identity.
+TermInfo
+BuiltInProfile
+LiveProbe
+ProtocolResponse
+```
 
-OSC 99 additionally provides an explicit capability query. A successful correlated response is stronger evidence than branding, but it remains terminal-supplied data and must be treated as untrusted input.
+For Sixel in 1.7, a valid Primary Device Attributes response containing attribute `4` is positive `Verified / ProtocolResponse` evidence for `DcsSixel`.
 
-Version 1.5 formalizes this internally through separate support state and evidence source. Static TermInfo/profile advertisement is not equivalent to a verified live response. Likewise:
+A valid response without `4` is **not** automatically authoritative proof that Sixel is unsupported. It records only unknown protocol-response evidence. Probe timeout likewise remains unknown. Caller cancellation propagates and is not converted into negative evidence.
 
-- a successful correlated OSC 99 support response can be `Verified / ProtocolResponse` evidence;
-- a Primary-DA barrier without Kitty keyboard flags can be reviewed `Unsupported / ProtocolResponse` evidence for that concrete backend;
-- probe timeout remains `Unknown` or no conclusion rather than unsupported truth;
-- caller backend preference remains routing policy rather than capability evidence.
+This prevents both false-positive brand guessing and false-negative interpretation of incomplete/compatibility DA responses.
 
 ## 6. Emission is not application
 
-For unacknowledged output protocols, successful completion normally means only that the complete requested bytes were written to the output service.
+For unacknowledged output protocols, successful completion normally means only that the requested bytes were successfully written to the output service.
 
 It does not prove that the terminal:
 
 - supports the protocol;
 - recognized the frame;
 - applied the requested state;
-- displayed a notification;
-- retained a notification identifier;
-- accepted or cached transmitted icon data;
-- activated or decorated a hyperlink;
-- accepted clipboard content;
-- accepted shell-integration metadata.
+- displayed a notification or image;
+- retained an identifier or cache entry.
 
-For explicit query APIs, successful completion means a correlated response was received and parsed according to the documented grammar. It still does not make the terminal a trusted authority beyond that response.
+For explicit query APIs, successful completion means a correlated response was received and parsed according to the reviewed grammar. The response remains untrusted terminal input.
 
-## 7. Clipboard privacy — OSC 52
+Sixel display is therefore capability-gated before emission, but successful `DisplayRasterAsync(...)` output still does not claim visual verification after the frame is written.
 
-Clipboard writes can place application data into terminal or desktop selection state. Clipboard reads request external selection data and are therefore explicitly privacy-sensitive.
+## 7. Raster input and alpha semantics
 
-`ReadClipboardAsync(...)` is never called automatically by session open, probing, lifecycle handling, or disposal.
+`TerminalRasterImage` owns an immutable snapshot of caller-provided raw raster data. Copying input at construction prevents asynchronous display from observing later caller mutation of the supplied buffers.
 
-Applications should treat returned clipboard bytes as untrusted external input. Sensitive application data should not be copied to terminal clipboard state unless that disclosure is intentional.
+The backend-neutral model preserves straight RGBA alpha. Version 1.7 Sixel output deliberately supports only the alpha semantics it can preserve truthfully:
 
-## 8. Current-location disclosure
+- alpha `0` means transparent/leave destination untouched;
+- alpha `255` means opaque/paint the pixel;
+- fractional alpha remains valid raster data, but the Sixel backend returns controlled unsupported rather than silently compositing against an invented matte/background.
 
-OSC 7, OSC 9;9, OSC 633 `Cwd`, and OSC 1337 `CurrentDir` can reveal user names, source-tree names, customer/project names, mount points, network shares, and host identity.
+The library does not perform hidden premultiplication, gamma conversion, profile conversion, or arbitrary background flattening.
 
-`Icod.Terminal` does not automatically read or publish `Environment.CurrentDirectory`, monitor directory changes, or infer path/host metadata from process state. Each vendor-specific current-directory operation is explicit and independent of the portable OSC 7 API.
+## 8. Deterministic quantization
 
-## 9. Hyperlink security — OSC 8
+True-color input may require palette reduction for Sixel. The quantizer uses bounded deterministic work state and stable tie-breaking.
 
-`Icod.Terminal` validates hyperlink URI syntax and protects OSC framing, but it does not decide whether a URI is safe for a particular application to expose to users.
+Security/reliability consequences include:
 
-The library does not fetch targets, resolve DNS, launch a browser or shell, or apply a universal URI-scheme trust policy. Applications accepting untrusted targets should enforce their own scheme/host/path policy before emission.
+- identical input/options produce identical palette/remapping output;
+- high-entropy input does not create an unbounded color dictionary;
+- palette cardinality remains bounded;
+- no hash-order-dependent output is relied upon;
+- no hidden dithering state or unbounded optimization search is introduced.
 
-## 10. Command and shell metadata
+Determinism is not a claim of perceptual optimality; it is a reproducibility and bounded-work guarantee.
 
-OSC 133, OSC 633, and OSC 1337 can publish command lines, paths, host identity, shell identity, prompt metadata, or caller-defined variables.
+## 9. Committed Sixel output
 
-These values can contain credentials, tokens, customer/project names, private paths, host names, or other sensitive material. Framing-safe encoding does not redact or encrypt them.
+Large Sixel output uses a committed streaming transaction through the existing session output serialization gate.
 
-`Icod.Terminal` does not inspect shell history, process arguments, environment variables, startup files, or secret patterns automatically. The caller decides whether publication is appropriate.
+Before the first DCS byte commits:
 
-OSC 633 nonces are caller-supplied trust evidence only; the library does not discover, generate from VS Code process state, persist, rotate, or independently verify them.
+- raster/conversion invariants are validated as far as the design permits;
+- caller cancellation is honored;
+- output-gate acquisition remains cancellable.
 
-## 11. Desktop notification privacy — OSC 9, OSC 777, and OSC 99
+The first canonical Sixel DCS prefix write is the commit boundary.
 
-Desktop notification content can leave the terminal window and appear in notification history, lock-screen UI, screen sharing, recording, remote/multiplexed logs, accessibility services, or other desktop-shell surfaces.
+After commitment:
 
-`SendNotificationAsync(message)` publishes one OSC 9 message. `SendTitledNotificationAsync(title, message)` publishes OSC 777 title/body fields. `SendKittyNotificationAsync(...)` can publish considerably more metadata, including:
+- ordinary caller cancellation is no longer allowed to truncate the control string;
+- the session output gate remains held across every payload segment, final ST, and flush;
+- unrelated session-managed output cannot interleave inside the graphics frame;
+- one successful transaction emits exactly one final ST.
 
-- title and body;
-- stable notification identifiers used for update/replacement;
-- application/type filtering metadata;
-- focus policy and occasion;
-- urgency and expiration requests;
-- sound names;
-- icon names and cache identifiers;
-- caller-supplied PNG/JPEG/GIF icon bytes.
+If the underlying transport fails after commitment, the error is surfaced. The library does not automatically retry the image, because the terminal may have received an unknown prefix of the frame, and it does not speculate that sending an extra terminator is always safe recovery.
 
-Applications should not put secrets in notification data unless that disclosure is intended. Icon bytes may themselves contain sensitive visual or embedded metadata outside `Icod.Terminal`'s interpretation; the library validates bounded image signatures but does not sanitize image contents.
+## 10. Teardown and committed output
 
-OSC 99 alive queries can reveal which caller-managed notification identifiers the terminal still considers active. Capability queries disclose that the application is probing notification features. Query responses are untrusted terminal input.
+`TerminalSession.DisposeAsync()` remains final cleanup/restoration authority for session-owned state.
 
-## 12. Notification identity and updates
+Version 1.7 ensures teardown drains the same session output gate used by committed graphics before output-state restoration proceeds. This prevents restoration traffic from interleaving inside a still-running Sixel control string.
 
-A caller-supplied OSC 99 identifier creates an application-visible linkage between notification operations. Reusing the identifier can update or replace prior terminal notification state; `CloseKittyNotificationAsync(...)` explicitly asks the terminal to close that identified notification.
+This ordering is a contract requirement; the internal synchronization primitive may change in future implementations.
 
-When protocol chunking requires an identifier and the caller did not supply one, `Icod.Terminal` creates an internal bounded identifier only for framing/correlation. The library does not expose hidden persistent notification ownership or replay such notifications across lifecycle transitions.
+## 11. No generic raw graphics escape hatch
 
-Applications should avoid embedding secrets in notification IDs because identifiers may be retained or returned by the terminal.
+Version 1.7 intentionally does not expose:
 
-## 13. Notification event boundary
+- a generic public DCS writer;
+- a generic public Sixel command/payload writer;
+- direct palette-register mutation for Sixel;
+- caller-selected Sixel backend routing;
+- arbitrary graphics control-string injection through the semantic raster API.
 
-Kitty OSC 99 defines richer interaction features including buttons and terminal-originated activation/close reports. Those features are intentionally deferred from 1.4.
+`TerminalSession.Output` remains a public advanced borrowed transport and can always be misused by a caller. Direct writes through it are outside session serialization and semantic validation. That advanced escape hatch is not an endorsement of constructing arbitrary untrusted terminal traffic.
 
-The reason is architectural rather than cosmetic: reports are unsolicited input events and must be integrated into the same authoritative event decoder used by `ReadEventAsync(...)`. A protocol-specific background reader would violate the one-reader guarantee and could race ordinary application input or query responses.
+## 12. Image-file decoding is out of scope
 
-No generic raw OSC 99 API is provided as a workaround for that omission.
+`Icod.Terminal` 1.7 consumes raw pixel/index data. It does not decode PNG, JPEG, GIF, or other image files as part of the raster-display path.
 
-## 14. Safe OSC 9 exclusion boundary
+This avoids importing file-parser attack surface, metadata handling, decompression-bomb policy, color-profile interpretation, and format-specific security decisions into the core live-terminal package.
 
-The public OSC 9 surface intentionally excludes vendor commands that can execute, block, control host-side behavior, or disclose environment data.
+Applications may decode image formats with libraries appropriate to their own trust model, then provide bounded raw raster data to `Icod.Terminal`.
 
-Excluded ConEmu-family operations include:
+## 13. Clipboard privacy — OSC 52
 
-```text
-9;1   sleep/delay
-9;2   GUI message box
-9;5   wait for key
-9;6   GUI macro execution
-9;7   process launch
-9;8   environment-variable disclosure
-9;10  xterm/emulation mutation
-```
+Clipboard writes can place application data into terminal or desktop selection state. Clipboard reads request external selection data and are explicitly privacy-sensitive.
 
-There is no generic `WriteOsc9Async(command, payload)` escape hatch.
+`ReadClipboardAsync(...)` is never called automatically by session open, graphics probing, lifecycle handling, or disposal.
 
-## 15. iTerm2 OSC 1337 exclusion boundary
+Applications should treat returned clipboard bytes as untrusted external input and should not publish secrets to terminal clipboard state unintentionally.
 
-The reviewed 1.3 OSC 1337 surface is intentionally narrower than the full vendor namespace. It excludes generic dispatch and invasive operations for profile mutation, focus stealing, URL opening, pasteboard/file transfer, custom scripting, arbitrary colors/cursors, Unicode-version mutation, and Touch Bar state.
+## 14. Current-location and shell metadata disclosure
 
-Those omissions are security boundaries, not missing convenience aliases.
+OSC 7, OSC 9;9, OSC 633 `Cwd`, OSC 1337 `CurrentDir`, and related semantic metadata can reveal user names, source-tree names, customer/project names, mount points, shares, and host identity.
 
-## 16. Modern keyboard, focus, mouse, and paste privacy
+`Icod.Terminal` does not automatically discover and publish environment/current-directory/shell-history data. The caller decides whether disclosure is appropriate.
 
-Modern keyboard protocols can expose press/repeat/release phase, associated text, shifted/base-layout identities, and expanded modifier state. Focus and mouse reports expose user interaction context. Bracketed-paste data can contain arbitrary user text.
+## 15. Hyperlink security — OSC 8
 
-Applications should collect, log, and transmit only what they need. Bracketed paste marks provenance and boundaries; it does not make pasted content safe to execute in a shell, SQL engine, markup processor, or another application language.
+The library validates hyperlink framing and URI syntax but does not decide whether a URI is safe for a particular application to expose to users.
 
-## 17. Terminal observations can fingerprint the environment
+It does not fetch targets, resolve DNS, launch browsers/shells, or apply a universal URI-scheme trust policy.
 
-Explicit queries can reveal terminal/environment characteristics such as device attributes, capability strings, cursor/color/pointer state, clipboard contents, and OSC 99 notification capabilities.
+## 16. Desktop notification privacy
 
-Applications should issue only observations they need. `Icod.Terminal` does not perform broad automatic fingerprinting merely because query APIs exist.
+OSC 9, OSC 777, and OSC 99 notifications can leave the terminal window and appear in desktop notification surfaces, logs, recordings, screen sharing, or accessibility software.
 
-Version 1.5's internal evidence broker does not itself trigger new observations merely because a semantic backend is registered. It records evidence only from selected static descriptions or probes/queries that existing code explicitly performs.
+Applications should not place secrets in notification content unless that disclosure is intended. Base64 used by OSC 99 is encoding, not encryption.
 
-## 18. Redirected output
+OSC 99 notification identifiers and alive-query results may reveal application state. Capability/alive responses remain untrusted terminal input.
 
-Semantic operations which require a live terminal reject known redirected/non-terminal output rather than blindly writing control bytes into a file or pipe.
+## 17. Notification event boundary
 
-OSC 633, OSC 777, OSC 1337, and OSC 99 semantic operations require an interactive terminal output endpoint. Active queries additionally require compatible interactive input/output endpoints through the shared query contract.
+Kitty OSC 99 buttons and terminal-originated activation/close reports remain outside the current public surface because they are unsolicited input events and must eventually integrate through the same authoritative `ReadEventAsync(...)` path.
 
-A `TerminalSession` itself still requires interactive input because it owns an input-mode transition. Version 1.5 routing does not redefine the session as a generic output-only transport.
+No protocol-specific background reader is provided as a workaround.
 
-## 19. Advanced raw output
+## 18. Safe OSC 9 exclusion boundary
 
-`TerminalSession.Output` is an advanced borrowed transport outside session serialization. Direct writes can interleave with session-managed traffic and bypass semantic validation, framing bounds, and security policy.
+The public OSC 9 surface intentionally excludes vendor commands that can execute, block, control host-side behavior, or disclose environment data. There is no generic `WriteOsc9Async(command, payload)` escape hatch.
 
-Likewise, `WriteTerminalStringAsync(...)` exists for already-resolved terminfo strings and padding semantics; it is not the recommended way to synthesize user-controlled OSC/CSI/DCS traffic.
+## 19. iTerm2 OSC 1337 exclusion boundary
 
-Version 1.5 does not add a generic public raw CSI/DCS/OSC/APC/PM/SOS writer as an escape hatch around typed semantics.
+The reviewed OSC 1337 surface intentionally excludes generic dispatch and invasive operations for profile mutation, focus stealing, URL opening, pasteboard/file transfer, custom scripting, arbitrary colors/cursors, Unicode-version mutation, and Touch Bar state.
 
-Consumers should use semantic APIs whenever one exists.
+Those omissions are security boundaries rather than missing convenience aliases.
 
-## 20. Restoration, lifecycle, and uncertainty
+## 20. Modern keyboard, focus, mouse, and paste privacy
+
+Modern keyboard protocols can expose press/repeat/release phase, associated text, shifted/base-layout identities, and modifier state. Focus/mouse reports expose interaction context. Bracketed-paste data may contain arbitrary user text.
+
+Applications should collect, log, and transmit only what they need. Bracketed paste marks provenance and boundaries; it does not make pasted content safe to execute.
+
+## 21. Terminal observations can fingerprint the environment
+
+Explicit queries can reveal terminal/environment characteristics such as device attributes, capability strings, cursor/color state, clipboard contents, notification support, and graphics support.
+
+Applications should issue only observations they need.
+
+`DisplayRasterAsync(...)` may issue the narrowly scoped Primary Device Attributes probe when verified graphics evidence is not already available; it does not conduct broad terminal fingerprinting.
+
+## 22. Redirected output
+
+Semantic operations that require a live terminal reject known redirected/non-terminal output rather than blindly writing control bytes into a file or pipe.
+
+Active queries additionally require compatible interactive input/output endpoints through the shared query contract.
+
+## 23. Restoration, lifecycle, and evidence invalidation
 
 When `Icod.Terminal` claims exact restoration, it establishes a truthful baseline first. Unknown state is not replaced by a guessed default while being described as restoration.
 
-Suspend/resume is a trust boundary for live observations. Observation-dependent state may be re-queried after resume; stale pre-resume responses cannot satisfy a new query generation.
+Suspend/resume and explicit invalidation are trust boundaries for live observations. Generation-scoped `LiveProbe` and `ProtocolResponse` evidence, including Sixel verification, expires through the existing semantic evidence generation mechanism. Immutable selected TermInfo/profile evidence may persist because it describes static session configuration rather than a prior live observation.
 
-Version 1.5 extends the same epoch rule to semantic capability evidence. `TerminalSession.InvalidateState()` advances the live-evidence generation, so explicit out-of-band invalidation and managed resume discard stale live probe/protocol-response conclusions. Immutable selected TermInfo/profile advertisement remains available because it describes the session's selected static profile rather than a prior live observation.
+Raster images are ephemeral output. Version 1.7 does not replay them automatically after resume and does not claim to restore external terminal image contents/palette state on disposal.
 
-Ephemeral metadata such as OSC 133/633/1337 shell metadata and OSC 9/777/99 notifications is not automatically replayed on resume. Disposal does not synthesize notification closes, prompt completion, or other application-history events that the library does not own.
+## 24. Dependencies and native boundaries
 
-## 21. Dependencies and native boundaries
+Native platform APIs are used only for terminal-control/lifecycle operations that require them. The package does not hide PTY process hosting, shell execution, browser/network access, OS clipboard integration, image decoding, or native desktop notification APIs behind terminal semantic methods.
 
-Native platform APIs are used only for terminal-control/lifecycle operations that require them. The package does not hide PTY process hosting, shell execution, browser/network access, OS clipboard integration, or native desktop notification APIs behind terminal semantic methods.
+Sixel is terminal traffic only.
 
-OSC 99 notification support is terminal traffic only. It does not invoke host-native notification services directly.
-
-## 22. Reporting security issues
+## 25. Reporting security issues
 
 Security defects should be reported through the repository owner's supported private security-reporting channel when available rather than publishing exploitable details before a fix can be prepared.
 
-Compatibility or missing-feature requests should remain distinct from security reports; not every unsupported vendor command is a security defect.
+Compatibility or missing-feature requests should remain distinct from security reports.
 
-## 23. Permanent security principles
+## 26. Permanent security principles
 
 For the stable 1.x line, new features should preserve these principles:
 
 1. expose semantic intent rather than generic dangerous protocol dispatch;
 2. validate and bound untrusted payloads before commitment where possible;
-3. keep parsing and resynchronization bounded;
+3. keep parsing, conversion, and resynchronization bounded;
 4. preserve one authoritative input/query reader;
 5. do not infer support solely from brand/environment identity;
-6. separate capability/support state from the source and lifetime of the evidence;
+6. separate capability state from evidence source/lifetime;
 7. distinguish emission from terminal application or acknowledgement;
 8. make metadata disclosure explicit;
 9. do not claim exact restoration without a truthful baseline;
-10. surface uncertainty and double failures rather than hiding them;
-11. avoid hidden host execution, network access, or process-global side effects.
+10. surface uncertainty and compound failures rather than hiding them;
+11. avoid hidden host execution, network access, file decoding, or process-global side effects;
+12. once a terminal control string is committed, preserve frame integrity rather than using ordinary caller cancellation to truncate it.

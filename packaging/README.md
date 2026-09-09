@@ -12,7 +12,7 @@ This directory carries the repository-local copy of the `uniblab/.github` C#/.NE
 | manual distribution validation | selected | same six-runner runtime/package split as `main` |
 | `v<semver>` tag | `Release` | tag metadata gate; runtime acceptance and package preparation in parallel; four package shards; parallel registry publication; curated GitHub Release |
 
-`Icod.Terminal` is a library package. The executable projects in the solution are samples and are deliberately excluded from release-archive discovery.
+`Icod.Terminal` is a library package. The executable projects in the solution are samples/verification utilities and are deliberately excluded from release-archive discovery.
 
 ## Local build
 
@@ -38,22 +38,21 @@ validate  restore -> build -> pack -> validate
 all       restore -> build -> test -> pack -> validate
 ```
 
-This preserves the comprehensive default while allowing normal MSBuild incremental behavior between developer invocations.
-
 ## Runtime versus package validation
 
 Runtime/architecture evidence and portable package evidence are separate contracts.
 
-`VerifyRuntime.ps1` owns:
+`VerifyRuntime.ps1` owns solution restore/build/test, focused sample/integration compilation, real `Icod.DCurses` integration checks, and repeated hardening/ownership soak. These checks run on every OS/architecture claimed by the relevant workflow.
 
-- solution restore/build/test;
-- focused notification-sample compilation;
-- real `Icod.DCurses` focused integration checks;
-- repeated DCurses hardening/ownership soak.
+`BuildPackageArtifact.ps1` builds the portable package candidate once and verifies the frozen current public API fingerprint. CI uploads that candidate for independent package-contract jobs rather than rebuilding the same RID-independent NuGet package on every architecture.
 
-These checks run on every OS/architecture claimed by the relevant workflow.
+For 1.7 the current machine public API fingerprint is:
 
-`BuildPackageArtifact.ps1` builds the portable package candidate once and verifies the frozen current public API fingerprint. CI then uploads that candidate for independent package-contract jobs rather than rebuilding the same RID-independent NuGet package on every architecture.
+```text
+847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
+```
+
+from `docs/Public-API-Baseline-1.7.sha256`. Historical baselines remain checked in unchanged.
 
 ## Package contract shards
 
@@ -63,10 +62,28 @@ These checks run on every OS/architecture claimed by the relevant workflow.
 | --- | --- |
 | `foundation` | exact package structure/Source Link/XML plus 0.8–0.10 package foundations |
 | `presentation` | pointer shape, semantic prompt, colors, and lifecycle-safe color ownership |
-| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, OSC 99, modern keyboard, and hardening |
+| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, OSC 99, modern keyboard, **1.7 raster graphics**, and hardening |
 | `release` | stable 1.x release-line package contract and packaged `Icod.DCurses` compatibility witness |
 
-The semantic shard includes fresh package-only consumers and generated XML-documentation checks for the additive 1.x protocol APIs, including OSC 633, OSC 777, OSC 1337, and OSC 99. OSC 99 package validation binds the typed send/close/support/alive APIs and their new public option/support types on `net8.0`, `net9.0`, and `net10.0`, while also enforcing the absence of a generic raw public OSC 99 dispatcher.
+The semantic shard includes fresh package-only consumers and generated XML-documentation checks for additive stable APIs.
+
+### Raster package verification
+
+`VerifyRasterGraphicsPackage.ps1` qualifies the public 1.7 raster contract from the freshly packed NuGet artifact. It:
+
+- verifies generated XML documentation for `TerminalRasterPixelFormat`, `TerminalRasterColor`, `TerminalRasterImage`, their reviewed public members, and `TerminalSession.DisplayRasterAsync(...)` under `lib/net8.0`, `lib/net9.0`, and `lib/net10.0`;
+- restores `tools/package-raster-graphics-smoke` from an isolated temporary directory against the freshly built package;
+- compiles and runs the consumer on all three TFMs;
+- compile-binds `DisplayRasterAsync(...)` without a repository project reference;
+- constructs RGB24, RGBA32, and Indexed8 images and verifies owned snapshot/value semantics;
+- verifies the frozen public raster enum values;
+- rejects accidental public raw DCS/Sixel dispatch or public raster backing-memory exposure.
+
+The raster consumer is silent on success and fails by exception so package validation output stays focused on failures and orchestration.
+
+The raster verifier runs anywhere the semantic package shard runs: pull requests, `main`, manual distribution validation, and tag/release qualification.
+
+The semantic shard also retains package-only/XML checks for OSC 633, OSC 777, OSC 1337, OSC 99, modern keyboard, and earlier semantic contracts.
 
 The shards have no ordering dependency on one another once the package candidate exists, so GitHub Actions executes them in parallel. `VerifyPackageDistribution.ps1` runs the same shards sequentially when a single-process local distribution check is desired.
 
@@ -103,12 +120,30 @@ This avoids repeating package layout/XML/Source Link and historical NuGet-consum
 
 A release tag must use `v<semver>`, point to a commit contained in `main`, and have curated `docs/releases/<version>.md` notes.
 
-The tag workflow's `metadata` job resolves the exact tag version. Jobs that consume that version declare `metadata` as a direct dependency so `needs.metadata.outputs.version` and prerelease state remain available to package-contract and GitHub-release stages.
+The tag workflow's `metadata` job resolves the exact tag version. Jobs that consume that version declare `metadata` as a direct dependency so version and prerelease state remain available to package-contract and GitHub-release stages.
 
 The tag workflow runs runtime acceptance and package preparation in parallel. After the package candidate exists, all four package shards must pass before either registry publication job may start. NuGet.org and GitHub Packages publish independently in parallel; the GitHub Release is created only after both registry publications succeed.
 
-`SelectReleasePackages.ps1` filters by the exact tag version and copies the matching symbol package. The GitHub Release attaches the `.nupkg`, `.snupkg`, and SHA-256 checksum file and uses the curated release-note document rather than auto-generated prose.
+`SelectReleasePackages.ps1` filters by exact tag version and copies the matching symbol package. The GitHub Release attaches the `.nupkg`, `.snupkg`, and SHA-256 checksum file and uses the curated release-note document rather than auto-generated prose.
+
+## 1.7 release-closure rule
+
+For `1.7.0`, D179 requires one unchanged final pull-request head to pass:
+
+```text
+Runtime Windows
+Runtime Linux
+Runtime macOS
+Package candidate / API baseline
+Package Foundation
+Package Presentation
+Package Semantic and hardening
+Package Stable 1.x release line
+Validated package artifact
+```
+
+Only after that exact-head Staging matrix succeeds may the PR leave draft status. Merge, post-merge Release validation, and `v1.7.0` tagging/publication remain separate explicit steps.
 
 ## Organization template follow-up
 
-The local incremental-build and workflow-graph improvements are intentionally proven here first. The generic portions should subsequently be upstreamed to `uniblab/.github`, including avoiding absolute runner-specific solution paths in reusable metadata flows.
+Repository-local workflow improvements are proven here first. Generic portions should subsequently be upstreamed to `uniblab/.github` where appropriate, while package-specific semantic/raster verification remains local to `Icod.Terminal`.

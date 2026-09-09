@@ -4,23 +4,19 @@
 **Package:** `Icod.Terminal`  
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Current release line:** `1.6.0`  
-**Current status:** Complete — C160 through C165 accepted; awaiting merge and post-merge Release validation  
+**Current release line:** `1.7.0`  
+**Current status:** Complete — D170 through D179 accepted; final status-only head validating before PR readiness  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
 
 This file is the permanent entry point for current `Icod.Terminal` development and release planning.
 
-The repository began with a detailed pre-1.0 architecture and milestone plan. That original document remains valuable historical design evidence and is preserved at:
+The original pre-1.0 roadmap remains preserved at:
 
 [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md)
 
-The completed rc1 program remains preserved at:
-
-[`Icod.Terminal-1.0.0-rc1-Development-Roadmap.md`](Icod.Terminal-1.0.0-rc1-Development-Roadmap.md)
-
-Stable `1.0.0` established the permanent 1.x contract. Minor releases may add compatible typed protocol APIs and internal infrastructure while preserving the documented 1.0 ownership, lifecycle, security, and compatibility guarantees.
+Stable `1.0.0` established the permanent 1.x contract. Minor releases may add compatible typed semantic APIs and internal protocol infrastructure while preserving the documented ownership, lifecycle, query, security, and compatibility guarantees.
 
 ## Current architecture
 
@@ -38,225 +34,192 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and expansion.
-- `Icod.Terminal` owns the live terminal conversation, native terminal modes, input decoding, lifecycle, query routing, semantic terminal output, protocol framing/routing, and reversible/scoped terminal state.
-- `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, curses presentation abstractions, and other higher-level semantic UI policy.
+- `Icod.Terminal` owns the live terminal conversation, native terminal modes, input decoding, lifecycle, query routing, capability evidence, semantic terminal output, raster output, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Completed 1.6.0 program — complete CSI grammar, consolidation, geometry, and hardening
+## Completed 1.7.0 program — DCS and Sixel raster graphics
 
-`1.6.0` is the first protocol-family tranche built on the 1.5 normalization. Its purpose is to make CSI one complete shared grammar, migrate existing CSI operations onto that grammar without changing released bytes, add the internal pixel geometry needed by later raster protocols, and qualify the resulting query/parser substrate against hostile fragmentation and oversized correlated responses.
+The 1.7 release applies the normalized 1.5 control-language architecture and 1.6 CSI foundation to DCS/Sixel graphics.
 
-The completed 1.6 task sequence is:
+The detailed program is:
+
+[`Icod.Terminal-1.7.0-Development-Roadmap.md`](Icod.Terminal-1.7.0-Development-Roadmap.md)
+
+The tranche sequence is complete:
 
 ```text
-C160  complete CSI grammar foundation                  complete
-C161  typed CSI parameter semantics                    complete
-C162  existing CSI consolidation                       complete
-C163  terminal/cell pixel geometry                     complete
-C164  CSI hardening, fragmentation, and recovery       complete
-C165  acceptance/package/documentation closure         complete
+D170  DCS construction contract and reference freeze   complete
+D171  existing DCS reconciliation                      complete
+D172  Sixel grammar and codec contract                 complete
+D173  common raw raster model                          complete
+D174  deterministic palette and quantization           complete
+D175  Sixel encoder                                    complete
+D176  committed streaming graphics output              complete
+D177  Sixel capability evidence/live observation       complete
+D178  first semantic raster-display operation          complete
+D179  hardening/package/documentation closure           complete
 ```
 
-The detailed completed program is:
+### 1.7 architectural result
+
+Version 1.7 separates the graphics stack into explicit layers:
+
+```text
+semantic raster intent
+    -> capability/evidence resolution
+        -> DcsSixel backend
+            -> Sixel quantizer/encoder
+                -> DCS framing
+                    -> committed session output
+```
+
+The implementation provides:
+
+- canonical internal DCS construction;
+- byte-stable DECRQSS and XTGETTCAP migration;
+- canonical Sixel grammar and RGB palette semantics;
+- bounded immutable-owned RGB24/RGBA32/Indexed8 raster data;
+- deterministic bounded palette reduction;
+- deterministic six-row Sixel encoding;
+- bounded lazy payload segments;
+- committed DCS output through the existing session output gate;
+- Primary DA attribute `4` as positive Sixel evidence without terminal-brand heuristics;
+- public backend-neutral `TerminalRasterImage` / `TerminalRasterColor` / `TerminalRasterPixelFormat`;
+- public `TerminalSession.DisplayRasterAsync(...)` semantic display.
+
+The public raster contract is intentionally smaller than the internal Sixel implementation. It does not expose raw DCS/Sixel writing, Sixel palette-register controls, an explicit backend selector, image-file decoding, generalized placement/scaling, animation, or persistent image identifiers.
+
+### Accepted 1.7 checkpoints
+
+| Tranche | Exact head | Staging workflow |
+| --- | --- | --- |
+| D170 | `7d338fe5a1de122738d4573093db90e1500003a1` | `34399549931` |
+| D171 | `277db7da8a586dda44966fa77990b4a9f32e953a` | `34400644772` |
+| D172 | `75d5562e5b1c0813a52d43f445365a228948a5f3` | `34401396507` |
+| D173 | `b2674f6cb356ca49a0b2564721c12f2eae9b9265` | `34402697961` |
+| D174 | `bf0542b77127a5af4d627480cb8d3797710dc93e` | `34405392319` |
+| D175 | `005992b27c95fd5c0142d23922aee40e929237e8` | `34407124131` |
+| D176 | `9e48c1cee4e44a0f272378ff4f60b4cabc9bed8a` | `34408371837` |
+| D177 | `2e241b6d0fcec1d68c6b6aaeaf665750ddf0a053` | `34411677303` |
+| D178 | `f9428927168524be5cc552c82ad00e2fcda70b13` | `34412478452` |
+| D179 qualification | `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` | `34414298714` |
+
+Each accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate, all four package-contract shards, and the validated package artifact. The D179 qualification head contains the complete implementation, hardening, release metadata, package-only raster qualification, and synchronized documentation. Only status-only closure edits follow it.
+
+### 1.7 public API baseline
+
+D178 intentionally advances the current machine public API fingerprint to:
+
+```text
+847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
+```
+
+The current baseline is:
+
+- `docs/Public-API-Baseline-1.7.md`
+- `docs/Public-API-Baseline-1.7.sha256`
+
+Historical stable baselines remain checked in unchanged.
+
+### D179 closure result
+
+D179 added no new public feature. It closed the release with:
+
+- maximum-width high- and low-compressibility Sixel segment-bound tests;
+- fresh package-only raster/XML qualification on all three TFMs;
+- current 1.7 public API fingerprint verification;
+- retained historical stable package contracts;
+- current `Icod.DCurses` package-boundary compatibility witness;
+- synchronized README, changelog, architecture, security, compatibility, release notes, package documentation, both roadmaps, NuGet metadata, and PR ledger.
+
+The complete qualification candidate `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` passed Staging workflow #1291 / `34414298714` across the full matrix. The subsequent status-only closure head must pass the same matrix before PR #45 is marked ready.
+
+Closure authority:
+
+[`docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md`](docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md)
+
+## Completed 1.6.0 program — complete CSI grammar and geometry
+
+Version 1.6 completed the first normalized protocol-family tranche:
+
+```text
+C160  complete CSI grammar foundation
+C161  typed CSI parameter semantics
+C162  existing CSI consolidation
+C163  terminal/cell pixel geometry
+C164  CSI hardening, fragmentation, and recovery
+C165  acceptance/package/documentation closure
+```
+
+The completed program is preserved at:
 
 [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md)
 
-The permanent 1.6 tranche records are:
+Version 1.6 added no public API. It retained the 1.4 public fingerprint while establishing the complete CSI and pixel-geometry substrate used by 1.7.
 
-- [`docs/C160-Complete-CSI-Grammar-Foundation.md`](docs/C160-Complete-CSI-Grammar-Foundation.md)
-- [`docs/C161-Typed-CSI-Parameter-Semantics.md`](docs/C161-Typed-CSI-Parameter-Semantics.md)
-- [`docs/C162-Existing-CSI-Consolidation.md`](docs/C162-Existing-CSI-Consolidation.md)
-- [`docs/C163-Terminal-and-Cell-Pixel-Geometry.md`](docs/C163-Terminal-and-Cell-Pixel-Geometry.md)
-- [`docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`](docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md)
-- [`docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`](docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md)
+## Completed 1.5.0 program — control-language normalization
 
-### 1.6 implementation result
-
-The completed implementation provides:
-
-- one bounded structural CSI grammar preserving private-use bytes, semicolon parameters, colon subparameters, omitted/empty components, intermediates, final selectors, and raw parameter bytes;
-- typed bounded numeric/component semantics without conflating omitted, empty, zero, and explicit values;
-- shared construction/parsing for DA/DSR/CPR, DEC private modes, synchronized output, Kitty keyboard CSI, mouse tracking/encoding, and cursor-style output;
-- TermInfo authority retained for exact focus/paste recipes and reviewed mouse advertisement;
-- internal `CSI 14 t` terminal-window pixel and `CSI 16 t` character-cell pixel observations;
-- exact-only cell-pixel derivation without rounding;
-- every-split-point geometry response qualification through one authoritative session reader;
-- exact parser resource-boundary qualification and CAN/SUB invalidation;
-- malformed and oversized correlated geometry recovery without poisoning the next query;
-- timeout late-response ownership anchored to the logical monotonic timeout deadline rather than scheduler-continuation timing.
-
-The accepted C164 implementation head is:
-
-```text
-3f5e1eccf2f655f25faf665c25262ad7a31df999
-```
-
-Staging workflow `34393525555` passed Windows, Linux, macOS, package candidate, all four package-contract shards, and the validated package artifact.
-
-The documentation/package-complete C165 acceptance head is:
-
-```text
-41f3fc87dba74b2f5f6db366bcbcbeca0356d216
-```
-
-Staging workflow `34394827411` passed the same complete matrix.
-
-### 1.6 compatibility result
-
-Version 1.6 adds no public API. The internal geometry substrate remains deliberately private until later Sixel/Kitty Graphics integration demonstrates the correct stable semantic shape.
-
-Existing stable 1.x CSI-based APIs retain their documented wire meaning. The authoritative public surface therefore remains the frozen 1.4 baseline carried unchanged by 1.5 and 1.6; no duplicate `Public-API-Baseline-1.6` file is required for an identical surface.
-
-A generic raw public CSI writer remains explicitly outside the 1.6 contract.
-
-## Completed 1.5.0 program — semantic protocol normalization and control-language foundation
-
-`1.5.0` normalized the architecture before complete CSI, DCS/Sixel, and APC/Kitty Graphics support.
-
-The completed 1.5 task sequence is:
-
-```text
-N150  terminology and layer-ownership freeze
-N151  generalized control-family framing
-N152  one bounded incremental control-language state machine
-N153  structural CSI/DCS/string frame model
-N154  multi-family query transactions
-N155  capability support/evidence model
-N156  semantic backend registry
-N157  deterministic routing policy
-N158  existing protocol and TermInfo reconciliation
-N159  acceptance/package/documentation closure
-```
-
-The completed 1.5 program is preserved in:
-
-[`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md)
-
-N158 reconciliation is recorded in:
-
-[`docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md`](docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md)
-
-N159 release closure is recorded in:
-
-[`docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md`](docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md)
-
-The longer path through CSI, Sixel, and Kitty Graphics is maintained in:
-
-[`docs/Control-Language-Normalization-and-Graphics-Roadmap.md`](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
-
-### 1.5 normalization result
-
-Version 1.5 separated five layers which had previously been easy to conflate:
+Version 1.5 separated:
 
 ```text
 semantic intent
     -> capability/evidence resolution
-    -> protocol backend selection
-    -> control family framing
-    -> dialect codec / wire transport
+        -> protocol backend selection
+            -> control family framing
+                -> dialect codec / wire transport
 ```
 
-The internal vocabulary distinguishes:
+The N150–N159 program added generalized CSI/DCS/OSC/APC/PM/SOS framing, one bounded scanner, structural frame parsing, multi-family query transactions, capability evidence, semantic backend registration/routing, and existing-protocol reconciliation.
+
+The completed program is preserved at:
+
+[`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md)
+
+The longer graphics architecture is maintained in:
+
+[`docs/Control-Language-Normalization-and-Graphics-Roadmap.md`](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
+
+## Earlier stable releases
+
+### 1.4.0 — Kitty OSC 99 desktop notifications
+
+Added typed send/update/close/support/alive notification APIs with bounded chunking, explicit capability queries, and no generic raw OSC 99 dispatch.
+
+### 1.3.0 — iTerm2 OSC 1337 shell integration
+
+Added typed `SetMark`, `CurrentDir`, `RemoteHost`, `SetUserVar`, shell-integration version, and clear-captured-output operations while keeping portable OSC 7/133 independent.
+
+### 1.2.0 — OSC 777 titled notifications
+
+Added bounded typed titled desktop notifications while preserving OSC 9 independently.
+
+### 1.1.0 — VS Code OSC 633
+
+Added typed VS Code shell integration rather than aliasing it to portable OSC 133.
+
+### 1.0.0 — stable contract
+
+Established the permanent 1.x ownership, lifecycle, one-reader, query, output-serialization, security, compatibility, licensing, and package-validation contract.
+
+## Public API baseline history
 
 ```text
-semantic operation
-protocol backend
-control family
-support state
-evidence source
+1.0  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
+1.1  455736a45b31ee9d29cd655e4b22cb90ea819ce4616d555ca45c7cb13ac5acc1
+1.2  dabfaf0231743136a57d4f5632209e14d9c545638e3b8a08205ae5d14faaae26
+1.3  0d3d05cc3100f39efde730c05b4d1c91dccbf0c8f510f2465f10ca082bf6bb53
+1.4  3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
+1.5  unchanged from 1.4
+1.6  unchanged from 1.4/1.5
+1.7  847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
 
-The normalized control-family vocabulary is:
-
-```text
-CSI  ESC [
-DCS  ESC P
-OSC  ESC ]
-APC  ESC _
-PM   ESC ^
-SOS  ESC X
-ST   ESC \
-```
-
-Sixel is classified as DCS. Kitty Graphics is classified as APC. APC itself remains an application-defined string container rather than being treated as inherently key/value based. CSI is treated as a structured parameter/intermediate/final grammar rather than merely a decimal parameter list.
-
-The completed 1.5 implementation provides:
-
-- generalized family framing across CSI/DCS/OSC/APC/PM/SOS;
-- one bounded incremental control-language scanner;
-- structural CSI/DCS/string frame parsing;
-- bounded multi-family query transactions;
-- capability support/evidence state with static versus live evidence separation;
-- a complete internal semantic backend registry;
-- deterministic routing independent of registry declaration order;
-- exact TermInfo recipe reconciliation without overclaiming partial metadata;
-- OSC 99 live protocol evidence integration;
-- Kitty keyboard live protocol evidence integration;
-- generation-scoped live evidence invalidation through `InvalidateState()`.
-
-### 1.5 compatibility result
-
-Existing stable 1.x explicit methods retain their exact documented wire meaning. Version 1.5 introduced no public automatic-routing API and retained the frozen 1.4 public API fingerprint.
-
-The final 1.5 PR, merged `main` validation, and `v1.5.0` tag-triggered release workflow all completed successfully.
-
-## Planned post-1.6 control-language releases
-
-The normalized development order is:
-
-```text
-1.7.0  DCS foundation / Sixel / common raster model and output transaction
-1.8.0  APC foundation / Kitty Graphics / graphics backend routing
-```
-
-This ordering lets graphics protocols reuse one authoritative input path, one family scanner, one query transaction model, one capability/evidence broker, one semantic backend resolver, and the complete CSI grammar established by 1.6.
-
-## Completed 1.4.0 program — Kitty OSC 99 desktop notifications
-
-`1.4.0` added typed Kitty OSC 99 desktop notifications while preserving OSC 9 and OSC 777 independently.
-
-The stable 1.4 surface includes:
-
-- `SendKittyNotificationAsync(...)`;
-- `CloseKittyNotificationAsync(...)`;
-- `QueryKittyNotificationSupportAsync(...)`;
-- `QueryKittyAliveNotificationsAsync(...)`;
-- typed notification options, support observations, urgency, and occasion;
-- bounded Base64 chunking and optional icon caching;
-- one-authoritative-reader query correlation.
-
-Buttons and unsolicited activation/close events remain deferred until they can be integrated through the authoritative `TerminalEvent` path.
-
-## Completed 1.3.0 program — iTerm2 OSC 1337 shell integration
-
-`1.3.0` added a typed iTerm2 OSC 1337 shell-integration and semantic-history metadata surface as a distinct vendor protocol family.
-
-The stable 1.3 surface covers:
-
-```text
-SetMark
-CurrentDir
-RemoteHost
-SetUserVar
-ShellIntegrationVersion=...;shell=...
-ClearCapturedOutput
-```
-
-Portable OSC 7 remains the preferred current-location API and OSC 133 remains the prompt/command-region API.
-
-## Completed 1.2.0 program — OSC 777 titled desktop notifications
-
-`1.2.0` added `SendTitledNotificationAsync(...)` for bounded urxvt-style OSC 777 notifications while preserving OSC 9 unchanged.
-
-## Completed 1.1.0 program — VS Code OSC 633
-
-`1.1.0` added typed VS Code OSC 633 shell integration as a distinct vendor protocol family rather than aliasing it to OSC 133.
-
-Its stable surface includes A/B/C/D/E command-detection forms and the stable `P` properties `Cwd`, `IsWindows`, `ContinuationPrompt`, and `HasRichCommandDetection`.
+Compatible additions get a new reviewed baseline; older baseline files remain historical compatibility evidence.
 
 ## Permanent 1.x authorities
 
-Consumers and maintainers should treat these documents as the current contract authorities:
+Current contract authorities include:
 
 - `docs/Architecture.md`
 - `docs/Terminal-Session-and-Ownership.md`
@@ -267,84 +230,45 @@ Consumers and maintainers should treat these documents as the current contract a
 - `docs/Presentation-and-Reversible-State.md`
 - `docs/Semantic-Output-Protocols.md`
 - `docs/Control-Language-Normalization-and-Graphics-Roadmap.md`
-- `docs/C160-Complete-CSI-Grammar-Foundation.md`
-- `docs/C161-Typed-CSI-Parameter-Semantics.md`
-- `docs/C162-Existing-CSI-Consolidation.md`
-- `docs/C163-Terminal-and-Cell-Pixel-Geometry.md`
-- `docs/C164-CSI-Hardening-Fragmentation-and-Recovery.md`
-- `docs/C165-1.6.0-Acceptance-Package-and-Documentation-Closure.md`
-- `docs/N150-Control-Language-Terminology-and-Layer-Ownership-Freeze.md`
-- `docs/N151-Generalized-Control-Family-Framing.md`
-- `docs/N152-Incremental-Control-Language-State-Machine.md`
-- `docs/N153-Structural-Control-Frame-Model.md`
-- `docs/N154-Multi-Family-Query-Transactions.md`
-- `docs/N155-Capability-Support-and-Evidence-Model.md`
-- `docs/N156-Semantic-Backend-Registry.md`
-- `docs/N157-Deterministic-Semantic-Backend-Routing-Policy.md`
-- `docs/N158-Existing-Protocol-and-TermInfo-Reconciliation.md`
-- `docs/N159-1.5.0-Acceptance-Package-and-Documentation-Closure.md`
-- `docs/VsCode-Osc633-Shell-Integration.md`
-- `docs/Osc777-Desktop-Notifications.md`
-- `docs/ITerm2-Osc1337-Shell-Integration.md`
-- `docs/Kitty-Osc99-Desktop-Notifications.md`
+- `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md`
+- `docs/D171-Existing-DCS-Reconciliation.md`
+- `docs/D172-Sixel-Grammar-and-Codec-Contract.md`
+- `docs/D173-Common-Raw-Raster-Model.md`
+- `docs/D174-Deterministic-Sixel-Palette-and-Quantization.md`
+- `docs/D175-Sixel-Encoder.md`
+- `docs/D176-Committed-Streaming-Graphics-Output.md`
+- `docs/D177-Sixel-Capability-Evidence-and-Live-Observation.md`
+- `docs/D178-First-Semantic-Raster-Display-Operation.md`
+- `docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md`
 - `docs/Security-and-Privacy.md`
-- `docs/Public-API-Baseline-1.0.md`
-- `docs/Public-API-Baseline-1.1.md`
-- `docs/Public-API-Baseline-1.2.md`
-- `docs/Public-API-Baseline-1.3.md`
-- `docs/Public-API-Baseline-1.4.md`
+- `docs/Public-API-Baseline-1.7.md`
 - `docs/Compatibility-and-Versioning.md`
 - `docs/Migration-to-1.0.md`
-- `docs/releases/1.0.0.md`
-- `docs/releases/1.1.0.md`
-- `docs/releases/1.2.0.md`
-- `docs/releases/1.3.0.md`
-- `docs/releases/1.4.0.md`
-- `docs/releases/1.5.0.md`
-- `docs/releases/1.6.0.md`
+- `docs/releases/1.7.0.md`
 - `CHANGELOG.md`
 
-Historical T-series, 0.x public API baselines, and `Public-API-Baseline-1.0-rc1.*` remain design/release evidence.
+Historical N150–N159, C160–C165, T-series, 0.x baselines, rc1, and prior stable release documents remain design/release evidence.
 
-## API baseline policy
+## Planned next release
 
-The stable 1.x baseline history is:
+The next graphics tranche remains:
 
 ```text
-1.0  8b213bb287e14729b07f0e640c8c1b1a5aa36b26f867f1e97604fb86fded36e5
-1.1  455736a45b31ee9d29cd655e4b22cb90ea819ce4616d555ca45c7cb13ac5acc1
-1.2  dabfaf0231743136a57d4f5632209e14d9c545638e3b8a08205ae5d14faaae26
-1.3  0d3d05cc3100f39efde730c05b4d1c91dccbf0c8f510f2465f10ca082bf6bb53
-1.4  3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
-1.5  unchanged from 1.4
-1.6  unchanged from 1.4/1.5
+1.8.0  APC foundation / Kitty Graphics / multi-backend raster routing
 ```
 
-C160–C164 are internal and retain the frozen 1.4/1.5 public fingerprint. C165 therefore does not create a duplicate 1.6 baseline file for an identical surface.
+The 1.8 design should reuse `TerminalRasterImage` and `DisplayRasterAsync(...)` rather than adding a second incompatible public image model.
 
 ## Release discipline
 
-Pull requests validate Staging on Windows, Linux, and macOS runtime/source paths while one portable package candidate feeds four parallel package-contract shards.
+Pull requests validate Staging on Windows, Linux, and macOS runtime/source paths while one portable package candidate feeds four package-contract shards.
 
-`main` Release validation runs runtime/source checks on:
+`main` Release validation runs runtime/source checks across Windows/Linux/macOS x64/ARM64 plus the portable package contract.
 
-- Windows x64;
-- Windows ARM64;
-- Linux x64;
-- Linux ARM64;
-- macOS x64;
-- macOS ARM64;
+For 1.7:
 
-and separately validates one RID-independent package candidate through the four package shards.
-
-The release line retains:
-
-- full build/test coverage on `net8.0`, `net9.0`, and `net10.0`;
-- retained stable 1.x public baseline evidence;
-- exact NuGet artifact/XML/symbol/Source Link verification;
-- historical package-only contracts from 0.8 through 0.18;
-- the stable 1.x release-line package contract;
-- current semantic package/XML consumers on all three TFMs;
-- current `Icod.DCurses` integration/ownership acceptance.
-
-Tags trigger publication. A `v1.6.0` tag is created only after the exact final 1.6 PR head and resulting `main` commit pass the required gates and publication is explicitly authorized. The tag workflow requires curated `docs/releases/1.6.0.md` notes.
+1. the complete D179 qualification candidate has passed the full Staging matrix;
+2. the status-only final head must pass the same matrix before PR #45 leaves draft status;
+3. merge remains explicit;
+4. the merged `main` head must pass Release distribution validation;
+5. `v1.7.0` tagging/publication remains a separate explicit authorization.

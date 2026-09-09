@@ -90,6 +90,14 @@ public sealed partial class TerminalSession {
 	private async ValueTask<Exception?> ClosePresentationStateAsync() {
 		List<Exception> exceptions = [];
 
+		try {
+			using IDisposable outputDrain = await this.AcquireControlOutputAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			exceptions.Add( exception );
+		}
+
 		Exception? cursorStyleException =
 			await this.CloseCursorStyleStateAsync().ConfigureAwait( false );
 		if ( cursorStyleException is not null ) {
