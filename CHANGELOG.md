@@ -4,7 +4,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 ## Unreleased
 
-No unreleased 1.x changes are currently recorded beyond the `1.8.1` maintenance candidate described below.
+No unreleased 1.x changes are currently recorded.
 
 ## 1.8.1
 
