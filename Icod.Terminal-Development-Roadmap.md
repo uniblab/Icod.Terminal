@@ -5,7 +5,7 @@
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Current release line:** `1.8.0`  
-**Current status:** Complete — A180 through A189 accepted; final status-only PR head pending Staging confirmation  
+**Current status:** Complete — A180 through A189 accepted; exact-head Staging confirmation required before PR readiness  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
