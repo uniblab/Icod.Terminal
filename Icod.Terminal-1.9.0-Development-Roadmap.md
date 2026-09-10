@@ -2,7 +2,7 @@
 
 **Release:** `1.9.0`  
 **Theme:** unsolicited semantic terminal events and interactive Kitty OSC 99 notifications  
-**Status:** E190-E197 accepted; E198 adversarial hardening and downstream/package acceptance authorized to begin  
+**Status:** E190-E198 accepted; E199 public API, documentation, compatibility, and release closure authorized to begin  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.8.1`  
 **Current source/package identity at roadmap creation:** `1.8.1`
@@ -220,8 +220,8 @@ E194  query coexistence, bounded buffering, and routing integration     accepted
 E195  interactive Kitty notification request options and buttons        accepted
 E196  typed activation/button/close semantic event projection           accepted
 E197  lifecycle, cancellation, disposal, and late-report semantics      accepted
-E198  adversarial hardening, downstream/package/sample acceptance       next
-E199  public API, documentation, compatibility, and release closure
+E198  adversarial hardening, downstream/package/sample acceptance       accepted
+E199  public API, documentation, compatibility, and release closure     next
 ```
 
 ## E190 — unsolicited semantic-event contract and reference freeze
@@ -261,6 +261,8 @@ Qualify queued events across suspend/resume, fragmented-report cancellation, dis
 ## E198 — adversarial hardening, downstream/package/sample acceptance
 
 Exercise every split point, concatenation, boundary/overflow, malformed metadata/payload, oversized drain/recovery, identifier collisions, repeated cancellation/timeouts, queue saturation, interleaving stress, and repeated lifecycle cycles. Add fresh NuGet-only net8/net9/net10 acceptance and retain the current DCurses witness.
+
+**Accepted:** adversarial testing exposed and corrected bounded semantic-report recovery and post-recovery query-precedence defects. The final E198 checkpoint `0f9eaa169922fa8679df682239c5d7e2fb6afa8f` passed pull-request workflow `#1444` / `34526210297` across Windows, Linux, macOS, the package/API candidate, all four package shards, and the validated artifact. Linux and Windows each completed 1,788 tests on every supported TFM with 0 warnings and 0 errors. Fresh NuGet-only OSC 99 semantic-event acceptance runs on `net8.0`, `net9.0`, and `net10.0`, while the existing `Icod.DCurses` acceptance and eight-cycle hardening-soak witnesses remain green. See `docs/E198-Semantic-Event-Adversarial-and-Package-Hardening.md`.
 
 ## E199 — public API, documentation, compatibility, and release closure
 
