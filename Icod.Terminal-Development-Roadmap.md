@@ -4,8 +4,8 @@
 **Package:** `Icod.Terminal`  
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Current release line:** `1.7.0`  
-**Current status:** Complete — D170 through D179 accepted; final status-only head validating before PR readiness  
+**Current release line:** `1.8.0`  
+**Current status:** A180 through A188 accepted; A189 release closure qualifying  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -38,11 +38,121 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Completed 1.7.0 program — DCS and Sixel raster graphics
+## Current 1.8.0 program — APC and Kitty Graphics
 
-The 1.7 release applies the normalized 1.5 control-language architecture and 1.6 CSI foundation to DCS/Sixel graphics.
+Version 1.8 applies the normalized 1.5 control-language architecture, 1.6 CSI foundation, and 1.7 backend-neutral raster contract to APC/Kitty Graphics.
 
 The detailed program is:
+
+[`Icod.Terminal-1.8.0-Development-Roadmap.md`](Icod.Terminal-1.8.0-Development-Roadmap.md)
+
+The tranche sequence is functionally complete and in release closure:
+
+```text
+A180  APC construction contract and reference freeze           complete
+A181  Kitty Graphics control-data and response grammar         complete
+A182  backend-neutral raster-to-Kitty raw adaptation           complete
+A183  direct Base64 chunk encoder                              complete
+A184  committed multi-frame APC graphics transaction           complete
+A185  Kitty Graphics live capability probe/correlation         complete
+A186  multi-backend raster routing and fallback                complete
+A187  raster semantic parity, alpha, geometry, cursor          complete
+A188  APC/Kitty hardening and resource closure                 complete
+A189  package/documentation/compatibility/release closure      qualifying
+```
+
+### 1.8 architectural result
+
+The common public raster intent introduced in 1.7 now resolves through two reviewed internal backends:
+
+```text
+TerminalSession.DisplayRasterAsync(...)
+    -> capability/evidence resolution
+        -> verified ApcKittyGraphics
+            -> RGB24/RGBA32 raw adaptation
+            -> bounded Base64 chunks
+            -> committed APC transaction
+        -> verified DcsSixel
+            -> deterministic palette/quantization
+            -> bounded Sixel payload segments
+            -> committed DCS transaction
+```
+
+Version 1.8 adds no public API. `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` retain their 1.7 meaning.
+
+The Kitty implementation provides:
+
+- canonical internal APC framing separated from Kitty dialect syntax;
+- typed bounded Kitty control-data and response parsing;
+- direct raw RGB24/RGBA32 transmission;
+- deterministic Indexed8 expansion preserving referenced palette alpha;
+- lazy Base64 chunks with at most 4,096 encoded payload bytes per APC chunk;
+- one committed multi-frame session-output transaction with no interleaving;
+- protocol-defined Kitty query plus Primary DA synchronization-barrier capability evidence;
+- deterministic preference for verified Kitty Graphics with verified Sixel fallback;
+- no retry/backend switch after committed graphics output fails;
+- backend-native placement/clipping/cursor behavior rather than fabricated cross-backend equivalence;
+- hostile-input ownership and bounded recovery for fragmented, malformed, aborted, oversized, and late correlated APC responses.
+
+Direct transmission (`t=d`) is the 1.8 Kitty transport. File, temporary-file, shared-memory, image-file decoding/transcoding, persistent placement/image ownership, z-order, Unicode placeholders, deletion, animation, and public backend selection remain outside the release contract.
+
+### Accepted 1.8 checkpoints
+
+| Tranche | Exact head | Staging workflow |
+| --- | --- | --- |
+| A180 | `88ac1db0a2904393622082423b8773bd8b19f121` | `34417006958` |
+| A181 | `6b5abbdda8ac3ef57bf4c99054a65946e0f13b3a` | `34417741619` |
+| A182 | `d9a02336aa2fd61b294064f526ade6021d9d35d2` | `34418298756` |
+| A183 | `6f160610bf2df3c666e7d3350e7051475aceca36` | `34418863405` |
+| A184 | `d3a7a9262263f28f7ae2d4511520f1b556e5539e` | `34420648720` |
+| A185 | `c6a79421b8e8eb3c0c333493f5925f44a2931152` | `34422948067` |
+| A186 | `21fb617965f41270e9f3cd43f405fa6ec6e87b2e` | `34426364013` |
+| A187 | `80d78b74fe780421bf2e667ef434d38775c0dd48` | `34427249773` |
+| A188 | `997feb9628d34389199ca3fffdf90e829f33819a` | `34469956370` |
+
+Each accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate/public-API freeze, all four package-contract shards, and the validated package artifact.
+
+A189 qualification head `df54b0506cda3a1bb432207cd45364489ed1df88` passed Staging workflow #1354 / `34474411101` across that same complete matrix after curated 1.8 release-note qualification was corrected.
+
+### 1.8 public API baseline
+
+Version 1.8 adds no public API. The authoritative current machine fingerprint therefore remains the 1.7 raster baseline:
+
+```text
+847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
+```
+
+The current baseline files remain:
+
+- `docs/Public-API-Baseline-1.7.md`
+- `docs/Public-API-Baseline-1.7.sha256`
+
+No redundant 1.8 baseline is created. Historical stable baselines remain checked in unchanged.
+
+### A189 closure result
+
+A189 adds no public feature. It closes 1.8 with:
+
+- complete 1.8 curated release notes satisfying the Stable 1.x release-line package gate;
+- fresh NuGet-only raster/XML qualification on all three TFMs against the unchanged public raster API;
+- package exclusion checks for raw DCS/Sixel and APC/Kitty escape hatches;
+- current public API fingerprint verification;
+- retained historical stable package contracts;
+- current `Icod.DCurses` package-boundary compatibility witness;
+- synchronized README, changelog, architecture, security, compatibility, semantic-output, graphics-roadmap, versioned roadmap, NuGet metadata, and PR ledger;
+- this overall roadmap promoted to the 1.8 release line.
+
+Closure authority:
+
+[`docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`](docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md)
+
+The final status-only closure head must pass the complete Staging matrix before PR #46 is marked ready for review.
+
+## Completed 1.7.0 program — DCS and Sixel raster graphics
+
+The 1.7 release applied the normalized 1.5 control-language architecture and 1.6 CSI foundation to DCS/Sixel graphics and introduced the common public raster model used unchanged by 1.8.
+
+The completed program is preserved at:
 
 [`Icod.Terminal-1.7.0-Development-Roadmap.md`](Icod.Terminal-1.7.0-Development-Roadmap.md)
 
@@ -61,35 +171,6 @@ D178  first semantic raster-display operation          complete
 D179  hardening/package/documentation closure           complete
 ```
 
-### 1.7 architectural result
-
-Version 1.7 separates the graphics stack into explicit layers:
-
-```text
-semantic raster intent
-    -> capability/evidence resolution
-        -> DcsSixel backend
-            -> Sixel quantizer/encoder
-                -> DCS framing
-                    -> committed session output
-```
-
-The implementation provides:
-
-- canonical internal DCS construction;
-- byte-stable DECRQSS and XTGETTCAP migration;
-- canonical Sixel grammar and RGB palette semantics;
-- bounded immutable-owned RGB24/RGBA32/Indexed8 raster data;
-- deterministic bounded palette reduction;
-- deterministic six-row Sixel encoding;
-- bounded lazy payload segments;
-- committed DCS output through the existing session output gate;
-- Primary DA attribute `4` as positive Sixel evidence without terminal-brand heuristics;
-- public backend-neutral `TerminalRasterImage` / `TerminalRasterColor` / `TerminalRasterPixelFormat`;
-- public `TerminalSession.DisplayRasterAsync(...)` semantic display.
-
-The public raster contract is intentionally smaller than the internal Sixel implementation. It does not expose raw DCS/Sixel writing, Sixel palette-register controls, an explicit backend selector, image-file decoding, generalized placement/scaling, animation, or persistent image identifiers.
-
 ### Accepted 1.7 checkpoints
 
 | Tranche | Exact head | Staging workflow |
@@ -105,35 +186,7 @@ The public raster contract is intentionally smaller than the internal Sixel impl
 | D178 | `f9428927168524be5cc552c82ad00e2fcda70b13` | `34412478452` |
 | D179 qualification | `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` | `34414298714` |
 
-Each accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate, all four package-contract shards, and the validated package artifact. The D179 qualification head contains the complete implementation, hardening, release metadata, package-only raster qualification, and synchronized documentation. Only status-only closure edits follow it.
-
-### 1.7 public API baseline
-
-D178 intentionally advances the current machine public API fingerprint to:
-
-```text
-847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
-```
-
-The current baseline is:
-
-- `docs/Public-API-Baseline-1.7.md`
-- `docs/Public-API-Baseline-1.7.sha256`
-
-Historical stable baselines remain checked in unchanged.
-
-### D179 closure result
-
-D179 added no new public feature. It closed the release with:
-
-- maximum-width high- and low-compressibility Sixel segment-bound tests;
-- fresh package-only raster/XML qualification on all three TFMs;
-- current 1.7 public API fingerprint verification;
-- retained historical stable package contracts;
-- current `Icod.DCurses` package-boundary compatibility witness;
-- synchronized README, changelog, architecture, security, compatibility, release notes, package documentation, both roadmaps, NuGet metadata, and PR ledger.
-
-The complete qualification candidate `2c813df67c3b3aa7d22401ffd2f5a26b1d9d728d` passed Staging workflow #1291 / `34414298714` across the full matrix. The subsequent status-only closure head must pass the same matrix before PR #45 is marked ready.
+D179 qualification and final status-only closure both passed the full Staging matrix before PR #45 left draft and was later merged to `main`.
 
 Closure authority:
 
@@ -156,7 +209,7 @@ The completed program is preserved at:
 
 [`Icod.Terminal-1.6.0-Development-Roadmap.md`](Icod.Terminal-1.6.0-Development-Roadmap.md)
 
-Version 1.6 added no public API. It retained the 1.4 public fingerprint while establishing the complete CSI and pixel-geometry substrate used by 1.7.
+Version 1.6 added no public API. It retained the 1.4 public fingerprint while establishing the complete CSI and pixel-geometry substrate used by 1.7 and 1.8.
 
 ## Completed 1.5.0 program — control-language normalization
 
@@ -176,7 +229,7 @@ The completed program is preserved at:
 
 [`Icod.Terminal-1.5.0-Development-Roadmap.md`](Icod.Terminal-1.5.0-Development-Roadmap.md)
 
-The longer graphics architecture is maintained in:
+The completed control-language/graphics architecture is maintained in:
 
 [`docs/Control-Language-Normalization-and-Graphics-Roadmap.md`](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
 
@@ -213,6 +266,7 @@ Established the permanent 1.x ownership, lifecycle, one-reader, query, output-se
 1.5  unchanged from 1.4
 1.6  unchanged from 1.4/1.5
 1.7  847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
+1.8  unchanged from 1.7
 ```
 
 Compatible additions get a new reviewed baseline; older baseline files remain historical compatibility evidence.
@@ -230,6 +284,16 @@ Current contract authorities include:
 - `docs/Presentation-and-Reversible-State.md`
 - `docs/Semantic-Output-Protocols.md`
 - `docs/Control-Language-Normalization-and-Graphics-Roadmap.md`
+- `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md`
+- `docs/A181-Kitty-Graphics-Control-Data-and-Response-Grammar.md`
+- `docs/A182-Backend-Neutral-Raster-to-Kitty-Raw-Adaptation.md`
+- `docs/A183-Direct-Kitty-Base64-Chunk-Encoder.md`
+- `docs/A184-Committed-Multi-Frame-APC-Graphics-Transaction.md`
+- `docs/A185-Kitty-Graphics-Live-Capability-Probe-and-Correlation.md`
+- `docs/A186-Multi-Backend-Raster-Routing-and-Fallback.md`
+- `docs/A187-Raster-Semantic-Parity-Alpha-Geometry-and-Cursor.md`
+- `docs/A188-APC-Kitty-Hardening-Fragmentation-and-Resource-Closure.md`
+- `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`
 - `docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md`
 - `docs/D171-Existing-DCS-Reconciliation.md`
 - `docs/D172-Sixel-Grammar-and-Codec-Contract.md`
@@ -244,6 +308,7 @@ Current contract authorities include:
 - `docs/Public-API-Baseline-1.7.md`
 - `docs/Compatibility-and-Versioning.md`
 - `docs/Migration-to-1.0.md`
+- `docs/releases/1.8.0.md`
 - `docs/releases/1.7.0.md`
 - `CHANGELOG.md`
 
@@ -251,13 +316,9 @@ Historical N150–N159, C160–C165, T-series, 0.x baselines, rc1, and prior sta
 
 ## Planned next release
 
-The next graphics tranche remains:
+The next release line is intentionally not frozen by 1.8 closure. Advanced graphics placement/lifecycle features require separate semantic, ownership, and security review rather than being implied by Kitty transport support.
 
-```text
-1.8.0  APC foundation / Kitty Graphics / multi-backend raster routing
-```
-
-The 1.8 design should reuse `TerminalRasterImage` and `DisplayRasterAsync(...)` rather than adding a second incompatible public image model.
+Potential future work may include typed placement/lifecycle functionality, but it must preserve the backend-neutral raster contract and must not expose generic Kitty/APC dispatch as a shortcut.
 
 ## Release discipline
 
@@ -265,10 +326,11 @@ Pull requests validate Staging on Windows, Linux, and macOS runtime/source paths
 
 `main` Release validation runs runtime/source checks across Windows/Linux/macOS x64/ARM64 plus the portable package contract.
 
-For 1.7:
+For 1.8:
 
-1. the complete D179 qualification candidate has passed the full Staging matrix;
-2. the status-only final head must pass the same matrix before PR #45 leaves draft status;
-3. merge remains explicit;
-4. the merged `main` head must pass Release distribution validation;
-5. `v1.7.0` tagging/publication remains a separate explicit authorization.
+1. A180–A188 are accepted on exact green Staging heads;
+2. A189 qualification head `df54b0506cda3a1bb432207cd45364489ed1df88` passed the complete Staging matrix in workflow #1354 / `34474411101`;
+3. this final roadmap/status closure must pass the same matrix on the actual PR head before PR #46 leaves draft status;
+4. merge remains explicit;
+5. the merged `main` head must pass Release distribution validation;
+6. `v1.8.0` tagging/publication remains a separate explicit authorization.
