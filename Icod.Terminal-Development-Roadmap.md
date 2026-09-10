@@ -5,8 +5,8 @@
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current stable release:** `1.8.1`
-- **Current maintenance line:** `1.8.x`
-- **Next feature line:** `1.9.0` — unsolicited semantic terminal events and interactive notifications
+- **Current release candidate:** `1.9.0` — unsolicited semantic terminal events and interactive notifications
+- **Next planned feature line:** `1.10.0` — semantic capability inspection and planning
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -33,7 +33,7 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and expansion.
-- `Icod.Terminal` owns the live terminal conversation, native terminal modes, input decoding, lifecycle, query routing, capability evidence, semantic terminal output, raster output, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation, native terminal modes, input decoding, unsolicited semantic events, lifecycle, query routing, capability evidence, semantic terminal output, raster output, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -58,7 +58,7 @@ TerminalSession.DisplayRasterAsync(...)
         -> verified Sixel / DCS
 ```
 
-Versions 1.8.0 and 1.8.1 add no public API. The current public API fingerprint remains the 1.7 value:
+Versions 1.8.0 and 1.8.1 add no public API and retain the 1.7 fingerprint:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
@@ -72,9 +72,40 @@ Detailed 1.8 design and qualification evidence is preserved in:
 
 The 1.8.1 maintenance release is documented in [`docs/releases/1.8.1.md`](docs/releases/1.8.1.md).
 
+## 1.9.0 release-candidate result
+
+The 1.9 feature program is complete through E198, with E199 performing final public API, documentation, package, and compatibility closure before maintainer-controlled merge and release validation.
+
+Version 1.9 establishes this authoritative input-routing order:
+
+```text
+active query response
+    -> recognized unsolicited semantic event
+        -> ordinary application input
+```
+
+The public event stream gains `TerminalEventKind.Semantic` and protocol-neutral `TerminalSemanticEvent` / `TerminalNotificationEvent` payloads. The first semantic family is interactive notification reporting with distinct activation, one-based button activation, close, and close-tracking-unavailable observations.
+
+The existing typed Kitty OSC 99 notification options gain explicit opt-in activation/button reporting, close reporting, and bounded button labels. Existing noninteractive notification behavior remains compatible when those options are unused.
+
+The final 1.9 public API fingerprint is:
+
+```text
+e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
+```
+
+Detailed 1.9 authorities:
+
+- [`Icod.Terminal-1.9.0-Development-Roadmap.md`](Icod.Terminal-1.9.0-Development-Roadmap.md)
+- [`docs/releases/1.9.0.md`](docs/releases/1.9.0.md)
+- [`docs/Public-API-Baseline-1.9.md`](docs/Public-API-Baseline-1.9.md)
+- `docs/E190-*` through `docs/E199-*`
+
+Merge, post-merge Release validation, tagging, and publication remain explicit maintainer actions and are not implied by release-candidate status on this branch.
+
 ## Approved post-1.8 release train
 
-The next feature sequence is frozen at the roadmap level:
+The feature sequence remains frozen at the roadmap level:
 
 ```text
 1.9.0   unsolicited semantic event routing
@@ -94,11 +125,11 @@ The themes are ordered by architectural dependency rather than novelty.
 
 ### 1.9.0 — unsolicited semantic events
 
-The current unified event model handles ordinary decoded input, lifecycle events, timeout, and caller cancellation, while typed terminal query responses are consumed internally by the active query path.
+The 1.9 implementation closes the architectural gap between active query responses and ordinary application input without opening a second reader.
 
-Kitty OSC 99 exposes the missing category: unsolicited activation, button, and close reports are application-relevant terminal events but are not query responses and must not open a second raw reader.
+Semantic events use the same bounded application-event ordering domain as ordinary input. Active query ownership has first refusal, malformed/oversized owned reports recover boundedly, and recovery re-enters query precedence before decoding later traffic.
 
-Version 1.9 therefore extends the authoritative input/event architecture first. Kitty OSC 99 is the first implementation and acceptance case, not the permanent definition of the event model.
+Kitty OSC 99 is the first implementation and acceptance family, not the permanent definition of the semantic event model.
 
 Detailed roadmap:
 
@@ -163,6 +194,7 @@ The post-1.8 program preserves the stable layer boundaries:
 - no process-global current terminal;
 - no second live input reader;
 - no raw control-family dispatcher as the normal public extension mechanism;
+- no generic vendor-event/raw-frame stream as the ordinary semantic extension mechanism;
 - no backend selection based solely on terminal brand, `TERM`, host OS, or environment variables;
 - no PTY/ConPTY process hosting in `Icod.Terminal`;
 - no cells/windows/damage/layout/widget ownership that belongs in `Icod.DCurses`;
@@ -177,15 +209,15 @@ A third graphics backend is not a priority merely because another protocol exist
 The approved order is:
 
 ```text
-event ownership
-    -> capability visibility
+event ownership                  completed in 1.9
+    -> capability visibility     next in 1.10
         -> persistent graphics ownership
             -> advanced placement only if justified
 ```
 
-This closes a known architectural gap before exposing more public planning state or adding a new stateful graphics ownership domain.
+Version 1.9 closes the known event-ownership gap before public capability planning or a new stateful graphics ownership domain is introduced.
 
-`Icod.DCurses` does not currently force a different order: its near-term work is retained semantic metadata, layers/z-order, layout, and interaction, while raster placement remains later work. Terminal should therefore strengthen the lower-level event and capability foundation first.
+`Icod.DCurses` does not currently force a different order: its near-term work is retained semantic metadata, layers/z-order, layout, and interaction, while raster placement remains later work. Terminal should therefore expose the reduced capability/planning surface next.
 
 ## Permanent 1.x authorities
 
