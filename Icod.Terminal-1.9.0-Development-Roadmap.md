@@ -2,7 +2,7 @@
 
 **Release:** `1.9.0`  
 **Theme:** unsolicited semantic terminal events and interactive Kitty OSC 99 notifications  
-**Status:** E190-E198 accepted; E199 release-candidate closure assembled and exact-head Staging qualification pending  
+**Status:** E190-E199 accepted; release candidate qualified and final documentation-only verification pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.8.1`  
 **Release-candidate source/package identity:** `1.9.0`
@@ -242,7 +242,7 @@ E195  interactive Kitty notification request options and buttons        accepted
 E196  typed activation/button/close semantic event projection           accepted
 E197  lifecycle, cancellation, disposal, and late-report semantics      accepted
 E198  adversarial hardening, downstream/package/sample acceptance       accepted
-E199  public API, documentation, compatibility, and release closure     qualification pending
+E199  public API, documentation, compatibility, and release closure     accepted
 ```
 
 ## E190 — unsolicited semantic-event contract and reference freeze
@@ -289,7 +289,7 @@ Exercise every split point, concatenation, boundary/overflow, malformed metadata
 
 Freeze the final 1.9 API fingerprint, set source/package identity to `1.9.0`, update README/changelog/release notes, align permanent input/query/notification/security/architecture/versioning authorities, verify the release-line package contract, and run the complete Staging gate on one unchanged final PR head.
 
-**Closure candidate assembled:** the release identity, NuGet release metadata, final public API baseline wording, root README, changelog, long-range roadmap, curated `docs/releases/1.9.0.md`, permanent authorities, and `docs/E199-1.9.0-Public-API-Documentation-Compatibility-and-Release-Closure.md` are being aligned on the feature branch. E199 is not accepted until the complete exact-head Staging matrix succeeds.
+**Accepted:** the first complete E199 candidate `60e7418f765a3a27a82ec638f59ec1284e74cc3a` passed workflow `#1460` / `34529694382`. A final consumer-facing audit then corrected the RichInput and Query samples to handle `TerminalEventKind.Semantic` explicitly and tolerate future outer event kinds, corrected Color sample wording, added safe event-loop guidance to `docs/Input-and-Events.md`, and sharpened `samples/README.md`. The final post-polish release candidate `236dd3ae9bf4c71bdf6b669e9c4edf98c26368fb` passed workflow `#1467` / `34531962039` across Windows, Linux, macOS, the package/API candidate, all four package shards, and the validated artifact. Each runtime platform completed 1,791 tests on `net8.0`, `net9.0`, and `net10.0` with zero failures and zero build warnings/errors. See `docs/E199-1.9.0-Public-API-Documentation-Compatibility-and-Release-Closure.md`.
 
 ## Explicit exclusions
 
@@ -313,8 +313,8 @@ The 1.9 event architecture permits future reviewed unsolicited terminal protocol
 
 ## Development PR rule
 
-PR #50 remains the 1.9 development/release-candidate branch until one unchanged E199 head passes the complete Staging qualification matrix. Merge, tagging, and publication are not performed by the development tranche.
+PR #50 is the qualified 1.9 release-candidate branch. The only post-qualification source-tree changes are documentation that records immutable qualification evidence. Merge, tagging, and publication are not performed by the development tranche.
 
 ## Release rule
 
-A completed E199 Staging gate is necessary but not sufficient to publish `1.9.0`. The maintainer performs the merge. The exact resulting `main` commit must then pass the complete Release distribution validation before the maintainer creates/pushes `v1.9.0` or publishes the release/package.
+The E199 release candidate has passed the complete Staging gate. The maintainer performs the merge. The exact resulting `main` commit must then pass the complete Release distribution validation before the maintainer creates/pushes `v1.9.0` or publishes the release/package.
