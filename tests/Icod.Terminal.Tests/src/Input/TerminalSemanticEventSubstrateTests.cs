@@ -20,6 +20,7 @@
 */
 namespace Icod.Terminal.Tests.Input;
 
+using System.Text;
 using Icod.Terminal;
 using Xunit;
 
@@ -47,7 +48,7 @@ public sealed class TerminalSemanticEventSubstrateTests {
 
 	[Fact]
 	public void InputDecodeResultUsesSameApplicationEventEnvelope() {
-		TerminalInputEvent input = TerminalInputEvent.Text( new Rune( 'x' ) );
+		TerminalInputEvent input = TerminalInputEvent.FromText( new Rune( 'x' ) );
 
 		TerminalInputDecodeResult result = TerminalInputDecodeResult.FromInput( input );
 
