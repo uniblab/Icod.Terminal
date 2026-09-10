@@ -36,6 +36,59 @@ Semantic events are application observations decoded from the same terminal byte
 
 When automatic lifecycle observation is enabled, `ReadEventAsync(...)` and `ReadLifecycleEventAsync(...)` consume the same lifecycle queue. Applications must not run independent competing lifecycle readers and expect each event to be duplicated.
 
+### Consuming the event stream safely
+
+Applications should handle the event kinds they understand explicitly while remaining tolerant of additive event kinds introduced by a later compatible minor release.
+
+A typical event loop is:
+
+```csharp
+TerminalEvent terminalEvent = await session.ReadEventAsync();
+
+switch ( terminalEvent.Kind ) {
+	case TerminalEventKind.Input:
+		TerminalInputEvent input = terminalEvent.Input
+			?? throw new InvalidOperationException(
+				"An Input event did not carry an input payload."
+			);
+		// Handle input.
+		break;
+
+	case TerminalEventKind.Lifecycle:
+		TerminalLifecycleEvent lifecycle = terminalEvent.Lifecycle
+			?? throw new InvalidOperationException(
+				"A Lifecycle event did not carry a lifecycle payload."
+			);
+		// Handle lifecycle.
+		break;
+
+	case TerminalEventKind.Semantic:
+		TerminalSemanticEvent semantic = terminalEvent.Semantic
+			?? throw new InvalidOperationException(
+				"A Semantic event did not carry a semantic payload."
+			);
+		// Handle the semantic families understood by this application.
+		break;
+
+	case TerminalEventKind.Timeout:
+		// The caller-supplied wait expired.
+		break;
+
+	case TerminalEventKind.Cancelled:
+		// The caller cancelled this wait.
+		break;
+
+	default:
+		// A newer compatible library version may add another event kind.
+		// Ignore, log, or surface it according to application policy.
+		break;
+}
+```
+
+For a known event kind, a missing corresponding payload indicates an invalid library/application state and may reasonably be treated as an error. By contrast, an unknown outer `TerminalEventKind` value should not normally crash a long-running event loop merely because the application is running against a newer compatible minor release.
+
+The same forward-compatible principle applies inside semantic families: applications should handle the semantic kinds they understand and choose an explicit fallback policy for future additions rather than assuming the set can never grow within 1.x.
+
 ## 3. Ownership and routing precedence
 
 Framed terminal traffic is assigned deterministically in this order:
