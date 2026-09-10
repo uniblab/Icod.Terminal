@@ -4,9 +4,8 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable release:** `1.8.1`
-- **Current release candidate:** `1.9.0` — unsolicited semantic terminal events and interactive notifications
-- **Next planned feature line:** `1.10.0` — semantic capability inspection and planning
+- **Current stable release:** `1.9.0`
+- **Current development line:** `1.10.0` — semantic capability inspection and planning
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -72,9 +71,7 @@ Detailed 1.8 design and qualification evidence is preserved in:
 
 The 1.8.1 maintenance release is documented in [`docs/releases/1.8.1.md`](docs/releases/1.8.1.md).
 
-## 1.9.0 release-candidate result
-
-The 1.9 feature program is complete through E198, with E199 performing final public API, documentation, package, and compatibility closure before maintainer-controlled merge and release validation.
+## Published 1.9 result
 
 Version 1.9 establishes this authoritative input-routing order:
 
@@ -101,7 +98,15 @@ Detailed 1.9 authorities:
 - [`docs/Public-API-Baseline-1.9.md`](docs/Public-API-Baseline-1.9.md)
 - `docs/E190-*` through `docs/E199-*`
 
-Merge, post-merge Release validation, tagging, and publication remain explicit maintainer actions and are not implied by release-candidate status on this branch.
+## Current 1.10 development
+
+Version 1.10 is the active feature line. Its primary goal is a deliberately reduced public semantic capability-inspection/planning surface built over the internal evidence/routing architecture established in 1.5–1.9.
+
+Before public API work, C100 removes unnecessary dependency-version coupling from active validation. `Icod.Terminal` continues to declare ordinary NuGet dependency requirements in the package project, but tests, samples, package smoke consumers, and verification tools must not independently turn a particular `Icod.TermInfo` release number into a second compatibility contract. Successful restore/build is the dependency compatibility proof.
+
+Detailed roadmap:
+
+[`Icod.Terminal-1.10.0-Development-Roadmap.md`](Icod.Terminal-1.10.0-Development-Roadmap.md)
 
 ## Approved post-1.8 release train
 
@@ -123,23 +128,11 @@ The feature sequence remains frozen at the roadmap level:
 
 The themes are ordered by architectural dependency rather than novelty.
 
-### 1.9.0 — unsolicited semantic events
-
-The 1.9 implementation closes the architectural gap between active query responses and ordinary application input without opening a second reader.
-
-Semantic events use the same bounded application-event ordering domain as ordinary input. Active query ownership has first refusal, malformed/oversized owned reports recover boundedly, and recovery re-enters query precedence before decoding later traffic.
-
-Kitty OSC 99 is the first implementation and acceptance family, not the permanent definition of the semantic event model.
-
-Detailed roadmap:
-
-[`Icod.Terminal-1.9.0-Development-Roadmap.md`](Icod.Terminal-1.9.0-Development-Roadmap.md)
-
 ### 1.10.0 — semantic capability inspection and planning
 
 The internal capability/evidence architecture already distinguishes semantic operation, protocol backend, support state, evidence source, endpoint availability, and routing decision.
 
-Version 1.10 should expose a deliberately reduced semantic projection for higher-level consumers without publishing the internal backend registry, preference table, or evidence ledger.
+Version 1.10 will expose a deliberately reduced semantic projection for higher-level consumers without publishing the internal backend registry, preference table, or evidence ledger.
 
 The intended public distinction is:
 
@@ -196,6 +189,7 @@ The post-1.8 program preserves the stable layer boundaries:
 - no raw control-family dispatcher as the normal public extension mechanism;
 - no generic vendor-event/raw-frame stream as the ordinary semantic extension mechanism;
 - no backend selection based solely on terminal brand, `TERM`, host OS, or environment variables;
+- no test/verifier dependency policy that independently pins a specific `Icod.TermInfo` release when ordinary restore/build already proves compatibility;
 - no PTY/ConPTY process hosting in `Icod.Terminal`;
 - no cells/windows/damage/layout/widget ownership that belongs in `Icod.DCurses`;
 - no image-file decoding/transcoding requirement in the core terminal package merely to support a vendor image protocol;
@@ -210,14 +204,14 @@ The approved order is:
 
 ```text
 event ownership                  completed in 1.9
-    -> capability visibility     next in 1.10
+    -> capability visibility     active in 1.10
         -> persistent graphics ownership
             -> advanced placement only if justified
 ```
 
 Version 1.9 closes the known event-ownership gap before public capability planning or a new stateful graphics ownership domain is introduced.
 
-`Icod.DCurses` does not currently force a different order: its near-term work is retained semantic metadata, layers/z-order, layout, and interaction, while raster placement remains later work. Terminal should therefore expose the reduced capability/planning surface next.
+`Icod.DCurses` does not currently force a different order: its near-term work is retained semantic metadata, layers/z-order, layout, and interaction, while raster placement remains later work. Terminal therefore exposes the reduced capability/planning surface next.
 
 ## Permanent 1.x authorities
 
