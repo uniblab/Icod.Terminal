@@ -9,13 +9,13 @@
 
 ## Status
 
-`1.9.0` is the current release candidate on this development branch. It adds a **protocol-neutral unsolicited semantic-event path** to the existing authoritative terminal reader and completes interactive Kitty OSC 99 desktop notifications with typed activation, button, close, and close-tracking-unavailable reports.
+`1.9.0` is the current stable feature line. Development toward `1.10.0` begins with dependency-decoupling and validation hygiene, followed by a reduced public semantic capability inspection/planning surface.
 
-The stable `1.0.0` compatibility floor remains unchanged. Merge, post-merge Release validation, tagging, and publication are maintainer-controlled release actions and are not implied by this branch status.
+The stable `1.0.0` compatibility floor remains unchanged. The 1.10 development branch deliberately treats successful restore/build as dependency compatibility evidence rather than duplicating exact `Icod.TermInfo` or `Icod.Timing` version requirements in tests and verification tools.
 
 ## Installation
 
-After `1.9.0` is published, install it with:
+Install the stable package with:
 
 ```text
 dotnet add package Icod.Terminal --version 1.9.0
@@ -29,7 +29,7 @@ net9.0
 net10.0
 ```
 
-and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
+`Icod.Terminal` declares its `Icod.TermInfo` and `Icod.Timing` requirements through normal NuGet package metadata. Tests, samples, and auxiliary verification tools do not independently pin those transitive dependencies merely to duplicate the package declaration.
 
 ## Architecture
 
@@ -232,8 +232,9 @@ See [Compatibility and Versioning](docs/Compatibility-and-Versioning.md). Consum
 
 Start with:
 
-- [1.9.0 release notes](docs/releases/1.9.0.md)
+- [1.10.0 development roadmap](Icod.Terminal-1.10.0-Development-Roadmap.md)
 - [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
+- [1.9.0 release notes](docs/releases/1.9.0.md)
 - [1.9.0 development roadmap](Icod.Terminal-1.9.0-Development-Roadmap.md)
 - [Architecture](docs/Architecture.md)
 - [Input and Events](docs/Input-and-Events.md)
