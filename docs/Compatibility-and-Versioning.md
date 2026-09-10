@@ -29,7 +29,8 @@ Compatible minor-release additions receive separate reviewed baselines rather th
 - `1.2` records the additive OSC 777 titled-notification surface;
 - `1.3` records the additive typed iTerm2 OSC 1337 surface;
 - `1.4` records the additive typed Kitty OSC 99 notification/query surface;
-- `1.7` records the additive backend-neutral raster-display surface.
+- `1.7` records the additive backend-neutral raster-display surface;
+- `1.9` records the additive protocol-neutral semantic-event envelope and interactive Kitty notification options.
 
 Versions `1.5.0` and `1.6.0` intentionally added no public API. Their generated snapshots remained identical to 1.4 at:
 
@@ -37,18 +38,24 @@ Versions `1.5.0` and `1.6.0` intentionally added no public API. Their generated 
 3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
 ```
 
-Version `1.7.0` intentionally advanced the current public API fingerprint to:
+Version `1.7.0` intentionally advanced the public API fingerprint to:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
 
-Versions `1.8.0` and `1.8.1` intentionally add no public API and retain that exact fingerprint. There is therefore no redundant `Public-API-Baseline-1.8` file.
+Versions `1.8.0` and `1.8.1` intentionally added no public API and retained that exact fingerprint. There is therefore no redundant `Public-API-Baseline-1.8` file.
 
-The authoritative current baseline remains:
+Version `1.9.0` intentionally advances the current public API fingerprint to:
 
-- `docs/Public-API-Baseline-1.7.md`;
-- `docs/Public-API-Baseline-1.7.sha256`.
+```text
+e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
+```
+
+The authoritative current baseline is:
+
+- `docs/Public-API-Baseline-1.9.md`;
+- `docs/Public-API-Baseline-1.9.sha256`.
 
 Historical baselines remain checked in unchanged as compatibility evidence.
 
@@ -151,7 +158,9 @@ Adding an enum value is compatibility-sensitive even when binary-compatible. It 
 - an intentional public API baseline update;
 - documentation of how callers should handle previously unknown values.
 
-This applies to `TerminalRasterPixelFormat` from version 1.7 onward just as it applies to prior stable enums.
+Version 1.9 applies this rule to `TerminalEventKind`: `Semantic = 4` is appended after the existing `Input = 0`, `Lifecycle = 1`, `Timeout = 2`, and `Cancelled = 3` values. Consumers with exhaustive switches should handle unknown/new values appropriately when adopting a newer minor release.
+
+This rule also applies to `TerminalRasterPixelFormat` from version 1.7 onward and to every other stable public enum.
 
 ## 7. Behavioral compatibility
 
@@ -160,6 +169,10 @@ The permanent documents under `docs/` define behavioral guarantees versioned alo
 Examples include:
 
 - one authoritative live-session input reader;
+- active query response ownership preceding unsolicited semantic-event recognition, which in turn precedes ordinary input decoding;
+- no double delivery of one frame as both query response and semantic event;
+- bounded semantic-event buffering in the same application-event ordering domain as ordinary input;
+- malformed/oversized owned semantic reports recovering without leaking hostile bytes into ordinary text and re-entering query precedence before later traffic is decoded;
 - query correlation and bounded late-response ownership;
 - timeout late-response ownership measured from the logical monotonic deadline rather than scheduler-continuation timing;
 - pre-commit versus post-commit cancellation behavior;
@@ -262,9 +275,11 @@ The one-reader/query ownership model is a stable 1.x behavioral contract.
 
 Version 1.8 extends it with a side-observed Kitty probe response without creating another reader. Once a complete matching `i=<probe-id>` field is observed in a recognizable APC prefix, the response remains transaction-owned through later malformed/aborted/oversized recovery.
 
-This is a hardening of ownership, not a relaxation of trust: correlated data still must satisfy grammar and size rules. A matching identifier cannot turn an invalid frame into valid evidence.
+Version 1.9 extends the same ownership model to unsolicited semantic reports. Active query ownership remains first. A recognized semantic candidate is never used to satisfy an unrelated query and is not leaked into ordinary application text merely because its later metadata, payload, framing, or size is invalid. After bounded semantic recovery, routing restarts at query precedence before later buffered traffic is considered.
 
-An identified but unterminated reply is malformed rather than indistinguishable from silence. An unrelated APC remains unrelated input/control traffic.
+This is a hardening of ownership, not a relaxation of trust: correlated or semantically recognizable data still must satisfy grammar and size rules. A matching identifier cannot turn invalid terminal traffic into trusted data.
+
+An identified but unterminated reply is malformed rather than indistinguishable from silence. Unrelated control traffic remains unrelated input/control traffic.
 
 ## 13. Resource-bound compatibility
 
@@ -280,6 +295,8 @@ maximum indexed palette  256 entries
 ```
 
 Additional protocol bounds include the 4096-byte normal response frame, 4096-byte Kitty Base64 image-data chunk, bounded small control-family frames, fixed Sixel histogram, and bounded resynchronization state.
+
+Interactive Kitty notification buttons are additionally bounded in 1.9 to 16 labels, 512 UTF-8 bytes per label, and 2,048 UTF-8 bytes for the combined protocol button payload including separators.
 
 Changing a ceiling may be compatible when it only increases accepted safe input without changing existing semantics, but decreases that reject previously supported values require explicit compatibility review.
 
@@ -322,11 +339,13 @@ Sixel and Kitty Graphics output are terminal traffic; neither depends on a host-
 Permanent layer boundaries remain part of the support model:
 
 - `Icod.TermInfo` owns immutable capability information;
-- `Icod.Terminal` owns the live terminal conversation, query/evidence model, semantic protocol output, raster output, backend routing, and reversible session mechanics;
+- `Icod.Terminal` owns the live terminal conversation, query/evidence model, unsolicited semantic-event routing, semantic protocol output, raster output, backend routing, and reversible session mechanics;
 - `Icod.DCurses` owns higher-level virtual-screen/curses presentation policy;
 - PTY/process hosting remains orthogonal.
 
 Adding Kitty Graphics in 1.8 does not move virtual-screen or graphics-scene ownership into `Icod.Terminal`. It implements the existing semantic raster output contract through another reviewed terminal protocol.
+
+Adding unsolicited semantic events in 1.9 does not turn `Icod.Terminal` into a generic vendor-event bus. The public envelope remains typed, protocol-neutral, bounded, and delivered through the existing authoritative `ReadEventAsync(...)` path.
 
 ## 17. Direct consumers and Icod.DCurses
 
@@ -346,10 +365,12 @@ Stable 1.x does not use a minor/patch release to quietly introduce:
 - hazardous host-affecting OSC 9 commands;
 - generic raw OSC 633/777/1337/99 dispatch replacing reviewed semantic surfaces;
 - a public arbitrary CSI/DCS/Sixel/APC/Kitty writer merely because internal grammars exist;
+- a generic raw unsolicited-event stream or arbitrary vendor-event dictionary;
 - terminal-brand-triggered activation presented as capability truth;
 - a competing protocol-specific input reader;
 - automatic clipboard reads;
 - hidden shell/environment metadata capture;
+- authentication claims for terminal-supplied notification interaction reports;
 - automatic image-file decoding or network/process side effects in raster display;
 - hidden file/temp-file/shared-memory graphics transport;
 - silent compositing of unsupported fractional-alpha raster data;
@@ -372,7 +393,7 @@ A release is not considered compatible merely because unit tests pass.
 
 The repository maintains layered evidence including:
 
-- retained historical public API fingerprints plus the current 1.7 fingerprint;
+- retained historical public API fingerprints plus the current 1.9 fingerprint;
 - Windows/Linux/macOS runtime/source validation;
 - exact multi-TFM API snapshot agreement;
 - fresh NuGet-only consumers for newly added or compatibility-critical semantic APIs;
@@ -386,6 +407,8 @@ The repository maintains layered evidence including:
 
 Version 1.8.0 completed the A180–A189 APC/Kitty Graphics program and retained the 1.7 public API fingerprint. Version 1.8.1 is a non-feature-bearing maintenance release that retains the same public and behavioral compatibility contract while strengthening release-facing documentation and executable sample coverage.
 
+Version 1.9.0 adds the reviewed semantic-event and interactive Kitty notification surface recorded by the 1.9 baseline. E190–E198 qualify one-reader routing, query precedence, malformed/oversized semantic recovery, bounded backpressure, lifecycle/cancellation behavior, fresh NuGet-only multi-TFM consumption, and downstream DCurses compatibility. E199 freezes the release-facing package/documentation state and final Staging checkpoint.
+
 Exact release qualification evidence belongs to the relevant pull-request workflow, merged `main` workflow, release notes, and GitHub Release rather than being hard-coded into this permanent policy document.
 
 ## 21. Release rule
@@ -396,8 +419,34 @@ For every stable release:
 
 1. one unchanged final pull-request head must pass the complete Staging qualification matrix;
 2. only that qualified exact head may be considered ready for merge;
-3. merge remains an explicit action;
+3. merge remains an explicit maintainer action;
 4. the resulting `main` head must pass Release distribution validation;
-5. `v<semver>` tagging/publication remains a separate explicit action and must use the curated `docs/releases/<version>.md` notes.
+5. `v<semver>` tagging/publication remains a separate explicit maintainer action and must use the curated `docs/releases/<version>.md` notes.
 
 These gates may evolve operationally, but equivalent compatibility evidence must exist before historical checks are removed.
+
+## 22. Version 1.9 semantic-event compatibility
+
+Version 1.9 is an additive minor release, not a reinterpretation of the existing input contract.
+
+The public additions are:
+
+```text
+TerminalEventKind.Semantic = 4
+TerminalEvent.Semantic
+TerminalSemanticEventKind
+TerminalSemanticEvent
+TerminalNotificationEventKind
+TerminalNotificationEvent
+KittyNotificationOptions.ReportActivation
+KittyNotificationOptions.ReportClose
+KittyNotificationOptions.Buttons
+```
+
+The first semantic notification observations are activation, one-based button activation, close, and close-tracking-unavailable. `CloseTrackingUnavailable` preserves uncertainty rather than pretending an unobservable future close has already occurred.
+
+Semantic events share the same authoritative session input path as ordinary input and typed query responses. They do not establish a second reader or callback stream. Applications using exhaustive `TerminalEventKind` switches must account for the new additive value when adopting 1.9.
+
+Interactive notification reporting is explicit opt-in and requires a caller-supplied notification identifier. Existing noninteractive Kitty notification calls preserve their established behavior when the new properties are left at defaults.
+
+Notification report identifiers and button numbers are untrusted correlation data. The typed API validates grammar and bounds but does not authenticate the terminal, desktop notification service, or user interaction.
