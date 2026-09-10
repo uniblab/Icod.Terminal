@@ -19,7 +19,7 @@ Unless a specific API documents a stronger contract:
 - semantic operations do not expose a generic `SendOsc`, `WriteEscape`, or arbitrary vendor-command API;
 - implicit flush occurs only where the protocol or active-query transaction contract requires it.
 
-Multi-frame semantic operations, such as chunked Kitty OSC 99 notifications, validate the logical operation before waiting for the shared session output gate and retain that gate across the frame set so another session-managed write cannot interleave with the protocol transaction.
+Multi-frame semantic operations validate the logical operation before waiting for the shared session output gate and retain that gate across the frame set when interleaving would corrupt the protocol transaction. Examples include chunked Kitty OSC 99 notifications and 1.8 Kitty Graphics direct raster transfers.
 
 The advanced `TerminalSession.Output` property and `WriteTerminalStringAsync(...)` boundary are discussed separately below because direct use does not provide the same semantic validation guarantees.
 
@@ -29,7 +29,7 @@ The advanced `TerminalSession.Output` property and `WriteTerminalStringAsync(...
 
 `WriteCapabilityAsync(...)` and `WriteTerminalStringAsync(...)` exist for capability-driven terminal renderers. They preserve terminfo's one-byte capability representation and padding semantics rather than treating terminal capability strings as ordinary application text.
 
-`WriteTerminalStringAsync(...)` is an advanced already-resolved terminal-string boundary. It is not the recommended path for synthesizing arbitrary OSC/CSI/DCS protocols when a semantic API exists.
+`WriteTerminalStringAsync(...)` is an advanced already-resolved terminal-string boundary. It is not the recommended path for synthesizing arbitrary OSC/CSI/DCS/APC protocols when a semantic API exists.
 
 ## 3. Titles — OSC 0, 1, and 2
 
@@ -114,22 +114,11 @@ ValueTask SendKittyNotificationAsync(
 );
 ```
 
-`KittyNotificationOptions` represents reviewed semantic metadata including:
-
-- optional stable notification identifier for update/replacement semantics;
-- application/type filtering metadata;
-- focus policy;
-- notification occasion;
-- urgency;
-- expiration;
-- sound name;
-- icon name;
-- transmitted PNG/JPEG/GIF icon data;
-- icon-cache identifier.
+`KittyNotificationOptions` represents reviewed semantic metadata including optional stable notification identity, filtering metadata, focus policy, occasion, urgency, expiration, sound, icon name, transmitted PNG/JPEG/GIF icon data, and icon-cache identity.
 
 Title/body and transmitted icon data are encoded with RFC 4648 Base64. Metadata fields are validated against a closed bounded grammar. The library does not expose raw OSC 99 metadata dictionaries.
 
-Kitty payload chunks are limited to 4,096 encoded bytes. A large title, body, or icon is divided into protocol chunks automatically. If a multi-frame notification needs an identifier and the caller did not supply one, `Icod.Terminal` creates a bounded internal identifier for the logical transaction.
+Kitty OSC 99 payload chunks are limited to 4,096 encoded bytes. A large title, body, or icon is divided into protocol chunks automatically. If a multi-frame notification needs an identifier and the caller did not supply one, `Icod.Terminal` creates a bounded internal identifier for the logical transaction.
 
 The complete logical send is validated before acquiring the session output gate. The gate remains held across all emitted chunks. Once emission is committed, individual frames are written without caller cancellation splitting the transaction. No implicit flush occurs for ordinary send/update output.
 
@@ -155,8 +144,6 @@ ValueTask<KittyNotificationSupport> QueryKittyNotificationSupportAsync(
 
 The request uses an internally generated query identifier and the existing active-query transaction manager. The response matcher claims only an OSC 99 response with the exact active query identity and payload type.
 
-`KittyNotificationSupport` exposes typed support information such as focus/report capability, close events, supported payload forms, automatic expiration, supported occasions, urgency levels, and sound names. Unknown future values are not promoted silently into known semantic values.
-
 A timeout is an unanswered query, not proof of unsupported behavior.
 
 ### 11.4 Alive-notification query
@@ -172,13 +159,11 @@ This query is also correlated by an internally generated identifier and uses bou
 
 ### 11.5 Deliberately deferred event forms
 
-Kitty OSC 99 also defines interaction features such as buttons and unsolicited activation/close reports. Version 1.4 does not expose them.
-
-Those reports are asynchronous terminal input, not ordinary request/response transactions. Correct support must extend the authoritative `ReadEventAsync(...)` event path; OSC 99 does not get a competing reader or a side-channel callback loop.
+Kitty OSC 99 buttons and unsolicited activation/close reports remain deferred because they are asynchronous terminal input and must integrate through the authoritative `ReadEventAsync(...)` path. No competing reader or side-channel callback loop is provided.
 
 There is no generic public `WriteOsc99Async(...)`, arbitrary metadata map, or raw command/payload dispatcher. The library also does not automatically choose among OSC 9, OSC 777, or OSC 99 from terminal branding.
 
-For the full 1.4 contract, see `Kitty-Osc99-Desktop-Notifications.md`.
+For the full contract, see `Kitty-Osc99-Desktop-Notifications.md`.
 
 ## 12. Semantic prompt and command regions — OSC 133
 
@@ -277,7 +262,81 @@ rgb:rrrr/gggg/bbbb
 
 with 16-bit RGB channels. Inbound observation accepts the frozen strict supported forms. Named colors, CSS syntax, arbitrary raw color strings, and unsupported grammar variants are outside the parser contract.
 
-## 20. Ephemeral vs owned state
+## 20. Raster graphics — semantic operation with Sixel and Kitty Graphics backends
+
+The public raster surface introduced in 1.7 remains:
+
+```text
+TerminalRasterPixelFormat
+TerminalRasterColor
+TerminalRasterImage
+TerminalSession.DisplayRasterAsync(...)
+```
+
+The public operation describes **display a bounded raw raster**. It does not describe a Sixel frame or Kitty image object.
+
+### 20.1 Backend routing
+
+Version 1.8 has two reviewed internal implementations:
+
+```text
+RasterGraphics
+    -> verified ApcKittyGraphics
+    -> verified DcsSixel
+```
+
+When both are verified, Kitty Graphics is preferred. Verified Sixel remains fallback. Unknown support does not cause blind emission; the session may perform the reviewed bounded probes needed to resolve evidence.
+
+Terminal brand, `TERM`, OS identity, and caller preference are not support proof.
+
+Backend fallback is a **pre-commit** routing decision. Once one backend has committed graphics bytes, a later transport failure is surfaced; the library does not replay the image through the other backend.
+
+### 20.2 Sixel / DCS
+
+The Sixel backend uses canonical seven-bit DCS framing, deterministic bounded palette conversion and six-row encoding, lazy payload segmentation, and one committed DCS transaction through final ST and flush.
+
+Fractional alpha is not silently flattened. If Sixel is selected and the image contains alpha that Sixel cannot preserve, the semantic operation returns controlled unsupported.
+
+### 20.3 Kitty Graphics / APC
+
+The 1.8 Kitty backend uses direct transmission (`t=d`) and canonical seven-bit APC frames:
+
+```text
+ESC _ G <control-data> ; <base64-data> ESC \
+```
+
+RGB24 and RGBA32 are transmitted directly. Indexed8 expands to RGB24 when all referenced palette colors are opaque; otherwise it expands to RGBA32 preserving alpha.
+
+Base64 image data is segmented deterministically with at most 4096 encoded bytes per Kitty chunk. One logical image may span multiple independently terminated APC frames, but all chunks are serialized as one committed session operation through the final flush.
+
+Caller cancellation is honored before commitment. After the first APC frame commits, ordinary caller cancellation does not intentionally strand an incomplete logical transfer.
+
+Version 1.8 does not use Kitty file, temporary-file, or shared-memory transport.
+
+### 20.4 Capability probe
+
+Kitty Graphics support uses the protocol-defined one-pixel query followed immediately by Primary DA as a barrier. The active Primary DA query remains within the common query transaction system while the input coordinator side-observes the matching Kitty APC by image id.
+
+A correlated valid Kitty reply verifies the backend. Primary DA arriving first is reviewed negative protocol-response evidence for that concrete probe. Timeout before either authoritative result remains unknown.
+
+A correlated reply remains untrusted: malformed, aborted, oversized, or unterminated responses fail according to bounded parser/recovery rules rather than becoming application input or fabricated support evidence.
+
+### 20.5 Deliberate common-raster exclusions
+
+The stable raster API does not expose:
+
+- raw/public DCS, Sixel, APC, or Kitty Graphics dispatch;
+- explicit backend selection;
+- Sixel palette registers;
+- persistent Kitty image/placement ids;
+- placement/scaling/source-rectangle/z-order controls;
+- Unicode placeholders;
+- deletion/animation scene ownership;
+- image-file decoding/transcoding.
+
+Those features require separate semantic and compatibility review rather than being smuggled through the existing raster method.
+
+## 21. Ephemeral vs owned state
 
 A semantic output method does not automatically imply lifecycle ownership.
 
@@ -288,21 +347,24 @@ Examples of ephemeral output include:
 - OSC 9, OSC 777, and OSC 99 notification requests;
 - OSC 133 markers/metadata;
 - OSC 633 metadata;
-- OSC 1337 shell metadata.
+- OSC 1337 shell metadata;
+- raster image display.
 
 These are not replayed on resume or synthesized on disposal.
 
 Scoped features such as hyperlinks, cursor style, synchronized output, progress, pointer shape, and colors each have their own documented ownership/restoration semantics.
 
-## 21. Active queries and output-only operations
+Raster graphics have committed **output transaction** ownership while being emitted, but that is not persistent terminal image-state ownership after the transaction completes.
+
+## 22. Active queries and output-only operations
 
 An output-only semantic operation uses session output serialization. A query additionally uses the authoritative terminal query manager, response matcher, finite timeout, bounded late-response ownership, and input coordinator.
 
-OSC 52 reads, OSC 22 observations, color observations, and OSC 99 support/alive queries all use that common transaction model. A vendor query does not create another input reader.
+OSC 52 reads, OSC 22 observations, color observations, OSC 99 support/alive queries, Sixel evidence queries, and the Kitty Graphics support test all reuse that common input/query architecture. A vendor query does not create another input reader.
 
 Query requests are flushed as part of the request/response transaction where required so the request is committed to the terminal before waiting for a reply.
 
-## 22. Advanced raw-output boundary
+## 23. Advanced raw-output boundary
 
 `TerminalSession.Output` exposes the borrowed `ITerminalOutput` service as an advanced escape hatch. Direct calls are outside session output ordering and can bypass semantic payload validation, resource bounds, and protocol support posture.
 
@@ -310,13 +372,15 @@ Likewise, `WriteTerminalStringAsync(...)` is intended for already-resolved termi
 
 Ordinary consumers should prefer semantic APIs and `WriteTextAsync(...)`.
 
-## 23. No generic protocol dispatcher
+## 24. No generic protocol dispatcher
 
 The stable 1.x public surface intentionally does not provide:
 
 - arbitrary OSC selector/payload transmission;
 - arbitrary CSI final/intermediate/parameter construction;
 - arbitrary DCS construction;
+- arbitrary APC construction;
+- generic Sixel or Kitty Graphics dispatch;
 - generic DECSET/DECRST mode numbers;
 - arbitrary vendor-command registration;
 - raw response-frame delivery;

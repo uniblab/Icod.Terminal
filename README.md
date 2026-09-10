@@ -9,37 +9,37 @@
 
 ## Status
 
-`1.8.0` is the current development release line. It builds on the completed 1.7 DCS/Sixel raster release and develops **Kitty Graphics over APC** as the second backend beneath the existing backend-neutral raster API.
+`1.8.0` is the current development release line and is in final A189 package/documentation/compatibility closure. A180–A188 are complete and accepted.
 
-The 1.8 program is designed to preserve the 1.7 public raster surface while adding:
+Version 1.8 builds on the 1.7 DCS/Sixel raster release and adds **Kitty Graphics over APC** as the second backend beneath the unchanged backend-neutral raster API. The implementation includes:
 
 - a canonical bounded APC construction layer;
 - a typed Kitty Graphics control-data and response grammar;
-- direct raw RGB24/RGBA32 transfer with bounded Base64 chunks;
+- direct raw RGB24/RGBA32 transfer with deterministic bounded Base64 chunks;
 - internal Indexed8 adaptation without changing the public raster model;
 - committed multi-frame APC graphics output through the existing session-output boundary;
-- protocol-defined Kitty capability probing through the authoritative multi-family query path;
-- deterministic evidence-driven routing which prefers verified Kitty Graphics and retains verified Sixel as fallback.
+- protocol-defined Kitty capability probing through the authoritative multi-family input/query path;
+- deterministic evidence-driven routing which prefers verified Kitty Graphics and retains verified Sixel as fallback;
+- adversarial APC correlation, fragmentation, oversized-response, late-response, and evidence-generation hardening.
 
-The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the floor for the 1.x line. The public `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` contract introduced by 1.7 remains the compatibility anchor.
+The stable 1.0 architecture, ownership, lifecycle, input/query, restoration, security, and compatibility guarantees remain the floor for the 1.x line. The public `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` contract introduced by 1.7 remains the compatibility anchor. Version 1.8 intentionally adds no public API.
 
 Release and design documents:
 
 - [Icod.Terminal 1.8.0 release notes](docs/releases/1.8.0.md)
 - [1.8.0 development roadmap](Icod.Terminal-1.8.0-Development-Roadmap.md)
 - [A180 APC construction contract](docs/A180-APC-Construction-Contract-and-Reference-Freeze.md)
+- [A181 Kitty Graphics grammar](docs/A181-Kitty-Graphics-Control-Data-and-Response-Grammar.md)
+- [A182 raw raster adaptation](docs/A182-Backend-Neutral-Raster-to-Kitty-Raw-Adaptation.md)
+- [A183 direct Base64 chunk encoder](docs/A183-Direct-Kitty-Base64-Chunk-Encoder.md)
+- [A184 committed multi-frame APC transaction](docs/A184-Committed-Multi-Frame-APC-Graphics-Transaction.md)
+- [A185 live Kitty capability probe](docs/A185-Kitty-Graphics-Live-Capability-Probe-and-Correlation.md)
+- [A186 multi-backend routing](docs/A186-Multi-Backend-Raster-Routing-and-Fallback.md)
+- [A187 raster semantic parity](docs/A187-Raster-Semantic-Parity-Alpha-Geometry-and-Cursor.md)
+- [A188 APC/Kitty hardening](docs/A188-APC-Kitty-Hardening-Fragmentation-and-Resource-Closure.md)
+- [A189 release closure](docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md)
 - [Icod.Terminal 1.7.0 release notes](docs/releases/1.7.0.md)
 - [1.7.0 development roadmap](Icod.Terminal-1.7.0-Development-Roadmap.md)
-- [D170 DCS construction contract](docs/D170-DCS-Construction-Contract-and-Reference-Freeze.md)
-- [D171 existing DCS reconciliation](docs/D171-Existing-DCS-Reconciliation.md)
-- [D172 Sixel grammar and codec](docs/D172-Sixel-Grammar-and-Codec-Contract.md)
-- [D173 common raw raster model](docs/D173-Common-Raw-Raster-Model.md)
-- [D174 deterministic Sixel quantization](docs/D174-Deterministic-Sixel-Palette-and-Quantization.md)
-- [D175 Sixel encoder](docs/D175-Sixel-Encoder.md)
-- [D176 committed streaming graphics output](docs/D176-Committed-Streaming-Graphics-Output.md)
-- [D177 Sixel capability evidence](docs/D177-Sixel-Capability-Evidence-and-Live-Observation.md)
-- [D178 first semantic raster-display operation](docs/D178-First-Semantic-Raster-Display-Operation.md)
-- [D179 1.7.0 hardening/package/documentation closure](docs/D179-1.7.0-Hardening-Package-and-Documentation-Closure.md)
 - [Public API Baseline 1.7](docs/Public-API-Baseline-1.7.md)
 - [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
 - [Migration to 1.0](docs/Migration-to-1.0.md)
@@ -103,9 +103,9 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 
 For a curses-style virtual screen, prefer `Icod.DCurses` rather than rebuilding windows/cells/diff policy directly over `TerminalSession`.
 
-## Raster graphics in 1.7
+## Raster graphics in 1.8
 
-The public raster API is deliberately semantic and backend-neutral.
+The public raster API is deliberately semantic and backend-neutral. Version 1.7 introduced it with Sixel; version 1.8 proves that contract by adding Kitty Graphics beneath the same method without a public-surface change.
 
 ### Raw raster formats
 
@@ -128,9 +128,9 @@ TerminalRasterImage image = TerminalRasterImage.CreateRgb24(
 );
 ```
 
-The constructor/factory path copies caller storage, so asynchronous output cannot observe later mutation of the supplied buffers.
+The factory path copies caller storage, so asynchronous output cannot observe later mutation of the supplied buffers.
 
-The public model exposes dimensions, pixel format, pixel count, and typed per-pixel color inspection. It intentionally does **not** expose mutable backing buffers or Sixel command data.
+The public model exposes dimensions, pixel format, pixel count, and typed per-pixel color inspection. It intentionally does **not** expose mutable backing buffers, Sixel command data, Kitty control data, or backend-specific identifiers.
 
 ### Displaying a raster
 
@@ -141,41 +141,91 @@ if ( !result.Succeeded ) {
 }
 ```
 
-In version 1.7, the semantic raster operation is implemented by Sixel only. The session requires verified Sixel capability evidence before committing graphics output. If such evidence is not already available, it may issue the bounded Primary Device Attributes probe used by D177.
+The semantic operation routes internally using live capability evidence:
 
-Primary DA attribute `4` verifies the Sixel backend. A valid DA response without `4`, or probe silence/timeout, remains uncertainty rather than fabricated proof that Sixel is unsupported.
+```text
+RasterGraphics
+    -> verified Kitty Graphics / APC
+    -> verified Sixel / DCS
+```
 
-The Sixel backend preserves fully transparent and fully opaque raster semantics. Fractional alpha remains valid backend-neutral raster data, but version 1.7 returns controlled `Unsupported` when Sixel cannot preserve it rather than silently compositing against an invented background.
+Verified Kitty Graphics is preferred. Verified Sixel remains fallback. If evidence is unresolved, the session may perform the bounded protocol probes required by the reviewed routing contract. Terminal brand, `TERM`, OS identity, and caller preference are not capability proof.
+
+For Kitty Graphics, the support test sends a correlated one-pixel Kitty query followed immediately by Primary DA as a synchronization barrier. A correlated Kitty APC response verifies the backend. Primary DA arriving first supplies reviewed negative protocol-response evidence for that concrete Kitty probe. Silence/timeout before either authoritative result remains uncertainty.
+
+For Sixel, Primary DA attribute `4` verifies the backend. A valid response without `4`, or probe silence/timeout, remains uncertainty rather than fabricated proof of unsupported Sixel.
+
+### Kitty direct transfer
+
+Version 1.8 uses Kitty direct transmission (`t=d`). RGB24 and RGBA32 are transmitted directly. Indexed8 expands internally:
+
+- to RGB24 when every referenced palette color is opaque;
+- to RGBA32 when referenced palette alpha must be preserved.
+
+Raw bytes are Base64 encoded into deterministic Kitty chunks whose encoded image-data section is at most 4096 bytes. A logical image may require several individually terminated APC frames, but the complete frame sequence is one committed session-output transaction.
+
+The library deliberately does not use Kitty file, temporary-file, or shared-memory transfer in 1.8.
+
+### Alpha behavior
+
+The common raster model preserves straight alpha.
+
+Kitty RGBA32 transfer preserves fractional alpha. Sixel preserves the binary transparent/opaque semantics it can represent; when Sixel is selected and fractional alpha cannot be preserved, `DisplayRasterAsync(...)` returns controlled `Unsupported` rather than silently compositing against an invented background.
 
 ### Raster bounds
 
-The raw raster contract is bounded:
+The raw raster contract remains bounded:
 
 ```text
-maximum dimension       16,384
-maximum pixels          16 Mi
+maximum dimension        16,384
+maximum pixels           16 Mi
 maximum owned pixel data 64 MiB
-maximum indexed palette 256 entries
+maximum indexed palette  256 entries
 ```
 
-Quantization uses bounded work state and deterministic output. Sixel payloads are emitted as bounded segments rather than one complete encoded-image allocation.
+Relevant protocol bounds include:
+
+```text
+normal terminal response frame       4,096 bytes
+Kitty Base64 data per APC chunk       4,096 bytes
+small complete APC frame              8,192 bytes
+small complete DCS frame              4,096 bytes
+```
+
+Sixel quantization uses bounded work state and deterministic output. Both graphics backends emit bounded segments/chunks rather than one complete encoded-image allocation.
 
 ### Committed graphics output
 
-Sixel output participates in the normal session output gate. Caller cancellation is honored before commitment. Once the DCS prefix has committed, ordinary caller cancellation is no longer allowed to truncate the control string; the transaction continues through its final ST and flush unless the transport itself fails.
+Both raster backends participate in the normal session output gate.
 
-Transport failure after commitment is surfaced to the caller. The library does not retry a partially written image or guess whether a terminator reached the terminal.
+Caller cancellation is honored before commitment. Once the first backend frame has committed, ordinary caller cancellation is no longer allowed to intentionally truncate the logical graphics transaction.
 
-Version 1.7 deliberately does not expose:
+For Sixel, the gate is held through the DCS payload, final ST, and flush. For Kitty Graphics, the gate is held across every APC chunk and the final flush.
 
-- a generic raw DCS or Sixel writer;
-- a public Sixel-backend selector;
+Transport failure after commitment is surfaced to the caller. The library does not retry a partially written image, replay an uncertain frame, switch to the other backend, or guess how much terminal-side state was applied.
+
+Session disposal drains a committed graphics transaction before output-state restoration proceeds.
+
+### Correlated Kitty replies are still untrusted
+
+Once a complete matching Kitty `i=<probe-id>` field is observed, that APC is boundedly owned by the active support probe even if it is later aborted, malformed, oversized, or unterminated. This prevents identified response traffic from leaking into ordinary application input after structural failure.
+
+Correlation does not grant trust. Grammar and numeric bounds still apply, oversized replies retain the normal 4096-byte response ceiling and use bounded resynchronization, and an identified but unterminated reply fails as malformed rather than being mislabeled as mere silence.
+
+### Deliberate graphics exclusions
+
+Version 1.8 does not expose:
+
+- a generic raw DCS/Sixel or APC/Kitty writer;
+- a public Sixel/Kitty backend selector;
 - Sixel color-register manipulation;
-- image placement/scaling options that cannot yet be preserved across backends;
-- PNG/JPEG/GIF decoding;
-- animation or persistent image identifiers.
+- Kitty image/placement identifiers;
+- image placement/scaling/source rectangles/z-order;
+- Unicode placeholder placement;
+- deletion or animation APIs;
+- PNG/JPEG/GIF decoding/transcoding.
 
-Version 1.8 develops Kitty Graphics behind this same semantic raster intent rather than replacing the public image model.
+Those features require separate semantic, security, and compatibility review rather than being forced into the stable common raster contract.
 
 ## Core 1.x guarantees
 
@@ -187,6 +237,8 @@ A live `TerminalSession` owns the only authoritative input reader for its transp
 - typed query operations for terminal responses.
 
 Do not run a competing `Console.Read*`, stream read, or retained custom-transport read on the same live terminal conversation.
+
+Kitty Graphics probing does not create a second reader; its correlated APC is side-observed inside the same input coordinator while Primary DA remains the active barrier query.
 
 ### Bounded query routing
 
@@ -201,9 +253,9 @@ Scoped state uses leases where overlapping ownership matters. The 1.x documentat
 1. **exact restoration** — a captured/observed external baseline is replayed exactly;
 2. **terminal-policy reset** — control returns to terminal policy without claiming the exact previous value;
 3. **Icod-owned nested state** — an outer library-owned value can be restored even when the pre-Icod state is not observable;
-4. **ephemeral metadata** — explicit output with no lifecycle replay/restoration state.
+4. **ephemeral metadata/output** — explicit output with no lifecycle replay/restoration state.
 
-`TerminalSession.DisposeAsync()` remains final cleanup/restoration authority for session-owned state. Version 1.7 additionally ensures teardown drains a committed Sixel transaction before output-state restoration proceeds.
+`TerminalSession.DisposeAsync()` remains final cleanup/restoration authority for session-owned state. Raster images are ephemeral terminal output; they are not replayed after resume or represented as persistent reversible image state.
 
 ### Output serialization boundary
 
@@ -235,7 +287,7 @@ SOS  ESC X
 ST   ESC \
 ```
 
-Version 1.7 uses that architecture directly: Sixel is classified as a DCS dialect, while `RasterGraphics` is the semantic operation. Version 1.8 applies the same separation to Kitty Graphics as an APC dialect. The library does not expose generic control-family framing merely because internal normalization exists.
+Sixel is a DCS dialect. Kitty Graphics is an APC dialect. `RasterGraphics` is the semantic operation above both. The library does not expose generic control-family framing merely because internal normalization exists.
 
 Examples:
 
@@ -246,8 +298,8 @@ DesktopNotification
     -> OSC 99
 
 RasterGraphics
-    -> Kitty Graphics / APC (1.8 in development)
-    -> Sixel / DCS
+    -> verified Kitty Graphics / APC
+    -> verified Sixel / DCS
 ```
 
 A terminal/vendor name is not itself a capability. Static TermInfo advertisement and generation-scoped live evidence are distinct. `InvalidateState()` expires live probe/protocol-response conclusions while retaining immutable selected profile/TermInfo evidence.
@@ -297,9 +349,9 @@ Semantic APIs validate and bound terminal protocol data before commitment where 
 
 Terminal traffic and query responses are untrusted external input. Successful byte transmission does not prove terminal-side application unless the protocol provides and the library receives an explicit correlated response.
 
-Raster-specific security properties include bounded dimensions/storage/work state, verified capability gating, deterministic quantization, pre-commit validation, committed-frame integrity, no silent retry of partial output, and no automatic image-file decoding.
+Raster-specific security properties include bounded dimensions/storage/work state, verified capability gating, pre-commit validation, committed logical-transfer integrity, no silent retry/backend switch after partial output, bounded correlated-response ownership, and no automatic image-file decoding.
 
-For 1.8, Kitty Graphics direct transfer is preferred specifically to avoid introducing hidden filesystem, temporary-file, or shared-memory side effects merely for performance. Those transmission modes remain outside the initial release contract.
+Kitty Graphics direct transfer avoids hidden filesystem, temporary-file, or shared-memory side effects merely for performance. Those transmission modes remain outside the 1.8 release contract.
 
 Several existing operations disclose caller-supplied metadata by design, including clipboard contents, filesystem locations, hyperlinks, shell metadata, notification text/metadata, and rich input events. The library does not automatically discover or redact secrets; applications decide what is appropriate to publish.
 
@@ -313,12 +365,12 @@ Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compati
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
 
-Version 1.8 begins from that public surface and is intended to implement Kitty Graphics beneath it without source-breaking changes. Historical baselines remain checked in unchanged. See [Public API Baseline 1.7](docs/Public-API-Baseline-1.7.md) and [Compatibility and Versioning](docs/Compatibility-and-Versioning.md).
+Version 1.8 intentionally retains that exact public surface and fingerprint while adding Kitty Graphics beneath it. No redundant 1.8 API baseline is created. Historical baselines remain checked in unchanged. See [Public API Baseline 1.7](docs/Public-API-Baseline-1.7.md) and [Compatibility and Versioning](docs/Compatibility-and-Versioning.md).
 
 For stable 1.x:
 
 - patch releases fix/harden the documented contract without intentionally breaking it;
-- minor releases may add compatible API/semantic features with an intentional baseline update;
+- minor releases may add compatible API/semantic features with an intentional baseline update when the public surface actually changes;
 - ordinary removals, renames, signature breaks, enum renumbering, or incompatible ownership/security/restoration changes require a new major release.
 
 Vendor runtime EOL alone is not sufficient reason to drop net8.0 or net9.0; a concrete security/toolchain/maintenance blocker is required.
@@ -374,7 +426,7 @@ sh build.sh
 
 PR validation runs Windows/Linux/macOS runtime/source validation, the current machine public-API fingerprint, one portable package candidate, and four parallel package-contract shards retaining historical and stable 1.x contracts.
 
-The semantic package shard compiles and runs fresh NuGet-only consumers on `net8.0`, `net9.0`, and `net10.0`, including the 1.7 raster consumer, and verifies generated XML documentation for the corresponding public APIs.
+The semantic package shard compiles and runs fresh NuGet-only consumers on `net8.0`, `net9.0`, and `net10.0`, including the stable raster consumer, and verifies generated XML documentation for the corresponding public APIs. The raster smoke also proves that protocol-specific DCS/Sixel and APC/Kitty escape-hatch method names remain absent from the shipped public surface.
 
 The Stable 1.x release-line shard retains the current `Icod.DCurses` integration/ownership package-boundary witness. These downstream checks complement rather than replace Terminal's own API, invariant, unit/hardening, and package gates.
 
@@ -384,7 +436,7 @@ After merge, Release distribution validation runs Windows/Linux/macOS x64/ARM64 
 
 `1.8.0` is publishable only after:
 
-1. the exact final 1.8 PR head passes the complete Staging matrix;
+1. the exact final A189 PR head passes the complete Staging matrix;
 2. the PR is explicitly merged;
 3. the resulting `main` head passes Release distribution validation;
 4. tagging/publication is explicitly authorized.

@@ -37,26 +37,28 @@ Versions `1.5.0` and `1.6.0` intentionally added no public API. Their generated 
 3654594768a0e47be7c43820bef96779739e12ce4b710d4eaca43308bef86b27
 ```
 
-Version `1.7.0` intentionally advances the current public API fingerprint to:
+Version `1.7.0` intentionally advanced the current public API fingerprint to:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
 
-The authoritative current baseline is:
+Version `1.8.0` intentionally adds no public API and retains that exact fingerprint. There is therefore no redundant `Public-API-Baseline-1.8` file.
+
+The authoritative current baseline remains:
 
 - `docs/Public-API-Baseline-1.7.md`;
 - `docs/Public-API-Baseline-1.7.sha256`.
 
 Historical baselines remain checked in unchanged as compatibility evidence.
 
-`packaging/VerifyPublicApiBaseline.ps1` points at the current release baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint.
+`packaging/VerifyPublicApiBaseline.ps1` points at the current baseline. It regenerates the reflection snapshot independently for `net8.0`, `net9.0`, and `net10.0`, proves the three surfaces agree, and verifies the current fingerprint.
 
-The fingerprint is a review gate, not a declaration that 1.x can never grow. An intentional compatible addition in a minor release requires an explicit new/current baseline in the same reviewed change. Accidental drift must fail CI.
+The fingerprint is a review gate, not a declaration that 1.x can never grow. An intentional compatible addition in a future minor release requires an explicit new/current baseline in the same reviewed change. Accidental drift must fail CI.
 
-## 3. Intentional 1.7 public additions
+## 3. Intentional 1.7 public raster additions
 
-Version 1.7 adds these public raster types:
+Version 1.7 added these public raster types:
 
 ```text
 TerminalRasterPixelFormat
@@ -73,7 +75,7 @@ ValueTask<TerminalControlMutationResult> DisplayRasterAsync(
 );
 ```
 
-`TerminalRasterPixelFormat` currently defines the closed values:
+`TerminalRasterPixelFormat` defines the closed values:
 
 ```text
 Rgb24    = 0
@@ -85,9 +87,42 @@ These numeric values are part of the 1.x compatibility contract from 1.7 onward.
 
 `TerminalRasterColor` represents straight RGBA8 color. `TerminalRasterImage` represents a bounded immutable-owned snapshot of raw raster data and exposes factories for RGB24, RGBA32, and Indexed8 plus dimensions/format/pixel count and typed color inspection.
 
-The public contract does not expose mutable raster backing memory, a Sixel payload container, raw DCS construction, palette-register controls, placement identifiers, or an explicit Sixel backend selector.
+The public contract does not expose mutable raster backing memory, a Sixel or Kitty payload container, raw DCS/APC construction, palette-register controls, placement identifiers, or an explicit raster backend selector.
 
-## 4. Source and binary compatibility
+## 4. Intentional 1.8 backend expansion with no public API delta
+
+Version 1.8 is a compatibility demonstration of the backend-neutral 1.7 design.
+
+The same public call:
+
+```text
+TerminalSession.DisplayRasterAsync(...)
+```
+
+may now be implemented internally by either reviewed backend:
+
+```text
+verified ApcKittyGraphics
+verified DcsSixel
+```
+
+Verified Kitty Graphics is preferred and verified Sixel remains fallback. The caller does not opt into Kitty through a new public overload or construct Kitty control data.
+
+This is an implementation/semantic expansion below an existing public contract, not a reinterpretation of `TerminalRasterImage` as a protocol-specific object.
+
+Version 1.8 therefore deliberately adds no public:
+
+- APC or Kitty Graphics writer;
+- Sixel/Kitty backend selector;
+- persistent image or placement id;
+- placement/scaling option;
+- source rectangle or z-order model;
+- graphics deletion/animation API;
+- cursor-normalization graphics option.
+
+Those concepts require separate compatibility review if introduced later.
+
+## 5. Source and binary compatibility
 
 Within the stable 1.x line, ordinary releases preserve existing public type/member names and signatures.
 
@@ -105,7 +140,7 @@ The following are compatibility-sensitive and normally require a major release i
 
 Compatible overloads, new types, and new semantic operations may be introduced in a minor release when they do not make existing behavior ambiguous or unsafe.
 
-## 5. Public enums
+## 6. Public enums
 
 Existing public enum numeric values are stable throughout 1.x. An existing value must not be renumbered or reused for another meaning.
 
@@ -118,7 +153,7 @@ Adding an enum value is compatibility-sensitive even when binary-compatible. It 
 
 This applies to `TerminalRasterPixelFormat` from version 1.7 onward just as it applies to prior stable enums.
 
-## 6. Behavioral compatibility
+## 7. Behavioral compatibility
 
 The permanent documents under `docs/` define behavioral guarantees versioned alongside the API.
 
@@ -138,36 +173,35 @@ Examples include:
 - `InvalidateState()` expiring live probe/protocol-response evidence;
 - terminal/vendor identity and caller routing preference not being treated as capability evidence;
 - query timeout not being automatically converted into unsupported truth;
-- committed Sixel output not being truncated by ordinary caller cancellation after the frame commit point;
-- transport failure after partial graphics output being surfaced without automatic replay;
-- teardown draining committed graphics before output-state restoration.
+- committed graphics output not being truncated by ordinary caller cancellation after its commit point;
+- transport failure after partial graphics output being surfaced without automatic replay/backend switching;
+- teardown draining committed graphics before output-state restoration;
+- correlated terminal responses remaining untrusted and bounded even after ownership is established.
 
 A minor/patch release may strengthen correctness while preserving these guarantees, but must not silently weaken or reverse them.
 
-## 7. Raster compatibility contract
+## 8. Raster compatibility contract
 
-The public raster model is backend-neutral. Its meaning is not “a Sixel image”; it is bounded raw image data plus semantic display intent.
+The public raster model is backend-neutral. Its meaning is not “a Sixel image” or “a Kitty image”; it is bounded raw image data plus semantic display intent.
 
-This distinction is a compatibility promise. Future backends such as Kitty Graphics may implement `DisplayRasterAsync(...)` without requiring callers to change their `TerminalRasterImage` construction.
+The raw raster object owns a snapshot of caller pixel/palette storage. RGB24 is opaque. RGBA32 and indexed palette colors preserve straight alpha in the model.
 
-Version 1.7 implements the semantic operation through Sixel only and preserves these rules:
+Version 1.7 implemented the semantic operation through Sixel. Version 1.8 adds Kitty Graphics while preserving the meaning of the existing model:
 
-- the raw raster object owns a snapshot of caller pixel/palette storage;
-- RGB24 is opaque;
-- RGBA32 and indexed palette colors preserve straight alpha in the model;
-- fractional alpha remains valid model data even though Sixel cannot preserve it in 1.7;
-- backend inability to preserve fractional alpha yields a controlled unsupported result rather than hidden compositing;
-- unknown/unverified graphics support does not cause blind Sixel emission;
-- a narrowly scoped Primary DA probe may be used to obtain positive Sixel evidence;
+- fractional alpha remains valid common raster data;
+- Kitty RGBA32 can preserve fractional alpha;
+- Sixel still returns controlled unsupported when it cannot preserve fractional alpha, rather than silently compositing;
+- source width/height remain intrinsic raster pixel dimensions;
+- unknown/unverified graphics support does not cause blind graphics emission;
 - successful byte emission is not represented as proof that the image was visually displayed.
 
 Adding placement/scaling policy or another raster backend later must preserve the meaning of this existing semantic contract.
 
-## 8. Sixel protocol compatibility
+## 9. Sixel protocol compatibility
 
-Sixel is an implementation backend below the public raster operation.
+Sixel remains an implementation backend below the public raster operation.
 
-Version 1.7 freezes the internal canonical output behavior required by the release tests, including:
+Version 1.7 froze the internal canonical behavior required by the release tests, including:
 
 - canonical seven-bit DCS framing;
 - deterministic palette/quantization behavior;
@@ -177,29 +211,66 @@ Version 1.7 freezes the internal canonical output behavior required by the relea
 - session output serialization through final ST and flush;
 - no automatic retry after partial transport failure.
 
-These are behavioral/security commitments even though the internal encoder types are not public API.
+Version 1.8 retains those Sixel behaviors and uses the backend as verified fallback. Adding Kitty Graphics does not change established Sixel bytes or weaken its transaction semantics.
 
-## 9. Capability evidence and uncertainty
+## 10. Kitty Graphics protocol compatibility
+
+Kitty Graphics is an internal APC dialect below the same public raster operation.
+
+Version 1.8 freezes the common-raster subset required by its release tests:
+
+- canonical library output uses seven-bit APC framing;
+- direct transmission (`t=d`) only;
+- RGB24 (`f=24`) and RGBA32 (`f=32`) raw transmission;
+- deterministic Indexed8 expansion to RGB24/RGBA32 according to referenced alpha;
+- encoded Base64 image data bounded to 4096 bytes per protocol chunk;
+- one logical multi-frame transfer serialized through the existing session output gate;
+- caller cancellation before commitment but no ordinary post-commit truncation;
+- no automatic replay or Sixel switch after partial committed failure;
+- protocol-defined correlated support query plus Primary DA barrier;
+- bounded correlated-response ownership and malformed/oversized recovery;
+- no public generic Kitty/APC dispatcher.
+
+File/temp-file/shared-memory transport and advanced placement/image lifecycle remain outside the 1.8 compatibility promise.
+
+## 11. Capability evidence and uncertainty
 
 Protocol support and NuGet package compatibility are separate concerns.
 
 A successful semantic output call proves emission, not terminal recognition or visual application unless a protocol supplies explicit acknowledged evidence.
 
-For Sixel in 1.7:
+For Sixel:
 
 - Primary DA attribute `4` may record `Verified / ProtocolResponse` evidence for `DcsSixel`;
 - a valid Primary DA response without `4` remains unknown rather than automatically unsupported;
-- a timeout remains unknown;
+- timeout remains unknown;
+- caller cancellation is not negative capability evidence.
+
+For Kitty Graphics:
+
+- a valid response correlated by the active probe image id records `Verified / ProtocolResponse`;
+- the reviewed Primary DA barrier arriving first records `Unsupported / ProtocolResponse` for `ApcKittyGraphics`;
+- timeout before either authoritative result remains unknown;
 - caller cancellation is not negative capability evidence;
 - terminal name, `TERM`, host OS, or emulator brand is not capability proof.
 
-Live Sixel evidence is generation-scoped and expires under the existing state-invalidation contract.
+Live graphics evidence is generation-scoped and expires under the existing state-invalidation contract.
 
-## 10. Resource-bound compatibility
+## 12. Correlation and response ownership compatibility
+
+The one-reader/query ownership model is a stable 1.x behavioral contract.
+
+Version 1.8 extends it with a side-observed Kitty probe response without creating another reader. Once a complete matching `i=<probe-id>` field is observed in a recognizable APC prefix, the response remains transaction-owned through later malformed/aborted/oversized recovery.
+
+This is a hardening of ownership, not a relaxation of trust: correlated data still must satisfy grammar and size rules. A matching identifier cannot turn an invalid frame into valid evidence.
+
+An identified but unterminated reply is malformed rather than indistinguishable from silence. An unrelated APC remains unrelated input/control traffic.
+
+## 13. Resource-bound compatibility
 
 Documented resource ceilings are part of the safety contract. Implementations may become more efficient, but minor/patch releases must not silently remove bounds and introduce unbounded work/retention.
 
-Version 1.7 raster ceilings include:
+Raster ceilings include:
 
 ```text
 maximum dimension       16,384
@@ -208,11 +279,11 @@ maximum owned pixel data 64 MiB
 maximum indexed palette  256 entries
 ```
 
-The quantizer also uses a fixed `32 x 32 x 32` histogram and the streaming encoder emits bounded segments.
+Additional protocol bounds include the 4096-byte normal response frame, 4096-byte Kitty Base64 image-data chunk, bounded small control-family frames, fixed Sixel histogram, and bounded resynchronization state.
 
 Changing a ceiling may be compatible when it only increases accepted safe input without changing existing semantics, but decreases that reject previously supported values require explicit compatibility review.
 
-## 11. Target frameworks
+## 14. Target frameworks
 
 The stable 1.x contract targets:
 
@@ -228,7 +299,7 @@ Vendor end-of-support alone is not sufficient reason to remove net8.0 or net9.0.
 
 Dropping a target framework is compatibility-sensitive and must be documented explicitly.
 
-## 12. Operating-system support
+## 15. Operating-system support
 
 The built-in `SystemTerminalControlProvider` provides native terminal-control behavior for:
 
@@ -244,20 +315,20 @@ Custom platform/transport implementations remain possible through:
 - `ITerminalInput`;
 - `ITerminalOutput`.
 
-Sixel output itself is terminal traffic; it does not depend on a host-native graphics API.
+Sixel and Kitty Graphics output are terminal traffic; neither depends on a host-native graphics API.
 
-## 13. Architecture compatibility
+## 16. Architecture compatibility
 
 Permanent layer boundaries remain part of the support model:
 
 - `Icod.TermInfo` owns immutable capability information;
-- `Icod.Terminal` owns the live terminal conversation, query/evidence model, semantic protocol output, raster output, and reversible session mechanics;
+- `Icod.Terminal` owns the live terminal conversation, query/evidence model, semantic protocol output, raster output, backend routing, and reversible session mechanics;
 - `Icod.DCurses` owns higher-level virtual-screen/curses presentation policy;
 - PTY/process hosting remains orthogonal.
 
-Version 1.7 does not move virtual-screen ownership into `Icod.Terminal`; it provides semantic raster output that higher-level consumers may use.
+Adding Kitty Graphics in 1.8 does not move virtual-screen or graphics-scene ownership into `Icod.Terminal`. It implements the existing semantic raster output contract through another reviewed terminal protocol.
 
-## 14. Direct consumers and Icod.DCurses
+## 17. Direct consumers and Icod.DCurses
 
 Direct consumers should use `TerminalSession` when they need live terminal/session mechanics without a curses virtual-screen model.
 
@@ -265,7 +336,7 @@ Applications needing windows/cells/diff/refresh should normally use `Icod.DCurse
 
 Do not create independent state-owning sessions over the same physical terminal merely to divide responsibilities.
 
-## 15. Security compatibility
+## 18. Security compatibility
 
 Security boundaries are compatibility commitments, not optional implementation details.
 
@@ -274,18 +345,20 @@ Stable 1.x does not use a minor/patch release to quietly introduce:
 - generic raw OSC/CSI/DCS/APC/vendor dispatch as the ordinary API;
 - hazardous host-affecting OSC 9 commands;
 - generic raw OSC 633/777/1337/99 dispatch replacing reviewed semantic surfaces;
-- a public arbitrary CSI/DCS/Sixel writer merely because internal grammars exist;
+- a public arbitrary CSI/DCS/Sixel/APC/Kitty writer merely because internal grammars exist;
 - terminal-brand-triggered activation presented as capability truth;
 - a competing protocol-specific input reader;
 - automatic clipboard reads;
 - hidden shell/environment metadata capture;
 - automatic image-file decoding or network/process side effects in raster display;
+- hidden file/temp-file/shared-memory graphics transport;
 - silent compositing of unsupported fractional-alpha raster data;
-- cancellation-driven truncation of already-committed control strings.
+- cancellation-driven truncation of already-committed graphics transfers;
+- automatic retry/backend switch after partial committed graphics output.
 
 New security-sensitive semantic features require explicit typed API, bounded validation, documentation, and tests.
 
-## 16. Deprecation policy
+## 19. Deprecation policy
 
 When an existing 1.x API can be replaced compatibly, deprecation is preferred before removal.
 
@@ -293,7 +366,7 @@ Ordinary removal should identify a replacement, document migration, mark the old
 
 Exceptional removal without a normal deprecation period is reserved for cases such as active security vulnerability or an impossible-to-support contract and still requires explicit release documentation.
 
-## 17. Compatibility evidence
+## 20. Compatibility evidence
 
 A release is not considered compatible merely because unit tests pass.
 
@@ -302,7 +375,7 @@ The repository maintains layered evidence including:
 - retained historical public API fingerprints plus the current 1.7 fingerprint;
 - Windows/Linux/macOS runtime/source validation;
 - exact multi-TFM API snapshot agreement;
-- fresh NuGet-only consumers for newly added semantic APIs;
+- fresh NuGet-only consumers for newly added or compatibility-critical semantic APIs;
 - generated XML documentation verification;
 - retained historical package consumers/contracts;
 - current `Icod.DCurses` package-boundary integration/ownership tests;
@@ -311,18 +384,20 @@ The repository maintains layered evidence including:
 - resource-bound tests;
 - release/distribution validation on configured architectures.
 
-For version 1.7, D178 passed the complete Staging matrix on exact head `f9428927168524be5cc552c82ad00e2fcda70b13`, workflow `34412478452`, including the new public API fingerprint. D179 adds package-only raster/XML qualification and requires a final documentation-complete exact head to pass the same full Staging matrix before the PR leaves draft status.
+For version 1.8, A180–A188 each passed exact-head Staging qualification. A188 passed on `997feb9628d34389199ca3fffdf90e829f33819a`, workflow `34469956370`, including all three runtime OS jobs, package candidate/public-API freeze, all four package shards, and the validated package artifact.
 
-## 18. Release rule
+A189 adds package-only multi-backend raster/XML qualification, synchronized permanent documentation, and requires one final documentation-complete exact head to pass the same complete Staging matrix before the release program is considered complete.
+
+## 21. Release rule
 
 A green feature checkpoint is not publication authorization.
 
-For `1.7.0`:
+For `1.8.0`:
 
-1. the exact final D179 PR head must pass the full Staging matrix;
-2. the PR may then leave draft status;
+1. the exact final A189 PR head must pass the full Staging matrix;
+2. release-program completion may then be recorded and PR readiness considered;
 3. merge requires explicit authorization/action;
 4. the resulting `main` head must pass Release distribution validation;
-5. `v1.7.0` tagging/publication requires separate explicit authorization.
+5. `v1.8.0` tagging/publication requires separate explicit authorization.
 
 These gates may evolve operationally, but equivalent compatibility evidence must exist before historical checks are removed.
