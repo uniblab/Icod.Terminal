@@ -84,7 +84,6 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 			transport,
 			lifecycle
 		);
-		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
 
 		await session.SendKittyNotificationAsync(
 			"Build",
@@ -100,12 +99,15 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 		Assert.True( 0 < notificationWriteCount );
 
 		for ( int cycle = 0; cycle < 4; ++cycle ) {
+			using CancellationTokenSource cycleTimeout = new(
+				TimeSpan.FromSeconds( 5 )
+			);
 			lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
 			TerminalLifecycleEvent suspending = await session.ReadLifecycleEventAsync(
-				timeout.Token
+				cycleTimeout.Token
 			);
 			TerminalLifecycleEvent resumed = await session.ReadLifecycleEventAsync(
-				timeout.Token
+				cycleTimeout.Token
 			);
 
 			Assert.Equal( TerminalLifecycleEventKind.Suspending, suspending.Kind );
@@ -186,7 +188,6 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 				lock ( this.sync ) {
 					return this.writes.Count;
 				}
-			}
 		}
 
 		internal void Publish(
