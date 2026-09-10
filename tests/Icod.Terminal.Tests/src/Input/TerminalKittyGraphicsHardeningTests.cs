@@ -33,6 +33,7 @@ using Xunit;
 /// </summary>
 public sealed class TerminalKittyGraphicsHardeningTests {
 	private const uint ProbeImageId = 31;
+	private static readonly TimeSpan HarnessTimeout = TimeSpan.FromSeconds( 5 );
 	private static readonly byte[] PrimaryDeviceAttributesResponse =
 		Encoding.ASCII.GetBytes( "\u001b[?64;1c" );
 
@@ -90,7 +91,11 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 			transport.Publish( response[split..] );
 			transport.Publish( PrimaryDeviceAttributesResponse );
 
-			Assert.True( await probe );
+			bool supported = await probe.WaitAsync( HarnessTimeout );
+			Assert.True(
+				supported,
+				$"The seven-bit response did not verify support at split {split}."
+			);
 		}
 	}
 
@@ -120,7 +125,11 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 			transport.Publish( response[split..] );
 			transport.Publish( PrimaryDeviceAttributesResponse );
 
-			Assert.True( await probe );
+			bool supported = await probe.WaitAsync( HarnessTimeout );
+			Assert.True(
+				supported,
+				$"The eight-bit response did not verify support at split {split}."
+			);
 		}
 	}
 
@@ -150,7 +159,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		transport.Publish( aborted );
 		transport.Publish( PrimaryDeviceAttributesResponse );
 
-		await Assert.ThrowsAsync<FormatException>( () => probe );
+		await AssertProbeFormatFailureAsync( probe );
 		AssertUnknownKittyEvidence( session );
 	}
 
@@ -171,7 +180,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		);
 		transport.Publish( PrimaryDeviceAttributesResponse );
 
-		await Assert.ThrowsAsync<FormatException>( () => probe );
+		await AssertProbeFormatFailureAsync( probe );
 		AssertUnknownKittyEvidence( session );
 	}
 
@@ -208,7 +217,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		);
 		transport.Publish( PrimaryDeviceAttributesResponse );
 
-		await Assert.ThrowsAsync<FormatException>( () => probe );
+		await AssertProbeFormatFailureAsync( probe );
 		AssertUnknownKittyEvidence( session );
 	}
 
@@ -231,7 +240,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		await transport.WaitForReadCountAsync( 2 );
 		clock.Advance( TimeSpan.FromSeconds( 1 ) );
 
-		await Assert.ThrowsAsync<FormatException>( () => probe );
+		await AssertProbeFormatFailureAsync( probe );
 		AssertUnknownKittyEvidence( session );
 	}
 
@@ -254,7 +263,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=31;OK\u001b\\" ) );
 		transport.Publish( PrimaryDeviceAttributesResponse );
 
-		Assert.True( await probe );
+		Assert.True( await probe.WaitAsync( HarnessTimeout ) );
 	}
 
 	[Fact]
@@ -269,7 +278,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		).AsTask();
 		await transport.WaitForWriteCountAsync( 1 );
 		transport.Publish( PrimaryDeviceAttributesResponse );
-		Assert.False( await probe );
+		Assert.False( await probe.WaitAsync( HarnessTimeout ) );
 
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=31;OK\u001b\\" ) );
 		Task<TerminalPrimaryDeviceAttributes> next = session.QueryPrimaryDeviceAttributesAsync(
@@ -278,7 +287,9 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		await transport.WaitForWriteCountAsync( 2 );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?64;4c" ) );
 
-		TerminalPrimaryDeviceAttributes attributes = await next;
+		TerminalPrimaryDeviceAttributes attributes = await next.WaitAsync(
+			HarnessTimeout
+		);
 		Assert.True( attributes.HasAttribute( 4 ) );
 		TerminalCapabilityResolution kitty = ResolveKittyEvidence( session );
 		Assert.Equal( TerminalCapabilitySupportState.Unsupported, kitty.State );
@@ -312,6 +323,17 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 				ResolveKittyEvidence( session ).State
 			);
 		}
+	}
+
+	private static async Task AssertProbeFormatFailureAsync(
+		Task<bool> probe
+	) {
+		ArgumentNullException.ThrowIfNull( probe );
+		await Assert.ThrowsAsync<FormatException>(
+			async () => {
+				_ = await probe.WaitAsync( HarnessTimeout );
+			}
+		);
 	}
 
 	private static void PublishInChunks(
@@ -451,7 +473,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 				throw new ArgumentOutOfRangeException( nameof( expected ) );
 			}
 			using CancellationTokenSource timeout = new();
-			timeout.CancelAfter( TimeSpan.FromSeconds( 5 ) );
+			timeout.CancelAfter( HarnessTimeout );
 			while ( true ) {
 				lock ( this.sync ) {
 					if ( expected <= this.writes.Count ) {
@@ -471,7 +493,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 				throw new ArgumentOutOfRangeException( nameof( expected ) );
 			}
 			using CancellationTokenSource timeout = new();
-			timeout.CancelAfter( TimeSpan.FromSeconds( 5 ) );
+			timeout.CancelAfter( HarnessTimeout );
 			while ( Volatile.Read( ref this.readCount ) < expected ) {
 				await this.readSignal.WaitAsync(
 					timeout.Token
