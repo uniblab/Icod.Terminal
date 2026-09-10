@@ -48,7 +48,6 @@ public sealed class TerminalCsiOversizedRecoveryTests {
 			transport,
 			oversizedFrame
 		);
-		transport.Publish( [ (byte)'t' ] );
 
 		await Assert.ThrowsAsync<FormatException>( () => oversized );
 
@@ -56,6 +55,8 @@ public sealed class TerminalCsiOversizedRecoveryTests {
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 2 );
+
+		transport.Publish( [ (byte)'t' ] );
 		transport.Publish(
 			Encoding.ASCII.GetBytes( "\u001b[6;20;10t" )
 		);
