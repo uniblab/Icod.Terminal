@@ -2,13 +2,13 @@
 
 **Release:** `1.8.0`  
 **Theme:** APC foundation, Kitty Graphics, and verified multi-backend raster routing  
-**Status:** A180 complete; A181 starting  
+**Status:** A180–A188 complete; A189 release closure in progress  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.7.0`
 
 ## Why this release exists
 
-`1.5.0` normalized control-family framing, query transactions, capability evidence, and semantic backend routing. `1.6.0` completed CSI and added internal pixel geometry. `1.7.0` then completed DCS/Sixel and introduced the first public backend-neutral raster contract:
+`1.5.0` normalized control-family framing, query transactions, capability evidence, and semantic backend routing. `1.6.0` completed CSI and added internal pixel geometry. `1.7.0` completed DCS/Sixel and introduced the first public backend-neutral raster contract:
 
 ```text
 TerminalRasterPixelFormat
@@ -17,7 +17,7 @@ TerminalRasterImage
 TerminalSession.DisplayRasterAsync(...)
 ```
 
-Version `1.8.0` adds the second raster backend without changing that caller-facing image model. Kitty Graphics is an APC dialect and must therefore fit the same layering discipline established for Sixel:
+Version `1.8.0` adds the second raster backend without changing that caller-facing image model. Kitty Graphics is an APC dialect and therefore follows the same layering discipline established for Sixel:
 
 ```text
 semantic raster intent
@@ -27,11 +27,11 @@ semantic raster intent
             -> Sixel dialect / DCS
 ```
 
-The primary design requirement is that callers continue to ask to display a raster, not to speak Kitty protocol.
+The primary design requirement remains that callers ask to display a raster, not to speak Kitty protocol.
 
 ## Protocol reference
 
-The reference protocol is the current Kitty terminal graphics protocol:
+The reference protocol is the Kitty terminal graphics protocol:
 
 `https://sw.kovidgoyal.net/kitty/graphics-protocol/`
 
@@ -41,9 +41,9 @@ The reviewed direct-transfer framing is:
 ESC _ G <control-data> ; <base64-payload> ESC \
 ```
 
-where control data is a comma-separated Kitty-defined `key=value` grammar. Raw RGB24 (`f=24`) and RGBA32 (`f=32`) data are first-class transmission formats. Direct transport (`t=d`) is the initial 1.8 medium. Large direct transfers are split into Base64 payload chunks no larger than 4,096 bytes and use `m=1` for continuation and `m=0` for the final chunk.
+Direct transport (`t=d`) is the 1.8 medium. Raw RGB24 (`f=24`) and RGBA32 (`f=32`) are first-class transmission formats. Large direct transfers use Base64 payload chunks no larger than 4096 bytes and protocol continuation metadata.
 
-The protocol's recommended support test combines a Kitty Graphics query action (`a=q`) with a following Primary DA request as a synchronization barrier. An APC query reply proves protocol handling; a Primary DA reply arriving first without the Kitty response is reviewed negative evidence for this specific backend.
+The reviewed support test combines a correlated Kitty Graphics query (`a=q`) with a following Primary DA request as a synchronization barrier. A correlated APC response proves protocol handling; Primary DA arriving first is reviewed negative evidence for this concrete Kitty backend. Silence alone remains uncertainty.
 
 ## Release invariants
 
@@ -51,36 +51,37 @@ The protocol's recommended support test combines a Kitty Graphics query action (
 2. APC framing remains a generic control-family concern; Kitty `G...` syntax belongs to the Kitty Graphics dialect layer.
 3. Canonical library-generated APC uses seven-bit `ESC _ ... ESC \\` framing.
 4. No generic raw public APC or Kitty Graphics writer is introduced.
-5. The public 1.7 raster model remains the semantic caller contract unless a demonstrated backend-neutral need requires an additive 1.8 extension.
+5. The public 1.7 raster model remains the semantic caller contract; 1.8 adds no public raster API.
 6. Existing Sixel output remains byte-stable and available as the fallback raster backend when verified.
-7. Kitty Graphics direct transfer is implemented before file, temporary-file, or shared-memory media.
-8. Filesystem, temporary-file, and shared-memory transmission remain excluded from 1.8 unless separately security-reviewed; no hidden filesystem or IPC side effects are introduced merely for performance.
-9. Initial Kitty raster transmission uses raw RGB24/RGBA32 data; PNG/JPEG/GIF decoding remains outside `Icod.Terminal`.
-10. Indexed8 input is adapted internally to a Kitty-supported raw format without changing the public raster contract.
-11. RGBA fractional alpha is preserved by Kitty Graphics rather than rejected or flattened.
-12. Direct-transfer payload chunking is deterministic and bounded; Base64 chunks do not exceed 4,096 bytes.
-13. One logical Kitty image transfer cannot interleave with unrelated session output or another graphics transfer.
-14. Caller cancellation is honored before the first committed APC frame. After transfer commitment, cancellation policy must preserve protocol integrity and must not strand an incomplete multi-chunk image silently.
-15. Kitty query/acknowledgement responses are terminal-controlled untrusted input and remain bounded.
-16. Capability probing uses the existing multi-family query/router architecture and never creates a second reader.
+7. Kitty Graphics uses direct raw transfer in 1.8; file, temporary-file, and shared-memory media remain excluded.
+8. No hidden filesystem or IPC side effects are introduced merely for graphics performance.
+9. RGB24/RGBA32 are transmitted directly; Indexed8 is adapted internally without changing the public raster contract.
+10. RGBA fractional alpha is preserved by Kitty Graphics rather than rejected or flattened.
+11. Direct-transfer Base64 payload chunks are deterministic and bounded to 4096 bytes.
+12. One logical Kitty image transfer cannot interleave with unrelated session output or another graphics transfer.
+13. Caller cancellation is honored before the first committed APC frame; post-commit cancellation does not intentionally strand an incomplete transfer.
+14. Transport failure after commitment is surfaced without automatic replay or backend switching.
+15. Kitty query responses are terminal-controlled untrusted input and remain bounded.
+16. Capability probing uses the existing one-reader multi-family query/router architecture.
 17. Terminal brand, `TERM`, operating system, environment variables, and caller preference are not capability proof.
-18. Timeout alone is not unsupported truth. A reviewed CSI barrier can provide negative Kitty evidence only because the protocol explicitly defines that ordering contract.
-19. Backend routing is deterministic and evidence-driven. Verified Kitty Graphics is preferred for the common raster operation; verified Sixel remains a valid fallback.
-20. Existing stable 1.0–1.7 public API, wire, ownership, cancellation, restoration, security, and package contracts remain compatible.
+18. Timeout alone is not unsupported truth; the reviewed Primary DA barrier supplies negative Kitty evidence only because the protocol defines the ordering contract.
+19. Backend routing is deterministic and evidence-driven: verified Kitty Graphics is preferred; verified Sixel remains fallback.
+20. Correlation establishes bounded ownership of a Kitty reply but never bypasses grammar or resource validation.
+21. Existing stable 1.0–1.7 public API, wire, ownership, cancellation, restoration, security, and package contracts remain compatible.
 
 ## Tranche plan
 
 ```text
 A180  APC construction contract and reference freeze           complete
-A181  Kitty Graphics control-data and response grammar         starting
-A182  backend-neutral raster-to-Kitty raw adaptation           planned
-A183  direct Base64 chunk encoder                              planned
-A184  committed multi-frame APC graphics transaction           planned
-A185  Kitty Graphics live capability probe and correlation     planned
-A186  multi-backend raster routing and fallback                planned
-A187  raster semantic parity, alpha, geometry, and cursor      planned
-A188  APC/Kitty hardening, fragmentation, and resource closure planned
-A189  package, documentation, compatibility, and release closure planned
+A181  Kitty Graphics control-data and response grammar         complete
+A182  backend-neutral raster-to-Kitty raw adaptation           complete
+A183  direct Base64 chunk encoder                              complete
+A184  committed multi-frame APC graphics transaction           complete
+A185  Kitty Graphics live capability probe and correlation     complete
+A186  multi-backend raster routing and fallback                complete
+A187  raster semantic parity, alpha, geometry, and cursor      complete
+A188  APC/Kitty hardening, fragmentation, and resource closure complete
+A189  package, documentation, compatibility, and release closure in progress
 ```
 
 ## Accepted checkpoints
@@ -88,22 +89,30 @@ A189  package, documentation, compatibility, and release closure planned
 | Tranche | Exact head | Staging workflow |
 | --- | --- | --- |
 | A180 | `88ac1db0a2904393622082423b8773bd8b19f121` | `34417006958` |
+| A181 | `6b5abbdda8ac3ef57bf4c99054a65946e0f13b3a` | `34417741619` |
+| A182 | `d9a02336aa2fd61b294064f526ade6021d9d35d2` | `34418298756` |
+| A183 | `6f160610bf2df3c666e7d3350e7051475aceca36` | `34418863405` |
+| A184 | `d3a7a9262263f28f7ae2d4511520f1b556e5539e` | `34420648720` |
+| A185 | `c6a79421b8e8eb3c0c333493f5925f44a2931152` | `34422948067` |
+| A186 | `21fb617965f41270e9f3cd43f405fa6ec6e87b2e` | `34426364013` |
+| A187 | `80d78b74fe780421bf2e667ef434d38775c0dd48` | `34427249773` |
+| A188 | `997feb9628d34389199ca3fffdf90e829f33819a` | `34469956370` |
 
-A180 passed Windows, Linux, macOS runtime/source validation, package candidate/public-API freeze, all four package-contract shards, and the validated package artifact. The 1.7 public API fingerprint remained unchanged.
+Every accepted checkpoint passed Windows, Linux, and macOS runtime/source validation, package candidate/public-API freeze, all four package-contract shards, and the validated package artifact. The public API fingerprint remained the 1.7 value throughout 1.8 implementation.
 
 ## A180 — APC construction contract and reference freeze
 
 **Status:** Complete.
 
-**Goal:** establish one canonical internal APC construction primitive while keeping Kitty-specific syntax out of the family layer.
+A180 establishes the canonical internal APC family writer while keeping Kitty-specific syntax out of the family layer.
 
-Completed implementation:
+Completed contract:
 
 - internal `ApcWriter`;
 - canonical seven-bit `ESC _` introducer and `ESC \\` terminator;
 - opaque application payload at the family layer;
-- rejection of `CAN`, `SUB`, `ESC`, and C1 ST where they would alter framing;
-- 8,192-byte complete small-frame ceiling;
+- rejection of framing-altering CAN, SUB, ESC, and C1 ST payload bytes;
+- bounded small complete frames;
 - normalized APC round-trip through `TerminalControlFrameStructure`;
 - no public API and no Kitty grammar in the family writer.
 
@@ -111,118 +120,66 @@ Permanent contract: `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md
 
 ## A181 — Kitty Graphics control-data and response grammar
 
-**Status:** Starting.
+**Status:** Complete.
 
-**Goal:** define the Kitty dialect above generic APC.
+A181 defines the reviewed Kitty dialect above generic APC. It adds deterministic typed control-data construction and strict response parsing for the common display/probe subset, with bounded numeric and field handling, duplicate/unknown-field policy, and non-zero image-id correlation.
 
-The codec/parser recognizes only the reviewed subset needed by 1.8 common raster display and capability probing.
-
-Initial command keys include the subset required for:
-
-```text
-a   action
-f   pixel format
-s   source width
-v   source height
-t   transmission medium
-m   continuation flag
-q   response quietness
-I/i response/query identity where needed
-```
-
-Requirements:
-
-- ASCII-only control grammar;
-- deterministic key ordering for generated commands;
-- duplicate/unknown-key policy explicitly defined;
-- bounded key/value/control-data lengths and 32-bit numeric magnitude;
-- strict response grammar for `OK` and printable protocol error messages;
-- support-query identity via non-zero `i` in the reviewed probe form;
-- response parsing able to recover `i`, `I`, and `p` without exposing a generic dictionary;
-- no generic arbitrary public Kitty metadata dictionary;
-- no placement/deletion/animation controls in the common raster path.
+Permanent contract: `docs/A181-Kitty-Graphics-Control-Data-and-Response-Grammar.md`.
 
 ## A182 — backend-neutral raster-to-Kitty raw adaptation
 
-**Goal:** map the existing public `TerminalRasterImage` into Kitty's supported raw formats without lossy policy surprises.
+**Status:** Complete.
 
-Expected mapping:
+The frozen mapping is:
 
 ```text
 Rgb24    -> f=24, byte-exact RGB payload
 Rgba32   -> f=32, byte-exact RGBA payload
-Indexed8 -> expand deterministically to RGB24 when fully opaque,
+Indexed8 -> RGB24 when referenced palette colors are opaque,
             otherwise RGBA32 preserving palette alpha
 ```
 
-Requirements:
+The adapter preserves byte values and straight alpha, performs checked bounded conversion, introduces no image-decoder dependency, and performs no hidden compositing/gamma conversion.
 
-- preserve sRGB byte values; no hidden gamma conversion;
-- preserve straight RGBA alpha, including values `1..254`;
-- no hidden matte/background compositing;
-- no PNG conversion dependency;
-- checked arithmetic and retained D173 public raster limits;
-- bounded conversion storage;
-- deterministic output for identical raster input.
+Permanent contract: `docs/A182-Backend-Neutral-Raster-to-Kitty-Raw-Adaptation.md`.
 
 ## A183 — direct Base64 chunk encoder
 
-**Goal:** encode direct (`t=d`) Kitty payloads into protocol-sized APC chunks.
+**Status:** Complete.
 
-Requirements:
+A183 lazily Base64-encodes direct Kitty raster bytes into deterministic application payloads whose encoded image-data portion never exceeds 4096 bytes. Large rasters do not require a complete Base64 allocation. First and continuation metadata follow the reviewed Kitty direct-transfer contract.
 
-- Base64 encode raw raster bytes;
-- encoded payload of every APC chunk <= 4,096 bytes;
-- every non-final Base64 chunk length is a multiple of four;
-- first chunk carries complete required control metadata;
-- continuation chunks carry only protocol-required continuation/quietness metadata;
-- `m=1` for all non-final chunks and `m=0` for final chunk;
-- no giant complete Base64 allocation for large rasters;
-- bounded reusable source/encoded work buffers;
-- hand-verifiable one-pixel and small multi-chunk golden vectors.
+Permanent contract: `docs/A183-Direct-Kitty-Base64-Chunk-Encoder.md`.
 
 ## A184 — committed multi-frame APC graphics transaction
 
-**Goal:** write a complete direct Kitty image transfer safely through the session's existing output serialization model.
+**Status:** Complete.
 
-Unlike Sixel, one logical transfer can consist of several separately terminated APC frames. The transaction must therefore freeze a transfer-level commit contract.
+A184 serializes one logical Kitty image transfer across all of its separately terminated APC chunks. It honors caller cancellation before commitment, ignores ordinary caller cancellation after the first committed frame so the transfer is not intentionally truncated, surfaces transport failure without replay, and holds the session output gate through final flush and teardown drainage.
 
-Requirements:
-
-- acquire the existing session output gate before the first APC frame;
-- honor caller cancellation before commitment;
-- once the first chunk commits, prevent unrelated output from interleaving until the final chunk and flush;
-- define post-commit cancellation so an image is not silently left in an incomplete protocol transfer;
-- surface transport failure without automatic replay that could duplicate or replace terminal state unpredictably;
-- no complete encoded-image allocation;
-- teardown waits for a committed transfer before restoration proceeds.
+Permanent contract: `docs/A184-Committed-Multi-Frame-APC-Graphics-Transaction.md`.
 
 ## A185 — Kitty Graphics live capability probe and response correlation
 
-**Goal:** integrate the protocol-defined APC+CSI support probe with the normalized query/evidence architecture.
+**Status:** Complete.
 
-The intended probe is equivalent to the protocol's one-pixel query followed by Primary DA:
+A185 integrates the protocol-defined Kitty query + Primary DA barrier with the existing authoritative input/query and capability-evidence architecture.
 
-```text
-APC Kitty query action
-CSI Primary DA request
-```
+Evidence rules:
 
-Evidence rules to freeze:
-
-- correlated Kitty `OK` response -> `ApcKittyGraphics / Verified / ProtocolResponse`;
-- correlated Kitty protocol response, including a recognized protocol error that proves dialect handling -> support semantics determined explicitly by error class;
-- Primary DA barrier before any Kitty response -> reviewed `Unsupported / ProtocolResponse` for `ApcKittyGraphics`;
-- timeout before an authoritative barrier/response -> `Unknown`, not unsupported;
+- correlated Kitty response -> `Verified / ProtocolResponse`;
+- Primary DA barrier first -> reviewed `Unsupported / ProtocolResponse` for `ApcKittyGraphics`;
+- timeout without authoritative barrier/response -> `Unknown`, not unsupported;
 - caller cancellation -> no fabricated negative evidence;
-- responses arriving after query completion remain subject to the existing late-response ownership rules;
 - no competing input reader.
+
+Permanent contract: `docs/A185-Kitty-Graphics-Live-Capability-Probe-and-Correlation.md`.
 
 ## A186 — multi-backend raster routing and fallback
 
-**Goal:** make the existing `DisplayRasterAsync(...)` semantic operation actually select between the two raster backends.
+**Status:** Complete.
 
-Preferred routing:
+`DisplayRasterAsync(...)` now selects internally between:
 
 ```text
 RasterGraphics
@@ -230,73 +187,57 @@ RasterGraphics
     -> verified DcsSixel
 ```
 
-Requirements:
+Verified Kitty is preferred; verified Sixel remains fallback. Unresolved evidence is probed in deterministic bounded order. Backend fallback is permitted only before bytes commit; committed transport/protocol failure is never retried through another backend.
 
-- verified Kitty is preferred when both backends are verified;
-- verified Sixel remains usable when Kitty is unsupported or unverified;
-- if neither is verified, bounded probing occurs in a deterministic order;
-- backend selection remains internal;
-- no silent conversion of transport/protocol failures into a retry on a different backend after bytes commit;
-- pre-commit backend fallback is allowed only where semantics remain truthful;
-- existing Sixel behavior remains stable.
+Permanent contract: `docs/A186-Multi-Backend-Raster-Routing-and-Fallback.md`.
 
 ## A187 — semantic parity, alpha, geometry, and cursor behavior
 
-**Goal:** ensure the shared public raster operation has coherent semantics across Sixel and Kitty rather than merely selecting whichever encoder exists.
+**Status:** Complete.
 
-Review and qualify:
+A187 freezes the common semantic boundary without pretending that the two protocols have identical feature models:
 
-- fractional alpha: supported through Kitty, controlled unsupported through Sixel;
-- all-transparent raster behavior;
-- cursor movement after image display;
-- interaction with the current cell/pixel geometry substrate;
-- clipping/truncation expectations;
-- whether any placement/scaling option is genuinely backend-neutral enough for an additive public API.
+- source raster dimensions remain intrinsic pixel dimensions;
+- fractional alpha is preserved through Kitty and controlled unsupported through Sixel;
+- transparent-raster behavior is explicit;
+- no public placement/scaling or cursor-normalization option is introduced;
+- the existing geometry substrate remains internal;
+- persistent Kitty image/placement IDs, source rectangles, z-order, Unicode placeholders, deletion, and animation remain separate concerns.
 
-Default preference is **no new public option** unless cross-backend behavior can be defined precisely and tested on both implementations.
-
-Persistent image IDs, explicit placement IDs, source rectangles, z-order, Unicode placeholders, deletion, and animation remain separate Kitty-specific concerns.
+Permanent contract: `docs/A187-Raster-Semantic-Parity-Alpha-Geometry-and-Cursor.md`.
 
 ## A188 — APC/Kitty hardening, fragmentation, and resource closure
 
-**Goal:** qualify the new family/dialect under adversarial and boundary conditions.
+**Status:** Complete.
 
-Coverage includes:
+A188 qualifies the live APC/Kitty path under adversarial conditions, including seven/eight-bit fragmentation, CAN/SUB aborts, malformed or missing ST, oversized correlated replies, unrelated control traffic, late responses, subsequent-query integrity, and repeated evidence generations.
 
-- APC 7-bit and accepted 8-bit input framing;
-- every meaningful response split point;
-- malformed/missing ST;
-- CAN/SUB interruption;
-- oversized APC responses;
-- invalid Base64/control-data responses;
-- duplicate/overflow numeric keys;
-- unrelated APC/CSI/OSC/DCS traffic during active probes;
-- late Kitty responses after barrier/timeout;
-- maximum public raster dimensions/pixels/storage;
-- direct chunk boundaries at 4096 and surrounding values;
-- deterministic segmentation;
-- output cancellation/failure/teardown races;
-- repeated capability invalidation/resume generations.
+Once a complete matching Kitty `i=<probe-id>` field is observed, the reply is transaction-owned even if later framing fails. Ownership remains bounded and does not imply trust. Oversized correlated replies retain the 4096-byte normal response limit and use bounded string resynchronization rather than leaking hostile bytes into ordinary input.
+
+Permanent contract: `docs/A188-APC-Kitty-Hardening-Fragmentation-and-Resource-Closure.md`.
 
 ## A189 — package, documentation, compatibility, and release closure
 
-**Goal:** qualify `1.8.0` as the first multi-backend raster release.
+**Status:** In progress.
 
-Required evidence:
+A189 qualifies `1.8.0` as the first multi-backend raster release without adding new graphics behavior.
+
+Required closure evidence:
 
 - Windows/Linux/macOS Staging runtime/source validation;
-- post-merge Release distribution validation;
-- `net8.0`, `net9.0`, and `net10.0` consistency;
+- `net8.0`, `net9.0`, and `net10.0` package consistency;
 - retained 1.0–1.7 package/API compatibility gates;
-- public API fingerprint unchanged from 1.7 unless A187 proves an intentional additive need;
-- fresh NuGet-only raster consumer exercising the same public API against the new backend-routing implementation;
+- public API fingerprint unchanged from 1.7;
+- fresh NuGet-only raster consumer using the same public API while excluding both Sixel/DCS and Kitty/APC public escape hatches;
 - retained current `Icod.DCurses` compatibility witness;
-- synchronized README, changelog, architecture, security, compatibility, release notes, roadmaps, package metadata, and PR ledger;
-- exact final PR head green before readiness/merge consideration.
+- synchronized README, changelog, architecture, security, compatibility, semantic-output documentation, graphics roadmap, release notes, package metadata, and PR ledger;
+- one exact final PR head green before readiness/merge consideration.
+
+Permanent closure contract: `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`.
 
 ## Explicit 1.8 exclusions
 
-The following are outside the initial 1.8 release contract unless separately approved during the roadmap:
+The following remain outside the 1.8 common contract:
 
 - generic public APC writing;
 - generic public Kitty Graphics key/value dispatch;
@@ -304,13 +245,12 @@ The following are outside the initial 1.8 release contract unless separately app
 - file transmission (`t=f`);
 - temporary-file transmission (`t=t`);
 - shared-memory transmission (`t=s`);
-- persistent image identifiers as a public ownership model;
-- placement IDs and placement lifecycle management;
+- public persistent image identifiers or placement ownership;
 - arbitrary source rectangles;
 - z-index/layering;
 - Unicode placeholder placements;
-- animation frames;
-- generalized graphics scene management;
+- animation/deletion/scene management;
+- public backend selection;
 - terminal-brand automatic activation.
 
 ## Relationship to later work
@@ -329,6 +269,6 @@ future   advanced graphics placement/lifecycle only after separate review
 
 ## Release rule
 
-A green development PR is necessary but not sufficient to publish `1.8.0`.
+A green implementation checkpoint is necessary but not sufficient to publish `1.8.0`.
 
-The complete A180–A189 program must finish on an unchanged exact PR head that passes Staging. Merge remains explicit. After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.8.0` remain separate explicit actions after post-merge validation succeeds.
+A189 must finish on one unchanged exact PR head that passes the complete Staging workflow. PR readiness and merge remain explicit release steps. After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.8.0` remain separate explicit actions after post-merge validation succeeds.

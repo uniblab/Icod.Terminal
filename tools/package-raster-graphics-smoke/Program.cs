@@ -113,7 +113,14 @@ string[] forbiddenSessionMethods = [
 	"WriteSixelAsync",
 	"WriteRawSixelAsync",
 	"DisplaySixelAsync",
-	"SetSixelPaletteAsync"
+	"SetSixelPaletteAsync",
+	"WriteApcAsync",
+	"WriteRawApcAsync",
+	"WriteKittyGraphicsAsync",
+	"WriteRawKittyGraphicsAsync",
+	"DisplayKittyGraphicsAsync",
+	"SetKittyGraphicsPlacementAsync",
+	"DeleteKittyGraphicsAsync"
 ];
 MethodInfo[] sessionMethods = typeof( TerminalSession ).GetMethods(
 	BindingFlags.Public | BindingFlags.Instance
