@@ -150,6 +150,26 @@ internal sealed class TerminalInputCoordinator {
 		this.decoder.RemoveKittyKeyboardFlagsProbe( probe );
 	}
 
+	internal KittyGraphicsSupportProbe RegisterKittyGraphicsSupportProbe(
+		uint imageId
+	) {
+		if ( 0 == imageId ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( imageId ),
+				imageId,
+				"A Kitty Graphics support-query image id must be non-zero."
+			);
+		}
+		return this.decoder.RegisterKittyGraphicsSupportProbe( imageId );
+	}
+
+	internal void RemoveKittyGraphicsSupportProbe(
+		KittyGraphicsSupportProbe probe
+	) {
+		ArgumentNullException.ThrowIfNull( probe );
+		this.decoder.RemoveKittyGraphicsSupportProbe( probe );
+	}
+
 	private bool TryAddApplicationDemand() {
 		lock ( this.sync ) {
 			if ( this.endOfInput ) {
