@@ -289,12 +289,12 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 	}
 
 	[Fact]
-	public void RepeatedLiveEvidenceGenerationsExpireKittyEvidenceDeterministically() {
+	public async Task RepeatedLiveEvidenceGenerationsExpireKittyEvidenceDeterministically() {
 		ProbeTransport transport = new();
-		using TerminalSession session = OpenSessionAsync(
+		await using TerminalSession session = await OpenSessionAsync(
 			transport,
 			new NonAdvancingMonotonicClock()
-		).AsTask().GetAwaiter().GetResult();
+		);
 
 		for ( int generation = 0; generation < 8; generation++ ) {
 			session.RecordSemanticBackendEvidence(
