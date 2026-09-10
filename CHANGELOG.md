@@ -63,14 +63,14 @@ See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference
 ### DCS foundation and Sixel graphics
 
 - Adds the internal canonical seven-bit `DcsWriter` for bounded small DCS frames while keeping DCS framing separate from dialect semantics.
-- Migrates DECRQSS and XTGETTCAP request framing onto that substrate while preserving exact released bytes, response parsing, correlation, and seven/eight-bit input compatibility.
+- Migrates DECRQSS and XTGETTCAP request construction onto the common DCS writer without changing their released bytes, response parsing, correlation, or seven/eight-bit input compatibility.
 - Adds the canonical internal Sixel dialect contract using `DCS 0;1;0 q`, explicit square-pixel raster attributes, self-contained RGB palette definitions, sixel data values, repeat syntax, and graphics movement commands.
 - Adds a bounded immutable-owned raw raster model for RGB24, RGBA32, and Indexed8+RGBA8 palette input.
 - Adds deterministic Sixel palette conversion with exact indexed passthrough where possible, lossless exact-color mapping where possible, binary transparency, a fixed 32×32×32 RGB histogram, deterministic weighted median cut, and stable nearest-palette remapping.
-- Adds a deterministic six-row Sixel encoder with stable palette/register order, correct partial-final-band handling, strict-size repeat selection, transparent-band progression, and bounded lazy payload segments.
+- Adds a deterministic six-row Sixel encoder with stable palette/register order, correct partial-band handling, strict-size repeat selection, transparent-band progression, and bounded lazy payload segments.
 - Adds committed streaming Sixel output through the existing session-output gate, honoring caller cancellation before commitment while preventing ordinary cancellation from truncating an already-committed DCS control string.
 - Surfaces transport failure after commitment without automatic retry or speculative terminator recovery, and drains committed graphics output before teardown continues into output-state restoration.
-- Integrates Sixel capability evidence through Primary Device Attributes parameter `4`: affirmative evidence becomes `Verified / ProtocolResponse`; a valid Primary DA response without `4` and probe timeout remain `Unknown`, not automatic `Unsupported`.
+- Integrates Sixel capability evidence through Primary Device Attributes parameter `4`: affirmative evidence becomes `Verified / ProtocolResponse`; a valid response without `4` and probe timeout remain `Unknown`, not automatic `Unsupported`.
 - Keeps terminal name, `TERM`, operating system, emulator brand, registry order, and caller preference out of the capability-proof model.
 
 ### Public raster API
@@ -88,7 +88,7 @@ See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference
 - Retains explicit raster ceilings of 16,384 per dimension, 16 Mi pixels, 64 MiB owned pixel data, and 256 indexed palette entries.
 - Adds both highly-compressible and deliberately low-compressibility maximum-width Sixel segmentation tests to prove bounded payload segments independently of RLE effectiveness.
 - Adds a fresh NuGet-only raster consumer on `net8.0`, `net9.0`, and `net10.0` plus packed XML-documentation verification for the complete public raster surface.
-- Adds package exclusion checks proving raw DCS/Sixel writers and direct raster backing-memory exposure remain nonpublic.
+- Adds package exclusion checks proving raw DCS/Sixel writers and direct mutable raster backing-memory access remain outside the shipped public API.
 - Intentionally advances the current public API fingerprint to `847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700` while retaining all historical baselines unchanged.
 - Retains the stable `1.0.0` compatibility floor, all released 1.0–1.6 public members and documented wire semantics, one authoritative input reader, bounded query/resource behavior, and current `Icod.DCurses` package-boundary compatibility witnesses.
 - Retains `net8.0`, `net9.0`, and `net10.0` plus the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
