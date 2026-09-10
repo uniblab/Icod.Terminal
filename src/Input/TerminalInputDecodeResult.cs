@@ -30,7 +30,7 @@ internal readonly struct TerminalInputDecodeResult {
 	private readonly Exception? responseException;
 
 	private TerminalInputDecodeResult(
-		TerminalInputEvent? inputEvent,
+		TerminalApplicationEvent? applicationEvent,
 		TerminalResponseExpectation? responseExpectation,
 		TerminalResponseFrame? responseFrame,
 		TerminalQueryResponseDisposition responseDisposition,
@@ -40,23 +40,29 @@ internal readonly struct TerminalInputDecodeResult {
 		if ( !Enum.IsDefined( responseDisposition ) ) {
 			throw new ArgumentOutOfRangeException( nameof( responseDisposition ) );
 		}
-		if ( responseRouted == ( inputEvent is not null )
+		if ( responseRouted == applicationEvent.HasValue
 			|| !responseRouted && ( responseFrame is not null || responseException is not null )
 			|| responseRouted && ( responseFrame is null ) == ( responseException is null ) ) {
 			throw new ArgumentException(
-				"A terminal decode result must represent either application input or one routed response."
+				"A terminal decode result must represent either one application event or one routed response."
 			);
 		}
 
-		this.InputEvent = inputEvent;
+		this.ApplicationEvent = applicationEvent;
 		this.responseExpectation = responseExpectation;
 		this.responseFrame = responseFrame;
 		this.responseDisposition = responseDisposition;
 		this.responseException = responseException;
 	}
 
-	internal TerminalInputEvent? InputEvent {
+	internal TerminalApplicationEvent? ApplicationEvent {
 		get;
+	}
+
+	internal TerminalInputEvent? InputEvent {
+		get {
+			return this.ApplicationEvent?.InputEvent;
+		}
 	}
 
 	internal bool ResponseRouted {
@@ -94,7 +100,20 @@ internal readonly struct TerminalInputDecodeResult {
 	) {
 		ArgumentNullException.ThrowIfNull( inputEvent );
 		return new TerminalInputDecodeResult(
-			inputEvent,
+			TerminalApplicationEvent.FromInput( inputEvent ),
+			responseExpectation: null,
+			responseFrame: null,
+			TerminalQueryResponseDisposition.Completion,
+			responseException: null
+		);
+	}
+
+	internal static TerminalInputDecodeResult FromSemantic(
+		TerminalSemanticEvent semanticEvent
+	) {
+		ArgumentNullException.ThrowIfNull( semanticEvent );
+		return new TerminalInputDecodeResult(
+			TerminalApplicationEvent.FromSemantic( semanticEvent ),
 			responseExpectation: null,
 			responseFrame: null,
 			TerminalQueryResponseDisposition.Completion,
@@ -113,7 +132,7 @@ internal readonly struct TerminalInputDecodeResult {
 			throw new ArgumentOutOfRangeException( nameof( disposition ) );
 		}
 		return new TerminalInputDecodeResult(
-			inputEvent: null,
+			applicationEvent: null,
 			expectation,
 			frame,
 			disposition,
@@ -128,7 +147,7 @@ internal readonly struct TerminalInputDecodeResult {
 		ArgumentNullException.ThrowIfNull( expectation );
 		ArgumentNullException.ThrowIfNull( exception );
 		return new TerminalInputDecodeResult(
-			inputEvent: null,
+			applicationEvent: null,
 			expectation,
 			responseFrame: null,
 			TerminalQueryResponseDisposition.Completion,
