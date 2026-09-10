@@ -4,9 +4,9 @@
 **Package:** `Icod.Terminal`  
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Published stable release:** `1.8.0`  
-**Current maintenance line:** `1.8.1`  
-**Current status:** documentation/sample polish in draft PR #47  
+**Current stable release:** `1.8.1`  
+**Current maintenance line:** `1.8.x`  
+**Next feature line:** not yet frozen  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -39,13 +39,14 @@ terminal applications
 
 ## Published 1.8 result
 
-The 1.5–1.8 program is complete:
+The 1.5–1.8 feature program is complete:
 
 ```text
 1.5.0  normalized control families / capability evidence / semantic routing
 1.6.0  complete CSI grammar / terminal and cell pixel geometry
 1.7.0  DCS / Sixel / public backend-neutral raster contract
 1.8.0  APC / Kitty Graphics / verified multi-backend raster routing
+1.8.1  documentation and sample maintenance; no runtime/API expansion
 ```
 
 The public raster intent introduced in 1.7 resolves through two reviewed internal backends:
@@ -57,7 +58,7 @@ TerminalSession.DisplayRasterAsync(...)
         -> verified Sixel / DCS
 ```
 
-Version 1.8 added no public API. The current public API fingerprint remains the 1.7 value:
+Versions 1.8.0 and 1.8.1 add no public API. The current public API fingerprint remains the 1.7 value:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
@@ -69,19 +70,21 @@ Detailed 1.8 design and qualification evidence is preserved in:
 - [`docs/releases/1.8.0.md`](docs/releases/1.8.0.md)
 - `docs/A180-*` through `docs/A189-*`
 
-## 1.8.1 maintenance program
+The 1.8.1 maintenance release is documented in [`docs/releases/1.8.1.md`](docs/releases/1.8.1.md).
+
+## 1.8.1 maintenance result
 
 Version `1.8.1` is intentionally a maintenance release. It does not introduce a new terminal protocol, public API, or runtime semantic contract.
 
-The work in PR #47 is limited to:
+The release:
 
-- correcting stale post-release wording left behind after the 1.8.0 merge/publication sequence;
-- making the root README and current roadmap concise, release-aware entry points rather than qualification diaries;
-- improving `/samples` discoverability by grouping examples around consumer goals;
-- adding a backend-neutral raster sample so the 1.7/1.8 headline graphics API has a first-class executable example;
-- adding a focused VS Code OSC 633 sample to complement the existing portable OSC 133 and iTerm2 OSC 1337 examples;
-- building the new focused samples on `net8.0`, `net9.0`, and `net10.0` as part of repository validation;
-- synchronizing maintenance release notes and package metadata.
+- corrects stale post-release wording left behind after the 1.8.0 merge/publication sequence;
+- makes the root README and current roadmap concise, release-aware entry points rather than qualification diaries;
+- improves `/samples` discoverability by grouping examples around consumer goals;
+- adds a backend-neutral raster sample so the 1.7/1.8 headline graphics API has a first-class executable example;
+- adds a focused VS Code OSC 633 sample to complement the existing portable OSC 133 and iTerm2 OSC 1337 examples;
+- builds the new focused samples on `net8.0`, `net9.0`, and `net10.0` as part of repository validation;
+- synchronizes maintenance release notes and package metadata.
 
 ### 1.8.1 invariants
 
@@ -92,7 +95,7 @@ The work in PR #47 is limited to:
 5. No change to raster bounds, ownership, alpha, cancellation, or committed-output semantics.
 6. No new package dependency.
 7. Existing `Icod.DCurses` compatibility witnesses remain authoritative.
-8. New samples use public APIs only and must build on every supported TFM.
+8. New samples use public APIs only and build on every supported TFM.
 9. The stable `1.0.0` compatibility floor remains unchanged.
 
 ## Candidate next development tracks
