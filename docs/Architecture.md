@@ -46,6 +46,7 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 - semantic terminal-output operations;
 - reversible presentation, rich-input, and color ownership;
 - semantic raster graphics output;
+- evidence-driven raster backend selection;
 - serialization of session-managed terminal output;
 - lifecycle-aware re-entry and deterministic cleanup.
 
@@ -53,7 +54,7 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 
 `Icod.DCurses` owns two-dimensional presentation policy: cells, styles, windows, pads, virtual-screen state, Unicode display width, clipping, wrapping, scrolling, damage tracking, desired-vs-physical screen comparison, and refresh strategy.
 
-DCurses may request semantic raster output from `Icod.Terminal`; it should not reimplement terminal modes, query routing, Sixel framing, capability evidence, or lifecycle restoration.
+DCurses may request semantic raster output from `Icod.Terminal`; it should not reimplement terminal modes, query routing, Sixel/Kitty framing, graphics capability evidence, or lifecycle restoration.
 
 ### Future `Icod.Pty`
 
@@ -86,7 +87,7 @@ These contracts do not imply that a live session can be bypassed safely. In part
 
 ### 2.3 Internal wire/platform machinery
 
-Protocol encoders/parsers, control-family writers, Sixel quantization/encoding, query transactions, capability evidence storage, lifecycle signal sources, presentation/input managers, and OS plumbing remain implementation details unless represented separately by a public semantic contract.
+Protocol encoders/parsers, control-family writers, Sixel quantization/encoding, Kitty Graphics adaptation/chunking, query transactions, capability evidence storage, lifecycle signal sources, presentation/input managers, and OS plumbing remain implementation details unless represented separately by a public semantic contract.
 
 Internal wire selectors are not compatibility promises merely because a public semantic API ultimately uses them.
 
@@ -106,7 +107,11 @@ evidence source
 
 Static TermInfo/profile advertisement and generation-scoped live evidence are distinct. A terminal name, `TERM`, environment variable, host OS, emulator brand, registry order, or caller preference is not automatically capability proof.
 
-For Sixel in 1.7, a Primary Device Attributes response containing parameter `4` is positive protocol-response evidence. A valid response without `4`, or silence/timeout, remains uncertainty rather than automatic proof of unsupported Sixel.
+For Sixel, Primary Device Attributes parameter `4` is positive protocol-response evidence. A valid response without `4`, or silence/timeout, remains uncertainty rather than automatic proof of unsupported Sixel.
+
+For Kitty Graphics in 1.8, the library uses the protocol-defined correlated Kitty query immediately followed by Primary DA as a barrier. A correlated Kitty APC response verifies `ApcKittyGraphics`; Primary DA arriving first is reviewed negative protocol-response evidence for that concrete probe. Silence before either authoritative result remains unknown.
+
+Capability evidence is generation-scoped where it describes live protocol behavior and expires on session invalidation/resume.
 
 ## 4. Control-language layering
 
@@ -122,20 +127,25 @@ semantic intent
 
 The normalized framing vocabulary includes CSI, DCS, OSC, APC, PM, and SOS.
 
-Version 1.7 demonstrates why the separation matters:
+The two raster backends demonstrate the separation directly:
 
 ```text
-RasterGraphics             semantic operation
-    -> DcsSixel            protocol backend
-        -> DCS             control family
-            -> Sixel       dialect codec
+RasterGraphics
+    -> DcsSixel
+        -> DCS
+            -> Sixel
+
+RasterGraphics
+    -> ApcKittyGraphics
+        -> APC
+            -> Kitty Graphics
 ```
 
-A later Kitty Graphics backend can therefore implement the same semantic raster intent through APC without changing the meaning of `TerminalRasterImage` or forcing callers to construct graphics control strings.
+A caller therefore keeps the same `TerminalRasterImage` and `DisplayRasterAsync(...)` semantic contract regardless of which verified backend is selected.
 
 ## 5. Backend-neutral raster architecture
 
-Version 1.7 introduces the first public raster model:
+Version 1.7 introduced the public raster model:
 
 ```text
 TerminalRasterImage
@@ -151,15 +161,15 @@ Rgba32
 Indexed8 + RGBA8 palette
 ```
 
-The raster object is an immutable-owned snapshot. Caller-provided pixel/palette storage is copied at creation. The public API intentionally does not expose mutable backing buffers or a Sixel byte container.
+The raster object is an immutable-owned snapshot. Caller-provided pixel/palette storage is copied at creation. The public API intentionally does not expose mutable backing buffers or a Sixel/Kitty payload container.
 
-The raw model preserves straight alpha and is intentionally more expressive than the current Sixel backend. Backend limitations are handled during semantic routing/conversion rather than by weakening the common image model.
+The raw model preserves straight alpha and is intentionally more expressive than any single backend. Backend limitations are handled during routing/conversion rather than by weakening the common image model.
 
-`TerminalSession.DisplayRasterAsync(...)` describes the intent to display the image. In 1.7, Sixel is the only implementation candidate. The public method does not expose Sixel palette registers, repeat commands, DCS framing, or an explicit backend selector.
+Version 1.8 leaves the public surface unchanged and adds Kitty Graphics beneath it. `DisplayRasterAsync(...)` still does not expose Sixel palette registers, Kitty image/placement identifiers, raw DCS/APC framing, or an explicit backend selector.
 
-## 6. Bounded graphics pipeline
+## 6. Bounded graphics pipelines
 
-The Sixel implementation is intentionally layered:
+The Sixel path is:
 
 ```text
 TerminalRasterImage
@@ -169,17 +179,55 @@ TerminalRasterImage
                 -> committed serialized DCS transaction
 ```
 
-The pipeline has explicit limits for dimensions, total pixels, owned raster bytes, palette entries, quantizer work state, small complete DCS frames, and streaming segments.
+The Kitty Graphics path is:
 
-Large graphics do not require one giant encoded DCS allocation.
+```text
+TerminalRasterImage
+    -> checked raw Kitty adaptation
+        -> RGB24 or RGBA32 byte stream
+            -> bounded lazy Base64 payload chunks
+                -> committed serialized APC frame sequence
+```
 
-The encoder is deterministic for identical input. Image-file decoding, gamma/color-profile processing, and hidden background compositing are outside the core raster contract.
+The common raster object enforces explicit limits for dimensions, total pixels, owned bytes, and indexed palette entries. Backend-specific stages add their own bounded work state and frame/chunk limits.
 
-## 7. Session-managed output ordering
+Large graphics do not require one giant encoded DCS string, one giant Base64 string, or one complete multi-frame Kitty transfer allocation.
+
+Image-file decoding, gamma/color-profile processing, and hidden background compositing are outside the core raster contract.
+
+## 7. Raster backend selection
+
+`RasterGraphics` is one semantic operation with two reviewed backends in 1.8:
+
+```text
+verified ApcKittyGraphics
+verified DcsSixel
+```
+
+When both are verified, Kitty Graphics is preferred. Verified Sixel remains fallback. When evidence is unresolved, the session may perform bounded live probing according to the reviewed routing policy.
+
+Routing decisions occur before commitment. Once either backend commits output, a transport/protocol failure is returned to the caller; the library does not replay through the other backend because the terminal may have applied an unknown prefix of the first attempt.
+
+Backend selection is therefore both capability-sensitive and commit-sensitive.
+
+## 8. Alpha and image semantics
+
+The public raster model preserves straight RGBA8 alpha.
+
+Kitty Graphics direct RGBA32 transfer can preserve fractional alpha. Sixel cannot represent the same semantics without an external compositing policy; therefore fractional alpha remains controlled unsupported when Sixel is the selected backend rather than being silently flattened.
+
+Indexed input is expanded for Kitty only as required by its direct raw formats:
+
+- referenced opaque palette colors permit RGB24 expansion;
+- any referenced non-opaque palette color requires RGBA32 expansion preserving alpha.
+
+Source width and height remain intrinsic raster dimensions. Version 1.8 does not add a common placement/scaling contract, persistent image identity, source rectangles, z-order, Unicode placeholders, deletion, animation, or cursor-normalization control.
+
+## 9. Session-managed output ordering
 
 High-level application text, semantic output operations, query requests, state-manager traffic, and raster output use session-owned serialization domains appropriate to their contracts.
 
-Committed Sixel output holds the existing session output gate across:
+Committed Sixel output holds the session output gate across:
 
 ```text
 DCS prefix
@@ -188,13 +236,25 @@ final ST
 flush
 ```
 
-Caller cancellation is honored before commitment. Once the first DCS prefix write commits, ordinary caller cancellation does not truncate the frame. Transport failure is surfaced without retry or speculative recovery.
+Committed Kitty output holds the same logical gate across:
+
+```text
+APC frame 1
+APC frame 2
+...
+APC final frame
+flush
+```
+
+Each Kitty frame is structurally complete, but the entire direct transfer is one logical transaction for interleaving/cancellation purposes.
+
+Caller cancellation is honored before commitment. Once the first backend frame commits, ordinary caller cancellation does not intentionally truncate the logical graphics transfer. Transport failure is surfaced without retry or speculative recovery.
 
 Session teardown drains committed output before output-state restoration continues.
 
 The library does not claim to serialize writes made directly to the borrowed `TerminalSession.Output` transport.
 
-## 8. One authoritative input conversation
+## 10. One authoritative input conversation
 
 Input is not a collection of independent readers.
 
@@ -205,13 +265,26 @@ The live session owns one incremental byte stream that may contain:
 - mouse/focus/bracketed-paste reports;
 - modern keyboard frames;
 - responses to active terminal queries;
+- side-observed correlated Kitty Graphics probe replies;
 - malformed or unknown terminal traffic.
 
-The decoder/query router therefore form one authoritative path. Public event reads and typed queries coordinate through it.
+The decoder/query router form one authoritative path. Public event reads and typed queries coordinate through it.
 
-Sixel capability probing reuses this existing query path; it does not create a graphics-specific reader.
+Both Sixel capability observation and Kitty Graphics probing reuse this existing path. Neither backend creates a graphics-specific reader.
 
-## 9. Ownership and reversible state
+For the Kitty support test, the active Primary DA query remains the barrier transaction while the input coordinator side-observes only the matching Kitty APC identified by its probe image id.
+
+## 11. Correlated input ownership
+
+Terminal responses are untrusted even after correlation.
+
+For Kitty Graphics, once a complete matching `i=<probe-id>` field is observed in a recognizable APC prefix, that string becomes boundedly owned by the active probe. Later CAN/SUB, malformed termination, overflow, oversize, or missing ST cannot turn that identified response back into ordinary application input.
+
+Correlation does not bypass grammar or size checks. Oversized correlated APC uses bounded string resynchronization, and an identified but unterminated response fails as malformed rather than being mislabeled as simple silence.
+
+Unrelated APC/OSC/DCS/CSI traffic remains outside the Kitty side observation unless owned by another active query/decoder rule.
+
+## 12. Ownership and reversible state
 
 A `TerminalSession` owns terminal **state transitions**, not necessarily the underlying descriptor, handle, stream, or transport object.
 
@@ -224,9 +297,9 @@ Consequences include:
 - state that cannot be observed/restored truthfully is not falsely described as exactly restorable;
 - invalidation marks stale beliefs untrustworthy rather than inventing certainty.
 
-Raster display is output, not a claim of reversible terminal image state. Version 1.7 does not attempt to capture/restore external Sixel palette/image contents.
+Raster display is ephemeral output, not a claim of reversible terminal image state. Version 1.8 does not capture/restore external Sixel palettes or Kitty image/placement state and does not replay raster images automatically after resume.
 
-## 10. Lifecycle is a state transition
+## 13. Lifecycle is a state transition
 
 When supported, suspend/resume is integrated with terminal ownership.
 
@@ -234,29 +307,33 @@ Before suspension, the session restores owned terminal state needed to return co
 
 Lifecycle failure may invalidate session state rather than falsely report recovery.
 
-## 11. Failure and uncertainty
+Graphics capability evidence obtained from live protocol behavior expires with the same generation mechanism.
+
+## 14. Failure and uncertainty
 
 The architecture prefers truthful uncertainty over optimistic advancement.
 
-For reversible state, partial completion is tracked and rollback failures are surfaced. For capability evidence, silence does not become unsupported truth. For committed raster output, a transport failure does not trigger an automatic replay because the terminal may have received an unknown prefix of the image.
+For reversible state, partial completion is tracked and rollback failures are surfaced. For capability evidence, silence does not become unsupported truth. A known protocol barrier may provide negative evidence only where that protocol's ordering semantics make the result authoritative.
+
+For committed raster output, a transport failure does not trigger automatic replay because the terminal may have received an unknown prefix of the image or transfer.
 
 Controlled `Unavailable` / `Unsupported` results represent capability/semantic limitations where appropriate; transport and malformed-response failures remain failures rather than being disguised as capability states.
 
-## 12. Managed-first platform model
+## 15. Managed-first platform model
 
 The library is managed C# with narrowly scoped native interop for terminal/console mechanics. There is no runtime dependency on native `ncurses`, `curses`, `libtinfo`, or `termcap`.
 
 Platform differences remain explicit. Windows does not fabricate POSIX semantics, and POSIX does not fabricate Windows console-mode semantics.
 
-Sixel itself is terminal traffic and does not require a platform-native graphics API.
+Sixel and Kitty Graphics are terminal traffic and do not require host-native graphics APIs. Kitty 1.8 uses direct protocol data and does not introduce filesystem/shared-memory/native-image-transfer dependencies.
 
-## 13. No process-global current terminal
+## 16. No process-global current terminal
 
 The primary API is instance-based. `Icod.Terminal` does not require a process-global current session or `cur_term`-style mutable singleton.
 
 Multiple session objects may exist, but the library does not promise that two independently created sessions may concurrently mutate or write protocol traffic to the same physical terminal without external coordination.
 
-## 14. Stable exclusions
+## 17. Stable exclusions
 
 The stable 1.x architecture continues to exclude:
 
@@ -270,10 +347,12 @@ The stable 1.x architecture continues to exclude:
 - image-file decoding inside the core terminal package;
 - generalized graphics scene/animation ownership.
 
-Version 1.7 intentionally **does** own semantic raster output and its Sixel backend. Kitty Graphics, ReGIS, persistent image identifiers/placements, generalized placement/scaling policy, filesystem/shared-memory graphics transport, and animation remain future work.
+Version 1.8 owns semantic raster output through Sixel and Kitty Graphics. It still excludes public protocol-specific graphics dispatch, file/temp-file/shared-memory Kitty transfer, persistent image/placement ownership, generalized placement/scaling policy, z-order, Unicode placeholder placement, deletion, and animation.
 
-## 15. Compatibility authority
+## 18. Compatibility authority
 
-The public raster additions are frozen by `docs/Public-API-Baseline-1.7.md` and `.sha256`. The permanent versioning rules are in `Compatibility-and-Versioning.md`.
+The public raster additions remain frozen by `docs/Public-API-Baseline-1.7.md` and `.sha256`. Version 1.8 intentionally adds no public API, so that 1.7 baseline remains the current authoritative fingerprint rather than being duplicated under a new filename.
+
+The permanent versioning rules are in `Compatibility-and-Versioning.md`.
 
 Architectural improvements may replace internal classes/algorithms without changing these documented semantic, ownership, evidence, serialization, security, and compatibility commitments.

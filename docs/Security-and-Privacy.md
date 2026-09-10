@@ -1,6 +1,6 @@
 # Security and Privacy
 
-`Icod.Terminal` mediates a bidirectional terminal conversation. Terminal control sequences are not merely visual formatting: some operations publish metadata, request external state, alter terminal-owned presentation state, or influence desktop integration. Raster graphics add another large-output path that must preserve the same bounded, typed, evidence-driven design.
+`Icod.Terminal` mediates a bidirectional terminal conversation. Terminal control sequences are not merely visual formatting: some operations publish metadata, request external state, alter terminal-owned presentation state, or influence desktop integration. Raster graphics add large bidirectional protocol paths that must preserve the same bounded, typed, evidence-driven design.
 
 This document defines the permanent 1.x security and privacy boundary.
 
@@ -13,7 +13,7 @@ This document defines the permanent 1.x security and privacy boundary.
 - the attached terminal, multiplexer, or remote session may not implement a protocol exactly as expected;
 - successful byte transmission does not prove terminal-side support or application;
 - terminal metadata may be logged, persisted, forwarded, surfaced to the desktop, or visible to other software depending on the environment;
-- large raster inputs may be accidental or adversarial resource pressure.
+- large raster inputs and large terminal replies may be accidental or adversarial resource pressure.
 
 The library therefore favors typed semantic APIs, bounded parsing/encoding, pre-output validation, explicit capability evidence, and one authoritative input/query path over raw generic protocol construction.
 
@@ -31,6 +31,7 @@ Different protocols use different safe encodings. Examples include:
 - OSC 133 and OSC 633 metadata use their reviewed serializers/escaping;
 - OSC 777 rejects delimiters/control bytes for which the protocol defines no interoperable escape;
 - OSC 1337 user-variable values use strict UTF-8 plus Base64;
+- Kitty Graphics raw image bytes use protocol-defined Base64 inside a typed bounded APC dialect;
 - closed color, pointer, keyboard, and raster APIs avoid arbitrary caller-supplied protocol strings.
 
 Validation protects framing integrity. It does not make semantic content confidential or trustworthy.
@@ -41,20 +42,28 @@ Input decoding, paste handling, query transactions, request/response frames, lat
 
 The normalized control-language layer uses one bounded scanner for CSI, DCS, OSC, APC, PM, and SOS rather than separate unbounded per-dialect accumulators.
 
-Version 1.7 adds explicit raster/Sixel ceilings:
+Public raster ceilings remain:
 
 ```text
 maximum raster dimension       16,384
 maximum raster pixels          16 Mi
 maximum owned pixel bytes      64 MiB
 maximum indexed palette        256 entries
-small complete DCS frame       4,096 bytes
-quantizer histogram            32 x 32 x 32 bins
 ```
 
-Sixel payload output is generated as bounded lazy segments. Large graphics do not require one complete encoded DCS frame in memory.
+Relevant graphics/protocol ceilings include:
 
-Both highly compressible and deliberately low-compressibility maximum-width test cases verify that segmentation remains bounded independently of how effective repeat encoding is.
+```text
+normal terminal response frame       4,096 bytes
+small complete DCS frame              4,096 bytes
+small complete APC frame              8,192 bytes
+Kitty Base64 image data per APC chunk 4,096 bytes
+Sixel quantizer histogram             32 x 32 x 32 bins
+```
+
+Sixel payload output is generated as bounded lazy segments. Kitty Graphics direct output is generated as bounded lazy Base64/application payload chunks and one bounded APC frame at a time. Large graphics do not require one complete encoded transfer in memory.
+
+Oversized correlated terminal responses do not cause an unbounded accumulator: recovery uses the existing bounded string resynchronization ceiling.
 
 ## 4. One authoritative input reader
 
@@ -64,7 +73,9 @@ The stable 1.x surface does not expose a session raw-input property. A competing
 
 `ITerminalInput` remains public for custom transport injection, but a caller supplying the transport must not create a competing reader while the session owns it.
 
-Version 1.7 Sixel capability probing reuses the same Primary Device Attributes query path and authoritative response router. It does not add a graphics-specific input loop.
+Both Sixel capability observation and the 1.8 Kitty Graphics support probe reuse the same authoritative input/query path. Neither adds a graphics-specific input loop.
+
+The Kitty probe's Primary DA response is owned by the normal query transaction while the input coordinator side-observes only an APC response correlated to the active probe image id.
 
 ## 5. Capability evidence is not terminal identity
 
@@ -85,13 +96,37 @@ LiveProbe
 ProtocolResponse
 ```
 
-For Sixel in 1.7, a valid Primary Device Attributes response containing attribute `4` is positive `Verified / ProtocolResponse` evidence for `DcsSixel`.
+For Sixel, a valid Primary Device Attributes response containing attribute `4` is positive `Verified / ProtocolResponse` evidence for `DcsSixel`.
 
 A valid response without `4` is **not** automatically authoritative proof that Sixel is unsupported. It records only unknown protocol-response evidence. Probe timeout likewise remains unknown. Caller cancellation propagates and is not converted into negative evidence.
 
-This prevents both false-positive brand guessing and false-negative interpretation of incomplete/compatibility DA responses.
+For Kitty Graphics in 1.8, the support test uses a protocol-defined correlated Kitty query followed immediately by Primary DA as a synchronization barrier:
 
-## 6. Emission is not application
+- a correlated valid Kitty reply verifies `ApcKittyGraphics`;
+- Primary DA arriving before such a reply is reviewed negative `Unsupported / ProtocolResponse` evidence for that concrete support test;
+- timeout before either authoritative result remains `Unknown`;
+- cancellation does not manufacture negative evidence.
+
+The distinction prevents both false-positive brand guessing and false-negative interpretation of ordinary silence.
+
+## 6. Correlation grants ownership, not trust
+
+A response that matches an active query identity is still attacker-controlled terminal input.
+
+For the Kitty Graphics support probe, once a complete matching `i=<probe-id>` control-data field is observed in a recognizable APC prefix, the string becomes boundedly transaction-owned. This prevents a response that has already identified itself as the probe reply from leaking into ordinary application input merely because later framing is hostile.
+
+Correlation does not bypass validation:
+
+- numeric image-id parsing is overflow-safe;
+- an incomplete identifier prefix does not claim the response;
+- CAN or SUB abort after correlation fails the probe;
+- malformed escape termination after correlation fails the probe;
+- exceeding the normal 4096-byte response-frame limit fails the probe and invokes bounded drain/resynchronization through string termination;
+- observing correlation without a structural terminator before the protocol deadline is a malformed-response failure, not silent uncertainty.
+
+Unrelated APC/OSC/DCS/CSI traffic does not satisfy the active Kitty probe merely because it is structurally valid terminal control traffic.
+
+## 7. Emission is not application
 
 For unacknowledged output protocols, successful completion normally means only that the requested bytes were successfully written to the output service.
 
@@ -105,21 +140,25 @@ It does not prove that the terminal:
 
 For explicit query APIs, successful completion means a correlated response was received and parsed according to the reviewed grammar. The response remains untrusted terminal input.
 
-Sixel display is therefore capability-gated before emission, but successful `DisplayRasterAsync(...)` output still does not claim visual verification after the frame is written.
+Raster display is therefore capability-gated before emission, but successful `DisplayRasterAsync(...)` output still does not claim visual verification after bytes are written.
 
-## 7. Raster input and alpha semantics
+## 8. Raster input and alpha semantics
 
 `TerminalRasterImage` owns an immutable snapshot of caller-provided raw raster data. Copying input at construction prevents asynchronous display from observing later caller mutation of the supplied buffers.
 
-The backend-neutral model preserves straight RGBA alpha. Version 1.7 Sixel output deliberately supports only the alpha semantics it can preserve truthfully:
+The backend-neutral model preserves straight RGBA alpha.
+
+Sixel supports only the alpha semantics it can preserve truthfully:
 
 - alpha `0` means transparent/leave destination untouched;
 - alpha `255` means opaque/paint the pixel;
 - fractional alpha remains valid raster data, but the Sixel backend returns controlled unsupported rather than silently compositing against an invented matte/background.
 
+Kitty Graphics direct RGBA32 transfer preserves fractional alpha. Indexed8 input is expanded to RGB24 only when referenced palette colors are opaque; otherwise it expands to RGBA32 preserving the indexed alpha values.
+
 The library does not perform hidden premultiplication, gamma conversion, profile conversion, or arbitrary background flattening.
 
-## 8. Deterministic quantization
+## 9. Deterministic Sixel quantization
 
 True-color input may require palette reduction for Sixel. The quantizer uses bounded deterministic work state and stable tie-breaking.
 
@@ -133,56 +172,75 @@ Security/reliability consequences include:
 
 Determinism is not a claim of perceptual optimality; it is a reproducibility and bounded-work guarantee.
 
-## 9. Committed Sixel output
+## 10. Kitty direct-transfer security boundary
 
-Large Sixel output uses a committed streaming transaction through the existing session output serialization gate.
+Version 1.8 deliberately uses direct Kitty Graphics transmission (`t=d`).
 
-Before the first DCS byte commits:
+It does not silently choose protocol media that require host-side path or IPC state:
+
+```text
+t=f  file
+t=t  temporary file
+t=s  shared memory
+```
+
+Those media are outside the 1.8 semantic raster contract and require separate security review before use because they introduce path naming, lifetime, permissions, race, visibility, cleanup, or cross-process concerns absent from direct terminal traffic.
+
+Raw image bytes are Base64 encoded into bounded protocol chunks. Base64 is framing-safe encoding, not encryption.
+
+## 11. Committed graphics output
+
+Both 1.8 raster backends use committed output semantics through the existing session serialization boundary.
+
+Before the first backend frame commits:
 
 - raster/conversion invariants are validated as far as the design permits;
 - caller cancellation is honored;
 - output-gate acquisition remains cancellable.
 
-The first canonical Sixel DCS prefix write is the commit boundary.
-
 After commitment:
 
-- ordinary caller cancellation is no longer allowed to truncate the control string;
-- the session output gate remains held across every payload segment, final ST, and flush;
-- unrelated session-managed output cannot interleave inside the graphics frame;
-- one successful transaction emits exactly one final ST.
+- ordinary caller cancellation is no longer allowed to intentionally truncate the logical graphics transfer;
+- the session output gate remains held until that backend's logical transaction completes or the transport fails;
+- unrelated session-managed output cannot interleave inside the transfer.
 
-If the underlying transport fails after commitment, the error is surfaced. The library does not automatically retry the image, because the terminal may have received an unknown prefix of the frame, and it does not speculate that sending an extra terminator is always safe recovery.
+For Sixel, the committed object is one DCS frame ending in one ST and flush.
 
-## 10. Teardown and committed output
+For Kitty Graphics, the committed object may be several individually complete APC frames, but all chunks belong to one logical direct-transfer transaction and the gate remains held through the final frame and flush.
+
+If the underlying transport fails after commitment, the error is surfaced. The library does not automatically retry the image, replay an uncertain frame, switch to the other raster backend, or speculate that additional terminators/recovery commands are safe.
+
+## 12. Teardown and committed output
 
 `TerminalSession.DisposeAsync()` remains final cleanup/restoration authority for session-owned state.
 
-Version 1.7 ensures teardown drains the same session output gate used by committed graphics before output-state restoration proceeds. This prevents restoration traffic from interleaving inside a still-running Sixel control string.
+Teardown drains the same session output gate used by committed raster graphics before output-state restoration proceeds. This prevents restoration traffic from interleaving inside either a Sixel control string or a multi-frame Kitty direct transfer.
 
 This ordering is a contract requirement; the internal synchronization primitive may change in future implementations.
 
-## 11. No generic raw graphics escape hatch
+## 13. No generic raw graphics escape hatch
 
-Version 1.7 intentionally does not expose:
+The stable semantic raster surface intentionally does not expose:
 
-- a generic public DCS writer;
-- a generic public Sixel command/payload writer;
-- direct palette-register mutation for Sixel;
-- caller-selected Sixel backend routing;
-- arbitrary graphics control-string injection through the semantic raster API.
+- a generic public DCS or Sixel writer;
+- a generic public APC or Kitty Graphics writer;
+- direct Sixel palette-register mutation;
+- caller-selected Sixel/Kitty backend routing;
+- arbitrary Kitty control-data dictionaries;
+- Kitty placement/image identifiers, z-order, source rectangles, deletion, or animation through the common raster API;
+- arbitrary graphics control-string injection through `DisplayRasterAsync(...)`.
 
 `TerminalSession.Output` remains a public advanced borrowed transport and can always be misused by a caller. Direct writes through it are outside session serialization and semantic validation. That advanced escape hatch is not an endorsement of constructing arbitrary untrusted terminal traffic.
 
-## 12. Image-file decoding is out of scope
+## 14. Image-file decoding is out of scope
 
-`Icod.Terminal` 1.7 consumes raw pixel/index data. It does not decode PNG, JPEG, GIF, or other image files as part of the raster-display path.
+`Icod.Terminal` consumes bounded raw pixel/index data. It does not decode PNG, JPEG, GIF, or other image files as part of the raster-display path.
 
 This avoids importing file-parser attack surface, metadata handling, decompression-bomb policy, color-profile interpretation, and format-specific security decisions into the core live-terminal package.
 
 Applications may decode image formats with libraries appropriate to their own trust model, then provide bounded raw raster data to `Icod.Terminal`.
 
-## 13. Clipboard privacy — OSC 52
+## 15. Clipboard privacy — OSC 52
 
 Clipboard writes can place application data into terminal or desktop selection state. Clipboard reads request external selection data and are explicitly privacy-sensitive.
 
@@ -190,19 +248,19 @@ Clipboard writes can place application data into terminal or desktop selection s
 
 Applications should treat returned clipboard bytes as untrusted external input and should not publish secrets to terminal clipboard state unintentionally.
 
-## 14. Current-location and shell metadata disclosure
+## 16. Current-location and shell metadata disclosure
 
 OSC 7, OSC 9;9, OSC 633 `Cwd`, OSC 1337 `CurrentDir`, and related semantic metadata can reveal user names, source-tree names, customer/project names, mount points, shares, and host identity.
 
 `Icod.Terminal` does not automatically discover and publish environment/current-directory/shell-history data. The caller decides whether disclosure is appropriate.
 
-## 15. Hyperlink security — OSC 8
+## 17. Hyperlink security — OSC 8
 
 The library validates hyperlink framing and URI syntax but does not decide whether a URI is safe for a particular application to expose to users.
 
 It does not fetch targets, resolve DNS, launch browsers/shells, or apply a universal URI-scheme trust policy.
 
-## 16. Desktop notification privacy
+## 18. Desktop notification privacy
 
 OSC 9, OSC 777, and OSC 99 notifications can leave the terminal window and appear in desktop notification surfaces, logs, recordings, screen sharing, or accessibility software.
 
@@ -210,63 +268,63 @@ Applications should not place secrets in notification content unless that disclo
 
 OSC 99 notification identifiers and alive-query results may reveal application state. Capability/alive responses remain untrusted terminal input.
 
-## 17. Notification event boundary
+## 19. Notification event boundary
 
 Kitty OSC 99 buttons and terminal-originated activation/close reports remain outside the current public surface because they are unsolicited input events and must eventually integrate through the same authoritative `ReadEventAsync(...)` path.
 
 No protocol-specific background reader is provided as a workaround.
 
-## 18. Safe OSC 9 exclusion boundary
+## 20. Safe OSC 9 exclusion boundary
 
 The public OSC 9 surface intentionally excludes vendor commands that can execute, block, control host-side behavior, or disclose environment data. There is no generic `WriteOsc9Async(command, payload)` escape hatch.
 
-## 19. iTerm2 OSC 1337 exclusion boundary
+## 21. iTerm2 OSC 1337 exclusion boundary
 
 The reviewed OSC 1337 surface intentionally excludes generic dispatch and invasive operations for profile mutation, focus stealing, URL opening, pasteboard/file transfer, custom scripting, arbitrary colors/cursors, Unicode-version mutation, and Touch Bar state.
 
 Those omissions are security boundaries rather than missing convenience aliases.
 
-## 20. Modern keyboard, focus, mouse, and paste privacy
+## 22. Modern keyboard, focus, mouse, and paste privacy
 
 Modern keyboard protocols can expose press/repeat/release phase, associated text, shifted/base-layout identities, and modifier state. Focus/mouse reports expose interaction context. Bracketed-paste data may contain arbitrary user text.
 
 Applications should collect, log, and transmit only what they need. Bracketed paste marks provenance and boundaries; it does not make pasted content safe to execute.
 
-## 21. Terminal observations can fingerprint the environment
+## 23. Terminal observations can fingerprint the environment
 
 Explicit queries can reveal terminal/environment characteristics such as device attributes, capability strings, cursor/color state, clipboard contents, notification support, and graphics support.
 
 Applications should issue only observations they need.
 
-`DisplayRasterAsync(...)` may issue the narrowly scoped Primary Device Attributes probe when verified graphics evidence is not already available; it does not conduct broad terminal fingerprinting.
+`DisplayRasterAsync(...)` may issue narrowly scoped Sixel/Kitty capability probes when verified graphics evidence is not already available; it does not conduct broad terminal fingerprinting.
 
-## 22. Redirected output
+## 24. Redirected output
 
 Semantic operations that require a live terminal reject known redirected/non-terminal output rather than blindly writing control bytes into a file or pipe.
 
 Active queries additionally require compatible interactive input/output endpoints through the shared query contract.
 
-## 23. Restoration, lifecycle, and evidence invalidation
+## 25. Restoration, lifecycle, and evidence invalidation
 
 When `Icod.Terminal` claims exact restoration, it establishes a truthful baseline first. Unknown state is not replaced by a guessed default while being described as restoration.
 
-Suspend/resume and explicit invalidation are trust boundaries for live observations. Generation-scoped `LiveProbe` and `ProtocolResponse` evidence, including Sixel verification, expires through the existing semantic evidence generation mechanism. Immutable selected TermInfo/profile evidence may persist because it describes static session configuration rather than a prior live observation.
+Suspend/resume and explicit invalidation are trust boundaries for live observations. Generation-scoped `LiveProbe` and `ProtocolResponse` evidence, including Sixel and Kitty Graphics verification, expires through the existing semantic evidence generation mechanism. Immutable selected TermInfo/profile evidence may persist because it describes static session configuration rather than a prior live observation.
 
-Raster images are ephemeral output. Version 1.7 does not replay them automatically after resume and does not claim to restore external terminal image contents/palette state on disposal.
+Raster images are ephemeral output. The library does not replay them automatically after resume and does not claim to restore external Sixel palette/image contents or Kitty image/placement state on disposal.
 
-## 24. Dependencies and native boundaries
+## 26. Dependencies and native boundaries
 
 Native platform APIs are used only for terminal-control/lifecycle operations that require them. The package does not hide PTY process hosting, shell execution, browser/network access, OS clipboard integration, image decoding, or native desktop notification APIs behind terminal semantic methods.
 
-Sixel is terminal traffic only.
+Sixel and Kitty Graphics are terminal traffic only. The 1.8 Kitty implementation uses direct transfer specifically so no filesystem/shared-memory graphics dependency is introduced.
 
-## 25. Reporting security issues
+## 27. Reporting security issues
 
 Security defects should be reported through the repository owner's supported private security-reporting channel when available rather than publishing exploitable details before a fix can be prepared.
 
 Compatibility or missing-feature requests should remain distinct from security reports.
 
-## 26. Permanent security principles
+## 28. Permanent security principles
 
 For the stable 1.x line, new features should preserve these principles:
 
@@ -276,9 +334,11 @@ For the stable 1.x line, new features should preserve these principles:
 4. preserve one authoritative input/query reader;
 5. do not infer support solely from brand/environment identity;
 6. separate capability state from evidence source/lifetime;
-7. distinguish emission from terminal application or acknowledgement;
-8. make metadata disclosure explicit;
-9. do not claim exact restoration without a truthful baseline;
-10. surface uncertainty and compound failures rather than hiding them;
-11. avoid hidden host execution, network access, file decoding, or process-global side effects;
-12. once a terminal control string is committed, preserve frame integrity rather than using ordinary caller cancellation to truncate it.
+7. treat correlation as bounded ownership rather than trust;
+8. distinguish emission from terminal application or acknowledgement;
+9. make metadata disclosure explicit;
+10. do not claim exact restoration without a truthful baseline;
+11. surface uncertainty and compound failures rather than hiding them;
+12. avoid hidden host execution, network access, file decoding, or process-global side effects;
+13. once a terminal graphics transaction is committed, preserve logical-transfer integrity rather than using ordinary caller cancellation to truncate it;
+14. never automatically replay or switch backends after partial committed graphics failure.

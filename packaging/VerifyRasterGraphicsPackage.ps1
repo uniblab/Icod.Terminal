@@ -78,7 +78,7 @@ try {
 		)
 		foreach ($requiredMember in $requiredMembers) {
 			if ($requiredMember -notin $documentedMembers) {
-				throw "$entryPath is missing required 1.7 raster documentation '$requiredMember'."
+				throw "$entryPath is missing required stable raster documentation '$requiredMember'."
 			}
 		}
 	}
@@ -136,4 +136,4 @@ try {
 	}
 }
 
-Write-Host "1.7 raster graphics package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.8 multi-backend raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
