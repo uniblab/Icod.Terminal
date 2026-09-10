@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.VsCodeShellIntegration.Sample
-	Sample application demonstrating typed VS Code OSC 633 shell integration.
+	Sample application demonstrating Icod.Terminal VsCodeShellIntegration features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
