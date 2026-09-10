@@ -206,6 +206,7 @@ internal sealed class KittyGraphicsSupportProbe {
 				return this.response;
 			}
 		}
+	}
 
 	internal FormatException? Failure {
 		get {
@@ -213,6 +214,7 @@ internal sealed class KittyGraphicsSupportProbe {
 				return this.failure;
 			}
 		}
+	}
 
 	internal void RecordResponse(
 		KittyGraphicsResponse value
