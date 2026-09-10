@@ -103,7 +103,7 @@ jobs:
           -Configuration '${{ env.CONFIGURATION }}'
 
   validated-package:
-    needs: [package-prep, package-contracts]
+    needs: [package-contracts]
     name: Validated package artifact
     runs-on: ubuntu-latest
     steps:
