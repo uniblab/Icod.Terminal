@@ -187,12 +187,13 @@ Version 1.8 retained the 1.7 public API fingerprint:
 
 The `1.8.1` maintenance work is intended to retain that public surface unchanged.
 
-See [Compatibility and Versioning](docs/Compatibility-and-Versioning.md).
+See [Compatibility and Versioning](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [Migration to 1.0](docs/Migration-to-1.0.md).
 
 ## Documentation
 
 Start with:
 
+- [1.8.1 maintenance release notes](docs/releases/1.8.1.md)
 - [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
 - [1.8.0 release notes](docs/releases/1.8.0.md)
 - [1.8.0 development roadmap](Icod.Terminal-1.8.0-Development-Roadmap.md)
@@ -201,6 +202,7 @@ Start with:
 - [Input and Events](docs/Input-and-Events.md)
 - [Security and Privacy](docs/Security-and-Privacy.md)
 - [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
+- [Migration to 1.0](docs/Migration-to-1.0.md)
 - [Samples](samples/README.md)
 - [Changelog](CHANGELOG.md)
 
