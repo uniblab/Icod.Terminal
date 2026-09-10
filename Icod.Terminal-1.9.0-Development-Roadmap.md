@@ -2,7 +2,7 @@
 
 **Release:** `1.9.0`  
 **Theme:** unsolicited semantic terminal events and interactive Kitty OSC 99 notifications  
-**Status:** roadmap frozen; E190 authorized to begin in the 1.9 feature PR  
+**Status:** E190-E197 accepted; E198 adversarial hardening and downstream/package acceptance authorized to begin  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.8.1`  
 **Current source/package identity at roadmap creation:** `1.8.1`
@@ -212,15 +212,15 @@ The semantic event model does not automatically attach process arguments, enviro
 ## Tranche plan
 
 ```text
-E190  unsolicited semantic-event contract and reference freeze
-E191  public TerminalEvent semantic envelope and API regret gate
-E192  ordered decoder/coordinator semantic-event substrate
-E193  Kitty OSC 99 unsolicited-report grammar and ownership
-E194  query coexistence, bounded buffering, and routing integration
-E195  interactive Kitty notification request options and buttons
-E196  typed activation/button/close semantic event projection
-E197  lifecycle, cancellation, disposal, and late-report semantics
-E198  adversarial hardening, downstream/package/sample acceptance
+E190  unsolicited semantic-event contract and reference freeze          accepted
+E191  public TerminalEvent semantic envelope and API regret gate        accepted
+E192  ordered decoder/coordinator semantic-event substrate              accepted
+E193  Kitty OSC 99 unsolicited-report grammar and ownership             accepted
+E194  query coexistence, bounded buffering, and routing integration     accepted
+E195  interactive Kitty notification request options and buttons        accepted
+E196  typed activation/button/close semantic event projection           accepted
+E197  lifecycle, cancellation, disposal, and late-report semantics      accepted
+E198  adversarial hardening, downstream/package/sample acceptance       next
 E199  public API, documentation, compatibility, and release closure
 ```
 
@@ -255,6 +255,8 @@ Publish the complete first semantic event family through `ReadEventAsync(...)`, 
 ## E197 — lifecycle, cancellation, disposal, and late-report semantics
 
 Qualify queued events across suspend/resume, fragmented-report cancellation, disposal with pending waits, late query responses, end-of-input, and the no-auto-close/no-replay rules.
+
+**Accepted:** the six-case semantic lifecycle matrix passed unchanged against the E196 runtime on `net8.0`, `net9.0`, and `net10.0` across Windows, Linux, and macOS. No production runtime change was required; the established authoritative reader, bounded application-event domain, query late-response ownership, and session lifecycle machinery already satisfy the 1.9 semantic-event contract. See `docs/E197-Semantic-Event-Lifecycle-and-Failure-Hardening.md`.
 
 ## E198 — adversarial hardening, downstream/package/sample acceptance
 
