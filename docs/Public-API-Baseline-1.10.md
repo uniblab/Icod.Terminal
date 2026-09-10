@@ -1,7 +1,7 @@
 # Icod.Terminal Public API Baseline — 1.10.0 Development
 
 **Release:** `1.10.0`  
-**Status:** provisional C103 public API checkpoint; final freeze occurs at C108  
+**Status:** provisional C104 public API checkpoint; final freeze occurs at C108  
 **Target frameworks:** `net8.0`, `net9.0`, `net10.0`
 
 ## Purpose
@@ -14,10 +14,10 @@ Historical baselines, including the final 1.9 baseline, remain unchanged.
 
 The deterministic reflection snapshot generated independently for `net8.0`, `net9.0`, and `net10.0` is identical across all three target frameworks.
 
-After normalizing line endings to LF, the C103 checkpoint fingerprint is:
+After normalizing line endings to LF, the C104 checkpoint fingerprint is:
 
 ```text
-ebca3e14f21354429c956eca1e43e22230cf4dbf151de08ef126133e321e9e56
+ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 ```
 
 The machine-readable fingerprint is stored in:
@@ -78,7 +78,7 @@ Construction is library-owned; the constructor is not public. This makes the typ
 
 ## C103 side-effect-free session inspection
 
-C103 adds one public session operation:
+C103 adds:
 
 ```csharp
 public TerminalCapabilityStatus InspectCapability(
@@ -88,13 +88,36 @@ public TerminalCapabilityStatus InspectCapability(
 
 The operation is synchronous and side-effect free. It projects the session's existing semantic evidence and routing state only; it does not emit terminal bytes or perform a live probe.
 
-Support knowledge and endpoint availability remain separate. For example, a statically advertised output capability may remain `Advertised` while its endpoint is `Unavailable`, in which case `IsUsable` is false without rewriting the support answer to `Unsupported`.
+Support knowledge and endpoint availability remain separate. A statically advertised output capability may remain `Advertised` while its endpoint is `Unavailable`, in which case `IsUsable` is false without rewriting the support answer to `Unsupported`.
 
-The public method maps the curated public capability enum to the existing internal semantic-routing vocabulary through an explicit private mapping. It does not expose or numerically alias the internal enum.
+## C104 explicit bounded verification
+
+C104 adds:
+
+```csharp
+public ValueTask<TerminalCapabilityStatus> VerifyCapabilityAsync(
+    TerminalCapability capability,
+    CancellationToken cancellationToken = default
+);
+```
+
+Verification attempts to strengthen current support knowledge only where an existing reviewed bounded live probe exists. In the initial 1.10 vocabulary those probe paths are:
+
+```text
+KeyboardReporting
+    Kitty keyboard support probe
+
+RasterGraphics
+    existing Kitty Graphics + Sixel probe orchestration
+```
+
+The operation returns immediately without probing when the required endpoint is unavailable or current live support evidence is already decisive. Capabilities without a reviewed support probe return their current inspection status unchanged; the public API does not invent protocol traffic merely to turn an unknown answer into a different state.
+
+The method reuses the existing authoritative query coordinator and existing internally bounded probe deadlines while honoring caller cancellation.
 
 ## Dependency and protocol neutrality
 
-The public evidence vocabulary deliberately does not expose:
+The public planning surface deliberately does not expose:
 
 - `Icod.TermInfo` as an evidence identity;
 - OSC, CSI, DCS, or APC framing;
