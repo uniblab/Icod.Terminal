@@ -6,16 +6,17 @@ The public API exposes typed semantic queries. The query transaction manager, ra
 
 ## 1. One terminal conversation
 
-Terminal queries share the same physical input stream used for application input.
+Terminal queries share the same physical input stream used for application input and unsolicited semantic reports.
 
 A query therefore is not merely "write bytes, then read bytes." `TerminalSession` must coordinate:
 
 1. request output;
 2. an expected response shape;
 3. ordinary user input that may arrive before, during, or after the response;
-4. other queries which could receive an indistinguishable response;
-5. caller cancellation or timeout;
-6. suspend/resume and session disposal.
+4. unsolicited semantic reports that may share the same control family or OSC number;
+5. other queries which could receive an indistinguishable response;
+6. caller cancellation or timeout;
+7. suspend/resume and session disposal.
 
 All built-in queries use the session's authoritative input coordinator and response router. Callers must not create a competing raw reader over the same input transport.
 
@@ -31,6 +32,7 @@ The 1.x query surface includes typed operations in these protocol families:
 - dynamic-color observation for the supported OSC 10–14, 17, and 19 semantic colors;
 - OSC 22 pointer-shape observation;
 - OSC 52 clipboard/selection observation;
+- Kitty OSC 99 support/alive observation;
 - internal lifecycle observation required to re-establish negotiated state after resume.
 
 The presence of a protocol family does not create a generic public CSI/OSC/DCS query builder. Public operations remain typed and bounded.
@@ -114,21 +116,31 @@ request B wants the same response shape
 
 If B were emitted immediately after caller A timed out, response A could be misidentified as response B.
 
-Instead, A continues to own its possible response for a bounded interval. If the late response arrives, it is consumed by A's stale ownership and does not leak into ordinary input or a later transaction. If no response arrives within the bounded ownership period, the ambiguity slot is released.
+Instead, A continues to own its possible response for a bounded interval. If the late response arrives, it is consumed by A's stale ownership and does not leak into ordinary input, the unsolicited semantic lane, or a later transaction. If no response arrives within the bounded ownership period, the ambiguity slot is released.
 
 This behavior is a core 1.x correctness guarantee.
 
-## 8. Response routing precedes ordinary input decoding
+## 8. Query routing precedes semantic events and ordinary input
 
-When an active response expectation exists, the input coordinator checks whether buffered input belongs to the correlated terminal response before presenting the same bytes as ordinary application input.
+Version 1.9 freezes the authoritative framed-input precedence as:
 
-Only a frame matching the active expectation is routed to that transaction. Unrelated text, keys, mouse/focus/paste input, and unrelated protocol-looking data continue through normal input decoding according to the parser contract.
+```text
+1. active query/response ownership
+2. recognized unsolicited semantic-report ownership
+3. ordinary application-input decoding
+```
+
+When an active response expectation exists, the input coordinator first checks whether buffered input belongs to the correlated terminal response before presenting the same bytes as a semantic event or ordinary application input.
+
+Only a frame matching the active expectation is routed to that transaction. A recognized unsolicited report that is unrelated to the active query remains available to the semantic-event path. Unrelated text, keys, mouse/focus/paste input, and unrelated protocol-looking data continue through normal input decoding according to the parser contract.
+
+A frame claimed by a query is never double-delivered as a semantic event. Likewise, sharing OSC 99 does not permit a notification activation/button/close report to satisfy a support/alive query.
 
 The public API does not expose raw `TerminalResponseFrame` objects.
 
 ## 9. Malformed correlated responses
 
-A response that is clearly correlated to the active query but malformed is not silently treated as ordinary application input.
+A response that is clearly correlated to the active query but malformed is not silently treated as an unsolicited semantic event or ordinary application input.
 
 The caller receives a deterministic parse failure, normally `FormatException` for the typed public query contracts.
 
@@ -139,7 +151,9 @@ Examples include:
 - an oversized correlated response;
 - invalid encoding or payload structure for the specific protocol.
 
-This prevents a malformed terminal response from being mistaken for unrelated user input while also preventing indefinite parser accumulation.
+This prevents a malformed terminal response from being mistaken for unrelated application traffic while also preventing indefinite parser accumulation.
+
+The same ownership principle applies when 1.9 recognizes an unsolicited semantic candidate after query routing declines it: later malformed metadata, payload, termination, or size does not cause those already-owned bytes to leak back into ordinary text. Semantic recovery remains a decoder concern rather than a successful query result.
 
 ## 10. Oversized responses and resynchronization
 
@@ -150,6 +164,8 @@ For a correlated response that exceeds its permitted bound, the active transacti
 Where a framed protocol such as OSC requires draining toward a terminator before the ordinary input stream can be trusted again, resynchronization itself is bounded. The library does not discard an unbounded stream while searching indefinitely for a terminator.
 
 If bounded resynchronization cannot restore a trustworthy boundary, failure remains explicit rather than pretending the parser is synchronized.
+
+Version 1.9 additionally guarantees that after malformed/oversized unsolicited semantic recovery restores a boundary, routing restarts at the top-level query-precedence stage before later buffered traffic is considered. A correlated query response immediately following a bad semantic frame therefore cannot be skipped merely because recovery occurred in the semantic branch.
 
 ## 11. Cancellation and timeout results
 
@@ -165,7 +181,7 @@ Public query callers should expect:
 
 The exact public method XML documentation remains authoritative for method-specific exceptions.
 
-The important common rule is that caller completion after request emission does not erase bounded stale-response ownership.
+The important common rule is that caller completion after request emission does not erase bounded stale-response ownership. A late query-owned OSC 99 response is not reclassified as an unsolicited notification event merely because the original caller has already timed out or canceled.
 
 ## 12. Suspend/resume generations
 
@@ -181,6 +197,8 @@ When suspend begins:
 
 A transaction rechecks its generation after obtaining the ambiguity slot and before emission. This prevents a request queued before suspend from appearing physically during a later terminal generation.
 
+Already-decoded unsolicited semantic events are application observations, not query state. They are not retroactively invalidated by the query-generation transition.
+
 ## 13. Lifecycle observation uses the same ambiguity domain
 
 Some session-owned state must be re-observed after resume, notably negotiated terminal capabilities whose truth cannot safely be assumed across suspension.
@@ -195,7 +213,7 @@ Instead:
 4. public queries remain unavailable during the lifecycle-only observation phase;
 5. normal public query availability returns only after lifecycle re-entry is complete.
 
-Therefore a late pre-suspend response cannot be stolen by a post-resume capability probe.
+Therefore a late pre-suspend response cannot be stolen by a post-resume capability probe or reclassified as a semantic notification event.
 
 ## 14. Lifecycle participant restrictions
 
@@ -227,9 +245,9 @@ A terminal query can cause data to cross a trust boundary.
 
 Clipboard queries in particular may request content from terminal/desktop selection state. Applications must treat returned clipboard text as external input and must consider whether querying it is appropriate for their security/privacy model.
 
-Likewise, device attributes, colors, capabilities, and other observations can reveal terminal-environment details. `Icod.Terminal` returns requested observations; it does not automatically redact application-requested query results.
+Likewise, device attributes, colors, capabilities, notification support, and other observations can reveal terminal-environment details. `Icod.Terminal` returns requested observations; it does not automatically redact application-requested query results.
 
-See `Security-and-Privacy.md` once T193 establishes the consolidated security authority.
+See `Security-and-Privacy.md` for the permanent trust-boundary authority.
 
 ## 18. Explicit non-contracts
 
@@ -241,7 +259,8 @@ The 1.x query system does not promise:
 - infinite late-response ownership;
 - unbounded request, response, queue, or resynchronization buffers;
 - reuse of an old-generation request after suspend/resume;
-- delivery of correlated terminal responses as ordinary input events;
+- delivery of correlated terminal responses as semantic or ordinary input events;
+- a generic query/semantic arbitration API exposed to callers;
 - a guarantee that every emulator implements every typed query.
 
-Future query families must use the same bounded correlation, emission-commit, stale-response ownership, and lifecycle-generation model unless a new protocol provides a stronger transaction identity that can be integrated without weakening these guarantees.
+Future query families must use the same bounded correlation, emission-commit, stale-response ownership, lifecycle-generation, and authoritative routing model unless a new protocol provides a stronger transaction identity that can be integrated without weakening these guarantees.
