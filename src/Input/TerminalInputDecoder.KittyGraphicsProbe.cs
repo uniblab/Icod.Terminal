@@ -161,8 +161,12 @@ internal sealed partial class TerminalInputDecoder {
 			introducerComplete = true;
 			return true;
 		}
-		if ( EscapeByte != bytes[ 0 ] || 2 > bytes.Count ) {
+		if ( EscapeByte != bytes[ 0 ] ) {
 			return false;
+		}
+		if ( 1 == bytes.Count ) {
+			payloadStart = 2;
+			return true;
 		}
 		if ( (byte)'_' != bytes[ 1 ] ) {
 			return false;
