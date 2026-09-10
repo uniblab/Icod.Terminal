@@ -78,6 +78,11 @@ public sealed partial class TerminalSession {
 					);
 					return true;
 				}
+				if ( probe.CorrelationObserved ) {
+					throw new FormatException(
+						"The correlated Kitty Graphics response did not terminate structurally before the probe deadline."
+					);
+				}
 
 				this.RecordSemanticBackendEvidence(
 					TerminalProtocolBackend.ApcKittyGraphics,
