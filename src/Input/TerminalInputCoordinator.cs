@@ -238,6 +238,9 @@ internal sealed class TerminalInputCoordinator {
 				TerminalInputDecodeResult result = await this.decoder.ReadNextAsync(
 					this.stopToken
 				).ConfigureAwait( false );
+				if ( result.RoutingRestartRequired ) {
+					continue;
+				}
 				if ( result.ResponseRouted ) {
 					lock ( this.sync ) {
 						if ( observedQueryDemandGeneration == this.queryDemandGeneration ) {

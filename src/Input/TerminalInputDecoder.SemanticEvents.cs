@@ -83,14 +83,7 @@ internal sealed partial class TerminalInputDecoder {
 						maximumFrameBytes,
 						cancellationToken
 					).ConfigureAwait( false );
-					if ( !await this.EnsureInputAfterSemanticDiscardAsync(
-						cancellationToken
-					).ConfigureAwait( false ) ) {
-						return TerminalInputDecodeResult.FromInput(
-							TerminalInputEvent.EndOfInput()
-						);
-					}
-					continue;
+					return TerminalInputDecodeResult.RestartRouting();
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					if ( !await this.ReadMoreAsync(
@@ -115,14 +108,7 @@ internal sealed partial class TerminalInputDecoder {
 						}
 					} catch ( FormatException ) {
 						this.Consume( parseResult.Length );
-						if ( !await this.EnsureInputAfterSemanticDiscardAsync(
-							cancellationToken
-						).ConfigureAwait( false ) ) {
-							return TerminalInputDecodeResult.FromInput(
-								TerminalInputEvent.EndOfInput()
-							);
-						}
-						continue;
+						return TerminalInputDecodeResult.RestartRouting();
 					}
 
 					if ( semanticEvent is null ) {
@@ -176,18 +162,6 @@ internal sealed partial class TerminalInputDecoder {
 		this.Consume( this.bufferedBytes.Count );
 		await this.DrainOversizedResponseAsync(
 			TerminalControlFamily.Osc,
-			cancellationToken
-		).ConfigureAwait( false );
-	}
-
-	private async ValueTask<bool> EnsureInputAfterSemanticDiscardAsync(
-		CancellationToken cancellationToken
-	) {
-		if ( 0 < this.bufferedBytes.Count ) {
-			return true;
-		}
-
-		return await this.ReadMoreAsync(
 			cancellationToken
 		).ConfigureAwait( false );
 	}

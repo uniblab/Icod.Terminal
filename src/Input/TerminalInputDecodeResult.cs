@@ -53,6 +53,25 @@ internal readonly struct TerminalInputDecodeResult {
 		this.responseFrame = responseFrame;
 		this.responseDisposition = responseDisposition;
 		this.responseException = responseException;
+		this.RoutingRestartRequired = false;
+	}
+
+	private TerminalInputDecodeResult(
+		bool routingRestartRequired
+	) {
+		if ( !routingRestartRequired ) {
+			throw new ArgumentException(
+				"The routing-restart decode result must request a routing restart.",
+				nameof( routingRestartRequired )
+			);
+		}
+
+		this.ApplicationEvent = null;
+		this.responseExpectation = null;
+		this.responseFrame = null;
+		this.responseDisposition = TerminalQueryResponseDisposition.Completion;
+		this.responseException = null;
+		this.RoutingRestartRequired = true;
 	}
 
 	internal TerminalApplicationEvent? ApplicationEvent {
@@ -71,7 +90,14 @@ internal readonly struct TerminalInputDecodeResult {
 		}
 	}
 
+	internal bool RoutingRestartRequired {
+		get;
+	}
+
 	internal void CompleteRoutedResponse() {
+		if ( this.RoutingRestartRequired ) {
+			return;
+		}
 		if ( this.responseExpectation is null ) {
 			throw new InvalidOperationException(
 				"The terminal decode result does not contain a routed response."
@@ -119,6 +145,10 @@ internal readonly struct TerminalInputDecodeResult {
 			TerminalQueryResponseDisposition.Completion,
 			responseException: null
 		);
+	}
+
+	internal static TerminalInputDecodeResult RestartRouting() {
+		return new TerminalInputDecodeResult( routingRestartRequired: true );
 	}
 
 	internal static TerminalInputDecodeResult RoutedResponse(
