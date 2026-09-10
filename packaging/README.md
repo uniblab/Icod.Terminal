@@ -46,7 +46,7 @@ Runtime/architecture evidence and portable package evidence are separate contrac
 
 `BuildPackageArtifact.ps1` builds the portable package candidate once and verifies the frozen current public API fingerprint. CI uploads that candidate for independent package-contract jobs rather than rebuilding the same RID-independent NuGet package on every architecture.
 
-For 1.7 the current machine public API fingerprint is:
+The current machine public API fingerprint, introduced by 1.7 and retained through 1.8.1, is:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
@@ -62,14 +62,14 @@ from `docs/Public-API-Baseline-1.7.sha256`. Historical baselines remain checked 
 | --- | --- |
 | `foundation` | exact package structure/Source Link/XML plus 0.8–0.10 package foundations |
 | `presentation` | pointer shape, semantic prompt, colors, and lifecycle-safe color ownership |
-| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, OSC 99, modern keyboard, **1.7 raster graphics**, and hardening |
+| `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, OSC 99, modern keyboard, **1.7/1.8 raster graphics**, and hardening |
 | `release` | stable 1.x release-line package contract and packaged `Icod.DCurses` compatibility witness |
 
 The semantic shard includes fresh package-only consumers and generated XML-documentation checks for additive stable APIs.
 
 ### Raster package verification
 
-`VerifyRasterGraphicsPackage.ps1` qualifies the public 1.7 raster contract from the freshly packed NuGet artifact. It:
+`VerifyRasterGraphicsPackage.ps1` qualifies the public raster contract introduced in 1.7 and retained by the 1.8 line from the freshly packed NuGet artifact. It:
 
 - verifies generated XML documentation for `TerminalRasterPixelFormat`, `TerminalRasterColor`, `TerminalRasterImage`, their reviewed public members, and `TerminalSession.DisplayRasterAsync(...)` under `lib/net8.0`, `lib/net9.0`, and `lib/net10.0`;
 - restores `tools/package-raster-graphics-smoke` from an isolated temporary directory against the freshly built package;
@@ -126,9 +126,9 @@ The tag workflow runs runtime acceptance and package preparation in parallel. Af
 
 `SelectReleasePackages.ps1` filters by exact tag version and copies the matching symbol package. The GitHub Release attaches the `.nupkg`, `.snupkg`, and SHA-256 checksum file and uses the curated release-note document rather than auto-generated prose.
 
-## 1.7 release-closure rule
+## Stable release-closure rule
 
-For `1.7.0`, D179 requires one unchanged final pull-request head to pass:
+Before any stable release PR leaves draft status, one unchanged final pull-request head must pass the complete Staging qualification matrix:
 
 ```text
 Runtime Windows
@@ -142,7 +142,7 @@ Package Stable 1.x release line
 Validated package artifact
 ```
 
-Only after that exact-head Staging matrix succeeds may the PR leave draft status. Merge, post-merge Release validation, and `v1.7.0` tagging/publication remain separate explicit steps.
+Only after that exact-head Staging matrix succeeds may the PR leave draft status. Merge, post-merge Release validation, and `v<semver>` tagging/publication remain separate explicit steps.
 
 ## Organization template follow-up
 

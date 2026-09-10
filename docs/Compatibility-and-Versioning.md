@@ -43,7 +43,7 @@ Version `1.7.0` intentionally advanced the current public API fingerprint to:
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
 
-Version `1.8.0` intentionally adds no public API and retains that exact fingerprint. There is therefore no redundant `Public-API-Baseline-1.8` file.
+Versions `1.8.0` and `1.8.1` intentionally add no public API and retain that exact fingerprint. There is therefore no redundant `Public-API-Baseline-1.8` file.
 
 The authoritative current baseline remains:
 
@@ -384,20 +384,20 @@ The repository maintains layered evidence including:
 - resource-bound tests;
 - release/distribution validation on configured architectures.
 
-For version 1.8, A180–A188 each passed exact-head Staging qualification. A188 passed on `997feb9628d34389199ca3fffdf90e829f33819a`, workflow `34469956370`, including all three runtime OS jobs, package candidate/public-API freeze, all four package shards, and the validated package artifact.
+Version 1.8.0 completed the A180–A189 APC/Kitty Graphics program and retained the 1.7 public API fingerprint. Version 1.8.1 is a non-feature-bearing maintenance release that retains the same public and behavioral compatibility contract while strengthening release-facing documentation and executable sample coverage.
 
-A189 adds package-only multi-backend raster/XML qualification, synchronized permanent documentation, and requires one final documentation-complete exact head to pass the same complete Staging matrix before the release program is considered complete.
+Exact release qualification evidence belongs to the relevant pull-request workflow, merged `main` workflow, release notes, and GitHub Release rather than being hard-coded into this permanent policy document.
 
 ## 21. Release rule
 
 A green feature checkpoint is not publication authorization.
 
-For `1.8.0`:
+For every stable release:
 
-1. the exact final A189 PR head must pass the full Staging matrix;
-2. release-program completion may then be recorded and PR readiness considered;
-3. merge requires explicit authorization/action;
+1. one unchanged final pull-request head must pass the complete Staging qualification matrix;
+2. only that qualified exact head may be considered ready for merge;
+3. merge remains an explicit action;
 4. the resulting `main` head must pass Release distribution validation;
-5. `v1.8.0` tagging/publication requires separate explicit authorization.
+5. `v<semver>` tagging/publication remains a separate explicit action and must use the curated `docs/releases/<version>.md` notes.
 
 These gates may evolve operationally, but equivalent compatibility evidence must exist before historical checks are removed.

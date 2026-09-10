@@ -38,6 +38,8 @@ try {
     foreach ($script in @(
         'VerifyNotificationSample.ps1',
         'VerifyITerm2ShellIntegrationSample.ps1',
+        'VerifyVsCodeShellIntegrationSample.ps1',
+        'VerifyRasterGraphicsSample.ps1',
         'VerifyDCursesSynchronizedOutput.ps1',
         'VerifyDCursesProgress.ps1',
         'VerifyDCursesPointerShape.ps1',
