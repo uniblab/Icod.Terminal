@@ -234,7 +234,7 @@ public sealed class TerminalRasterDisplayTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
-			if ( buffer.Span.SequenceEqual( PrimaryDeviceAttributesRequest ) ) {
+			if ( buffer.Span.EndsWith( PrimaryDeviceAttributesRequest ) ) {
 				Interlocked.Increment( ref this.primaryDeviceAttributesRequestCount );
 				if ( !this.input.Writer.TryWrite(
 					this.primaryDeviceAttributesResponse.ToArray()
