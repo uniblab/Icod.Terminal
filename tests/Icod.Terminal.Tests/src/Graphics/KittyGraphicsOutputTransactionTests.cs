@@ -369,6 +369,7 @@ public sealed class KittyGraphicsOutputTransactionTests {
 						.Select( write => write.ToArray() )
 						.ToArray();
 				}
+			}
 		}
 
 		public async ValueTask WriteAsync(
