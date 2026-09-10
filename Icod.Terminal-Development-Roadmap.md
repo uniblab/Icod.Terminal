@@ -5,7 +5,7 @@
 **Language:** C# 13  
 **Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
 **Current release line:** `1.8.0`  
-**Current status:** A180 through A188 accepted; A189 release closure qualifying  
+**Current status:** Complete — A180 through A189 accepted; final status-only PR head pending Staging confirmation  
 **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -46,7 +46,7 @@ The detailed program is:
 
 [`Icod.Terminal-1.8.0-Development-Roadmap.md`](Icod.Terminal-1.8.0-Development-Roadmap.md)
 
-The tranche sequence is functionally complete and in release closure:
+The tranche sequence is complete:
 
 ```text
 A180  APC construction contract and reference freeze           complete
@@ -58,7 +58,7 @@ A185  Kitty Graphics live capability probe/correlation         complete
 A186  multi-backend raster routing and fallback                complete
 A187  raster semantic parity, alpha, geometry, cursor          complete
 A188  APC/Kitty hardening and resource closure                 complete
-A189  package/documentation/compatibility/release closure      qualifying
+A189  package/documentation/compatibility/release closure      complete
 ```
 
 ### 1.8 architectural result
@@ -109,10 +109,9 @@ Direct transmission (`t=d`) is the 1.8 Kitty transport. File, temporary-file, sh
 | A186 | `21fb617965f41270e9f3cd43f405fa6ec6e87b2e` | `34426364013` |
 | A187 | `80d78b74fe780421bf2e667ef434d38775c0dd48` | `34427249773` |
 | A188 | `997feb9628d34389199ca3fffdf90e829f33819a` | `34469956370` |
+| A189 qualification | `0de1a1c6b95b2b36407a94935b3126c8bfd6ca5a` | `34476585310` |
 
 Each accepted checkpoint passed Windows, Linux, macOS runtime/source validation, package candidate/public-API freeze, all four package-contract shards, and the validated package artifact.
-
-A189 qualification head `df54b0506cda3a1bb432207cd45364489ed1df88` passed Staging workflow #1354 / `34474411101` across that same complete matrix after curated 1.8 release-note qualification was corrected.
 
 ### 1.8 public API baseline
 
@@ -142,11 +141,11 @@ A189 adds no public feature. It closes 1.8 with:
 - synchronized README, changelog, architecture, security, compatibility, semantic-output, graphics-roadmap, versioned roadmap, NuGet metadata, and PR ledger;
 - this overall roadmap promoted to the 1.8 release line.
 
+The A189 qualification head `0de1a1c6b95b2b36407a94935b3126c8bfd6ca5a` passed Staging workflow #1355 / `34476585310` across the full matrix. Only status/evidence closure edits follow it; the actual final PR head must pass the same matrix before PR #46 is marked ready for review.
+
 Closure authority:
 
 [`docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`](docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md)
-
-The final status-only closure head must pass the complete Staging matrix before PR #46 is marked ready for review.
 
 ## Completed 1.7.0 program — DCS and Sixel raster graphics
 
@@ -329,8 +328,8 @@ Pull requests validate Staging on Windows, Linux, and macOS runtime/source paths
 For 1.8:
 
 1. A180–A188 are accepted on exact green Staging heads;
-2. A189 qualification head `df54b0506cda3a1bb432207cd45364489ed1df88` passed the complete Staging matrix in workflow #1354 / `34474411101`;
-3. this final roadmap/status closure must pass the same matrix on the actual PR head before PR #46 leaves draft status;
+2. A189 qualification head `0de1a1c6b95b2b36407a94935b3126c8bfd6ca5a` passed the complete Staging matrix in workflow #1355 / `34476585310`;
+3. the status/evidence-only final PR head must pass the same matrix before PR #46 leaves draft status;
 4. merge remains explicit;
 5. the merged `main` head must pass Release distribution validation;
 6. `v1.8.0` tagging/publication remains a separate explicit authorization.
