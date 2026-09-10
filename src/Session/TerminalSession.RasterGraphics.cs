@@ -28,15 +28,14 @@ public sealed partial class TerminalSession {
 	/// Displays one immutable raw raster through a verified graphics backend.
 	/// </summary>
 	/// <remarks>
-	/// Version 1.7 implements this semantic operation through Sixel. The method
-	/// does not expose Sixel commands, palette registers, or backend selection.
-	/// A later backend such as Kitty Graphics can implement the same operation
-	/// without changing the caller's raster contract.
+	/// Version 1.8 resolves the semantic raster operation between verified
+	/// Kitty Graphics and Sixel backends. Backend probing and selection remain
+	/// internal; callers continue to provide one backend-neutral raster image.
 	/// </remarks>
 	/// <param name="image">The owned backend-neutral raster image.</param>
 	/// <param name="cancellationToken">
-	/// Cancellation observed before graphics output commits. After the first
-	/// control-string byte commits, cancellation cannot truncate the frame.
+	/// Cancellation observed before graphics output commits. Once a selected
+	/// graphics transaction commits, cancellation cannot truncate that protocol object.
 	/// </param>
 	/// <returns>
 	/// A successful mutation result when the raster was emitted, an unavailable
@@ -55,7 +54,7 @@ public sealed partial class TerminalSession {
 			TerminalSemanticOperation.RasterGraphics
 		);
 		if ( !IsVerifiedRasterBackend( resolution ) ) {
-			_ = await this.ProbeSixelSupportAsync(
+			await this.ProbeRasterGraphicsBackendsAsync(
 				cancellationToken
 			).ConfigureAwait( false );
 			cancellationToken.ThrowIfCancellationRequested();
@@ -72,6 +71,17 @@ public sealed partial class TerminalSession {
 		}
 
 		switch ( resolution.SelectedCandidate.Value.Backend ) {
+			case TerminalProtocolBackend.ApcKittyGraphics: {
+				KittyRasterData kittyImage = KittyRasterAdapter.Adapt( image );
+				cancellationToken.ThrowIfCancellationRequested();
+				await KittyGraphicsOutputTransaction.WriteAsync(
+					this,
+					kittyImage,
+					cancellationToken
+				).ConfigureAwait( false );
+				return TerminalControlMutationResult.Success();
+			}
+
 			case TerminalProtocolBackend.DcsSixel: {
 				SixelPaletteImage sixelImage;
 				try {
@@ -91,16 +101,68 @@ public sealed partial class TerminalSession {
 				return TerminalControlMutationResult.Success();
 			}
 
-			case TerminalProtocolBackend.ApcKittyGraphics:
-				return TerminalControlMutationResult.Unsupported(
-					"Kitty Graphics is not implemented by Icod.Terminal 1.7.0."
-				);
-
 			default:
 				throw new InvalidOperationException(
-					"The selected raster graphics backend is not recognized by the 1.7 implementation."
+					"The selected raster graphics backend is not recognized by the 1.8 implementation."
 				);
 		}
+	}
+
+	private async ValueTask ProbeRasterGraphicsBackendsAsync(
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalCapabilityResolution kittyEvidence = this.ResolveRasterBackendEvidence(
+			TerminalProtocolBackend.ApcKittyGraphics
+		);
+		if ( kittyEvidence.State is not TerminalCapabilitySupportState.Verified
+			and not TerminalCapabilitySupportState.Unsupported ) {
+			_ = await this.ProbeKittyGraphicsSupportAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+			cancellationToken.ThrowIfCancellationRequested();
+		}
+
+		TerminalSemanticBackendResolution resolution = this.ResolveSemanticBackend(
+			TerminalSemanticOperation.RasterGraphics
+		);
+		if ( IsVerifiedRasterBackend( resolution ) ) {
+			return;
+		}
+
+		TerminalCapabilityResolution sixelEvidence = this.ResolveRasterBackendEvidence(
+			TerminalProtocolBackend.DcsSixel
+		);
+		if ( sixelEvidence.State is TerminalCapabilitySupportState.Verified
+			or TerminalCapabilitySupportState.Unsupported ) {
+			return;
+		}
+		if ( TerminalCapabilityEvidenceSource.ProtocolResponse
+			== sixelEvidence.EvidenceSource ) {
+			return;
+		}
+
+		_ = await this.ProbeSixelSupportAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+	}
+
+	private TerminalCapabilityResolution ResolveRasterBackendEvidence(
+		TerminalProtocolBackend backend
+	) {
+		if ( backend is not TerminalProtocolBackend.ApcKittyGraphics
+			and not TerminalProtocolBackend.DcsSixel ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( backend ),
+				backend,
+				"The requested backend is not a raster graphics backend."
+			);
+		}
+
+		return this.GetSemanticCapabilityEvidence().Resolve(
+			TerminalCapabilitySubject.ForProtocolBackend( backend )
+		);
 	}
 
 	private static bool IsVerifiedRasterBackend(
