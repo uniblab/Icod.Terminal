@@ -2,16 +2,16 @@
 
 **Release:** `1.9.0`  
 **Theme:** unsolicited semantic terminal events and interactive Kitty OSC 99 notifications  
-**Status:** E190-E198 accepted; E199 public API, documentation, compatibility, and release closure authorized to begin  
+**Status:** E190-E198 accepted; E199 release-candidate closure assembled and exact-head Staging qualification pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.8.1`  
-**Current source/package identity at roadmap creation:** `1.8.1`
+**Release-candidate source/package identity:** `1.9.0`
 
 ## Why this release exists
 
 `Icod.Terminal` already owns one authoritative live input conversation. Ordinary application input, lifecycle activity, and typed terminal query responses are coordinated through that one session rather than competing readers.
 
-The stable public `TerminalEvent` model currently represents:
+Before 1.9, the stable public `TerminalEvent` model represented:
 
 ```text
 Input
@@ -38,20 +38,11 @@ Primary reference:
 
 Relevant report forms include activation, one-based button activation, close, and the `untracked` close-tracking result. Interactive request controls include `a=report`, `c=1`, and `p=buttons`; button labels use UTF-8 separated by U+2028 LINE SEPARATOR.
 
-The existing `QueryKittyNotificationSupportAsync(...)` contract already reports whether the terminal advertises activation reports, close events, and buttons. Version 1.9 reuses that observation rather than creating a competing capability database.
+The existing `QueryKittyNotificationSupportAsync(...)` contract reports whether the terminal advertises activation reports, close events, and buttons. Version 1.9 reuses that observation rather than creating a competing capability database.
 
-## Architecture target
+## Architecture result
 
-The authoritative input path evolves conceptually from:
-
-```text
-terminal bytes
-    -> decoder
-        -> active query response
-        -> ordinary application input
-```
-
-to:
+The authoritative input path is:
 
 ```text
 terminal bytes
@@ -72,15 +63,15 @@ TerminalSession.ReadEventAsync(...)
     -> Semantic
 ```
 
-If `TerminalEventKind.Semantic` is accepted, it is appended after the existing stable values. Existing enum numeric values must not move.
+`TerminalEventKind.Semantic = 4` is appended after the existing stable values. Existing enum numeric values do not move.
 
-Input and unsolicited semantic events originate from the same terminal byte stream. Their relative byte-stream order must be preserved in one bounded coordinator domain rather than independent queues that can reorder decoded observations.
+Input and unsolicited semantic events originate from the same terminal byte stream. Their relative byte-stream order is preserved in one bounded coordinator domain rather than independent queues that can reorder decoded observations.
 
-Lifecycle events remain a distinct source and retain the existing documented lifecycle semantics.
+Lifecycle events remain a distinct source and retain the existing documented lifecycle semantics. `ReadEventAsync(...)` and `ReadLifecycleEventAsync(...)` consume the same lifecycle queue rather than duplicated lifecycle streams; applications should choose one ownership pattern rather than independent competing readers.
 
-## Public semantic direction
+## Public semantic result
 
-E191 freezes exact names and signatures after a public-API regret review. The intended shape is additive and protocol-neutral:
+The final additive protocol-neutral shape is:
 
 ```text
 TerminalEvent
@@ -99,7 +90,7 @@ TerminalNotificationEvent
     ButtonNumber?
 ```
 
-The first notification event kinds must distinguish at least:
+The first notification event kinds are:
 
 ```text
 Activated
@@ -110,26 +101,34 @@ CloseTrackingUnavailable
 
 `CloseTrackingUnavailable` is not equivalent to `Closed`; it means the terminal reports that the host cannot reliably observe a future close event.
 
-The semantic envelope must not expose raw OSC bytes, raw selectors, arbitrary metadata dictionaries, backend identifiers, or a generic vendor-event payload.
+The semantic envelope does not expose raw OSC bytes, raw selectors, arbitrary metadata dictionaries, backend identifiers, or a generic vendor-event payload.
 
 Version 1.9 does not add a second `ReadSemanticEventAsync(...)` path. Semantic events belong to the same `ReadEventAsync(...)` stream.
 
-## Interactive notification request direction
+## Interactive notification request result
 
-The existing typed Kitty notification API remains the protocol-specific request surface. `KittyNotificationOptions` should gain reviewed bounded concepts equivalent to activation/button reporting, close reporting, and button labels.
+The existing typed Kitty notification API remains the protocol-specific request surface. `KittyNotificationOptions` gains:
+
+```text
+ReportActivation
+ReportClose
+Buttons
+```
 
 Rules:
 
-1. Reporting remains explicit opt-in.
+1. Reporting is explicit opt-in.
 2. Existing noninteractive notification calls remain byte-compatible when new options are unused.
 3. Interactive reporting requires an explicit caller-supplied notification identifier; generated multipart identifiers are not stable application identities.
-4. Button count and UTF-8 label size are bounded.
-5. Button payload construction uses strict UTF-8 and the protocol-defined U+2028 separator.
-6. Validation completes before output commitment.
-7. Send completion proves request emission, not user interaction or host notification state.
-8. The library does not retain a hidden database of sent notifications.
-9. Returned identifiers and button numbers are untrusted terminal-controlled data.
-10. Event identifiers are correlation data, not authentication.
+4. Buttons are bounded to 16 labels.
+5. Each button label is bounded to 512 UTF-8 bytes.
+6. The complete button payload is bounded to 2,048 UTF-8 bytes including U+2028 separators.
+7. Button payload construction uses strict UTF-8 and the protocol-defined U+2028 separator.
+8. Validation completes before output commitment.
+9. Send completion proves request emission, not user interaction or host notification state.
+10. The library does not retain a hidden database of sent notifications.
+11. Returned identifiers and button numbers are untrusted terminal-controlled data.
+12. Event identifiers are correlation data, not authentication.
 
 The existing `FocusOnActivation` behavior composes independently with reporting.
 
@@ -143,21 +142,23 @@ Ownership order is frozen as:
 3. ordinary application-input decoding
 ```
 
-A frame claimed by an active query is never also published as a semantic event. A recognizable unsolicited semantic report never satisfies an unrelated query merely because it shares the OSC family.
+A frame claimed by an active or bounded late-response query is never also published as a semantic event. A recognizable unsolicited semantic report never satisfies an unrelated query merely because it shares the OSC family.
 
 Recognition establishes bounded ownership, not trust. Grammar, length, numeric, and framing checks remain mandatory. Malformed or oversized owned reports are consumed/recovered deterministically and are not leaked into ordinary application text.
+
+After semantic recovery, routing restarts at active-query precedence before later buffered traffic is considered.
 
 ## Ordering and bounded buffering
 
 Version 1.9 preserves the existing bounded, demand-driven coordinator model while widening the application-facing decoded stream to include semantic events.
 
-Required behavior:
+Required and qualified behavior:
 
 - same-stream input and semantic events preserve decode order;
-- no unbounded semantic side queue;
+- no unbounded semantic side queue exists;
 - slow consumers produce bounded backpressure;
 - active query completion can progress without losing already-decoded application events;
-- timeout/cancellation of one `ReadEventAsync(...)` wait does not discard queued events;
+- timeout/cancellation of one `ReadEventAsync(...)` wait does not discard queued events or fragmented report state;
 - disposal unblocks pending waits through existing session shutdown;
 - enabling notification reporting does not create a second always-running reader.
 
@@ -165,9 +166,11 @@ The public contract is ordering, boundedness, and one-reader ownership, not a sp
 
 ## Query coexistence
 
-Tests must cover semantic reports before and after query responses, between independent fragmented frames, during query timeout/cancellation, during OSC 99 support/alive queries, and alongside Primary DA, DECRQSS, XTGETTCAP, color, geometry, and Kitty Graphics probe traffic.
+The release qualifies semantic reports before and after query responses, between fragmented frames, during query timeout/cancellation, during OSC 99 support/alive queries, and alongside existing query/control traffic.
 
-A semantic event must not satisfy an unrelated query, extend a query deadline, be lost when a query completes, be double-delivered, or reorder already-decoded same-stream input.
+A semantic event does not satisfy an unrelated query, extend a query deadline, become lost when a query completes, become double-delivered, or reorder already-decoded same-stream input.
+
+Malformed semantic recovery re-enters query precedence, so an immediately following correlated response remains available to the active query transaction.
 
 ## Lifecycle, cancellation, and failure
 
@@ -185,29 +188,47 @@ The library validates framing and resource bounds but does not authenticate the 
 
 The semantic event model does not automatically attach process arguments, environment variables, shell history, command output, clipboard data, or unrelated raw terminal traffic.
 
+## Final public API freeze
+
+The final 1.9 public API fingerprint is:
+
+```text
+e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
+```
+
+Authoritative files:
+
+```text
+docs/Public-API-Baseline-1.9.md
+docs/Public-API-Baseline-1.9.sha256
+```
+
+Historical baselines remain retained unchanged.
+
 ## Release invariants
 
 1. Stable `1.0.0` remains the compatibility floor.
 2. `net8.0`, `net9.0`, and `net10.0` remain first-class targets.
 3. One live `TerminalSession` remains the authoritative input reader.
 4. No public second raw-input or semantic-event reader is introduced.
-5. Existing `TerminalEventKind` numeric values remain unchanged; any new value is appended.
+5. Existing `TerminalEventKind` numeric values remain unchanged; `Semantic = 4` is appended.
 6. Ordinary input and semantic events preserve same-stream order.
 7. Active query response ownership has deterministic precedence.
 8. A frame is never double-delivered as query response and semantic event.
 9. Semantic recognition remains bounded and incremental.
 10. Malformed owned reports recover without leaking hostile bytes into ordinary input.
-11. Event buffering remains bounded and backpressured.
-12. Notification reporting remains opt-in.
-13. Existing 1.4 Kitty notification calls remain compatible when interactive options are unused.
-14. Interactive correlation requires an explicit caller notification identifier.
-15. `untracked` is surfaced as close-tracking uncertainty, not a fabricated close.
-16. Interaction reports are validated but unauthenticated terminal input.
-17. Existing support/alive queries remain authoritative and use the same reader/router.
-18. Existing raster, keyboard, presentation, lifecycle, and restoration semantics remain unchanged.
-19. No new package dependency is introduced merely for OSC 99 event support.
-20. Fresh package-only validation covers all intentional new 1.9 public members on every supported TFM.
-21. Current `Icod.DCurses` compatibility remains a release gate.
+11. Recovery re-enters query precedence before later traffic is decoded.
+12. Event buffering remains bounded and backpressured.
+13. Notification reporting remains opt-in.
+14. Existing 1.4 Kitty notification calls remain compatible when interactive options are unused.
+15. Interactive correlation requires an explicit caller notification identifier.
+16. `untracked` is surfaced as close-tracking uncertainty, not a fabricated close.
+17. Interaction reports are validated but unauthenticated terminal input.
+18. Existing support/alive queries remain authoritative and use the same reader/router.
+19. Existing raster, keyboard, presentation, lifecycle, and restoration semantics remain unchanged.
+20. No new package dependency is introduced merely for OSC 99 event support.
+21. Fresh package-only validation covers all intentional new 1.9 public members on every supported TFM.
+22. Current `Icod.DCurses` compatibility remains a release gate.
 
 ## Tranche plan
 
@@ -221,7 +242,7 @@ E195  interactive Kitty notification request options and buttons        accepted
 E196  typed activation/button/close semantic event projection           accepted
 E197  lifecycle, cancellation, disposal, and late-report semantics      accepted
 E198  adversarial hardening, downstream/package/sample acceptance       accepted
-E199  public API, documentation, compatibility, and release closure     next
+E199  public API, documentation, compatibility, and release closure     qualification pending
 ```
 
 ## E190 — unsolicited semantic-event contract and reference freeze
@@ -266,7 +287,9 @@ Exercise every split point, concatenation, boundary/overflow, malformed metadata
 
 ## E199 — public API, documentation, compatibility, and release closure
 
-Freeze the 1.9 API fingerprint; update README, changelog, permanent input/query/notification/security/architecture/versioning authorities, release notes and package metadata; then run the complete Staging gate on the exact final PR head.
+Freeze the final 1.9 API fingerprint, set source/package identity to `1.9.0`, update README/changelog/release notes, align permanent input/query/notification/security/architecture/versioning authorities, verify the release-line package contract, and run the complete Staging gate on one unchanged final PR head.
+
+**Closure candidate assembled:** the release identity, NuGet release metadata, final public API baseline wording, root README, changelog, long-range roadmap, curated `docs/releases/1.9.0.md`, permanent authorities, and `docs/E199-1.9.0-Public-API-Documentation-Compatibility-and-Release-Closure.md` are being aligned on the feature branch. E199 is not accepted until the complete exact-head Staging matrix succeeds.
 
 ## Explicit exclusions
 
@@ -286,12 +309,12 @@ Version 1.9 does not add a raw OSC event stream, arbitrary vendor-event dispatch
 1.12.0 advanced placement only if justified
 ```
 
-The 1.9 event architecture must permit future reviewed unsolicited terminal protocols to add semantic event families without adding readers or exposing raw frames.
+The 1.9 event architecture permits future reviewed unsolicited terminal protocols to add semantic event families without adding readers or exposing raw frames.
 
 ## Development PR rule
 
-The roadmap commit is documentation-only and does not change version, public API, or runtime behavior. E190 may then proceed in the same explicitly authorized 1.9 feature branch/PR. Later tranches remain gated by the acceptance criteria above.
+PR #50 remains the 1.9 development/release-candidate branch until one unchanged E199 head passes the complete Staging qualification matrix. Merge, tagging, and publication are not performed by the development tranche.
 
 ## Release rule
 
-A completed E199 Staging gate is necessary but not sufficient to publish `1.9.0`. After merge, the exact resulting `main` commit must pass the complete Release distribution validation before `v1.9.0` tagging or publication.
+A completed E199 Staging gate is necessary but not sufficient to publish `1.9.0`. The maintainer performs the merge. The exact resulting `main` commit must then pass the complete Release distribution validation before the maintainer creates/pushes `v1.9.0` or publishes the release/package.
