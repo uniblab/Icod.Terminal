@@ -2,7 +2,7 @@
 
 **Release:** `Icod.Terminal 1.8.0`  
 **Tranche:** A184  
-**Status:** implemented / validating
+**Status:** complete — accepted on exact head `d3a7a9262263f28f7ae2d4511520f1b556e5539e`, Staging workflow #1322 / `34420648720`
 
 ## Purpose
 
@@ -144,8 +144,25 @@ A184 regression coverage must prove:
 - session disposal waits for a paused committed Kitty transfer before restoration flush proceeds;
 - the 1.7 public API fingerprint remains unchanged.
 
+## Acceptance evidence
+
+Exact head:
+
+```text
+d3a7a9262263f28f7ae2d4511520f1b556e5539e
+```
+
+Staging workflow:
+
+```text
+#1322
+34420648720
+```
+
+That workflow passed Runtime Windows, Runtime Linux, Runtime macOS, package candidate/public-API freeze, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
+
 ## Acceptance rule
 
 A184 is accepted only on one exact PR head passing Runtime Windows, Runtime Linux, Runtime macOS, package candidate/public-API freeze, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact.
 
-A green A184 checkpoint does not authorize merge or publication. PR #46 remains draft while A185–A189 are developed.
+The accepted checkpoint above satisfies that rule. It does not authorize merge or publication. PR #46 remains draft while A185–A189 are developed.
