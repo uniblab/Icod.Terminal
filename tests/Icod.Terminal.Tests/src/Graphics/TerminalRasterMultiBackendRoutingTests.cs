@@ -25,6 +25,7 @@ using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
+using Icod.Timing;
 using Xunit;
 
 /// <summary>
@@ -315,7 +316,8 @@ public sealed class TerminalRasterMultiBackendRoutingTests {
 					"raster-multi-backend-test"
 				).Build(),
 				ConfigureOutput = false,
-				ObserveLifecycleEvents = false
+				ObserveLifecycleEvents = false,
+				MonotonicClock = new NonAdvancingMonotonicClock()
 			}
 		);
 	}
@@ -490,6 +492,38 @@ public sealed class TerminalRasterMultiBackendRoutingTests {
 				NumberStyles.None,
 				CultureInfo.InvariantCulture
 			);
+		}
+	}
+
+	private sealed class NonAdvancingMonotonicClock : IMonotonicClock {
+		public long GetTimestamp() {
+			return 0;
+		}
+
+		public TimeSpan GetElapsedTime(
+			long startingTimestamp,
+			long endingTimestamp
+		) {
+			return TimeSpan.Zero;
+		}
+
+		public ValueTask DelayAsync(
+			TimeSpan delay,
+			CancellationToken cancellationToken = default
+		) {
+			if ( TimeSpan.Zero > delay ) {
+				throw new ArgumentOutOfRangeException( nameof( delay ) );
+			}
+			cancellationToken.ThrowIfCancellationRequested();
+			return TimeSpan.Zero == delay
+				? ValueTask.CompletedTask
+				: new ValueTask(
+					Task.Delay(
+						Timeout.InfiniteTimeSpan,
+						cancellationToken
+					)
+				)
+			;
 		}
 	}
 
