@@ -31,6 +31,8 @@ public sealed class KittyNotificationOptions {
 	/// Identifiers are limited to ASCII letters, digits, underscore, hyphen, plus sign, and period.
 	/// The legacy special identifier <c>0</c> is rejected. Reusing an identifier requests replacement/update
 	/// of the previously displayed notification with that identifier when the terminal supports replacement.
+	/// An explicit identifier is required when <see cref="ReportActivation"/> or <see cref="ReportClose"/>
+	/// is enabled because received reports use this value only as correlation data.
 	/// </remarks>
 	public string? Identifier {
 		get;
@@ -58,13 +60,51 @@ public sealed class KittyNotificationOptions {
 	/// </summary>
 	/// <remarks>
 	/// The default is <see langword="true"/>. Setting this property to <see langword="false"/> emits
-	/// <c>a=-focus</c>. Activation reporting is deliberately not exposed by this release because unsolicited
-	/// OSC 99 reports require a separate session-event routing contract.
+	/// the Kitty <c>-focus</c> action. This option composes independently with
+	/// <see cref="ReportActivation"/>.
 	/// </remarks>
 	public bool FocusOnActivation {
 		get;
 		init;
 	} = true;
+
+	/// <summary>
+	/// Gets or initializes whether activation and button interaction reports are requested.
+	/// </summary>
+	/// <remarks>
+	/// The default is <see langword="false"/>. Enabling reporting requires an explicit
+	/// <see cref="Identifier"/>. A successful send only proves request emission; received reports remain
+	/// untrusted terminal-controlled input.
+	/// </remarks>
+	public bool ReportActivation {
+		get;
+		init;
+	}
+
+	/// <summary>
+	/// Gets or initializes whether notification-close reports are requested.
+	/// </summary>
+	/// <remarks>
+	/// The default is <see langword="false"/>. Enabling close reporting requires an explicit
+	/// <see cref="Identifier"/>.
+	/// </remarks>
+	public bool ReportClose {
+		get;
+		init;
+	}
+
+	/// <summary>
+	/// Gets or initializes the ordered button labels shown by a supporting terminal.
+	/// </summary>
+	/// <remarks>
+	/// Button labels are encoded as one bounded UTF-8 Kitty <c>p=buttons</c> payload. Applications that
+	/// need button-activation events should also enable <see cref="ReportActivation"/> and provide an
+	/// explicit <see cref="Identifier"/>.
+	/// </remarks>
+	public IReadOnlyList<string> Buttons {
+		get;
+		init;
+	} = Array.Empty<string>();
 
 	/// <summary>
 	/// Gets or initializes when the terminal should honor the notification request.
