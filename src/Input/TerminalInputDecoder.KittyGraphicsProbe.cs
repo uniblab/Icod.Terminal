@@ -91,6 +91,14 @@ internal sealed partial class TerminalInputDecoder {
 				return false;
 			}
 
+			bool correlatedPrefix = KittyGraphicsCapabilityProtocol.IsCorrelatedResponsePrefix(
+				this.bufferedBytes,
+				probe.ImageId
+			);
+			if ( correlatedPrefix ) {
+				probe.RecordCorrelation();
+			}
+
 			TerminalResponseFrameParseResult parseResult = TerminalResponseFramer.Parse(
 				this.bufferedBytes,
 				TerminalControlFamily.Apc,
@@ -98,8 +106,41 @@ internal sealed partial class TerminalInputDecoder {
 			);
 			switch ( parseResult.Status ) {
 				case TerminalResponseFrameParseStatus.NotCandidate:
-				case TerminalResponseFrameParseStatus.Invalid:
 					return false;
+
+				case TerminalResponseFrameParseStatus.Invalid:
+					if ( !correlatedPrefix ) {
+						return false;
+					}
+
+					int invalidLength = FindInvalidKittyGraphicsApcLength(
+						this.bufferedBytes
+					);
+					if ( TerminalResponseFramer.DefaultMaximumFrameBytes <= invalidLength ) {
+						probe.RecordFailure(
+							new FormatException(
+								$"The correlated Kitty Graphics response exceeded the {TerminalResponseFramer.DefaultMaximumFrameBytes}-byte framing limit."
+							)
+						);
+						await this.DrainOversizedResponseAsync(
+							TerminalControlFamily.Apc,
+							cancellationToken
+						).ConfigureAwait( false );
+					} else {
+						this.Consume( invalidLength );
+						probe.RecordFailure(
+							new FormatException(
+								"The correlated Kitty Graphics response was aborted or structurally malformed."
+							)
+						);
+					}
+
+					if ( 0 == this.bufferedBytes.Count && !this.endOfInput ) {
+						_ = await this.ReadMoreAsync(
+							cancellationToken
+						).ConfigureAwait( false );
+					}
+					return true;
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					if ( this.endOfInput
@@ -122,6 +163,7 @@ internal sealed partial class TerminalInputDecoder {
 						return false;
 					}
 
+					probe.RecordCorrelation();
 					this.Consume( parseResult.Length );
 					try {
 						KittyGraphicsResponse response = KittyGraphicsCodec.ParseResponse( frame );
@@ -148,6 +190,29 @@ internal sealed partial class TerminalInputDecoder {
 					);
 			}
 		}
+	}
+
+	private static int FindInvalidKittyGraphicsApcLength(
+		IReadOnlyList<byte> bytes
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		TerminalControlSequenceScanner scanner = new(
+			TerminalResponseFramer.DefaultMaximumFrameBytes
+		);
+		for ( int index = 0; index < bytes.Count; index++ ) {
+			TerminalResponseFrameParseStatus status = scanner.Feed( bytes[ index ] );
+			if ( TerminalResponseFrameParseStatus.Invalid == status ) {
+				return index + 1;
+			}
+			if ( status is TerminalResponseFrameParseStatus.Complete
+				or TerminalResponseFrameParseStatus.NotCandidate ) {
+				break;
+			}
+		}
+
+		throw new InvalidOperationException(
+			"The Kitty Graphics APC was reported invalid without an identifiable invalid boundary."
+		);
 	}
 
 	private static bool TryGetKittyGraphicsApcPayloadStart(
@@ -188,6 +253,7 @@ internal sealed class KittyGraphicsSupportProbe {
 	private readonly object sync = new();
 	private KittyGraphicsResponse? response;
 	private FormatException? failure;
+	private int correlationObserved;
 
 	internal KittyGraphicsSupportProbe(
 		uint imageId
@@ -222,6 +288,16 @@ internal sealed class KittyGraphicsSupportProbe {
 		}
 	}
 
+	internal bool CorrelationObserved {
+		get {
+			return 0 != Volatile.Read( ref this.correlationObserved );
+		}
+	}
+
+	internal void RecordCorrelation() {
+		Volatile.Write( ref this.correlationObserved, 1 );
+	}
+
 	internal void RecordResponse(
 		KittyGraphicsResponse value
 	) {
@@ -233,6 +309,7 @@ internal sealed class KittyGraphicsSupportProbe {
 			);
 		}
 
+		this.RecordCorrelation();
 		lock ( this.sync ) {
 			if ( this.response is not null || this.failure is not null ) {
 				this.failure = new FormatException(
@@ -249,6 +326,7 @@ internal sealed class KittyGraphicsSupportProbe {
 		FormatException exception
 	) {
 		ArgumentNullException.ThrowIfNull( exception );
+		this.RecordCorrelation();
 		lock ( this.sync ) {
 			if ( this.response is not null || this.failure is not null ) {
 				this.failure = new FormatException(
