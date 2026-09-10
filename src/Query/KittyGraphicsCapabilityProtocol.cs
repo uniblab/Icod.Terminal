@@ -56,13 +56,7 @@ internal static class KittyGraphicsCapabilityProtocol {
 		uint imageId
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
-		if ( 0 == imageId ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( imageId ),
-				imageId,
-				"A Kitty Graphics support-query image id must be non-zero."
-			);
-		}
+		ValidateImageId( imageId );
 		if ( TerminalResponseFrameKind.Apc != frame.Kind ) {
 			return false;
 		}
@@ -78,6 +72,54 @@ internal static class KittyGraphicsCapabilityProtocol {
 				structure.PayloadBytes.Span,
 				imageId
 			);
+	}
+
+	internal static bool IsCorrelatedResponsePrefix(
+		IReadOnlyList<byte> bytes,
+		uint imageId
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		ValidateImageId( imageId );
+		if ( 0 == bytes.Count ) {
+			return false;
+		}
+
+		int payloadStart;
+		if ( 0x9F == bytes[ 0 ] ) {
+			payloadStart = 1;
+		} else if ( 2 <= bytes.Count
+			&& 0x1B == bytes[ 0 ]
+			&& (byte)'_' == bytes[ 1 ] ) {
+			payloadStart = 2;
+		} else {
+			return false;
+		}
+		if ( bytes.Count <= payloadStart
+			|| (byte)'G' != bytes[ payloadStart ] ) {
+			return false;
+		}
+
+		int fieldStart = payloadStart + 1;
+		for ( int index = fieldStart; index < bytes.Count; index++ ) {
+			byte value = bytes[ index ];
+			if ( value is not (byte)',' and not (byte)';' ) {
+				continue;
+			}
+
+			if ( IsImageIdField(
+				bytes,
+				fieldStart,
+				index - fieldStart,
+				imageId
+			) ) {
+				return true;
+			}
+			if ( (byte)';' == value ) {
+				return false;
+			}
+			fieldStart = index + 1;
+		}
+		return false;
 	}
 
 	private static bool ContainsImageId(
@@ -117,6 +159,37 @@ internal static class KittyGraphicsCapabilityProtocol {
 		return false;
 	}
 
+	private static bool IsImageIdField(
+		IReadOnlyList<byte> bytes,
+		int start,
+		int length,
+		uint imageId
+	) {
+		ArgumentNullException.ThrowIfNull( bytes );
+		if ( 3 > length
+			|| 0 > start
+			|| bytes.Count < start + length
+			|| (byte)'i' != bytes[ start ]
+			|| (byte)'=' != bytes[ start + 1 ] ) {
+			return false;
+		}
+
+		uint parsed = 0;
+		for ( int index = start + 2; index < start + length; index++ ) {
+			byte item = bytes[ index ];
+			if ( item is < (byte)'0' or > (byte)'9' ) {
+				return false;
+			}
+
+			uint digit = (uint)( item - (byte)'0' );
+			if ( ( uint.MaxValue - digit ) / 10 < parsed ) {
+				return false;
+			}
+			parsed = ( parsed * 10 ) + digit;
+		}
+		return imageId == parsed;
+	}
+
 	private static bool TryParseImageIdField(
 		ReadOnlySpan<byte> field,
 		out uint imageId
@@ -147,5 +220,17 @@ internal static class KittyGraphicsCapabilityProtocol {
 		}
 		imageId = parsed;
 		return true;
+	}
+
+	private static void ValidateImageId(
+		uint imageId
+	) {
+		if ( 0 == imageId ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( imageId ),
+				imageId,
+				"A Kitty Graphics support-query image id must be non-zero."
+			);
+		}
 	}
 }
