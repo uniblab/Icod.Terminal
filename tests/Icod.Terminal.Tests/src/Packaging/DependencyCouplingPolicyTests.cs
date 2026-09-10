@@ -44,6 +44,33 @@ public sealed class DependencyCouplingPolicyTests {
 		Assert.DoesNotContain( "references an unexpected {packageId} version", source );
 	}
 
+	[Fact]
+	public void TestsAndSamplesDoNotPinTerminalRuntimeDependencies() {
+		string root = FindRepositoryRoot();
+		string[] projectRoots = [
+			Path.Combine( root, "tests" ),
+			Path.Combine( root, "samples" )
+		];
+
+		foreach ( string projectRoot in projectRoots ) {
+			foreach ( string projectPath in Directory.EnumerateFiles(
+				projectRoot,
+				"*.csproj",
+				SearchOption.AllDirectories
+			) ) {
+				string source = File.ReadAllText( projectPath );
+				Assert.DoesNotContain(
+					"PackageReference Include=\"Icod.TermInfo\"",
+					source
+				);
+				Assert.DoesNotContain(
+					"PackageReference Include=\"Icod.Timing\"",
+					source
+				);
+			}
+		}
+	}
+
 	private static string FindRepositoryRoot() {
 		DirectoryInfo? directory = new( AppContext.BaseDirectory );
 		while ( directory is not null ) {
