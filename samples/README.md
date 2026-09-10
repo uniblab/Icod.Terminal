@@ -1,8 +1,21 @@
 # Icod.Terminal Samples
 
-The sample projects are small repository consumers built through project references. They teach the supported 1.x usage model; package-only compatibility is validated separately by the consumers under `tools/`, which restore only the freshly packed NuGet artifact.
+The sample projects are small, focused repository consumers built through project references. They teach the supported 1.x usage model; package-only compatibility is validated separately by the consumers under `tools/`, which restore only the freshly packed NuGet artifact.
 
 All samples target `net8.0`, `net9.0`, and `net10.0`.
+
+## At a glance
+
+| Goal | Sample |
+| --- | --- |
+| Open a terminal session and read one event | `Icod.Terminal.Sample` |
+| Inspect text, keys, mouse, focus, paste, and modern keyboard input | `Icod.Terminal.RichInput.Sample` |
+| Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
+| Observe or temporarily own palette/dynamic colors | `Icod.Terminal.Color.Sample` |
+| Display a backend-neutral raster through verified Kitty Graphics or Sixel | `Icod.Terminal.RasterGraphics.Sample` |
+| Own cursor style, synchronized output, progress, or pointer shape | focused state samples below |
+| Publish titles, location, prompt/command metadata, or shell integration | focused metadata samples below |
+| Emit desktop notifications, hyperlinks, or clipboard operations | focused output samples below |
 
 ## Usage rules demonstrated by the samples
 
@@ -69,6 +82,20 @@ dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Samp
 ```
 
 The first scoped owner observes the external color before mutation. Final release replays that observed value; OSC 104 and OSC 110–119 remain terminal-policy reset operations instead of restoration substitutes.
+
+## Display raster graphics
+
+### `Icod.Terminal.RasterGraphics.Sample`
+
+Demonstrates the public backend-neutral `TerminalRasterImage` / `DisplayRasterAsync(...)` contract introduced in 1.7 and backed by both Sixel and Kitty Graphics in 1.8.
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterGraphics.Sample/Icod.Terminal.RasterGraphics.Sample.csproj -f net10.0
+```
+
+The sample generates a small RGB24 gradient in memory and passes it to one semantic display operation. It does not select a backend, emit raw DCS/APC traffic, inspect terminal branding, load image files, or add an image-decoder dependency. `DisplayRasterAsync(...)` may use a verified Kitty Graphics backend or verified Sixel backend according to the normal evidence-driven routing contract.
+
+The focused raster sample is built by `packaging/VerifyRasterGraphicsSample.ps1` on every supported TFM during repository validation.
 
 ## Own reversible presentation or terminal state
 
@@ -146,6 +173,20 @@ dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.S
 
 The sample demonstrates prompt, command-input, command-output, explicit completion, abort, typed prompt metadata, and explicit command-line metadata. Command lines can contain secrets; publication is caller policy and is not automatically redacted.
 
+### `Icod.Terminal.VsCodeShellIntegration.Sample`
+
+Typed VS Code OSC 633 shell-integration metadata and command boundaries. The sample demonstrates rich-command-detection metadata, current-directory publication, prompt/input/output boundaries, explicit command-line publication, and successful command completion.
+
+```text
+dotnet run --project samples/Icod.Terminal.VsCodeShellIntegration.Sample/Icod.Terminal.VsCodeShellIntegration.Sample.csproj -f net10.0 -- /srv/repo "dotnet test" optional-nonce
+```
+
+All potentially sensitive metadata is supplied explicitly on the command line. The sample does not inspect process arguments, environment variables, shell history, or the process current directory. Successful completion proves that complete OSC 633 frames were emitted, not that a particular terminal recognized them.
+
+OSC 133 remains the portable semantic prompt/command-region API and OSC 7 remains the preferred portable current-location API. The VS Code sample exists to demonstrate the separately typed vendor-specific surface.
+
+The focused VS Code sample is built by `packaging/VerifyVsCodeShellIntegrationSample.ps1` on every supported TFM during repository validation.
+
 ### `Icod.Terminal.ITerm2ShellIntegration.Sample`
 
 Typed iTerm2 OSC 1337 shell-integration and semantic-history metadata. All metadata is supplied explicitly; the sample does not read process current directory, user name, host name, shell environment, or shell startup files.
@@ -222,5 +263,7 @@ Icod.Terminal.Sample
     -> Icod.Terminal.Query.Sample
     -> one focused state/output sample relevant to the application
 ```
+
+Applications interested in raster output should go directly from the basic session sample to `Icod.Terminal.RasterGraphics.Sample`; applications integrating with a shell should prefer the portable semantic APIs first, then use a vendor-specific sample only when they intentionally target that protocol.
 
 Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cell/window/refresh policy directly.
