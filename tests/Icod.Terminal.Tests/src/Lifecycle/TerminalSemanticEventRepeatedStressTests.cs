@@ -288,6 +288,7 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 				throw new InvalidOperationException(
 					"The scripted lifecycle source is closed."
 				);
+			}
 		}
 
 		public ValueTask<TerminalLifecycleSignal> ReadAsync(
