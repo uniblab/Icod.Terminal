@@ -18,6 +18,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+using System.Diagnostics;
 using Icod.Terminal;
 
 if ( 0 == args.Length ) {
@@ -35,24 +36,44 @@ bool kitty = string.Equals(
 	"--kitty",
 	StringComparison.Ordinal
 );
+bool kittyInteractive = string.Equals(
+	args[ 0 ],
+	"--kitty-interactive",
+	StringComparison.Ordinal
+);
 if ( ( titled || kitty ) && 3 > args.Length ) {
 	WriteUsage();
 	return 2;
 }
+if ( kittyInteractive && 4 > args.Length ) {
+	WriteUsage();
+	return 2;
+}
 
-string? title = titled || kitty
+string? identifier = kittyInteractive
 	? args[ 1 ]
 	: null
 ;
-string message = titled || kitty
+string? title = kittyInteractive
+	? args[ 2 ]
+	: titled || kitty
+		? args[ 1 ]
+		: null
+;
+string message = kittyInteractive
 	? string.Join(
 		" ",
-		args[ 2.. ]
+		args[ 3.. ]
 	)
-	: string.Join(
-		" ",
-		args
-	)
+	: titled || kitty
+		? string.Join(
+			" ",
+			args[ 2.. ]
+		)
+		: string.Join(
+			" ",
+			args
+		)
 ;
 
 Console.WriteLine(
@@ -62,7 +83,7 @@ Console.WriteLine(
 	"Warning: notification content may be visible in desktop notification history, lock screens, screen sharing, terminal logs, or remote/multiplexed sessions."
 );
 Console.WriteLine(
-	"This sample publishes only the title/text supplied explicitly on the command line and never chooses a protocol from terminal branding."
+	"This sample publishes only values supplied explicitly on the command line plus fixed sample button labels, and never chooses a protocol from terminal branding."
 );
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
@@ -72,7 +93,30 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-if ( kitty ) {
+if ( kittyInteractive ) {
+	await session.SendKittyNotificationAsync(
+		title!,
+		message,
+		new KittyNotificationOptions {
+			Identifier = identifier,
+			ApplicationName = "Icod.Terminal.Notification.Sample",
+			NotificationTypes = [ "sample" ],
+			ReportActivation = true,
+			ReportClose = true,
+			Buttons = [ "Acknowledge", "Dismiss" ]
+		}
+	);
+	Console.WriteLine(
+		"Interactive Kitty OSC 99 notification request emitted with activation/button and close reporting enabled."
+	);
+	Console.WriteLine(
+		"Waiting up to 30 seconds for a matching typed notification event through TerminalSession.ReadEventAsync(...)."
+	);
+	await ObserveInteractiveNotificationAsync(
+		session,
+		identifier!
+	);
+} else if ( kitty ) {
 	await session.SendKittyNotificationAsync(
 		title!,
 		message,
@@ -101,6 +145,56 @@ if ( kitty ) {
 
 return 0;
 
+static async ValueTask ObserveInteractiveNotificationAsync(
+	TerminalSession session,
+	string identifier
+) {
+	ArgumentNullException.ThrowIfNull( session );
+	ArgumentException.ThrowIfNullOrEmpty( identifier );
+
+	TimeSpan timeout = TimeSpan.FromSeconds( 30 );
+	Stopwatch stopwatch = Stopwatch.StartNew();
+	while ( stopwatch.Elapsed < timeout ) {
+		TimeSpan remaining = timeout - stopwatch.Elapsed;
+		TerminalEvent terminalEvent = await session.ReadEventAsync( remaining );
+		if ( TerminalEventKind.Timeout == terminalEvent.Kind ) {
+			break;
+		}
+		if ( TerminalEventKind.Semantic != terminalEvent.Kind ) {
+			continue;
+		}
+
+		TerminalNotificationEvent? notification = terminalEvent.Semantic?.Notification;
+		if ( null == notification ) {
+			continue;
+		}
+		if ( !string.Equals(
+			notification.Identifier,
+			identifier,
+			StringComparison.Ordinal
+		) ) {
+			continue;
+		}
+
+		Console.WriteLine(
+			$"Received notification event: {notification.Kind}."
+		);
+		if ( notification.ButtonNumber.HasValue ) {
+			Console.WriteLine(
+				$"Button number: {notification.ButtonNumber.Value}."
+			);
+		}
+		Console.WriteLine(
+			"The report is validated terminal input, not proof of an authenticated desktop interaction."
+		);
+		return;
+	}
+
+	Console.WriteLine(
+		"No matching notification event was observed before the sample timeout. This does not prove the terminal lacks support."
+	);
+}
+
 static void WriteUsage() {
 	Console.Error.WriteLine(
 		"Usage: Icod.Terminal.Notification.Sample <notification text>"
@@ -110,5 +204,8 @@ static void WriteUsage() {
 	);
 	Console.Error.WriteLine(
 		"   or: Icod.Terminal.Notification.Sample --kitty <title> <notification text>"
+	);
+	Console.Error.WriteLine(
+		"   or: Icod.Terminal.Notification.Sample --kitty-interactive <identifier> <title> <notification text>"
 	);
 }
