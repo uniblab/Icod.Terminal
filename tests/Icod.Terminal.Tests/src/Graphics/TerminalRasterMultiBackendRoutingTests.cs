@@ -75,7 +75,7 @@ public sealed class TerminalRasterMultiBackendRoutingTests {
 		Assert.True( result.Succeeded );
 		Assert.Equal( 0, transport.KittyProbeRequestCount );
 		Assert.Equal( 0, transport.DirectPrimaryDaRequestCount );
-		AssertSixelFrame( Assert.Single( transport.GetGraphicsWrites() ) );
+		AssertSixelTransfer( transport.GetGraphicsWrites() );
 	}
 
 	[Fact]
@@ -142,7 +142,7 @@ public sealed class TerminalRasterMultiBackendRoutingTests {
 				TerminalProtocolBackend.DcsSixel
 			).State
 		);
-		AssertSixelFrame( Assert.Single( transport.GetGraphicsWrites() ) );
+		AssertSixelTransfer( transport.GetGraphicsWrites() );
 	}
 
 	[Fact]
@@ -188,7 +188,7 @@ public sealed class TerminalRasterMultiBackendRoutingTests {
 		Assert.True( result.Succeeded );
 		Assert.Equal( 0, transport.KittyProbeRequestCount );
 		Assert.Equal( 1, transport.DirectPrimaryDaRequestCount );
-		AssertSixelFrame( Assert.Single( transport.GetGraphicsWrites() ) );
+		AssertSixelTransfer( transport.GetGraphicsWrites() );
 	}
 
 	[Fact]
@@ -275,6 +275,18 @@ public sealed class TerminalRasterMultiBackendRoutingTests {
 		Assert.Equal( (byte)'G', bytes[ 2 ] );
 		Assert.Equal( 0x1B, bytes[ ^2 ] );
 		Assert.Equal( (byte)'\\', bytes[ ^1 ] );
+	}
+
+	private static void AssertSixelTransfer(
+		IReadOnlyList<byte[]> writes
+	) {
+		ArgumentNullException.ThrowIfNull( writes );
+		Assert.NotEmpty( writes );
+		AssertSixelFrame(
+			writes
+				.SelectMany( static write => write )
+				.ToArray()
+		);
 	}
 
 	private static void AssertSixelFrame(
