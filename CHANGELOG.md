@@ -10,21 +10,35 @@ No unreleased 1.x changes are currently recorded.
 
 ### APC foundation and Kitty Graphics
 
-- Begins the APC/Kitty Graphics release on the completed 1.7 backend-neutral raster API and DCS/Sixel implementation.
-- Adds the A180 internal canonical seven-bit APC writer for bounded small application-defined control strings while keeping APC framing separate from Kitty dialect semantics.
-- Retains the 1.7 public `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` contract as the shared semantic raster surface.
-- Plans direct Kitty Graphics transmission first, using raw RGB24/RGBA32 data and bounded Base64 chunks, while deferring file/temp-file/shared-memory media and advanced placement/animation ownership.
-- Keeps Kitty capability discovery on the existing multi-family query/evidence architecture using the protocol-defined Kitty query plus Primary DA barrier rather than terminal-brand or `TERM` heuristics.
-- Targets deterministic evidence-driven raster routing which prefers verified Kitty Graphics and retains verified Sixel as a fallback without retrying another backend after committed output fails.
+- Adds the internal canonical seven-bit `ApcWriter` for bounded application-defined control strings while keeping APC family framing separate from Kitty Graphics dialect semantics.
+- Adds strict typed Kitty Graphics control-data/response handling, direct transfer (`t=d`), raw RGB24/RGBA32 transmission, and deterministic Indexed8 expansion which preserves referenced alpha through RGBA32 when required.
+- Adds deterministic lazy Base64 segmentation with at most 4,096 encoded image-data bytes per Kitty Graphics chunk; large transfers do not require one complete encoded image allocation.
+- Adds a committed multi-frame APC graphics transaction through the existing session output gate. Caller cancellation remains effective before commitment but does not intentionally truncate an already-committed logical transfer.
+- Surfaces post-commit transport failure without replay, speculative recovery, or automatic switch to Sixel.
+- Adds the protocol-defined correlated Kitty Graphics support query plus Primary DA synchronization barrier through the existing authoritative input/query path; no competing graphics reader is introduced.
+- Adds deterministic evidence-driven raster routing which prefers verified Kitty Graphics and retains verified Sixel as fallback.
+- Hardens seven/eight-bit APC response fragmentation, CAN/SUB aborts, malformed/missing terminators, oversized correlated responses, unrelated control traffic, late responses, subsequent-query integrity, and generation-scoped evidence expiration.
+- Treats a complete matching `i=<probe-id>` response prefix as bounded transaction ownership rather than trust: later malformed/oversized data remains owned and strictly validated instead of leaking into ordinary application input.
+
+### Stable raster contract
+
+- Retains the public 1.7 `TerminalRasterImage`, `TerminalRasterColor`, `TerminalRasterPixelFormat`, and `TerminalSession.DisplayRasterAsync(...)` API unchanged.
+- Preserves fractional alpha through Kitty RGBA32 while keeping Sixel's controlled unsupported behavior when fractional alpha cannot be represented truthfully.
+- Keeps source raster dimensions intrinsic and deliberately adds no public placement/scaling, persistent image/placement identity, source rectangle, z-order, Unicode placeholder, deletion, animation, or cursor-normalization contract.
+- Retains the established raster ceilings of 16,384 per dimension, 16 Mi pixels, 64 MiB owned pixel storage, and 256 indexed palette entries.
+- Retains verified Sixel behavior/bytes as the fallback backend rather than replacing or weakening the 1.7 implementation.
+- Continues to exclude generic public raw DCS/Sixel and APC/Kitty Graphics dispatch, explicit backend selection, image-file decoding/transcoding, and hidden file/temp-file/shared-memory graphics transport.
 
 ### Compatibility and validation
 
-- Retains the stable `1.0.0` compatibility floor and all released 1.0–1.7 public signatures and documented wire/ownership/security semantics.
-- Retains the 1.7 public API fingerprint unless a later 1.8 tranche demonstrates a necessary reviewed additive public change.
+- Adds no public API and intentionally retains the 1.7 public API fingerprint `847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700`; no redundant 1.8 baseline is created.
+- Retains the stable `1.0.0` compatibility floor and all released 1.0–1.7 public signatures plus documented wire/ownership/query/resource/lifecycle/restoration/security semantics.
 - Retains `net8.0`, `net9.0`, and `net10.0` plus the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
-- Introduces no generic public APC/Kitty Graphics dispatcher and no hidden filesystem/shared-memory graphics side effects.
+- Extends the fresh NuGet-only raster package smoke so both DCS/Sixel-specific and APC/Kitty-specific public escape-hatch method names remain excluded from the shipped API while the same public raster contract compiles/runs on all three TFMs.
+- A180–A188 each passed exact-head Staging qualification; A188 passed the complete matrix on `997feb9628d34389199ca3fffdf90e829f33819a`, workflow `34469956370`.
+- A189 synchronizes release/package/permanent documentation and requires one final unchanged exact PR head to pass the complete Staging matrix before release-program completion.
 
-See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md`, and `Icod.Terminal-1.8.0-Development-Roadmap.md` for the evolving 1.8 contract.
+See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md` through `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`, and `Icod.Terminal-1.8.0-Development-Roadmap.md` for the complete 1.8 contract.
 
 ## 1.7.0
 
