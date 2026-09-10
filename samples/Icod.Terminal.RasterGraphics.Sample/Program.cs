@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.RasterGraphics.Sample
-	Sample application demonstrating backend-neutral raster graphics.
+	Sample application demonstrating Icod.Terminal RasterGraphics features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
