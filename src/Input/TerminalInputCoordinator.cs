@@ -39,6 +39,7 @@ internal sealed class TerminalInputCoordinator {
 	private Task? pumpTask;
 	private int applicationDemandCount;
 	private int queryDemandCount;
+	private long queryDemandGeneration;
 	private bool queryDemandPaused;
 	private bool endOfInput;
 	private bool closed;
@@ -178,6 +179,7 @@ internal sealed class TerminalInputCoordinator {
 			bool wake = !this.HasRunnableDemand();
 			checked {
 				++this.queryDemandCount;
+				++this.queryDemandGeneration;
 			}
 			this.queryDemandPaused = false;
 			this.EnsurePumpStarted();
@@ -206,12 +208,19 @@ internal sealed class TerminalInputCoordinator {
 				this.stopToken.ThrowIfCancellationRequested();
 				await this.WaitForDemandAsync().ConfigureAwait( false );
 
+				long observedQueryDemandGeneration;
+				lock ( this.sync ) {
+					observedQueryDemandGeneration = this.queryDemandGeneration;
+				}
+
 				TerminalInputDecodeResult result = await this.decoder.ReadNextAsync(
 					this.stopToken
 				).ConfigureAwait( false );
 				if ( result.ResponseRouted ) {
 					lock ( this.sync ) {
-						this.queryDemandPaused = true;
+						if ( observedQueryDemandGeneration == this.queryDemandGeneration ) {
+							this.queryDemandPaused = true;
+						}
 					}
 					result.CompleteRoutedResponse();
 					continue;
