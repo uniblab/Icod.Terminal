@@ -202,7 +202,7 @@ try {
 	);
 	await WriteLineAsync(
 		session,
-		"Generate one input or lifecycle event within 15 seconds to verify the unified event loop remains live."
+		"Generate one terminal event within 15 seconds to verify queries, ordinary input, lifecycle, and semantic events share the unified reader."
 	);
 
 	TerminalEvent terminalEvent = await session.ReadEventAsync(
@@ -297,6 +297,13 @@ static string FormatEvent(
 				lifecycle.Kind.ToString()
 			);
 
+		case TerminalEventKind.Semantic:
+			TerminalSemanticEvent semantic = terminalEvent.Semantic
+				?? throw new InvalidOperationException(
+					"A Semantic event did not carry a semantic payload."
+				);
+			return FormatSemantic( semantic );
+
 		case TerminalEventKind.Timeout:
 			return "Unified event loop: no event before timeout.";
 
@@ -304,10 +311,43 @@ static string FormatEvent(
 			return "Unified event loop: wait cancelled.";
 
 		default:
-			throw new InvalidOperationException(
-				$"Unexpected terminal event kind: {terminalEvent.Kind}."
+			return string.Concat(
+				"Unified event loop: event kind=",
+				terminalEvent.Kind.ToString(),
+				" is not recognized by this sample version."
 			);
 	}
+}
+
+static string FormatSemantic(
+	TerminalSemanticEvent semantic
+) {
+	ArgumentNullException.ThrowIfNull( semantic );
+	if ( TerminalSemanticEventKind.Notification == semantic.Kind ) {
+		TerminalNotificationEvent notification = semantic.Notification
+			?? throw new InvalidOperationException(
+				"A Notification semantic event did not carry a notification payload."
+			);
+		string result = string.Concat(
+			"Unified event loop: semantic notification kind=",
+			notification.Kind.ToString(),
+			" identifier=",
+			notification.Identifier
+		);
+		if ( notification.ButtonNumber.HasValue ) {
+			result = string.Concat(
+				result,
+				" button=",
+				notification.ButtonNumber.Value.ToString( CultureInfo.InvariantCulture )
+			);
+		}
+		return result;
+	}
+
+	return string.Concat(
+		"Unified event loop: semantic kind=",
+		semantic.Kind.ToString()
+	);
 }
 
 static ValueTask WriteLineAsync(
