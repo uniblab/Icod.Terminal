@@ -68,6 +68,68 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	/// <summary>
+	/// Explicitly attempts to strengthen the session's current support knowledge for one semantic
+	/// capability through an existing reviewed bounded live probe when such a probe exists.
+	/// </summary>
+	/// <remarks>
+	/// Verification is intentionally narrower than inspection. In version 1.10, live support
+	/// verification is available for modern keyboard reporting and raster graphics. Other semantic
+	/// capabilities return their current inspection status unchanged rather than emitting invented
+	/// or behavior-changing probe traffic. Existing decisive live evidence and unavailable endpoints
+	/// are also returned without probing.
+	/// </remarks>
+	/// <param name="capability">The semantic capability to verify when a reviewed probe exists.</param>
+	/// <param name="cancellationToken">Cancellation for any live verification attempt.</param>
+	/// <returns>The capability status after the bounded verification attempt, if any.</returns>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// <paramref name="capability"/> is not a recognized <see cref="TerminalCapability"/> value.
+	/// </exception>
+	/// <exception cref="OperationCanceledException">
+	/// <paramref name="cancellationToken"/> is canceled before or during verification.
+	/// </exception>
+	public async ValueTask<TerminalCapabilityStatus> VerifyCapabilityAsync(
+		TerminalCapability capability,
+		CancellationToken cancellationToken = default
+	) {
+		if ( !Enum.IsDefined( capability ) ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( capability ),
+				capability,
+				"The terminal capability is not recognized."
+			);
+		}
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalCapabilityStatus status = this.InspectCapability( capability );
+		if ( TerminalCapabilityEndpointAvailability.Unavailable == status.EndpointAvailability
+			|| status.Support is TerminalCapabilitySupport.Verified
+				or TerminalCapabilitySupport.Unsupported ) {
+			return status;
+		}
+
+		switch ( capability ) {
+			case TerminalCapability.KeyboardReporting:
+				_ = await this.ProbeKittyKeyboardSupportAsync(
+					lifecycleObservation: false,
+					cancellationToken
+				).ConfigureAwait( false );
+				break;
+
+			case TerminalCapability.RasterGraphics:
+				await this.ProbeRasterGraphicsBackendsAsync(
+					cancellationToken
+				).ConfigureAwait( false );
+				break;
+
+			default:
+				return status;
+		}
+
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.InspectCapability( capability );
+	}
+
 	private static TerminalSemanticOperation MapCapability(
 		TerminalCapability capability
 	) {
