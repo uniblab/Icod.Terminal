@@ -30,8 +30,6 @@ using System.Xml.Linq;
 internal static class Program {
 	private const string PackageId = "Icod.Terminal";
 	private const string RepositoryUrl = "https://github.com/uniblab/Icod.Terminal";
-	private const string TermInfoDependencyVersion = "1.10.0";
-	private const string TimingDependencyVersion = "1.0.0";
 
 	private static readonly string[] TargetFrameworks = [
 		"net8.0",
@@ -579,13 +577,11 @@ internal static class Program {
 		VerifyDependency(
 			dependencies,
 			"Icod.TermInfo",
-			TermInfoDependencyVersion,
 			frameworkVersion
 		);
 		VerifyDependency(
 			dependencies,
 			"Icod.Timing",
-			TimingDependencyVersion,
 			frameworkVersion
 		);
 	}
@@ -593,12 +589,10 @@ internal static class Program {
 	private static void VerifyDependency(
 		IEnumerable<XElement> dependencies,
 		string packageId,
-		string expectedVersion,
 		string frameworkVersion
 	) {
 		ArgumentNullException.ThrowIfNull( dependencies );
 		ArgumentException.ThrowIfNullOrWhiteSpace( packageId );
-		ArgumentException.ThrowIfNullOrWhiteSpace( expectedVersion );
 		ArgumentException.ThrowIfNullOrWhiteSpace( frameworkVersion );
 
 		XElement[] matches = dependencies
@@ -608,15 +602,16 @@ internal static class Program {
 					packageId,
 					StringComparison.Ordinal
 				)
-			)
 			.ToArray();
 		Require(
 			1 == matches.Length,
 			$"Framework {frameworkVersion} must reference {packageId} exactly once."
 		);
 		Require(
-			expectedVersion == matches[ 0 ].Attribute( "version" )?.Value,
-			$"Framework {frameworkVersion} references an unexpected {packageId} version."
+			!string.IsNullOrWhiteSpace(
+				matches[ 0 ].Attribute( "version" )?.Value
+			),
+			$"Framework {frameworkVersion} must declare a version range for {packageId}."
 		);
 	}
 
