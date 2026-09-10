@@ -9,13 +9,14 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Goal | Sample |
 | --- | --- |
 | Open a session, inspect identity/endpoints, and read an event | `Icod.Terminal.Sample` |
-| Inspect rich terminal input | `Icod.Terminal.RichInput.Sample` |
-| Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
+| Inspect rich input plus lifecycle and unsolicited semantic events | `Icod.Terminal.RichInput.Sample` |
+| Run bounded terminal queries and verify coexistence with the unified event stream | `Icod.Terminal.Query.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples below |
 | Publish title/location/prompt/shell metadata | focused metadata samples below |
-| Emit notifications, hyperlinks, or clipboard operations | focused output samples below |
+| Emit notifications and observe interactive semantic events | `Icod.Terminal.Notification.Sample` |
+| Emit hyperlinks or clipboard operations | focused output samples below |
 
 ## Sample rules
 
@@ -26,7 +27,8 @@ The examples follow the permanent 1.x contracts:
 - `TerminalSession.Output` is an advanced borrowed transport, not the normal application-output path;
 - scoped terminal state uses `await using` / `DisposeAsync()` for deterministic cleanup;
 - exact restoration is claimed only when the library first observed or captured a truthful baseline;
-- metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, and hyperlinks may disclose information outside the application.
+- metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, and hyperlinks may disclose information outside the application;
+- event-loop samples handle the event kinds they understand explicitly and remain nonfatal when a newer compatible minor release introduces an unfamiliar outer `TerminalEventKind` value.
 
 ## Start here
 
@@ -40,7 +42,7 @@ dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f
 
 ### `Icod.Terminal.RichInput.Sample`
 
-Interactive inspector for text, keys, bracketed paste, focus, mouse, and negotiated modern keyboard reporting. Traditional keyboard decoding remains the compatibility fallback.
+Interactive inspector for text, keys, bracketed paste, focus, mouse, lifecycle, unsolicited semantic events, and negotiated modern keyboard reporting. Traditional keyboard decoding remains the compatibility fallback. The outer event switch also demonstrates a forward-compatible fallback for event kinds introduced by later compatible 1.x releases.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
@@ -48,7 +50,7 @@ dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichIn
 
 ### `Icod.Terminal.Query.Sample`
 
-Demonstrates explicit bounded Primary/Secondary DA, DSR, CPR, DECRQSS, and XTGETTCAP queries through the session's single response-correlation path.
+Demonstrates explicit bounded Primary/Secondary DA, DSR, CPR, DECRQSS, and XTGETTCAP queries through the session's single response-correlation path, then reads one event from the same authoritative session stream to demonstrate coexistence with ordinary input, lifecycle, and semantic events.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
