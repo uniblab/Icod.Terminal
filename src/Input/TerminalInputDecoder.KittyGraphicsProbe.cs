@@ -134,6 +134,12 @@ internal sealed partial class TerminalInputDecoder {
 					} catch ( FormatException exception ) {
 						probe.RecordFailure( exception );
 					}
+
+					if ( 0 == this.bufferedBytes.Count && !this.endOfInput ) {
+						_ = await this.ReadMoreAsync(
+							cancellationToken
+						).ConfigureAwait( false );
+					}
 					return true;
 
 				default:
