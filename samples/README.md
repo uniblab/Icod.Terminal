@@ -170,7 +170,7 @@ Add `--clear-captured-output` only when intentionally demonstrating the destruct
 
 ### `Icod.Terminal.Notification.Sample`
 
-Demonstrates explicit OSC 9, OSC 777, and Kitty OSC 99 desktop-notification surfaces without terminal-brand routing.
+Demonstrates explicit OSC 9, OSC 777, and Kitty OSC 99 desktop-notification surfaces without terminal-brand routing. The interactive mode also demonstrates opt-in activation/button and close reporting through the same public `TerminalSession.ReadEventAsync(...)` event stream used for ordinary terminal input.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- "Build complete"
@@ -178,7 +178,11 @@ dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Not
 dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --titled "Build" "Compilation complete"
 
 dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --kitty "Build" "Compilation complete"
+
+dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --kitty-interactive build-42 "Build" "Compilation complete"
 ```
+
+Interactive mode uses the caller-supplied identifier, requests activation/button and close reports, adds fixed `Acknowledge` and `Dismiss` sample buttons, and waits up to 30 seconds for a matching typed notification event. The event identifier and button number are validated but unauthenticated terminal-controlled input. A timeout does not prove that the terminal lacks support.
 
 Successful emission does not prove that the desktop displayed a notification. Notification text may be retained by the terminal or operating environment.
 
