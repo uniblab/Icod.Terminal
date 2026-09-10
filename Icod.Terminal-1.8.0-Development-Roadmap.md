@@ -2,7 +2,7 @@
 
 **Release:** `1.8.0`  
 **Theme:** APC foundation, Kitty Graphics, and verified multi-backend raster routing  
-**Status:** A180–A188 complete; A189 release closure in progress  
+**Status:** A180–A189 complete — A189 accepted on qualification head `0de1a1c6b95b2b36407a94935b3126c8bfd6ca5a`, Staging workflow #1355 / `34476585310`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.7.0`
 
@@ -81,7 +81,7 @@ A185  Kitty Graphics live capability probe and correlation     complete
 A186  multi-backend raster routing and fallback                complete
 A187  raster semantic parity, alpha, geometry, and cursor      complete
 A188  APC/Kitty hardening, fragmentation, and resource closure complete
-A189  package, documentation, compatibility, and release closure in progress
+A189  package, documentation, compatibility, and release closure complete
 ```
 
 ## Accepted checkpoints
@@ -97,6 +97,7 @@ A189  package, documentation, compatibility, and release closure in progress
 | A186 | `21fb617965f41270e9f3cd43f405fa6ec6e87b2e` | `34426364013` |
 | A187 | `80d78b74fe780421bf2e667ef434d38775c0dd48` | `34427249773` |
 | A188 | `997feb9628d34389199ca3fffdf90e829f33819a` | `34469956370` |
+| A189 qualification | `0de1a1c6b95b2b36407a94935b3126c8bfd6ca5a` | `34476585310` |
 
 Every accepted checkpoint passed Windows, Linux, and macOS runtime/source validation, package candidate/public-API freeze, all four package-contract shards, and the validated package artifact. The public API fingerprint remained the 1.7 value throughout 1.8 implementation.
 
@@ -218,11 +219,11 @@ Permanent contract: `docs/A188-APC-Kitty-Hardening-Fragmentation-and-Resource-Cl
 
 ## A189 — package, documentation, compatibility, and release closure
 
-**Status:** In progress.
+**Status:** Complete — accepted on qualification head `0de1a1c6b95b2b36407a94935b3126c8bfd6ca5a`, workflow #1355 / `34476585310`.
 
 A189 qualifies `1.8.0` as the first multi-backend raster release without adding new graphics behavior.
 
-Required closure evidence:
+Closure evidence includes:
 
 - Windows/Linux/macOS Staging runtime/source validation;
 - `net8.0`, `net9.0`, and `net10.0` package consistency;
@@ -230,10 +231,12 @@ Required closure evidence:
 - public API fingerprint unchanged from 1.7;
 - fresh NuGet-only raster consumer using the same public API while excluding both Sixel/DCS and Kitty/APC public escape hatches;
 - retained current `Icod.DCurses` compatibility witness;
-- synchronized README, changelog, architecture, security, compatibility, semantic-output documentation, graphics roadmap, release notes, package metadata, and PR ledger;
-- one exact final PR head green before readiness/merge consideration.
+- synchronized README, changelog, architecture, security, compatibility, semantic-output documentation, graphics roadmap, release notes, package metadata, both development roadmaps, and PR ledger;
+- curated release notes satisfying the Stable 1.x release-line gate.
 
 Permanent closure contract: `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`.
+
+Only status/evidence closure edits follow the accepted qualification head. The actual final PR head must pass the same complete Staging matrix before PR #46 leaves draft status.
 
 ## Explicit 1.8 exclusions
 
@@ -269,6 +272,6 @@ future   advanced graphics placement/lifecycle only after separate review
 
 ## Release rule
 
-A green implementation checkpoint is necessary but not sufficient to publish `1.8.0`.
+A189 qualification is complete, but qualification is not publication authorization.
 
-A189 must finish on one unchanged exact PR head that passes the complete Staging workflow. PR readiness and merge remain explicit release steps. After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.8.0` remain separate explicit actions after post-merge validation succeeds.
+The status/evidence-only final PR head must pass the complete Staging workflow before PR #46 is marked ready for review. Merge remains explicit. After merge, the resulting `main` head must pass Release distribution validation. Tagging and publishing `v1.8.0` remain separate explicit actions after post-merge validation succeeds.
