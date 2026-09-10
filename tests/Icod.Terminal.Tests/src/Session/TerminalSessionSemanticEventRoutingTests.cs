@@ -88,6 +88,43 @@ public sealed class TerminalSessionSemanticEventRoutingTests {
 		Assert.Equal( TerminalEventKind.Timeout, trailing.Kind );
 	}
 
+	[Fact]
+	public async Task MalformedSemanticRecoveryReentersActiveQueryPrecedence() {
+		RoutingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<KittyNotificationSupport> query = session.QueryKittyNotificationSupportAsync(
+			TimeSpan.FromSeconds( 5 )
+		).AsTask();
+		await transport.WaitForWriteCountAsync( 1 );
+		string identifier = GetSupportQueryIdentifier( transport.GetWrite( 0 ) );
+
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				"\u001b]99;i=malformed:i=duplicate;\u001b\\"
+			)
+		);
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				$"\u001b]99;i={identifier}:p=?;p=title,body\u001b\\"
+			)
+		);
+		transport.Publish( Encoding.ASCII.GetBytes( "x" ) );
+
+		KittyNotificationSupport support = await query;
+		Assert.True( support.SupportsTitle );
+		Assert.True( support.SupportsBody );
+
+		TerminalEvent terminalEvent = await session.ReadEventAsync(
+			TimeSpan.FromSeconds( 5 )
+		);
+		Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
+		Assert.Equal( new Rune( 'x' ), terminalEvent.Input?.Character );
+
+		TerminalEvent trailing = await session.ReadEventAsync( TimeSpan.Zero );
+		Assert.Equal( TerminalEventKind.Timeout, trailing.Kind );
+	}
+
 	private static void AssertSemanticActivation(
 		TerminalEvent terminalEvent,
 		string identifier
