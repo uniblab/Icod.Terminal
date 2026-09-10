@@ -97,13 +97,15 @@ public sealed class KittyGraphicsOutputTransactionTests {
 		Assert.Equal( expected, output.GetCombinedWrites() );
 		Assert.Equal( 2, output.WriteCount );
 		Assert.Equal( 1, output.FlushCount );
-		Assert.StartsWith(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=T," ),
-			output.GetWrite( 0 )
+		Assert.True(
+			output.GetWrite( 0 ).AsSpan().StartsWith(
+				Encoding.ASCII.GetBytes( "\u001b_Ga=T," )
+			)
 		);
-		Assert.StartsWith(
-			Encoding.ASCII.GetBytes( "\u001b_Gm=0,q=2;" ),
-			output.GetWrite( 1 )
+		Assert.True(
+			output.GetWrite( 1 ).AsSpan().StartsWith(
+				Encoding.ASCII.GetBytes( "\u001b_Gm=0,q=2;" )
+			)
 		);
 	}
 
