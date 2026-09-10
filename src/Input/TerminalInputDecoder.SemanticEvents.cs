@@ -76,8 +76,21 @@ internal sealed partial class TerminalInputDecoder {
 
 			switch ( parseResult.Status ) {
 				case TerminalResponseFrameParseStatus.NotCandidate:
-				case TerminalResponseFrameParseStatus.Invalid:
 					return null;
+
+				case TerminalResponseFrameParseStatus.Invalid:
+					await this.DiscardInvalidSemanticReportAsync(
+						maximumFrameBytes,
+						cancellationToken
+					).ConfigureAwait( false );
+					if ( !await this.EnsureInputAfterSemanticDiscardAsync(
+						cancellationToken
+					).ConfigureAwait( false ) ) {
+						return TerminalInputDecodeResult.FromInput(
+							TerminalInputEvent.EndOfInput()
+						);
+					}
+					continue;
 
 				case TerminalResponseFrameParseStatus.Incomplete:
 					if ( !await this.ReadMoreAsync(
@@ -102,7 +115,14 @@ internal sealed partial class TerminalInputDecoder {
 						}
 					} catch ( FormatException ) {
 						this.Consume( parseResult.Length );
-						throw;
+						if ( !await this.EnsureInputAfterSemanticDiscardAsync(
+							cancellationToken
+						).ConfigureAwait( false ) ) {
+							return TerminalInputDecodeResult.FromInput(
+								TerminalInputEvent.EndOfInput()
+							);
+						}
+						continue;
 					}
 
 					if ( semanticEvent is null ) {
@@ -119,6 +139,57 @@ internal sealed partial class TerminalInputDecoder {
 					);
 			}
 		}
+	}
+
+	private async ValueTask DiscardInvalidSemanticReportAsync(
+		int maximumFrameBytes,
+		CancellationToken cancellationToken
+	) {
+		if ( 4 > maximumFrameBytes
+			|| TerminalResponseFramer.DefaultMaximumFrameBytes < maximumFrameBytes ) {
+			throw new ArgumentOutOfRangeException( nameof( maximumFrameBytes ) );
+		}
+
+		TerminalControlSequenceScanner scanner = new(
+			TerminalResponseFramer.HardMaximumFrameBytes
+		);
+		foreach ( byte value in this.bufferedBytes ) {
+			TerminalResponseFrameParseStatus status = scanner.Feed( value );
+			if ( TerminalResponseFrameParseStatus.Invalid == status ) {
+				this.Consume( scanner.Length );
+				return;
+			}
+			if ( TerminalResponseFrameParseStatus.Complete == status
+				|| TerminalResponseFrameParseStatus.NotCandidate == status ) {
+				throw new InvalidOperationException(
+					"Invalid semantic framing did not reproduce while locating its discard boundary."
+				);
+			}
+		}
+
+		if ( this.bufferedBytes.Count < maximumFrameBytes ) {
+			throw new InvalidOperationException(
+				"Invalid semantic framing did not identify a structural or size boundary."
+			);
+		}
+
+		this.Consume( this.bufferedBytes.Count );
+		await this.DrainOversizedResponseAsync(
+			TerminalControlFamily.Osc,
+			cancellationToken
+		).ConfigureAwait( false );
+	}
+
+	private async ValueTask<bool> EnsureInputAfterSemanticDiscardAsync(
+		CancellationToken cancellationToken
+	) {
+		if ( 0 < this.bufferedBytes.Count ) {
+			return true;
+		}
+
+		return await this.ReadMoreAsync(
+			cancellationToken
+		).ConfigureAwait( false );
 	}
 
 	private bool IsPotentialOsc99SemanticPrefix(
