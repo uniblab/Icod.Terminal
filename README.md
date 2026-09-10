@@ -9,16 +9,16 @@
 
 ## Status
 
-`1.8.0` is the current published stable release. It completed the 1.5–1.8 control-language and raster program by adding **Kitty Graphics over APC** as a second backend beneath the backend-neutral raster API introduced with Sixel in 1.7.
+`1.8.1` is the current stable maintenance release for the 1.8 line. `1.8.0` completed the 1.5–1.8 control-language and raster program by adding **Kitty Graphics over APC** as a second backend beneath the backend-neutral raster API introduced with Sixel in 1.7.
 
-This branch prepares the `1.8.1` maintenance release. The maintenance scope is deliberately non-feature-bearing: documentation cleanup, improved sample coverage, and validation of those samples. No public API or terminal-runtime behavior change is intended.
+`1.8.1` is deliberately non-feature-bearing: it corrects stale release-facing documentation, improves sample discoverability, adds focused raster and VS Code shell-integration examples, and validates those examples across every supported target framework. It does not intentionally change the public API or terminal-runtime behavior.
 
 ## Installation
 
-For the published stable package:
+Install the stable package with:
 
 ```text
-dotnet add package Icod.Terminal --version 1.8.0
+dotnet add package Icod.Terminal --version 1.8.1
 ```
 
 The package targets:
@@ -171,7 +171,7 @@ Terminal protocol traffic is external input/output and must be treated according
 
 Several APIs intentionally publish caller-supplied metadata, including filesystem locations, hyperlinks, clipboard contents, notification text, shell metadata, and command lines. The library does not automatically discover or redact secrets; applications decide what is appropriate to disclose to the terminal.
 
-Kitty Graphics uses direct transfer in 1.8. File, temporary-file, and shared-memory graphics transports are intentionally excluded, avoiding hidden filesystem or IPC side effects merely for performance.
+Kitty Graphics uses direct transfer in the 1.8 line. File, temporary-file, and shared-memory graphics transports are intentionally excluded, avoiding hidden filesystem or IPC side effects merely for performance.
 
 See [Security and Privacy](docs/Security-and-Privacy.md).
 
@@ -179,13 +179,11 @@ See [Security and Privacy](docs/Security-and-Privacy.md).
 
 Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control-language/query infrastructure; 1.7 introduced the public raster contract; and 1.8 added Kitty Graphics beneath that unchanged raster surface.
 
-Version 1.8 retained the 1.7 public API fingerprint:
+Version `1.8.1` retains the 1.7/1.8 public API fingerprint:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
 ```
-
-The `1.8.1` maintenance work is intended to retain that public surface unchanged.
 
 See [Compatibility and Versioning](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [Migration to 1.0](docs/Migration-to-1.0.md).
 
