@@ -76,7 +76,7 @@ try {
 
 	await WriteLineAsync(
 		session,
-		"Type text, use modified/navigation keys, click the mouse, change focus, or paste."
+		"Type text, use modified/navigation keys, click the mouse, change focus, paste, or generate a semantic terminal event."
 	);
 	await WriteLineAsync(
 		session,
@@ -125,6 +125,14 @@ try {
 				}
 				break;
 
+			case TerminalEventKind.Semantic:
+				TerminalSemanticEvent semantic = terminalEvent.Semantic
+					?? throw new InvalidOperationException(
+						"A Semantic event did not carry a semantic payload."
+					);
+				await WriteLineAsync( session, FormatSemantic( semantic ) );
+				break;
+
 			case TerminalEventKind.Timeout:
 				await WriteLineAsync( session, "Timeout" );
 				break;
@@ -135,9 +143,15 @@ try {
 				break;
 
 			default:
-				throw new InvalidOperationException(
-					$"Unexpected terminal event kind: {terminalEvent.Kind}."
+				await WriteLineAsync(
+					session,
+					string.Concat(
+						"Event kind=",
+						terminalEvent.Kind.ToString(),
+						" (not recognized by this sample version)"
+					)
 				);
+				break;
 		}
 	}
 } finally {
@@ -253,6 +267,38 @@ static string FormatRune(
 	return value.HasValue
 		? string.Concat( "\"", EscapeText( value.Value.ToString() ), "\"" )
 		: "none";
+}
+
+static string FormatSemantic(
+	TerminalSemanticEvent semantic
+) {
+	ArgumentNullException.ThrowIfNull( semantic );
+	if ( TerminalSemanticEventKind.Notification == semantic.Kind ) {
+		TerminalNotificationEvent notification = semantic.Notification
+			?? throw new InvalidOperationException(
+				"A Notification semantic event did not carry a notification payload."
+			);
+		string result = string.Concat(
+			"Semantic notification kind=",
+			notification.Kind.ToString(),
+			" identifier=\"",
+			EscapeText( notification.Identifier ),
+			"\""
+		);
+		if ( notification.ButtonNumber.HasValue ) {
+			result = string.Concat(
+				result,
+				" button=",
+				notification.ButtonNumber.Value.ToString( CultureInfo.InvariantCulture )
+			);
+		}
+		return result;
+	}
+
+	return string.Concat(
+		"Semantic kind=",
+		semantic.Kind.ToString()
+	);
 }
 
 static string FormatLifecycle(
