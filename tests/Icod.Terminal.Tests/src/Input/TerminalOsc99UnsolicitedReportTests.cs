@@ -30,7 +30,7 @@ using Xunit;
 public sealed class TerminalOsc99UnsolicitedReportTests {
 	[Fact]
 	public void ParsesActivationReport() {
-		bool recognized = TerminalOsc99Protocol.TryParseUnsolicitedReport(
+		bool recognized = TerminalOsc99UnsolicitedReportParser.TryParse(
 			OscFrame( "99;i=build-finished;" ),
 			out TerminalSemanticEvent? parsed
 		);
@@ -48,7 +48,7 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 
 	[Fact]
 	public void ParsesOneBasedButtonReport() {
-		bool recognized = TerminalOsc99Protocol.TryParseUnsolicitedReport(
+		bool recognized = TerminalOsc99UnsolicitedReportParser.TryParse(
 			OscFrame( "99;i=question;2" ),
 			out TerminalSemanticEvent? parsed
 		);
@@ -65,13 +65,13 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 	[Fact]
 	public void ParsesCloseAndUntrackedReports() {
 		Assert.True(
-			TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=job:p=close;" ),
 				out TerminalSemanticEvent? closed
 			)
 		);
 		Assert.True(
-			TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;p=close:i=job;untracked" ),
 				out TerminalSemanticEvent? untracked
 			)
@@ -104,7 +104,7 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 		);
 
 		Assert.True(
-			TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			TerminalOsc99UnsolicitedReportParser.TryParse(
 				frame,
 				out TerminalSemanticEvent? parsed
 			)
@@ -120,14 +120,14 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 	[Fact]
 	public void QueryResponseFormsRemainOutsideUnsolicitedGrammar() {
 		Assert.False(
-			TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=query:p=?;p=title,body" ),
 				out TerminalSemanticEvent? support
 			)
 		);
 		Assert.Null( support );
 		Assert.False(
-			TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=query:p=alive;job1,job2" ),
 				out TerminalSemanticEvent? alive
 			)
@@ -144,7 +144,7 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 		string payload
 	) {
 		Assert.Throws<FormatException>(
-			() => TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			() => TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=job;" + payload ),
 				out _
 			)
@@ -154,7 +154,7 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 	[Fact]
 	public void RejectsMalformedOwnedClosePayload() {
 		Assert.Throws<FormatException>(
-			() => TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			() => TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=job:p=close;unknown" ),
 				out _
 			)
@@ -166,13 +166,13 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 		string oversized = new( 'a', TerminalOsc99NotificationEncoder.MaximumIdentifierLength + 1 );
 
 		Assert.Throws<FormatException>(
-			() => TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			() => TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=" + oversized + ";" ),
 				out _
 			)
 		);
 		Assert.Throws<FormatException>(
-			() => TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			() => TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=bad:id;" ),
 				out _
 			)
@@ -182,7 +182,7 @@ public sealed class TerminalOsc99UnsolicitedReportTests {
 	[Fact]
 	public void UnknownPayloadSelectorRemainsOutsideUnsolicitedGrammar() {
 		Assert.False(
-			TerminalOsc99Protocol.TryParseUnsolicitedReport(
+			TerminalOsc99UnsolicitedReportParser.TryParse(
 				OscFrame( "99;i=job:p=future;data" ),
 				out TerminalSemanticEvent? parsed
 			)
