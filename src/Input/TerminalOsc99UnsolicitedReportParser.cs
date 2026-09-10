@@ -20,6 +20,7 @@
 */
 namespace Icod.Terminal;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
@@ -120,7 +121,7 @@ internal static class TerminalOsc99UnsolicitedReportParser {
 
 	private static bool TryParseFrame(
 		TerminalResponseFrame frame,
-		out Osc99Frame? parsed
+		[NotNullWhen( true )] out Osc99Frame? parsed
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
 		parsed = null;
