@@ -188,6 +188,7 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 				lock ( this.sync ) {
 					return this.writes.Count;
 				}
+			}
 		}
 
 		internal void Publish(
@@ -287,7 +288,6 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 				throw new InvalidOperationException(
 					"The scripted lifecycle source is closed."
 				);
-			}
 		}
 
 		public ValueTask<TerminalLifecycleSignal> ReadAsync(
