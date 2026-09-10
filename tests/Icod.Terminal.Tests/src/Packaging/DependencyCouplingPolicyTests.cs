@@ -45,11 +45,12 @@ public sealed class DependencyCouplingPolicyTests {
 	}
 
 	[Fact]
-	public void TestsAndSamplesDoNotPinTerminalRuntimeDependencies() {
+	public void AuxiliaryProjectsDoNotPinTerminalRuntimeDependencies() {
 		string root = FindRepositoryRoot();
 		string[] projectRoots = [
 			Path.Combine( root, "tests" ),
-			Path.Combine( root, "samples" )
+			Path.Combine( root, "samples" ),
+			Path.Combine( root, "tools" )
 		];
 
 		foreach ( string projectRoot in projectRoots ) {
