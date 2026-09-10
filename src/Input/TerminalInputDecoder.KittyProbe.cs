@@ -55,6 +55,12 @@ internal sealed partial class TerminalInputDecoder {
 	private async ValueTask<bool> TryConsumeKittyKeyboardFlagsProbeAsync(
 		CancellationToken cancellationToken
 	) {
+		if ( await this.TryConsumeKittyGraphicsSupportProbeAsync(
+			cancellationToken
+		).ConfigureAwait( false ) ) {
+			return true;
+		}
+
 		KittyKeyboardFlagsProbe? probe;
 		lock ( this.kittyKeyboardProbeGate ) {
 			probe = this.kittyKeyboardFlagsProbe;
