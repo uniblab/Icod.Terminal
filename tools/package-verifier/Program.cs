@@ -602,6 +602,7 @@ internal static class Program {
 					packageId,
 					StringComparison.Ordinal
 				)
+			)
 			.ToArray();
 		Require(
 			1 == matches.Length,
