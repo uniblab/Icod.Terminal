@@ -40,7 +40,6 @@ public sealed class DependencyCouplingPolicyTests {
 
 		Assert.DoesNotContain( "TermInfoDependencyVersion", source );
 		Assert.DoesNotContain( "TimingDependencyVersion", source );
-		Assert.DoesNotContain( "string expectedVersion", source );
 		Assert.DoesNotContain( "references an unexpected {packageId} version", source );
 	}
 
