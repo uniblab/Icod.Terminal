@@ -19,7 +19,6 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using Icod.Terminal;
-using Icod.TermInfo;
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
 	new TerminalSessionOptions {
@@ -29,11 +28,66 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 );
 
 await session.WriteTextAsync( "Icod.Terminal sample ready.\r\n" );
+await session.WriteTextAsync(
+	string.Concat(
+		"Identity source: ",
+		session.Identity.Source.ToString(),
+		"\r\n"
+	)
+);
+await session.WriteTextAsync(
+	FormatObservation(
+		"Input",
+		session.InputObservation
+	)
+);
+await session.WriteTextAsync(
+	FormatObservation(
+		"Output",
+		session.OutputObservation
+	)
+);
+await session.WriteTextAsync(
+	"Press a key, or wait one second for the timed read to complete.\r\n"
+);
 
 TerminalEvent terminalEvent = await session.ReadEventAsync(
 	TimeSpan.FromSeconds( 1 )
 );
 
-if ( terminalEvent.Kind == TerminalEventKind.Input ) {
-	await session.WriteTextAsync( $"Input: {terminalEvent.Input?.Kind}\r\n" );
+await session.WriteTextAsync(
+	string.Concat(
+		"Event: ",
+		terminalEvent.Kind.ToString(),
+		TerminalEventKind.Input == terminalEvent.Kind
+			? string.Concat(
+				" / ",
+				terminalEvent.Input?.Kind.ToString() ?? "missing input payload"
+			)
+			: string.Empty,
+		"\r\n"
+	)
+);
+
+return 0;
+
+static string FormatObservation(
+	string label,
+	TerminalEndpointObservation observation
+) {
+	ArgumentException.ThrowIfNullOrWhiteSpace( label );
+	ArgumentNullException.ThrowIfNull( observation );
+
+	return string.Concat(
+		label,
+		" endpoint: terminal=",
+		observation.IsTerminal.ToString(),
+		", platform=",
+		observation.Platform?.ToString() ?? "none",
+		", pathname=",
+		observation.Pathname ?? "unavailable",
+		", capabilities=",
+		observation.Capabilities.ToString(),
+		"\r\n"
+	);
 }
