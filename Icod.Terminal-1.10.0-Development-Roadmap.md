@@ -2,7 +2,7 @@
 
 **Release:** `1.10.0`  
 **Theme:** semantic capability inspection and planning  
-**Status:** C100 complete; C101 semantic capability vocabulary and API regret gate active  
+**Status:** C100–C103 complete; C104 explicit bounded verification active  
 **Development version:** `1.10.0-alpha.1`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.9.0`
@@ -60,32 +60,84 @@ C100 established:
 
 C100 changes no public runtime API.
 
+## C101–C103 result
+
+C101 froze a deliberately reduced, dependency-neutral public planning vocabulary in:
+
+[`docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`](docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md)
+
+The initial public capability set is:
+
+```text
+ClipboardRead
+ClipboardWrite
+CursorStyle
+SynchronizedOutput
+KeyboardReporting
+MouseReporting
+FocusReporting
+BracketedPaste
+RasterGraphics
+```
+
+Support, endpoint availability, and evidence lifetime are separate dimensions. Public evidence is intentionally projected as only:
+
+```text
+None
+StaticDescription
+LiveObservation
+```
+
+`Icod.TermInfo`, OSC, CSI, DCS, APC, concrete backends, raw capability names, routing scores, and terminal-brand heuristics remain private implementation detail.
+
+C102 added the immutable public value model:
+
+```text
+TerminalCapability
+TerminalCapabilitySupport
+TerminalCapabilityEndpointAvailability
+TerminalCapabilityEvidenceKind
+TerminalCapabilityStatus
+```
+
+C103 added the side-effect-free public session operation:
+
+```csharp
+public TerminalCapabilityStatus InspectCapability(
+    TerminalCapability capability
+);
+```
+
+Inspection reads existing session knowledge only. It emits no terminal bytes and performs no hidden live probe. Support is resolved independently from endpoint availability so that, for example, an advertised output capability can remain `Advertised` while its endpoint is `Unavailable` and `IsUsable` is false.
+
+The C103 package project built successfully for `net8.0`, `net9.0`, and `net10.0` with zero warnings and zero errors. The deterministic public API snapshots were identical across all three TFMs and produced the current development fingerprint:
+
+```text
+ebca3e14f21354429c956eca1e43e22230cf4dbf151de08ef126133e321e9e56
+```
+
+The current provisional 1.10 baseline is maintained in:
+
+- [`docs/Public-API-Baseline-1.10.md`](docs/Public-API-Baseline-1.10.md)
+- `docs/Public-API-Baseline-1.10.sha256`
+
+The final release baseline remains a C108 responsibility.
+
 ## Public capability-planning direction
 
-The intended public distinction remains:
+The public distinction is:
 
 ```text
 inspect
     side-effect free
     reports what this TerminalSession currently knows
 
-verify / prepare
+verify
     explicit and bounded
-    may perform a live terminal probe when the semantic operation requires one
+    attempts to strengthen current knowledge only where a reviewed live probe exists
 ```
 
 The public surface describes semantic operations and support knowledge, not protocol mechanics or dependency implementation.
-
-Candidate questions include:
-
-```text
-Can raster graphics presently be used?
-Can synchronized output presently be used?
-Can modern keyboard reporting presently be acquired?
-Is clipboard read/write presently known to be usable?
-Is the required terminal endpoint available?
-Is the current answer verified live, advertised statically, unsupported, or still unknown?
-```
 
 Callers should not need to ask:
 
@@ -110,17 +162,18 @@ Those remain implementation details.
 7. The public model does not expose arbitrary raw capability names as the primary semantic API.
 8. The public model does not expose `Icod.TermInfo`, OSC, CSI, DCS, APC, or vendor names as evidence categories.
 9. No second terminal reader is introduced.
-10. Verification remains bounded by timeout/cancellation and the existing query coordinator.
-11. Existing 1.x APIs and enum numeric values remain stable unless an additive minor-version change is deliberately reviewed and baselined.
+10. Verification reuses only reviewed bounded probes and the existing authoritative query coordinator.
+11. A capability without a reviewed support probe is not assigned fabricated verification traffic merely to satisfy the public API.
+12. Existing 1.x APIs and enum numeric values remain stable unless an additive minor-version change is deliberately reviewed and baselined.
 
 ## Tranche plan
 
 ```text
 C100  dependency-decoupling and validation hygiene                 complete
-C101  semantic capability vocabulary and API regret gate          active
-C102  side-effect-free capability inspection model                planned
-C103  session inspection integration and evidence projection      planned
-C104  explicit bounded verification / preparation                 planned
+C101  semantic capability vocabulary and API regret gate          complete
+C102  side-effect-free capability inspection model                complete
+C103  session inspection integration and evidence projection      complete
+C104  explicit bounded verification / preparation                 active
 C105  lifecycle, invalidation, and concurrent-query semantics     planned
 C106  samples and downstream planning acceptance                  planned
 C107  adversarial/package hardening                               planned
@@ -130,34 +183,41 @@ C109  1.10.0 release closure                                      planned
 
 ## C101 — semantic capability vocabulary and API regret gate
 
-Inventory the internal semantic operations and support/evidence states. Select the smallest public vocabulary that is stable enough to support higher-level planning without publishing backend, protocol, dependency, or routing internals.
-
-The tranche must answer:
-
-- which semantic capabilities are appropriate for public inspection;
-- whether support state and evidence kind should be separate types;
-- how endpoint unavailability differs from semantic unsupported state;
-- which data is stable enough for public enums versus opaque/extensible identifiers;
-- how internal evidence such as TermInfo/static profile data projects into dependency-neutral public evidence;
-- what information must remain internal.
-
-The C101 decision record is maintained in `docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`.
-
-No live probing API is committed until this vocabulary passes the regret gate.
+Complete. The public vocabulary is intentionally curated rather than exposing the internal 21-member semantic-operation enum. Evidence provenance is dependency-neutral and protocol-neutral.
 
 ## C102 — side-effect-free capability inspection model
 
-Add the immutable public result types needed to report what the session already knows. Inspection must not emit terminal bytes, acquire presentation state, or perform hidden queries.
+Complete. The immutable public result model separates support, endpoint availability, evidence lifetime, and current usability.
 
 ## C103 — session inspection integration and evidence projection
 
-Project the existing internal capability/evidence ledger into the reduced public model. Preserve internal routing details while proving static, live, unsupported, unknown, and endpoint-unavailable cases.
+Complete. `InspectCapability(...)` projects the existing internal evidence/routing model without terminal I/O, hidden queries, backend leakage, or dependency leakage.
 
 ## C104 — explicit bounded verification / preparation
 
-Add an explicit async path for semantic capabilities where a caller wants stronger evidence and a bounded live probe exists. Reuse the authoritative query router and existing timeout/cancellation semantics.
+Add an explicit async path for callers that want the session to attempt to strengthen current support knowledge.
 
-Verification must not become a generic raw-query escape hatch.
+The C104 probe inventory is intentionally narrow:
+
+```text
+KeyboardReporting
+    existing reviewed bounded Kitty keyboard support probe
+
+RasterGraphics
+    existing reviewed bounded Kitty Graphics + Sixel probe orchestration
+```
+
+The other initial public capabilities do not currently have a clean, reviewed support probe. C104 must not fabricate terminal traffic for them. Calling verification for those capabilities should therefore return the current inspection result unchanged.
+
+Verification must:
+
+- validate the semantic capability at entry;
+- return immediately when the required endpoint is unavailable;
+- return immediately when current live evidence is already decisive;
+- use the existing authoritative query coordinator;
+- remain bounded by the existing reviewed probe deadlines and caller cancellation;
+- return the post-attempt `TerminalCapabilityStatus`;
+- never become a generic raw-query escape hatch.
 
 ## C105 — lifecycle, invalidation, and concurrent-query semantics
 
