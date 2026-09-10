@@ -4,7 +4,26 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 ## Unreleased
 
-No unreleased 1.x changes are currently recorded.
+No unreleased 1.x changes are currently recorded beyond the `1.8.1` maintenance candidate described below.
+
+## 1.8.1
+
+### Documentation and sample polish
+
+- Corrects stale post-release wording which still described `1.8.0` as awaiting A189 PR/release qualification after the release had already been merged, tagged, and published.
+- Reworks the root README and current roadmap into concise consumer/contributor entry points while preserving detailed historical design evidence in the versioned roadmaps and tranche documents.
+- Reorganizes the sample catalog around consumer goals and adds an at-a-glance guide for choosing focused examples.
+- Adds `Icod.Terminal.RasterGraphics.Sample`, a dependency-free backend-neutral raster example which generates RGB24 pixels in memory and uses only `TerminalRasterImage` plus `DisplayRasterAsync(...)`.
+- Adds `Icod.Terminal.VsCodeShellIntegration.Sample`, demonstrating the typed VS Code OSC 633 shell-integration surface without process/environment discovery.
+- Adds focused validation scripts which restore and build both new samples on `net8.0`, `net9.0`, and `net10.0` as part of the runtime validation graph.
+
+### Compatibility
+
+- Adds no public API and intentionally retains the 1.7/1.8 public API fingerprint `847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700`.
+- Makes no intentional change to terminal-runtime wire behavior, capability evidence, query routing, raster routing, lifecycle/restoration semantics, or committed-output semantics.
+- Retains the stable `1.0.0` compatibility floor, `net8.0`/`net9.0`/`net10.0`, and the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+
+See `docs/releases/1.8.1.md` for the curated maintenance release notes.
 
 ## 1.8.0
 
@@ -35,8 +54,7 @@ No unreleased 1.x changes are currently recorded.
 - Retains the stable `1.0.0` compatibility floor and all released 1.0–1.7 public signatures plus documented wire/ownership/query/resource/lifecycle/restoration/security semantics.
 - Retains `net8.0`, `net9.0`, and `net10.0` plus the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
 - Extends the fresh NuGet-only raster package smoke so both DCS/Sixel-specific and APC/Kitty-specific public escape-hatch method names remain excluded from the shipped API while the same public raster contract compiles/runs on all three TFMs.
-- A180–A188 each passed exact-head Staging qualification; A188 passed the complete matrix on `997feb9628d34389199ca3fffdf90e829f33819a`, workflow `34469956370`.
-- A189 synchronizes release/package/permanent documentation and requires one final unchanged exact PR head to pass the complete Staging matrix before release-program completion.
+- A180–A189 completed exact-head Staging qualification before PR #46 was merged; `v1.8.0` was subsequently tagged and published as the stable multi-backend raster release.
 
 See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md` through `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`, and `Icod.Terminal-1.8.0-Development-Roadmap.md` for the complete 1.8 contract.
 
