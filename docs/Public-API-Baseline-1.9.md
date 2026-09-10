@@ -1,20 +1,20 @@
-# Icod.Terminal Public API Baseline — 1.9.0 Development
+# Icod.Terminal Public API Baseline — 1.9.0
 
 **Release:** `1.9.0`  
-**Checkpoint:** E195 interactive Kitty notification requests  
+**Status:** final E199 public API freeze  
 **Target frameworks:** `net8.0`, `net9.0`, `net10.0`
 
 ## Purpose
 
-This document records the current intentional additive public surface for 1.9 development while retaining all prior stable public API baselines as compatibility evidence.
+This document records the final intentional additive public surface for `Icod.Terminal 1.9.0` while retaining every earlier stable public API baseline as compatibility evidence.
 
-E191 introduced the protocol-neutral semantic-event envelope used by unsolicited terminal events. E195 adds the request-side options needed for applications to explicitly ask Kitty OSC 99 for activation/button and close reports and to supply button labels. The parser, routing, and request-side changes remain additive to the stable 1.x API.
+Version 1.9 adds a protocol-neutral semantic-event envelope for unsolicited terminal observations and extends the existing typed Kitty OSC 99 notification options with explicit interactive-report controls. E196–E198 add projection, hardening, package, sample, and lifecycle evidence without adding further public members after E195.
 
 ## Exact machine fingerprint
 
 The deterministic reflection snapshot generated independently for `net8.0`, `net9.0`, and `net10.0` is identical across all three target frameworks.
 
-After normalizing line endings to LF, the E195 fingerprint is:
+After normalizing line endings to LF, the final 1.9 fingerprint is:
 
 ```text
 e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
@@ -24,17 +24,17 @@ The machine-readable fingerprint is stored in:
 
 `docs/Public-API-Baseline-1.9.sha256`
 
-This is the current 1.9 development baseline, not a claim that the final E199 public surface is already frozen. If a later reviewed 1.9 tranche intentionally adds public members, this same 1.9 baseline must be regenerated and reviewed while all historical stable baselines remain untouched.
+`packaging/VerifyPublicApiBaseline.ps1` uses that file as the current baseline. Historical baselines remain checked in unchanged.
 
-## Intentional E191 additions
+## Intentional semantic-event additions
 
-E191 appends one value to the existing outer event enum:
+Version 1.9 appends one value to the existing outer event enum:
 
 ```text
 TerminalEventKind.Semantic = 4
 ```
 
-The prior numeric values remain:
+The prior numeric values remain unchanged:
 
 ```text
 Input      = 0
@@ -43,13 +43,13 @@ Timeout    = 2
 Cancelled  = 3
 ```
 
-E191 adds a nullable semantic payload to `TerminalEvent`:
+`TerminalEvent` gains:
 
 ```csharp
 public TerminalSemanticEvent? Semantic { get; }
 ```
 
-It also adds these public types:
+and the release adds these public semantic types:
 
 ```text
 TerminalSemanticEventKind
@@ -58,13 +58,13 @@ TerminalNotificationEventKind
 TerminalNotificationEvent
 ```
 
-The semantic envelope currently exposes one reviewed family:
+The first semantic family is:
 
 ```text
 TerminalSemanticEventKind.Notification
 ```
 
-The first notification event kinds are:
+The first notification-event values are:
 
 ```text
 Activated
@@ -81,11 +81,13 @@ public string Identifier { get; }
 public int? ButtonNumber { get; }
 ```
 
-`ButtonNumber` is present only for `ButtonActivated` and is one-based. `CloseTrackingUnavailable` remains distinct from `Closed` so the public model preserves the terminal's uncertainty rather than fabricating a close event.
+`ButtonNumber` is present only for `ButtonActivated` and is one-based. `CloseTrackingUnavailable` is distinct from `Closed` so the public API represents terminal uncertainty truthfully.
 
-## Intentional E195 additions
+Semantic events arrive through the existing `TerminalSession.ReadEventAsync(...)` path. No second public semantic reader is added.
 
-E195 extends `KittyNotificationOptions` with three opt-in request properties:
+## Intentional interactive-notification additions
+
+`KittyNotificationOptions` gains:
 
 ```csharp
 public bool ReportActivation { get; init; }
@@ -101,34 +103,38 @@ ReportClose      = false
 Buttons          = empty
 ```
 
-`ReportActivation` requests activation/button reports. `ReportClose` requests close-state reports. `Buttons` carries ordered button labels for a supporting Kitty OSC 99 terminal.
+Interactive reporting requires an explicit caller-supplied notification identifier. `FocusOnActivation` remains independent of reporting. Button labels are exposed semantically; U+2028 separation, Base64 framing, and resource limits remain implementation/protocol details rather than public wire APIs.
 
-Interactive reporting requires the caller to supply an explicit `KittyNotificationOptions.Identifier`; internally generated multipart identifiers never become application correlation identities. `FocusOnActivation` remains independent of activation reporting, so callers can request reports while retaining or suppressing the default focus action explicitly.
+## Behavioral compatibility attached to the API
 
-Button transport is validated and bounded internally. The public API deliberately exposes labels rather than protocol separators, Base64 framing, raw OSC metadata, or parser limits.
+The additive surface participates in the established 1.x contracts:
+
+- active query ownership precedes unsolicited semantic recognition;
+- recognized semantic reports precede ordinary application-input decoding;
+- no frame is double-delivered as a query response and semantic event;
+- input and semantic events share one bounded ordered application-event domain;
+- malformed/oversized owned reports recover boundedly and do not leak into ordinary text;
+- caller wait cancellation/timeout does not discard fragmented decoder state;
+- notification reports are validated but unauthenticated terminal-controlled input;
+- notification requests are not retained as reversible session state and are not replayed on resume or automatically closed on disposal.
 
 ## Deliberate exclusions
 
-The current 1.9 public surface does not expose:
+The 1.9 public surface does not expose:
 
-- raw OSC frames;
-- raw protocol selectors;
-- arbitrary metadata dictionaries;
+- raw OSC frames or selector dictionaries;
+- arbitrary vendor-event payloads;
 - protocol-backend identifiers on semantic events;
 - a second `ReadSemanticEventAsync(...)` method;
-- public event factories intended for applications to synthesize terminal input;
-- a notification-state database;
+- public terminal-event factories for application synthesis;
+- a persistent notification database;
 - authenticated notification identities;
-- protocol framing or Base64 details for button payloads.
-
-Semantic events continue to arrive through the authoritative `TerminalSession.ReadEventAsync(...)` path.
+- persistent raster resources/placements or graphics scene state.
 
 ## Compatibility rule
 
-The 1.9 changes recorded here are additive. Existing public members are retained and existing enum numeric values are unchanged.
+Version 1.9 is an additive minor release. Existing public members remain present and existing enum numeric values are unchanged.
 
-Consumers using exhaustive switches over `TerminalEventKind` must nevertheless be prepared for the new `Semantic` case when they adopt the 1.9 package, as with any additive public enum expansion.
+Consumers using exhaustive switches over `TerminalEventKind` should handle the new `Semantic` value when adopting 1.9. Existing Kitty notification calls retain their prior behavior when the new interactive options are unused.
 
-Existing Kitty notification calls remain byte-compatible when the E195 interactive options are unused. Interactive reporting is explicit opt-in and does not change the meaning of successful send completion: completion proves request emission, not that a desktop notification was displayed or that a later terminal report is authentic.
-
-Final 1.9 release closure remains E199. The exact E199 public surface must be regenerated, reviewed, and recorded before stable promotion.
+Stable `1.0.0` remains the compatibility floor. The permanent authority is `docs/Compatibility-and-Versioning.md`.
