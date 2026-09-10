@@ -34,6 +34,9 @@ internal static class TerminalOsc99NotificationEncoder {
 	internal const int MaximumMetadataTextBytes = 4096;
 	internal const int MaximumMetadataItems = 16;
 	internal const int MaximumFrameBytes = 16_384;
+	internal const int MaximumButtons = 16;
+	internal const int MaximumButtonLabelBytes = 512;
+	internal const int MaximumButtonsPayloadBytes = 2048;
 
 	private static readonly UTF8Encoding StrictUtf8 = new(
 		encoderShouldEmitUTF8Identifier: false,
@@ -65,6 +68,7 @@ internal static class TerminalOsc99NotificationEncoder {
 			MaximumTextBytes
 		);
 		ValidateOptions( options );
+		byte[]? buttonsBytes = EncodeButtonsPayload( options.Buttons );
 
 		byte[]? iconData = options.IconData?.ToArray();
 		if ( iconData is not null ) {
@@ -91,6 +95,14 @@ internal static class TerminalOsc99NotificationEncoder {
 				parts,
 				"body",
 				bodyBytes
+			);
+		}
+		if ( buttonsBytes is not null ) {
+			parts.Add(
+				new PayloadPart(
+					"buttons",
+					Convert.ToBase64String( buttonsBytes )
+				)
 			);
 		}
 		if ( 0 == parts.Count ) {
@@ -189,9 +201,19 @@ internal static class TerminalOsc99NotificationEncoder {
 		KittyNotificationOptions options
 	) {
 		ArgumentNullException.ThrowIfNull( options );
+		ArgumentNullException.ThrowIfNull( options.NotificationTypes );
+		ArgumentNullException.ThrowIfNull( options.IconNames );
+		ArgumentNullException.ThrowIfNull( options.Buttons );
 		if ( options.Identifier is not null ) {
 			ValidateIdentifier(
 				options.Identifier,
+				nameof( options.Identifier )
+			);
+		}
+		if ( ( options.ReportActivation || options.ReportClose )
+			&& options.Identifier is null ) {
+			throw new ArgumentException(
+				"Interactive Kitty notification reporting requires an explicit notification identifier.",
 				nameof( options.Identifier )
 			);
 		}
@@ -260,8 +282,17 @@ internal static class TerminalOsc99NotificationEncoder {
 		foreach ( string notificationType in options.NotificationTypes ) {
 			metadata.Add( "t=" + EncodeMetadataText( notificationType ) );
 		}
-		if ( !options.FocusOnActivation ) {
+		if ( options.ReportActivation ) {
+			metadata.Add(
+				options.FocusOnActivation
+					? "a=report"
+					: "a=report,-focus"
+			);
+		} else if ( !options.FocusOnActivation ) {
 			metadata.Add( "a=-focus" );
+		}
+		if ( options.ReportClose ) {
+			metadata.Add( "c=1" );
 		}
 		if ( KittyNotificationOccasion.Always != options.Occasion ) {
 			metadata.Add(
@@ -303,6 +334,72 @@ internal static class TerminalOsc99NotificationEncoder {
 			KittyNotificationOccasion.Invisible => "invisible",
 			_ => throw new ArgumentOutOfRangeException( nameof( occasion ) )
 		};
+	}
+
+	private static byte[]? EncodeButtonsPayload(
+		IReadOnlyList<string> buttons
+	) {
+		ArgumentNullException.ThrowIfNull( buttons );
+		if ( 0 == buttons.Count ) {
+			return null;
+		}
+		if ( MaximumButtons < buttons.Count ) {
+			throw new ArgumentException(
+				$"A Kitty OSC 99 notification cannot contain more than {MaximumButtons} buttons.",
+				nameof( KittyNotificationOptions.Buttons )
+			);
+		}
+
+		List<byte[]> labels = new( buttons.Count );
+		int totalBytes = 0;
+		for ( int index = 0; index < buttons.Count; ++index ) {
+			string? label = buttons[ index ];
+			if ( string.IsNullOrEmpty( label ) ) {
+				throw new ArgumentException(
+					"Kitty OSC 99 button labels must be non-empty.",
+					nameof( KittyNotificationOptions.Buttons )
+				);
+			}
+			if ( label.Contains( '\u2028', StringComparison.Ordinal ) ) {
+				throw new ArgumentException(
+					"Kitty OSC 99 button labels cannot contain U+2028 LINE SEPARATOR.",
+					nameof( KittyNotificationOptions.Buttons )
+				);
+			}
+			byte[] labelBytes = EncodeBoundedUtf8(
+				label,
+				nameof( KittyNotificationOptions.Buttons ),
+				MaximumButtonLabelBytes
+			);
+			labels.Add( labelBytes );
+			totalBytes = checked( totalBytes + labelBytes.Length );
+			if ( 0 < index ) {
+				totalBytes = checked( totalBytes + 3 );
+			}
+			if ( MaximumButtonsPayloadBytes < totalBytes ) {
+				throw new ArgumentException(
+					$"Kitty OSC 99 button data cannot exceed {MaximumButtonsPayloadBytes} UTF-8 bytes including separators.",
+					nameof( KittyNotificationOptions.Buttons )
+				);
+			}
+		}
+
+		byte[] payload = new byte[ totalBytes ];
+		int offset = 0;
+		for ( int index = 0; index < labels.Count; ++index ) {
+			if ( 0 < index ) {
+				payload[ offset++ ] = 0xE2;
+				payload[ offset++ ] = 0x80;
+				payload[ offset++ ] = 0xA8;
+			}
+			byte[] label = labels[ index ];
+			label.CopyTo(
+				payload,
+				offset
+			);
+			offset += label.Length;
+		}
+		return payload;
 	}
 
 	private static void AppendBase64Parts(
