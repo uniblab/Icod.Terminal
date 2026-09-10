@@ -207,7 +207,7 @@ jobs:
           if (0 -ne $LASTEXITCODE) { throw "GitHub Packages publication failed for '$($package.Name)' with status $LASTEXITCODE." }
 
   github-release:
-    needs: [publish-nuget, publish-github-packages]
+    needs: [metadata, publish-nuget, publish-github-packages]
     if: >-
       always() &&
       needs.metadata.result == 'success' &&
