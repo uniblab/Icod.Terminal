@@ -31,6 +31,10 @@ public sealed partial class TerminalSession {
 	/// Version 1.8 resolves the semantic raster operation between verified
 	/// Kitty Graphics and Sixel backends. Backend probing and selection remain
 	/// internal; callers continue to provide one backend-neutral raster image.
+	/// The image is displayed at its intrinsic pixel dimensions using the
+	/// selected backend's ordinary current-position, clipping, and post-display
+	/// cursor semantics. Version 1.8 does not impose portable placement,
+	/// scaling, clipping, or cursor-position behavior across graphics backends.
 	/// </remarks>
 	/// <param name="image">The owned backend-neutral raster image.</param>
 	/// <param name="cancellationToken">
