@@ -1,6 +1,6 @@
 # Security and Privacy
 
-`Icod.Terminal` mediates a bidirectional terminal conversation. Terminal control sequences are not merely visual formatting: some operations publish metadata, request external state, alter terminal-owned presentation state, or influence desktop integration. Raster graphics add large bidirectional protocol paths that must preserve the same bounded, typed, evidence-driven design.
+`Icod.Terminal` mediates a bidirectional terminal conversation. Terminal control sequences are not merely visual formatting: some operations publish metadata, request external state, alter terminal-owned presentation state, influence desktop integration, or report unsolicited terminal-side observations. Raster graphics add large bidirectional protocol paths that must preserve the same bounded, typed, evidence-driven design.
 
 This document defines the permanent 1.x security and privacy boundary.
 
@@ -9,13 +9,14 @@ This document defines the permanent 1.x security and privacy boundary.
 `Icod.Terminal` assumes that:
 
 - application-supplied arguments may be untrusted;
-- terminal input and query responses are external input and may be malformed or adversarial;
+- terminal input, unsolicited semantic events, and query responses are external input and may be malformed or adversarial;
+- the attached terminal, multiplexer, remote session, or transport may fabricate otherwise well-formed observations;
 - the attached terminal, multiplexer, or remote session may not implement a protocol exactly as expected;
 - successful byte transmission does not prove terminal-side support or application;
 - terminal metadata may be logged, persisted, forwarded, surfaced to the desktop, or visible to other software depending on the environment;
 - large raster inputs and large terminal replies may be accidental or adversarial resource pressure.
 
-The library therefore favors typed semantic APIs, bounded parsing/encoding, pre-output validation, explicit capability evidence, and one authoritative input/query path over raw generic protocol construction.
+The library therefore favors typed semantic APIs, bounded parsing/encoding, pre-output validation, explicit capability evidence, and one authoritative input/query/event path over raw generic protocol construction.
 
 ## 2. Control-sequence injection boundary
 
@@ -27,18 +28,18 @@ Different protocols use different safe encodings. Examples include:
 
 - OSC 7 path data uses strict UTF-8 percent encoding;
 - OSC 52 binary payloads use Base64;
-- OSC 99 text/icon data uses protocol-defined Base64 and closed metadata grammar;
+- OSC 99 text/icon/button data uses protocol-defined Base64 and closed metadata grammar;
 - OSC 133 and OSC 633 metadata use their reviewed serializers/escaping;
 - OSC 777 rejects delimiters/control bytes for which the protocol defines no interoperable escape;
 - OSC 1337 user-variable values use strict UTF-8 plus Base64;
 - Kitty Graphics raw image bytes use protocol-defined Base64 inside a typed bounded APC dialect;
-- closed color, pointer, keyboard, and raster APIs avoid arbitrary caller-supplied protocol strings.
+- closed color, pointer, keyboard, notification-event, and raster APIs avoid arbitrary caller-supplied protocol strings.
 
-Validation protects framing integrity. It does not make semantic content confidential or trustworthy.
+Validation protects framing integrity. It does not make semantic content confidential, authentic, or trustworthy.
 
 ## 3. Bounded resources
 
-Input decoding, paste handling, query transactions, request/response frames, late-response ownership, resynchronization, and graphics processing are bounded.
+Input decoding, paste handling, query transactions, unsolicited semantic reports, application-event buffering, request/response frames, late-response ownership, resynchronization, and graphics processing are bounded.
 
 The normalized control-language layer uses one bounded scanner for CSI, DCS, OSC, APC, PM, and SOS rather than separate unbounded per-dialect accumulators.
 
@@ -59,21 +60,36 @@ small complete DCS frame              4,096 bytes
 small complete APC frame              8,192 bytes
 Kitty Base64 image data per APC chunk 4,096 bytes
 Sixel quantizer histogram             32 x 32 x 32 bins
+Kitty notification buttons            16 labels
+Kitty button label                     512 UTF-8 bytes
+Kitty combined button payload        2,048 UTF-8 bytes including separators
 ```
 
 Sixel payload output is generated as bounded lazy segments. Kitty Graphics direct output is generated as bounded lazy Base64/application payload chunks and one bounded APC frame at a time. Large graphics do not require one complete encoded transfer in memory.
 
 Oversized correlated terminal responses do not cause an unbounded accumulator: recovery uses the existing bounded string resynchronization ceiling.
 
+Version 1.9 applies the same principle to unsolicited semantic candidates. Malformed or oversized owned OSC 99 reports are consumed/recovered boundedly and are not leaked into ordinary application text. Semantic events share the existing bounded application-event backpressure domain rather than accumulating in an unbounded side queue.
+
 ## 4. One authoritative input reader
 
-A live `TerminalSession` owns the authoritative input decoder and query router.
+A live `TerminalSession` owns the authoritative input decoder, query router, and unsolicited semantic-event classifier.
 
-The stable 1.x surface does not expose a session raw-input property. A competing raw read could steal bytes from UTF-8 scalars, key sequences, paste frames, lifecycle traffic, or active query responses.
+The stable 1.x surface does not expose a session raw-input property. A competing raw read could steal bytes from UTF-8 scalars, key sequences, paste frames, lifecycle traffic, unsolicited semantic reports, or active query responses.
 
 `ITerminalInput` remains public for custom transport injection, but a caller supplying the transport must not create a competing reader while the session owns it.
 
-Both Sixel capability observation and the 1.8 Kitty Graphics support probe reuse the same authoritative input/query path. Neither adds a graphics-specific input loop.
+Version 1.9 freezes the routing order as:
+
+```text
+active query response
+    -> recognized unsolicited semantic event
+        -> ordinary application input
+```
+
+A query-owned response is never also published as a semantic event. A recognizable unsolicited report does not satisfy an unrelated query merely because both use OSC 99 or another shared control family.
+
+Both Sixel capability observation and the 1.8 Kitty Graphics support probe reuse the same authoritative input/query path. Neither adds a graphics-specific input loop. Unsolicited semantic events likewise do not add a notification-specific background reader or callback stream.
 
 The Kitty probe's Primary DA response is owned by the normal query transaction while the input coordinator side-observes only an APC response correlated to the active probe image id.
 
@@ -126,6 +142,8 @@ Correlation does not bypass validation:
 
 Unrelated APC/OSC/DCS/CSI traffic does not satisfy the active Kitty probe merely because it is structurally valid terminal control traffic.
 
+The same principle applies to 1.9 unsolicited semantic recognition: recognition grants bounded routing ownership only. It does not authenticate the report or exempt it from metadata, numeric, framing, and resource validation.
+
 ## 7. Emission is not application
 
 For unacknowledged output protocols, successful completion normally means only that the requested bytes were successfully written to the output service.
@@ -141,6 +159,8 @@ It does not prove that the terminal:
 For explicit query APIs, successful completion means a correlated response was received and parsed according to the reviewed grammar. The response remains untrusted terminal input.
 
 Raster display is therefore capability-gated before emission, but successful `DisplayRasterAsync(...)` output still does not claim visual verification after bytes are written.
+
+Similarly, successful `SendKittyNotificationAsync(...)` completion proves request emission according to its output contract, not that the host notification service displayed or retained the notification.
 
 ## 8. Raster input and alpha semantics
 
@@ -218,6 +238,8 @@ Teardown drains the same session output gate used by committed raster graphics b
 
 This ordering is a contract requirement; the internal synchronization primitive may change in future implementations.
 
+Notifications are not retained as reversible session state merely because interactive reporting was requested. Version 1.9 does not automatically close identified notifications during session disposal.
+
 ## 13. No generic raw graphics escape hatch
 
 The stable semantic raster surface intentionally does not expose:
@@ -266,13 +288,30 @@ OSC 9, OSC 777, and OSC 99 notifications can leave the terminal window and appea
 
 Applications should not place secrets in notification content unless that disclosure is intended. Base64 used by OSC 99 is encoding, not encryption.
 
-OSC 99 notification identifiers and alive-query results may reveal application state. Capability/alive responses remain untrusted terminal input.
+OSC 99 notification identifiers, button labels, and alive/query results may reveal application state. Capability/alive responses remain untrusted terminal input.
 
-## 19. Notification event boundary
+Interactive reporting does not create confidentiality: requesting activation/button/close reports can expose additional interaction metadata to the application.
 
-Kitty OSC 99 buttons and terminal-originated activation/close reports remain outside the current public surface because they are unsolicited input events and must eventually integrate through the same authoritative `ReadEventAsync(...)` path.
+## 19. Unsolicited semantic notification event boundary
 
-No protocol-specific background reader is provided as a workaround.
+Version 1.9 exposes Kitty OSC 99 activation, button, close, and close-tracking-unavailable reports as typed `TerminalNotificationEvent` values through the existing `ReadEventAsync(...)` path.
+
+These reports are **validated but unauthenticated terminal-controlled input**. A malicious or compromised terminal path can fabricate:
+
+- notification identifiers;
+- activation events;
+- button numbers;
+- close events;
+- `untracked` close-tracking results;
+- syntactically valid event ordering.
+
+An identifier provides application-level correlation only. It is not a capability token, cryptographic nonce, trusted desktop handle, or proof that the operating system displayed the associated notification. A typed activation/button report is not proof that a trusted human performed the action.
+
+Applications must not use these events as an authorization boundary without their own independent security mechanism.
+
+The semantic envelope deliberately does not expose raw OSC bytes, arbitrary selector dictionaries, backend identifiers, or generic vendor payloads. There is no protocol-specific background reader, callback stream, or `ReadSemanticEventAsync(...)` workaround.
+
+Malformed or oversized owned semantic candidates are consumed/recovered within bounded parser/resynchronization limits and are not leaked into ordinary application text. After recovery, active-query precedence is re-entered before later traffic is decoded.
 
 ## 20. Safe OSC 9 exclusion boundary
 
@@ -312,11 +351,15 @@ Suspend/resume and explicit invalidation are trust boundaries for live observati
 
 Raster images are ephemeral output. The library does not replay them automatically after resume and does not claim to restore external Sixel palette/image contents or Kitty image/placement state on disposal.
 
+Notification requests and unsolicited interaction events are also not reversible state. The library does not replay sent notifications on resume, synthesize missed notification events, or treat already-decoded semantic observations as capability evidence merely because they survived an application-level lifecycle transition.
+
 ## 26. Dependencies and native boundaries
 
 Native platform APIs are used only for terminal-control/lifecycle operations that require them. The package does not hide PTY process hosting, shell execution, browser/network access, OS clipboard integration, image decoding, or native desktop notification APIs behind terminal semantic methods.
 
 Sixel and Kitty Graphics are terminal traffic only. The 1.8 Kitty implementation uses direct transfer specifically so no filesystem/shared-memory graphics dependency is introduced.
+
+Kitty desktop notifications in 1.9 remain terminal protocol traffic. `Icod.Terminal` does not invoke a platform notification API itself.
 
 ## 27. Reporting security issues
 
@@ -330,15 +373,17 @@ For the stable 1.x line, new features should preserve these principles:
 
 1. expose semantic intent rather than generic dangerous protocol dispatch;
 2. validate and bound untrusted payloads before commitment where possible;
-3. keep parsing, conversion, and resynchronization bounded;
-4. preserve one authoritative input/query reader;
+3. keep parsing, conversion, event buffering, and resynchronization bounded;
+4. preserve one authoritative input/query/event reader;
 5. do not infer support solely from brand/environment identity;
 6. separate capability state from evidence source/lifetime;
-7. treat correlation as bounded ownership rather than trust;
+7. treat correlation or semantic recognition as bounded ownership rather than trust;
 8. distinguish emission from terminal application or acknowledgement;
-9. make metadata disclosure explicit;
-10. do not claim exact restoration without a truthful baseline;
-11. surface uncertainty and compound failures rather than hiding them;
-12. avoid hidden host execution, network access, file decoding, or process-global side effects;
-13. once a terminal graphics transaction is committed, preserve logical-transfer integrity rather than using ordinary caller cancellation to truncate it;
-14. never automatically replay or switch backends after partial committed graphics failure.
+9. treat unsolicited semantic events as unauthenticated external input;
+10. make metadata disclosure explicit;
+11. do not claim exact restoration without a truthful baseline;
+12. surface uncertainty and compound failures rather than hiding them;
+13. avoid hidden host execution, network access, file decoding, or process-global side effects;
+14. once a terminal graphics transaction is committed, preserve logical-transfer integrity rather than using ordinary caller cancellation to truncate it;
+15. never automatically replay or switch backends after partial committed graphics failure;
+16. do not turn typed semantic event support into a generic raw vendor-event bus.
