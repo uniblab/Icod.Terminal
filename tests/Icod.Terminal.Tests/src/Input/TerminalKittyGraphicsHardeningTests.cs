@@ -213,7 +213,7 @@ public sealed class TerminalKittyGraphicsHardeningTests {
 		PublishInChunks(
 			transport,
 			oversized,
-			512
+			128
 		);
 		transport.Publish( PrimaryDeviceAttributesResponse );
 
