@@ -99,15 +99,20 @@ public sealed class TerminalSemanticEventRepeatedStressTests {
 		Assert.True( 0 < notificationWriteCount );
 
 		for ( int cycle = 0; cycle < 4; ++cycle ) {
-			using CancellationTokenSource cycleTimeout = new(
+			lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
+			TerminalEvent suspendingEvent = await session.ReadEventAsync(
 				TimeSpan.FromSeconds( 5 )
 			);
-			lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
-			TerminalLifecycleEvent suspending = await session.ReadLifecycleEventAsync(
-				cycleTimeout.Token
+			TerminalEvent resumedEvent = await session.ReadEventAsync(
+				TimeSpan.FromSeconds( 5 )
 			);
-			TerminalLifecycleEvent resumed = await session.ReadLifecycleEventAsync(
-				cycleTimeout.Token
+			Assert.Equal( TerminalEventKind.Lifecycle, suspendingEvent.Kind );
+			Assert.Equal( TerminalEventKind.Lifecycle, resumedEvent.Kind );
+			TerminalLifecycleEvent suspending = Assert.IsType<TerminalLifecycleEvent>(
+				suspendingEvent.Lifecycle
+			);
+			TerminalLifecycleEvent resumed = Assert.IsType<TerminalLifecycleEvent>(
+				resumedEvent.Lifecycle
 			);
 
 			Assert.Equal( TerminalLifecycleEventKind.Suspending, suspending.Kind );
