@@ -24,12 +24,15 @@ using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
+using Icod.Timing;
 using Xunit;
 
 /// <summary>
 /// Qualifies the complete CSI grammar at resource boundaries and hostile fragmentation points.
 /// </summary>
 public sealed class TerminalCsiHardeningTests {
+	private static readonly TimeSpan HarnessTimeout = TimeSpan.FromSeconds( 5 );
+
 	[Fact]
 	public void ExactSyntaxResourceBoundsRemainValid() {
 		TerminalCsiSyntax raw = ParseSyntax(
@@ -144,7 +147,11 @@ public sealed class TerminalCsiHardeningTests {
 	public async Task EveryGeometryResponseSplitPointCompletesThroughSessionQueryPath() {
 		byte[] response = Encoding.ASCII.GetBytes( "\u001b[4;800;1200t" );
 		HardeningTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			new NonAdvancingMonotonicClock(),
+			TerminalSession.DefaultEscapeSequenceTimeout
+		);
 
 		for ( int split = 1; split < response.Length; ++split ) {
 			Task<TerminalPixelSize> query = session.QueryTerminalPixelSizeAsync(
@@ -159,7 +166,7 @@ public sealed class TerminalCsiHardeningTests {
 			Assert.False( query.IsCompleted );
 			transport.Publish( response[ split.. ] );
 
-			TerminalPixelSize result = await query;
+			TerminalPixelSize result = await query.WaitAsync( HarnessTimeout );
 			Assert.Equal( 1200, result.Width );
 			Assert.Equal( 800, result.Height );
 		}
@@ -213,7 +220,9 @@ public sealed class TerminalCsiHardeningTests {
 	}
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
-		HardeningTransport transport
+		HardeningTransport transport,
+		IMonotonicClock? monotonicClock = null,
+		TimeSpan? escapeSequenceTimeout = null
 	) {
 		ArgumentNullException.ThrowIfNull( transport );
 
@@ -226,8 +235,9 @@ public sealed class TerminalCsiHardeningTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				MonotonicClock = monotonicClock ?? SystemMonotonicClock.Instance,
 				InputDecoderOptions = new TerminalInputDecoderOptions {
-					EscapeSequenceTimeout = TimeSpan.Zero
+					EscapeSequenceTimeout = escapeSequenceTimeout ?? TimeSpan.Zero
 				}
 			}
 		);
@@ -243,7 +253,7 @@ public sealed class TerminalCsiHardeningTests {
 		}
 
 		using CancellationTokenSource timeout = new();
-		timeout.CancelAfter( TimeSpan.FromSeconds( 5 ) );
+		timeout.CancelAfter( HarnessTimeout );
 		await transport.WaitForWriteCountAsync(
 			expected,
 			timeout.Token
@@ -430,6 +440,38 @@ public sealed class TerminalCsiHardeningTests {
 					return;
 				}
 			}
+		}
+	}
+
+	private sealed class NonAdvancingMonotonicClock : IMonotonicClock {
+		public long GetTimestamp() {
+			return 0;
+		}
+
+		public TimeSpan GetElapsedTime(
+			long startingTimestamp,
+			long endingTimestamp
+		) {
+			return TimeSpan.Zero;
+		}
+
+		public ValueTask DelayAsync(
+			TimeSpan delay,
+			CancellationToken cancellationToken = default
+		) {
+			if ( TimeSpan.Zero > delay ) {
+				throw new ArgumentOutOfRangeException( nameof( delay ) );
+			}
+			cancellationToken.ThrowIfCancellationRequested();
+			return TimeSpan.Zero == delay
+				? ValueTask.CompletedTask
+				: new ValueTask(
+					Task.Delay(
+						Timeout.InfiniteTimeSpan,
+						cancellationToken
+					)
+				)
+			;
 		}
 	}
 }
