@@ -42,6 +42,7 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 - live dimensions and lifecycle observation;
 - one authoritative input-reader/decoder path;
 - active query/response correlation;
+- unsolicited protocol-neutral semantic event routing;
 - bounded incremental control-language parsing;
 - semantic terminal-output operations;
 - reversible presentation, rich-input, and color ownership;
@@ -54,7 +55,7 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 
 `Icod.DCurses` owns two-dimensional presentation policy: cells, styles, windows, pads, virtual-screen state, Unicode display width, clipping, wrapping, scrolling, damage tracking, desired-vs-physical screen comparison, and refresh strategy.
 
-DCurses may request semantic raster output from `Icod.Terminal`; it should not reimplement terminal modes, query routing, Sixel/Kitty framing, graphics capability evidence, or lifecycle restoration.
+DCurses may request semantic raster output from `Icod.Terminal`; it should not reimplement terminal modes, query routing, unsolicited semantic-event routing, Sixel/Kitty framing, graphics capability evidence, or lifecycle restoration.
 
 ### Future `Icod.Pty`
 
@@ -68,7 +69,7 @@ This is the preferred level for applications.
 
 `TerminalSession` exposes semantic operations for:
 
-- reading normalized terminal events;
+- reading normalized terminal events, including typed unsolicited semantic observations;
 - querying live terminal state through typed query methods;
 - writing application text;
 - emitting reviewed semantic terminal metadata/control operations;
@@ -87,7 +88,7 @@ These contracts do not imply that a live session can be bypassed safely. In part
 
 ### 2.3 Internal wire/platform machinery
 
-Protocol encoders/parsers, control-family writers, Sixel quantization/encoding, Kitty Graphics adaptation/chunking, query transactions, capability evidence storage, lifecycle signal sources, presentation/input managers, and OS plumbing remain implementation details unless represented separately by a public semantic contract.
+Protocol encoders/parsers, control-family writers, Sixel quantization/encoding, Kitty Graphics adaptation/chunking, unsolicited OSC 99 recognition, query transactions, capability evidence storage, lifecycle signal sources, presentation/input managers, and OS plumbing remain implementation details unless represented separately by a public semantic contract.
 
 Internal wire selectors are not compatibility promises merely because a public semantic API ultimately uses them.
 
@@ -142,6 +143,8 @@ RasterGraphics
 ```
 
 A caller therefore keeps the same `TerminalRasterImage` and `DisplayRasterAsync(...)` semantic contract regardless of which verified backend is selected.
+
+Version 1.9 applies the same layering to inbound unsolicited traffic: public semantic notification observations are not raw OSC frames and do not expose Kitty selector dictionaries merely because OSC 99 is the first dialect implemented beneath the semantic-event envelope.
 
 ## 5. Backend-neutral raster architecture
 
@@ -265,24 +268,41 @@ The live session owns one incremental byte stream that may contain:
 - mouse/focus/bracketed-paste reports;
 - modern keyboard frames;
 - responses to active terminal queries;
+- unsolicited semantic reports;
 - side-observed correlated Kitty Graphics probe replies;
 - malformed or unknown terminal traffic.
 
 The decoder/query router form one authoritative path. Public event reads and typed queries coordinate through it.
 
+Version 1.9 freezes the inbound precedence as:
+
+```text
+active query/response ownership
+    -> recognized unsolicited semantic-event ownership
+        -> ordinary application-input decoding
+```
+
+A frame accepted by an active query is never also published as a semantic event. A recognizable unsolicited semantic report does not satisfy an unrelated query merely because both share a control family or OSC number.
+
+Ordinary input and unsolicited semantic events share the same bounded application-event ordering domain. Their same-byte-stream order is preserved without an unbounded semantic side queue or second terminal reader.
+
 Both Sixel capability observation and Kitty Graphics probing reuse this existing path. Neither backend creates a graphics-specific reader.
 
 For the Kitty support test, the active Primary DA query remains the barrier transaction while the input coordinator side-observes only the matching Kitty APC identified by its probe image id.
 
-## 11. Correlated input ownership
+`ReadEventAsync(...)` is the unified application event path. `ReadLifecycleEventAsync(...)` consumes the same lifecycle queue rather than a duplicated event stream; applications should choose one lifecycle-consumption ownership pattern rather than run independent competing readers.
 
-Terminal responses are untrusted even after correlation.
+## 11. Correlated and semantic input ownership
+
+Terminal responses and unsolicited reports are untrusted even after routing ownership is established.
 
 For Kitty Graphics, once a complete matching `i=<probe-id>` field is observed in a recognizable APC prefix, that string becomes boundedly owned by the active probe. Later CAN/SUB, malformed termination, overflow, oversize, or missing ST cannot turn that identified response back into ordinary application input.
 
-Correlation does not bypass grammar or size checks. Oversized correlated APC uses bounded string resynchronization, and an identified but unterminated response fails as malformed rather than being mislabeled as simple silence.
+For 1.9 unsolicited OSC 99 notifications, semantic recognition likewise grants bounded ownership, not trust. A malformed or oversized semantic candidate is consumed/recovered deterministically rather than leaked as ordinary application text. After recovery, the decoder restarts at active-query precedence so immediately following correlated traffic cannot be bypassed.
 
-Unrelated APC/OSC/DCS/CSI traffic remains outside the Kitty side observation unless owned by another active query/decoder rule.
+Correlation or semantic recognition does not bypass grammar or size checks. Oversized owned control strings use bounded resynchronization, and identified/recognized but unterminated traffic is handled as malformed according to the relevant bounded contract rather than being mislabeled as ordinary text or simple silence.
+
+Unrelated APC/OSC/DCS/CSI traffic remains outside a particular query or semantic observation unless owned by another active routing/decoder rule.
 
 ## 12. Ownership and reversible state
 
@@ -299,11 +319,15 @@ Consequences include:
 
 Raster display is ephemeral output, not a claim of reversible terminal image state. Version 1.8 does not capture/restore external Sixel palettes or Kitty image/placement state and does not replay raster images automatically after resume.
 
+Interactive notification requests and notification semantic events are also not reversible session state. Version 1.9 does not retain a hidden notification database, replay sent notifications after resume, synthesize interaction events, or automatically close identified notifications on session disposal.
+
 ## 13. Lifecycle is a state transition
 
 When supported, suspend/resume is integrated with terminal ownership.
 
 Before suspension, the session restores owned terminal state needed to return control safely to the host. After resume, stale beliefs and generation-scoped live evidence are invalidated, configured/owned state is re-established, required observations are refreshed, participants resume, and normal operation continues.
+
+Already-decoded semantic events remain application observations and are not retroactively invalidated or replayed by lifecycle generation changes. Notification requests are not replayed merely because reporting was enabled.
 
 Lifecycle failure may invalidate session state rather than falsely report recovery.
 
@@ -317,6 +341,8 @@ For reversible state, partial completion is tracked and rollback failures are su
 
 For committed raster output, a transport failure does not trigger automatic replay because the terminal may have received an unknown prefix of the image or transfer.
 
+For notification semantics, `CloseTrackingUnavailable` remains distinct from `Closed`: inability to observe a future close is represented as uncertainty rather than a fabricated close event.
+
 Controlled `Unavailable` / `Unsupported` results represent capability/semantic limitations where appropriate; transport and malformed-response failures remain failures rather than being disguised as capability states.
 
 ## 15. Managed-first platform model
@@ -326,6 +352,8 @@ The library is managed C# with narrowly scoped native interop for terminal/conso
 Platform differences remain explicit. Windows does not fabricate POSIX semantics, and POSIX does not fabricate Windows console-mode semantics.
 
 Sixel and Kitty Graphics are terminal traffic and do not require host-native graphics APIs. Kitty 1.8 uses direct protocol data and does not introduce filesystem/shared-memory/native-image-transfer dependencies.
+
+Interactive Kitty notifications in 1.9 are likewise terminal protocol traffic; `Icod.Terminal` does not become a host-native desktop-notification service.
 
 ## 16. No process-global current terminal
 
@@ -339,6 +367,7 @@ The stable 1.x architecture continues to exclude:
 
 - arbitrary raw escape-sequence dispatch as the normal application API;
 - arbitrary OSC/CSI/DCS/APC/vendor command selection;
+- generic raw unsolicited-event streams or arbitrary vendor-event dictionaries;
 - blind activation based on terminal branding;
 - virtual-screen/window/cell management owned by `Icod.Terminal`;
 - PTY/ConPTY child-process ownership;
@@ -349,9 +378,24 @@ The stable 1.x architecture continues to exclude:
 
 Version 1.8 owns semantic raster output through Sixel and Kitty Graphics. It still excludes public protocol-specific graphics dispatch, file/temp-file/shared-memory Kitty transfer, persistent image/placement ownership, generalized placement/scaling policy, z-order, Unicode placeholder placement, deletion, and animation.
 
+Version 1.9 owns a protocol-neutral unsolicited semantic-event envelope and typed interactive notification observations. It still excludes a second semantic reader, callback stream competing with `ReadEventAsync(...)`, raw OSC event delivery, host-native notification ownership, notification authentication, persistent notification databases, replay, and automatic close-on-dispose.
+
 ## 18. Compatibility authority
 
-The public raster additions remain frozen by `docs/Public-API-Baseline-1.7.md` and `.sha256`. Version 1.8 intentionally adds no public API, so that 1.7 baseline remains the current authoritative fingerprint rather than being duplicated under a new filename.
+The public raster additions remain frozen by `docs/Public-API-Baseline-1.7.md` and `.sha256`. Versions 1.8.0 and 1.8.1 intentionally add no public API and retain that fingerprint.
+
+Version 1.9's additive semantic-event and interactive-notification public surface is frozen by:
+
+```text
+docs/Public-API-Baseline-1.9.md
+docs/Public-API-Baseline-1.9.sha256
+```
+
+with final fingerprint:
+
+```text
+e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
+```
 
 The permanent versioning rules are in `Compatibility-and-Versioning.md`.
 

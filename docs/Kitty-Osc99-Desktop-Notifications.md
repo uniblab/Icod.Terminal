@@ -1,6 +1,6 @@
 # Kitty OSC 99 Desktop Notifications
 
-This document is the permanent 1.x contract for the typed Kitty OSC 99 notification surface introduced by `Icod.Terminal 1.4.0`.
+This document is the permanent 1.x contract for the typed Kitty OSC 99 notification surface introduced by `Icod.Terminal 1.4.0` and extended with bounded interactive reporting in `Icod.Terminal 1.9.0`.
 
 OSC 99 is a distinct notification protocol. It does not replace the legacy OSC 9 `SendNotificationAsync(...)` API or the urxvt-style OSC 777 `SendTitledNotificationAsync(...)` API, and `Icod.Terminal` does not automatically choose among them from terminal branding.
 
@@ -46,6 +46,14 @@ ValueTask<IReadOnlyList<string>> QueryKittyAliveNotificationsAsync(
 
 The query methods use the session's existing authoritative input/response router. They do not open a competing reader.
 
+Version 1.9 also allows `KittyNotificationOptions` to request unsolicited activation/button and close reporting. Those reports are returned through the same public session event stream:
+
+```csharp
+TerminalEvent terminalEvent = await session.ReadEventAsync(...);
+```
+
+There is no separate notification-event reader.
+
 ## Framing
 
 Every request uses the Kitty OSC 99 envelope:
@@ -60,7 +68,7 @@ The two semicolons are always emitted, including when the payload is empty. Outb
 ESC ] ... ESC \
 ```
 
-The response parser accepts the bounded OSC response framing already supported by the common query infrastructure.
+The bounded input parser accepts the supported OSC framing used by the common query and semantic-event infrastructure.
 
 ## Text encoding and chunking
 
@@ -72,7 +80,7 @@ Title/body payloads are encoded as:
 
 Base64 keeps arbitrary well-formed Unicode as data rather than raw OSC framing. It provides no confidentiality.
 
-The 1.4 resource limits are:
+The established resource limits include:
 
 ```text
 title UTF-8 bytes               <= 65,536
@@ -86,6 +94,9 @@ one encoded OSC frame           <= 16,384 bytes
 notification identifier         <= 128 ASCII characters
 alive-query returned IDs        <= 256
 support/alive response payload  <= 4,096 bytes
+interactive buttons             <= 16
+one button label UTF-8 bytes    <= 512
+button payload UTF-8 bytes      <= 2,048 including separators
 ```
 
 Large title/body/icon payloads are split into multiple OSC 99 frames. `d=0` marks an incomplete request and `d=1` marks the final emitted part. Every payload-bearing frame emitted by this API uses `e=1`.
@@ -108,7 +119,7 @@ Reusing an identifier requests update/replacement semantics from the terminal. `
 
 A multi-frame request requires an identifier so the terminal can associate its chunks. When the caller does not provide one, `Icod.Terminal` generates an internal safe identifier solely for that transmission. It is intentionally not exposed as persistent application state.
 
-Callers that need later update or close semantics must supply their own stable identifier.
+Callers that need later update, close, or interactive-report correlation semantics must supply their own stable identifier. Version 1.9 specifically requires an explicit caller-supplied identifier when activation/button or close reporting is requested.
 
 ## Filtering metadata
 
@@ -121,13 +132,33 @@ NotificationTypes  -> repeated t=<Base64 UTF-8>
 
 These fields may participate in terminal-side filtering policy. They are explicit caller data; `Icod.Terminal` does not inspect the process, executable, environment, or shell to populate them automatically.
 
-## Activation focus policy
+## Activation focus and reporting
 
 Kitty's default activation behavior includes focusing the originating terminal window.
 
-`KittyNotificationOptions.FocusOnActivation` defaults to `true`. Setting it to `false` emits `a=-focus`.
+`KittyNotificationOptions.FocusOnActivation` defaults to `true`. Setting it to `false` emits `-focus` in the action list.
 
-Version 1.4 deliberately does **not** expose activation reporting. The `report` action creates unsolicited terminal input and therefore requires a separately reviewed `TerminalEvent` routing contract.
+`KittyNotificationOptions.ReportActivation` is independent. Setting it to `true` requests Kitty activation/button reports using the protocol `report` action. It requires an explicit `Identifier` so the application has a stable correlation identity.
+
+`FocusOnActivation = false` and `ReportActivation = true` therefore compose: an application can request an activation report without requesting that activation focus the terminal window.
+
+## Buttons
+
+`KittyNotificationOptions.Buttons` supplies an optional bounded ordered list of button labels.
+
+The labels are strict UTF-8, joined using protocol-defined U+2028 LINE SEPARATOR, Base64 encoded, and emitted as one `p=buttons` payload. Version 1.9 does not invent multipart button semantics.
+
+The button count, per-label UTF-8 size, and total UTF-8 payload size are bounded before output commitment. Interactive button reporting requires `ReportActivation = true` and an explicit notification identifier.
+
+A reported button number is one-based and is exposed as `TerminalNotificationEvent.ButtonNumber` only for `TerminalNotificationEventKind.ButtonActivated`.
+
+## Close reporting
+
+`KittyNotificationOptions.ReportClose` requests close-event reporting (`c=1`) and requires an explicit caller-supplied notification identifier.
+
+A normal close report becomes `TerminalNotificationEventKind.Closed`.
+
+The protocol `untracked` result becomes `TerminalNotificationEventKind.CloseTrackingUnavailable`. This is not a close event. It means reliable future close tracking is unavailable, and the library preserves that uncertainty instead of fabricating `Closed`.
 
 ## Occasion
 
@@ -187,6 +218,8 @@ The cache identifier uses the same bounded identifier grammar as notification ID
 
 This operation requires interactive terminal output and participates in shared session output ordering. Successful completion proves request emission only.
 
+A session does not automatically call `CloseKittyNotificationAsync(...)` during disposal. Notifications are not session-owned reversible terminal state.
+
 ## Capability query
 
 `QueryKittyNotificationSupportAsync(...)` sends a uniquely identified `p=?` query and correlates the reply by exact query identifier and payload type.
@@ -195,11 +228,30 @@ This operation requires interactive terminal output and participates in shared s
 
 Unknown future support keys are ignored where safe. A timeout remains a timeout; silence is not converted into a permanent unsupported claim.
 
+A correlated query response has precedence over unsolicited semantic classification. A frame owned by an active or bounded late-response query transaction is never also delivered as a semantic notification event.
+
 ## Alive query
 
 `QueryKittyAliveNotificationsAsync(...)` sends a uniquely identified `p=alive` query and returns a bounded list of notification identifiers reported as alive by the terminal.
 
 The result is a live observation rather than library-owned state and can become stale immediately after receipt. Returned IDs are treated as untrusted terminal data and validated against protocol/resource bounds.
+
+## Unsolicited semantic reports
+
+Version 1.9 recognizes the bounded Kitty OSC 99 application-report forms needed for interactive notification observation and maps them into the protocol-neutral event envelope:
+
+```text
+activation             -> Activated
+button activation      -> ButtonActivated + one-based ButtonNumber
+close                   -> Closed
+close + untracked       -> CloseTrackingUnavailable
+```
+
+The event carries the validated terminal-reported identifier. The library does not expose raw OSC bytes, selectors, arbitrary metadata dictionaries, or a generic Kitty event object.
+
+Reports enter through the one authoritative `TerminalSession.ReadEventAsync(...)` stream. Same-stream ordering with ordinary input is preserved, active query ownership takes precedence, and there is no second unbounded semantic queue.
+
+Malformed or oversized owned report candidates are rejected/recovered within bounded parser rules and are not leaked into ordinary text. After recovery, routing re-enters active-query precedence before later buffered traffic is considered.
 
 ## Redirected output
 
@@ -209,30 +261,26 @@ Support/alive queries require compatible interactive input and output endpoints 
 
 ## Security and privacy
 
-OSC 99 can publish more metadata than OSC 9/777, including title/body, stable IDs, filtering metadata, urgency/expiry/sound policy, icon names, cache IDs, and caller-supplied image bytes.
+OSC 99 can publish more metadata than OSC 9/777, including title/body, stable IDs, filtering metadata, urgency/expiry/sound policy, icon names, cache IDs, caller-supplied image bytes, and interactive button labels.
 
 Notification services, terminal logs, multiplexers, remote transports, notification histories, lock screens, or screen-sharing software may expose decoded data. Base64 is framing, not encryption.
 
+Unsolicited activation/button/close reports are validated but unauthenticated terminal input. A terminal, multiplexer, remote peer, or hostile byte source can fabricate a syntactically valid identifier, button number, activation, close, or `untracked` report. Applications must not use these events as an authentication or authorization boundary.
+
 `Icod.Terminal` does not automatically harvest process arguments, shell history, command output, environment variables, filesystem paths, or application state for notifications.
-
-## Deliberately deferred interactive forms
-
-Kitty OSC 99 also defines buttons and unsolicited activation/close reports. Version 1.4 deliberately does **not** expose those forms.
-
-Those reports are application input, not query responses. Supporting them correctly requires a separate reviewed extension to the authoritative `TerminalEvent` routing path so they can coexist with ordinary input and active queries without stealing bytes or opening a competing reader.
-
-The capability query can still report that a terminal advertises those features; this release simply does not request or surface their unsolicited events.
-
-There is no generic raw OSC 99 selector/metadata API.
 
 ## Lifecycle
 
-OSC 99 notifications are application metadata, not session-owned reversible terminal state.
+OSC 99 notifications and their reports are application metadata/observations, not session-owned reversible terminal state.
 
-`Icod.Terminal` therefore does not replay notification requests on resume, synthesize close requests on disposal, retain a hidden database of sent notification IDs, or infer host notification state from previous emission.
+`Icod.Terminal` therefore does not replay notification requests on resume, synthesize close requests on disposal, retain a hidden database of sent notification IDs, reconstruct host notification history, or synthesize semantic events across lifecycle transitions.
+
+Already-decoded queued semantic notification events remain observed application input across suspend/resume and are delivered once. Caller cancellation of a `ReadEventAsync(...)` wait does not abandon a fragmented semantic report already owned by the decoder. Session disposal terminates pending session-lifetime reads through normal shutdown.
+
+Late correlated query responses retain their bounded query ownership after caller timeout/cancellation and are not reclassified as semantic reports.
 
 ## Compatibility
 
-Version 1.4 is additive. OSC 9 and OSC 777 notification APIs remain unchanged and independently explicit. Existing OSC 633/1337 and all other stable 1.x contracts retain their prior meaning.
+The 1.9 interactive extension is additive. OSC 9 and OSC 777 notification APIs remain unchanged and independently explicit. Existing noninteractive Kitty OSC 99 calls retain their prior byte behavior when the new interactive options are unused. Existing OSC 633/1337 and all other stable 1.x contracts retain their prior meaning.
 
-The exact 1.4 API fingerprint is recorded in `Public-API-Baseline-1.4.md` / `.sha256`, while all earlier stable baseline files remain retained unchanged.
+The final 1.9 API fingerprint is `e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315` and is recorded in `Public-API-Baseline-1.9.md` / `.sha256`; historical stable public API baseline files remain retained unchanged.

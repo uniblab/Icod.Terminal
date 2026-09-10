@@ -1,17 +1,17 @@
 # Icod.Terminal Development Roadmap
 
-**Project:** `Icod.Terminal`  
-**Package:** `Icod.Terminal`  
-**Language:** C# 13  
-**Target frameworks:** `net8.0`; `net9.0`; `net10.0`  
-**Current stable release:** `1.8.1`  
-**Current maintenance line:** `1.8.x`  
-**Next feature line:** not yet frozen  
-**Stable compatibility floor:** `1.0.0`
+- **Project:** `Icod.Terminal`
+- **Package:** `Icod.Terminal`
+- **Language:** C# 13
+- **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
+- **Current stable release:** `1.8.1`
+- **Current release candidate:** `1.9.0` — unsolicited semantic terminal events and interactive notifications
+- **Next planned feature line:** `1.10.0` — semantic capability inspection and planning
+- **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
 
-This file is the concise entry point for current `Icod.Terminal` development and release planning. Detailed historical design evidence remains in the versioned roadmaps and tranche documents rather than being duplicated here.
+This file is the concise entry point for current `Icod.Terminal` development and long-range release planning. Detailed historical design evidence remains in the versioned roadmaps and tranche documents rather than being duplicated here.
 
 The original pre-1.0 roadmap is preserved at:
 
@@ -33,7 +33,7 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and expansion.
-- `Icod.Terminal` owns the live terminal conversation, native terminal modes, input decoding, lifecycle, query routing, capability evidence, semantic terminal output, raster output, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation, native terminal modes, input decoding, unsolicited semantic events, lifecycle, query routing, capability evidence, semantic terminal output, raster output, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns cells, windows, virtual-screen state, refresh/diff policy, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -58,7 +58,7 @@ TerminalSession.DisplayRasterAsync(...)
         -> verified Sixel / DCS
 ```
 
-Versions 1.8.0 and 1.8.1 add no public API. The current public API fingerprint remains the 1.7 value:
+Versions 1.8.0 and 1.8.1 add no public API and retain the 1.7 fingerprint:
 
 ```text
 847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
@@ -72,42 +72,152 @@ Detailed 1.8 design and qualification evidence is preserved in:
 
 The 1.8.1 maintenance release is documented in [`docs/releases/1.8.1.md`](docs/releases/1.8.1.md).
 
-## 1.8.1 maintenance result
+## 1.9.0 release-candidate result
 
-Version `1.8.1` is intentionally a maintenance release. It does not introduce a new terminal protocol, public API, or runtime semantic contract.
+The 1.9 feature program is complete through E198, with E199 performing final public API, documentation, package, and compatibility closure before maintainer-controlled merge and release validation.
 
-The release:
+Version 1.9 establishes this authoritative input-routing order:
 
-- corrects stale post-release wording left behind after the 1.8.0 merge/publication sequence;
-- makes the root README and current roadmap concise, release-aware entry points rather than qualification diaries;
-- improves `/samples` discoverability by grouping examples around consumer goals;
-- adds a backend-neutral raster sample so the 1.7/1.8 headline graphics API has a first-class executable example;
-- adds a focused VS Code OSC 633 sample to complement the existing portable OSC 133 and iTerm2 OSC 1337 examples;
-- builds the new focused samples on `net8.0`, `net9.0`, and `net10.0` as part of repository validation;
-- synchronizes maintenance release notes and package metadata.
+```text
+active query response
+    -> recognized unsolicited semantic event
+        -> ordinary application input
+```
 
-### 1.8.1 invariants
+The public event stream gains `TerminalEventKind.Semantic` and protocol-neutral `TerminalSemanticEvent` / `TerminalNotificationEvent` payloads. The first semantic family is interactive notification reporting with distinct activation, one-based button activation, close, and close-tracking-unavailable observations.
 
-1. No public API change.
-2. No terminal wire-protocol behavior change in the library runtime.
-3. No change to the one-authoritative-reader contract.
-4. No change to capability evidence or backend routing semantics.
-5. No change to raster bounds, ownership, alpha, cancellation, or committed-output semantics.
-6. No new package dependency.
-7. Existing `Icod.DCurses` compatibility witnesses remain authoritative.
-8. New samples use public APIs only and build on every supported TFM.
-9. The stable `1.0.0` compatibility floor remains unchanged.
+The existing typed Kitty OSC 99 notification options gain explicit opt-in activation/button reporting, close reporting, and bounded button labels. Existing noninteractive notification behavior remains compatible when those options are unused.
 
-## Candidate next development tracks
+The final 1.9 public API fingerprint is:
 
-The release following 1.8.1 is intentionally not frozen by this maintenance work. Current candidates are:
+```text
+e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
+```
 
-- unsolicited semantic terminal events, beginning with the already-deferred Kitty OSC 99 activation/close/button reports;
-- persistent/placed Kitty Graphics, including typed image/placement identity and lifecycle;
-- a reduced public capability-inspection/planning surface for higher-level consumers;
-- graphics transport/performance work only where measurement justifies the added complexity.
+Detailed 1.9 authorities:
 
-The preferred sequencing remains to address the authoritative input/event-model gap before expanding graphics persistence, unless a concrete downstream `Icod.DCurses` requirement changes that priority.
+- [`Icod.Terminal-1.9.0-Development-Roadmap.md`](Icod.Terminal-1.9.0-Development-Roadmap.md)
+- [`docs/releases/1.9.0.md`](docs/releases/1.9.0.md)
+- [`docs/Public-API-Baseline-1.9.md`](docs/Public-API-Baseline-1.9.md)
+- `docs/E190-*` through `docs/E199-*`
+
+Merge, post-merge Release validation, tagging, and publication remain explicit maintainer actions and are not implied by release-candidate status on this branch.
+
+## Approved post-1.8 release train
+
+The feature sequence remains frozen at the roadmap level:
+
+```text
+1.9.0   unsolicited semantic event routing
+        + interactive Kitty OSC 99 activation/button/close reports
+
+1.10.0  reduced public semantic capability inspection/planning
+        + explicit bounded verification where observation requires live probing
+
+1.11.0  persistent raster resource and placement lifecycle
+        + backend-neutral ownership above Kitty image/placement identifiers
+
+1.12.0  conditional advanced raster placement/lifecycle work
+        only where downstream requirements and measurements justify it
+```
+
+The themes are ordered by architectural dependency rather than novelty.
+
+### 1.9.0 — unsolicited semantic events
+
+The 1.9 implementation closes the architectural gap between active query responses and ordinary application input without opening a second reader.
+
+Semantic events use the same bounded application-event ordering domain as ordinary input. Active query ownership has first refusal, malformed/oversized owned reports recover boundedly, and recovery re-enters query precedence before decoding later traffic.
+
+Kitty OSC 99 is the first implementation and acceptance family, not the permanent definition of the semantic event model.
+
+Detailed roadmap:
+
+[`Icod.Terminal-1.9.0-Development-Roadmap.md`](Icod.Terminal-1.9.0-Development-Roadmap.md)
+
+### 1.10.0 — semantic capability inspection and planning
+
+The internal capability/evidence architecture already distinguishes semantic operation, protocol backend, support state, evidence source, endpoint availability, and routing decision.
+
+Version 1.10 should expose a deliberately reduced semantic projection for higher-level consumers without publishing the internal backend registry, preference table, or evidence ledger.
+
+The intended public distinction is:
+
+```text
+inspect
+    side-effect free
+    reports what the session currently knows
+
+verify / prepare
+    explicit and bounded
+    may perform a live terminal probe
+```
+
+Callers should be able to ask whether a semantic capability such as raster graphics or modern keyboard reporting is presently usable without learning whether Terminal chose Kitty, Sixel, CSI, OSC, or a TermInfo recipe.
+
+### 1.11.0 — persistent raster resources and placements
+
+Version 1.7/1.8 intentionally limits raster output to ephemeral `DisplayRasterAsync(...)` semantics.
+
+Persistent graphics require a new ownership domain covering raster resource identity, placement identity, terminal-resident lifetime, acknowledgement/correlation, move/resize/update, deletion, lifecycle uncertainty, and disposal cleanup.
+
+The public shape should remain semantic and opaque rather than publishing Kitty's numeric image/placement identifiers as the common API. The first persistent release should remain narrow: create/upload a resource, create a placement, reposition/resize it, and delete/dispose it.
+
+Automatic replay across suspend/resume is not assumed; a lifecycle generation change should initially invalidate terminal-resident certainty rather than require the library to retain arbitrarily large source images for hidden replay.
+
+### 1.12.0 — conditional advanced placement
+
+Advanced Kitty capabilities such as source rectangles, z-order, Unicode placeholders, relative placement, animation, and richer scene behavior remain candidates rather than promises.
+
+They should enter the core only when the semantic abstraction remains useful beyond one protocol, a concrete downstream requirement exists, ownership/lifecycle semantics remain supportable, and the feature does not turn `Icod.Terminal` into a virtual-screen or scene-graph library.
+
+## Parallel evidence tracks
+
+### Graphics performance
+
+Kitty direct transfer remains the portability/security default. ZLIB/deflate compression may be valuable, but it should be adopted only after benchmark evidence across representative workloads such as icons, flat diagrams, screenshots, gradients, photographs, and high-entropy rasters.
+
+Measure at least wire bytes, CPU time, allocations, first-frame latency, and total transfer latency. File, temporary-file, and shared-memory Kitty transports remain excluded unless direct-transfer measurements demonstrate a concrete problem that justifies their filesystem/IPC complexity.
+
+### Diagnostics and observability
+
+As capability evidence, live probes, semantic routing, lifecycle generations, query ownership, rollback, and graphics transactions become more sophisticated, maintainers need a way to explain decisions without logging private terminal data.
+
+A future diagnostic surface may report semantic operations, support-state changes, probe lifecycle, backend selection, lifecycle-generation changes, restoration failures, and committed graphics failures. It must not expose keyboard text, paste contents, clipboard data, notification contents, hyperlinks, shell command lines, or raster payload bytes by default.
+
+Diagnostics may be developed alongside 1.10 capability inspection if that produces the cleanest boundary.
+
+## Long-range architectural guardrails
+
+The post-1.8 program preserves the stable layer boundaries:
+
+- no process-global current terminal;
+- no second live input reader;
+- no raw control-family dispatcher as the normal public extension mechanism;
+- no generic vendor-event/raw-frame stream as the ordinary semantic extension mechanism;
+- no backend selection based solely on terminal brand, `TERM`, host OS, or environment variables;
+- no PTY/ConPTY process hosting in `Icod.Terminal`;
+- no cells/windows/damage/layout/widget ownership that belongs in `Icod.DCurses`;
+- no image-file decoding/transcoding requirement in the core terminal package merely to support a vendor image protocol;
+- no hidden replay of persistent terminal state without a separately reviewed ownership contract;
+- no unbounded terminal-controlled input, event buffering, query state, or graphics state.
+
+A third graphics backend is not a priority merely because another protocol exists. It must fit the semantic raw-raster contract or justify a separate optional codec/package boundary.
+
+## Sequencing rationale
+
+The approved order is:
+
+```text
+event ownership                  completed in 1.9
+    -> capability visibility     next in 1.10
+        -> persistent graphics ownership
+            -> advanced placement only if justified
+```
+
+Version 1.9 closes the known event-ownership gap before public capability planning or a new stateful graphics ownership domain is introduced.
+
+`Icod.DCurses` does not currently force a different order: its near-term work is retained semantic metadata, layers/z-order, layout, and interaction, while raster placement remains later work. Terminal should therefore expose the reduced capability/planning surface next.
 
 ## Permanent 1.x authorities
 

@@ -304,6 +304,13 @@ internal sealed partial class TerminalInputDecoder {
 			);
 		}
 
+		TerminalInputDecodeResult? semanticEvent = await this.TryRouteSemanticEventAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		if ( semanticEvent.HasValue ) {
+			return semanticEvent.Value;
+		}
+
 		TerminalInputEvent? inputEvent = await this.TryReadModernKeyboardEventAsync(
 			cancellationToken
 		).ConfigureAwait( false );
@@ -395,7 +402,7 @@ internal sealed partial class TerminalInputDecoder {
 					throw new InvalidOperationException(
 						"The terminal input decoder could not resynchronize after an oversized response within the bounded discard interval."
 					);
-				}
+			}
 			}
 
 			if ( !await this.ReadMoreAsync(

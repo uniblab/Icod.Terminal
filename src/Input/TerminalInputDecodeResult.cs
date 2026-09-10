@@ -30,7 +30,7 @@ internal readonly struct TerminalInputDecodeResult {
 	private readonly Exception? responseException;
 
 	private TerminalInputDecodeResult(
-		TerminalInputEvent? inputEvent,
+		TerminalApplicationEvent? applicationEvent,
 		TerminalResponseExpectation? responseExpectation,
 		TerminalResponseFrame? responseFrame,
 		TerminalQueryResponseDisposition responseDisposition,
@@ -40,23 +40,48 @@ internal readonly struct TerminalInputDecodeResult {
 		if ( !Enum.IsDefined( responseDisposition ) ) {
 			throw new ArgumentOutOfRangeException( nameof( responseDisposition ) );
 		}
-		if ( responseRouted == ( inputEvent is not null )
+		if ( responseRouted == applicationEvent.HasValue
 			|| !responseRouted && ( responseFrame is not null || responseException is not null )
 			|| responseRouted && ( responseFrame is null ) == ( responseException is null ) ) {
 			throw new ArgumentException(
-				"A terminal decode result must represent either application input or one routed response."
+				"A terminal decode result must represent either one application event or one routed response."
 			);
 		}
 
-		this.InputEvent = inputEvent;
+		this.ApplicationEvent = applicationEvent;
 		this.responseExpectation = responseExpectation;
 		this.responseFrame = responseFrame;
 		this.responseDisposition = responseDisposition;
 		this.responseException = responseException;
+		this.RoutingRestartRequired = false;
+	}
+
+	private TerminalInputDecodeResult(
+		bool routingRestartRequired
+	) {
+		if ( !routingRestartRequired ) {
+			throw new ArgumentException(
+				"The routing-restart decode result must request a routing restart.",
+				nameof( routingRestartRequired )
+			);
+		}
+
+		this.ApplicationEvent = null;
+		this.responseExpectation = null;
+		this.responseFrame = null;
+		this.responseDisposition = TerminalQueryResponseDisposition.Completion;
+		this.responseException = null;
+		this.RoutingRestartRequired = true;
+	}
+
+	internal TerminalApplicationEvent? ApplicationEvent {
+		get;
 	}
 
 	internal TerminalInputEvent? InputEvent {
-		get;
+		get {
+			return this.ApplicationEvent?.InputEvent;
+		}
 	}
 
 	internal bool ResponseRouted {
@@ -65,7 +90,14 @@ internal readonly struct TerminalInputDecodeResult {
 		}
 	}
 
+	internal bool RoutingRestartRequired {
+		get;
+	}
+
 	internal void CompleteRoutedResponse() {
+		if ( this.RoutingRestartRequired ) {
+			return;
+		}
 		if ( this.responseExpectation is null ) {
 			throw new InvalidOperationException(
 				"The terminal decode result does not contain a routed response."
@@ -94,12 +126,29 @@ internal readonly struct TerminalInputDecodeResult {
 	) {
 		ArgumentNullException.ThrowIfNull( inputEvent );
 		return new TerminalInputDecodeResult(
-			inputEvent,
+			TerminalApplicationEvent.FromInput( inputEvent ),
 			responseExpectation: null,
 			responseFrame: null,
 			TerminalQueryResponseDisposition.Completion,
 			responseException: null
 		);
+	}
+
+	internal static TerminalInputDecodeResult FromSemantic(
+		TerminalSemanticEvent semanticEvent
+	) {
+		ArgumentNullException.ThrowIfNull( semanticEvent );
+		return new TerminalInputDecodeResult(
+			TerminalApplicationEvent.FromSemantic( semanticEvent ),
+			responseExpectation: null,
+			responseFrame: null,
+			TerminalQueryResponseDisposition.Completion,
+			responseException: null
+		);
+	}
+
+	internal static TerminalInputDecodeResult RestartRouting() {
+		return new TerminalInputDecodeResult( routingRestartRequired: true );
 	}
 
 	internal static TerminalInputDecodeResult RoutedResponse(
@@ -113,7 +162,7 @@ internal readonly struct TerminalInputDecodeResult {
 			throw new ArgumentOutOfRangeException( nameof( disposition ) );
 		}
 		return new TerminalInputDecodeResult(
-			inputEvent: null,
+			applicationEvent: null,
 			expectation,
 			frame,
 			disposition,
@@ -128,7 +177,7 @@ internal readonly struct TerminalInputDecodeResult {
 		ArgumentNullException.ThrowIfNull( expectation );
 		ArgumentNullException.ThrowIfNull( exception );
 		return new TerminalInputDecodeResult(
-			inputEvent: null,
+			applicationEvent: null,
 			expectation,
 			responseFrame: null,
 			TerminalQueryResponseDisposition.Completion,

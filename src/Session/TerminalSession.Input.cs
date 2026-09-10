@@ -23,7 +23,7 @@ namespace Icod.Terminal;
 using Icod.Timing;
 
 /// <summary>
-/// Incremental keyboard decoding and unified event-loop input for
+/// Incremental terminal decoding and unified event-loop input for
 /// <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
@@ -58,22 +58,22 @@ public sealed partial class TerminalSession {
 	private readonly SemaphoreSlim eventReadGate = new( 1, 1 );
 
 	private TerminalInputDecoder? inputDecoder;
-	private Task<TerminalInputEvent>? pendingInputEvent;
+	private Task<TerminalApplicationEvent>? pendingApplicationEvent;
 	private Task<TerminalLifecycleEvent>? pendingInputLifecycleEvent;
 
 	/// <summary>
-	/// Waits indefinitely for decoded terminal input or a managed lifecycle event.
+	/// Waits indefinitely for a decoded application event or managed lifecycle event.
 	/// </summary>
 	/// <remarks>
 	/// Caller cancellation is represented by a <see cref="TerminalEventKind.Cancelled"/>
 	/// event and does not cancel the underlying terminal read. This preserves bytes
-	/// which may form a fragmented UTF-8 scalar or terminal key sequence for the next call.
-	/// When lifecycle observation is enabled, this method and
-	/// <see cref="ReadLifecycleEventAsync(CancellationToken)"/> consume the same lifecycle queue;
-	/// applications should not use both concurrently from independent readers.
+	/// which may form a fragmented UTF-8 scalar, terminal key sequence, semantic report,
+	/// or query response for the next call. When lifecycle observation is enabled, this
+	/// method and <see cref="ReadLifecycleEventAsync(CancellationToken)"/> consume the same
+	/// lifecycle queue; applications should not use both concurrently from independent readers.
 	/// </remarks>
 	/// <param name="cancellationToken">Cancellation for this wait only.</param>
-	/// <returns>The next input, lifecycle, or cancellation event.</returns>
+	/// <returns>The next input, semantic, lifecycle, or cancellation event.</returns>
 	public ValueTask<TerminalEvent> ReadEventAsync(
 		CancellationToken cancellationToken = default
 	) {
@@ -84,14 +84,14 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
-	/// Waits for decoded terminal input or a managed lifecycle event for at most
+	/// Waits for a decoded application event or managed lifecycle event for at most
 	/// the supplied interval.
 	/// </summary>
 	/// <param name="timeout">
 	/// A nonnegative timeout, or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.
 	/// </param>
 	/// <param name="cancellationToken">Cancellation for this wait only.</param>
-	/// <returns>An input, lifecycle, timeout, or cancellation event.</returns>
+	/// <returns>An input, semantic, lifecycle, timeout, or cancellation event.</returns>
 	public ValueTask<TerminalEvent> ReadEventAsync(
 		TimeSpan timeout,
 		CancellationToken cancellationToken = default
@@ -113,12 +113,12 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
-	/// Waits for decoded terminal input or a managed lifecycle event until the
+	/// Waits for a decoded application event or managed lifecycle event until the
 	/// supplied absolute deadline.
 	/// </summary>
 	/// <param name="deadline">The absolute deadline.</param>
 	/// <param name="cancellationToken">Cancellation for this wait only.</param>
-	/// <returns>An input, lifecycle, timeout, or cancellation event.</returns>
+	/// <returns>An input, semantic, lifecycle, timeout, or cancellation event.</returns>
 	public ValueTask<TerminalEvent> ReadEventAsync(
 		DateTimeOffset deadline,
 		CancellationToken cancellationToken = default
@@ -170,7 +170,7 @@ public sealed partial class TerminalSession {
 		}
 
 		try {
-			Task<TerminalInputEvent> inputTask = this.GetPendingInputEvent();
+			Task<TerminalApplicationEvent> applicationTask = this.GetPendingApplicationEvent();
 			Task<TerminalLifecycleEvent>? lifecycleTask = this.GetPendingInputLifecycleEvent();
 
 			if ( lifecycleTask is not null && lifecycleTask.IsCompleted ) {
@@ -180,12 +180,12 @@ public sealed partial class TerminalSession {
 					).ConfigureAwait( false )
 				);
 			}
-			if ( inputTask.IsCompleted ) {
-				return TerminalEvent.FromInput(
-					await this.CompleteInputEventAsync(
-						inputTask
-					).ConfigureAwait( false )
-				);
+			if ( applicationTask.IsCompleted ) {
+				TerminalApplicationEvent applicationEvent =
+					await this.CompleteApplicationEventAsync(
+						applicationTask
+					).ConfigureAwait( false );
+				return applicationEvent.ToTerminalEvent();
 			}
 			if ( TimeSpan.Zero == timeout ) {
 				return TerminalEvent.TimedOut();
@@ -201,11 +201,11 @@ public sealed partial class TerminalSession {
 			;
 			Task completed = lifecycleTask is null
 				? await Task.WhenAny(
-					inputTask,
+					applicationTask,
 					waitTask
 				).ConfigureAwait( false )
 				: await Task.WhenAny(
-					inputTask,
+					applicationTask,
 					lifecycleTask,
 					waitTask
 				).ConfigureAwait( false )
@@ -219,12 +219,12 @@ public sealed partial class TerminalSession {
 					).ConfigureAwait( false )
 				);
 			}
-			if ( ReferenceEquals( completed, inputTask ) ) {
-				return TerminalEvent.FromInput(
-					await this.CompleteInputEventAsync(
-						inputTask
-					).ConfigureAwait( false )
-				);
+			if ( ReferenceEquals( completed, applicationTask ) ) {
+				TerminalApplicationEvent applicationEvent =
+					await this.CompleteApplicationEventAsync(
+						applicationTask
+					).ConfigureAwait( false );
+				return applicationEvent.ToTerminalEvent();
 			}
 			if ( cancellationToken.IsCancellationRequested ) {
 				return TerminalEvent.Cancelled();
@@ -236,12 +236,12 @@ public sealed partial class TerminalSession {
 		}
 	}
 
-	private Task<TerminalInputEvent> GetPendingInputEvent() {
-		this.pendingInputEvent ??= this.GetInputCoordinator().ReadAsync(
+	private Task<TerminalApplicationEvent> GetPendingApplicationEvent() {
+		this.pendingApplicationEvent ??= this.GetInputCoordinator().ReadAsync(
 			this.lifecycleStop.Token
 		).AsTask();
 
-		return this.pendingInputEvent;
+		return this.pendingApplicationEvent;
 	}
 
 	private Task<TerminalLifecycleEvent>? GetPendingInputLifecycleEvent() {
@@ -255,16 +255,16 @@ public sealed partial class TerminalSession {
 		return this.pendingInputLifecycleEvent;
 	}
 
-	private async ValueTask<TerminalInputEvent> CompleteInputEventAsync(
-		Task<TerminalInputEvent> inputTask
+	private async ValueTask<TerminalApplicationEvent> CompleteApplicationEventAsync(
+		Task<TerminalApplicationEvent> applicationTask
 	) {
-		ArgumentNullException.ThrowIfNull( inputTask );
+		ArgumentNullException.ThrowIfNull( applicationTask );
 
 		try {
-			return await inputTask.ConfigureAwait( false );
+			return await applicationTask.ConfigureAwait( false );
 		} finally {
-			if ( ReferenceEquals( this.pendingInputEvent, inputTask ) ) {
-				this.pendingInputEvent = null;
+			if ( ReferenceEquals( this.pendingApplicationEvent, applicationTask ) ) {
+				this.pendingApplicationEvent = null;
 			}
 		}
 	}

@@ -34,21 +34,26 @@ public enum TerminalEventKind {
 	Timeout,
 
 	/// <summary>The caller canceled this wait.</summary>
-	Cancelled
+	Cancelled,
+
+	/// <summary>An unsolicited semantic terminal event is available.</summary>
+	Semantic
 }
 
 /// <summary>
-/// Represents one decoded input, lifecycle, timeout, or caller-cancellation event.
+/// Represents one decoded input, lifecycle, semantic, timeout, or caller-cancellation event.
 /// </summary>
 public sealed class TerminalEvent {
 	private TerminalEvent(
 		TerminalEventKind kind,
 		TerminalInputEvent? input,
-		TerminalLifecycleEvent? lifecycle
+		TerminalLifecycleEvent? lifecycle,
+		TerminalSemanticEvent? semantic
 	) {
 		this.Kind = kind;
 		this.Input = input;
 		this.Lifecycle = lifecycle;
+		this.Semantic = semantic;
 	}
 
 	/// <summary>Gets the high-level event kind.</summary>
@@ -72,6 +77,14 @@ public sealed class TerminalEvent {
 		get;
 	}
 
+	/// <summary>
+	/// Gets the semantic terminal event when <see cref="Kind"/> is
+	/// <see cref="TerminalEventKind.Semantic"/>.
+	/// </summary>
+	public TerminalSemanticEvent? Semantic {
+		get;
+	}
+
 	internal static TerminalEvent FromInput(
 		TerminalInputEvent input
 	) {
@@ -80,6 +93,7 @@ public sealed class TerminalEvent {
 		return new TerminalEvent(
 			TerminalEventKind.Input,
 			input,
+			null,
 			null
 		);
 	}
@@ -92,13 +106,28 @@ public sealed class TerminalEvent {
 		return new TerminalEvent(
 			TerminalEventKind.Lifecycle,
 			null,
-			lifecycle
+			lifecycle,
+			null
+		);
+	}
+
+	internal static TerminalEvent FromSemantic(
+		TerminalSemanticEvent semantic
+	) {
+		ArgumentNullException.ThrowIfNull( semantic );
+
+		return new TerminalEvent(
+			TerminalEventKind.Semantic,
+			null,
+			null,
+			semantic
 		);
 	}
 
 	internal static TerminalEvent TimedOut() {
 		return new TerminalEvent(
 			TerminalEventKind.Timeout,
+			null,
 			null,
 			null
 		);
@@ -107,6 +136,7 @@ public sealed class TerminalEvent {
 	internal static TerminalEvent Cancelled() {
 		return new TerminalEvent(
 			TerminalEventKind.Cancelled,
+			null,
 			null,
 			null
 		);

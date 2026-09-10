@@ -24,7 +24,7 @@ using System.Threading.Channels;
 
 /// <summary>
 /// Owns demand-driven access to one terminal input decoder and preserves
-/// application input while internal response transactions are active.
+/// ordered application events while internal response transactions are active.
 /// </summary>
 internal sealed class TerminalInputCoordinator {
 	internal const int DefaultDeferredEventCapacity = 256;
@@ -33,7 +33,7 @@ internal sealed class TerminalInputCoordinator {
 	private readonly object sync = new();
 	private readonly TerminalInputDecoder decoder;
 	private readonly CancellationToken stopToken;
-	private readonly Channel<TerminalInputEvent> applicationEvents;
+	private readonly Channel<TerminalApplicationEvent> applicationEvents;
 	private readonly SemaphoreSlim demandSignal = new( 0, 1 );
 
 	private Task? pumpTask;
@@ -55,14 +55,14 @@ internal sealed class TerminalInputCoordinator {
 			throw new ArgumentOutOfRangeException(
 				nameof( deferredEventCapacity ),
 				deferredEventCapacity,
-				$"The deferred terminal-input capacity must be between 1 and "
+				$"The deferred terminal-event capacity must be between 1 and "
 					+ $"{MaximumDeferredEventCapacity} events."
 			);
 		}
 
 		this.decoder = decoder;
 		this.stopToken = stopToken;
-		this.applicationEvents = Channel.CreateBounded<TerminalInputEvent>(
+		this.applicationEvents = Channel.CreateBounded<TerminalApplicationEvent>(
 			new BoundedChannelOptions( deferredEventCapacity ) {
 				SingleReader = true,
 				SingleWriter = true,
@@ -72,17 +72,19 @@ internal sealed class TerminalInputCoordinator {
 		);
 	}
 
-	internal async ValueTask<TerminalInputEvent> ReadAsync(
+	internal async ValueTask<TerminalApplicationEvent> ReadAsync(
 		CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 
-		if ( this.applicationEvents.Reader.TryRead( out TerminalInputEvent? buffered ) ) {
+		if ( this.applicationEvents.Reader.TryRead( out TerminalApplicationEvent buffered ) ) {
 			return buffered;
 		}
 
 		if ( !this.TryAddApplicationDemand() ) {
-			return TerminalInputEvent.EndOfInput();
+			return TerminalApplicationEvent.FromInput(
+				TerminalInputEvent.EndOfInput()
+			);
 		}
 		if ( this.applicationEvents.Reader.TryRead( out buffered ) ) {
 			this.ReleaseApplicationDemand();
@@ -236,6 +238,9 @@ internal sealed class TerminalInputCoordinator {
 				TerminalInputDecodeResult result = await this.decoder.ReadNextAsync(
 					this.stopToken
 				).ConfigureAwait( false );
+				if ( result.RoutingRestartRequired ) {
+					continue;
+				}
 				if ( result.ResponseRouted ) {
 					lock ( this.sync ) {
 						if ( observedQueryDemandGeneration == this.queryDemandGeneration ) {
@@ -246,11 +251,11 @@ internal sealed class TerminalInputCoordinator {
 					continue;
 				}
 
-				TerminalInputEvent inputEvent = result.InputEvent
+				TerminalApplicationEvent applicationEvent = result.ApplicationEvent
 					?? throw new InvalidOperationException(
 						"The terminal input coordinator received an empty decoder result."
 					);
-				bool reachedEndOfInput = TerminalInputEventKind.EndOfInput == inputEvent.Kind;
+				bool reachedEndOfInput = applicationEvent.IsEndOfInput;
 				if ( reachedEndOfInput ) {
 					lock ( this.sync ) {
 						this.endOfInput = true;
@@ -258,7 +263,7 @@ internal sealed class TerminalInputCoordinator {
 				}
 
 				await this.applicationEvents.Writer.WriteAsync(
-					inputEvent,
+					applicationEvent,
 					this.stopToken
 				).ConfigureAwait( false );
 				this.ReleaseApplicationDemand();

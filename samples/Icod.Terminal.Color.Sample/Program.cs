@@ -111,7 +111,7 @@ try {
 	);
 	await WriteLineAsync(
 		session,
-		"Generate one terminal input event, or wait 30 seconds. Leaving this scope restores both observed baselines exactly."
+		"Generate one terminal event, or wait 30 seconds. Leaving this scope restores both observed baselines exactly."
 	);
 
 	TerminalEvent terminalEvent = await session.ReadEventAsync(
@@ -120,7 +120,7 @@ try {
 	if ( TerminalEventKind.Timeout == terminalEvent.Kind ) {
 		await WriteLineAsync(
 			session,
-			"No input event arrived before the timeout; releasing scoped color ownership now."
+			"No terminal event arrived before the timeout; releasing scoped color ownership now."
 		);
 	} else {
 		await WriteLineAsync(

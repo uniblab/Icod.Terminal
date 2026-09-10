@@ -1,7 +1,7 @@
 param(
 	[string]$Configuration = 'Staging',
 	[string]$OutputDirectory = 'artifacts/public-api',
-	[string]$BaselinePath = 'docs/Public-API-Baseline-1.7.sha256'
+	[string]$BaselinePath = 'docs/Public-API-Baseline-1.9.sha256'
 )
 
 Set-StrictMode -Version Latest

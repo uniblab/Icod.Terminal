@@ -40,6 +40,19 @@ $requiredMembers = @(
     'T:Icod.Terminal.KittyNotificationSupport',
     'T:Icod.Terminal.KittyNotificationOccasion',
     'T:Icod.Terminal.KittyNotificationUrgency',
+    'T:Icod.Terminal.TerminalSemanticEvent',
+    'T:Icod.Terminal.TerminalSemanticEventKind',
+    'T:Icod.Terminal.TerminalNotificationEvent',
+    'T:Icod.Terminal.TerminalNotificationEventKind',
+    'P:Icod.Terminal.TerminalEvent.Semantic',
+    'P:Icod.Terminal.TerminalSemanticEvent.Kind',
+    'P:Icod.Terminal.TerminalSemanticEvent.Notification',
+    'P:Icod.Terminal.TerminalNotificationEvent.Kind',
+    'P:Icod.Terminal.TerminalNotificationEvent.Identifier',
+    'P:Icod.Terminal.TerminalNotificationEvent.ButtonNumber',
+    'P:Icod.Terminal.KittyNotificationOptions.ReportActivation',
+    'P:Icod.Terminal.KittyNotificationOptions.ReportClose',
+    'P:Icod.Terminal.KittyNotificationOptions.Buttons',
     'M:Icod.Terminal.TerminalSession.SendKittyNotificationAsync(System.String,System.String,Icod.Terminal.KittyNotificationOptions,System.Threading.CancellationToken)',
     'M:Icod.Terminal.TerminalSession.CloseKittyNotificationAsync(System.String,System.Threading.CancellationToken)',
     'M:Icod.Terminal.TerminalSession.QueryKittyNotificationSupportAsync(System.TimeSpan,System.Threading.CancellationToken)',
@@ -69,7 +82,7 @@ try {
         )
         foreach ($requiredMember in $requiredMembers) {
             if ($requiredMember -notin $documentedMembers) {
-                throw "$entryPath is missing required 1.4 OSC 99 documentation '$requiredMember'."
+                throw "$entryPath is missing required 1.9 OSC 99 semantic-event documentation '$requiredMember'."
             }
         }
     }
@@ -110,7 +123,7 @@ try {
 
         foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
             Write-Host ''
-            Write-Host "=== Fresh package OSC 99 consumer: $framework ==="
+            Write-Host "=== Fresh package OSC 99 semantic-event consumer: $framework ==="
             Invoke-DotNet -Arguments @(
                 'run',
                 '--project', $project,
@@ -129,4 +142,4 @@ try {
     }
 }
 
-Write-Host "1.4 OSC 99 package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.9 OSC 99 semantic-event package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

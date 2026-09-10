@@ -34,6 +34,46 @@ _ = querySupport;
 _ = queryAlive;
 
 RequireEnumValue(
+	TerminalEventKind.Input,
+	0
+);
+RequireEnumValue(
+	TerminalEventKind.Lifecycle,
+	1
+);
+RequireEnumValue(
+	TerminalEventKind.Timeout,
+	2
+);
+RequireEnumValue(
+	TerminalEventKind.Cancelled,
+	3
+);
+RequireEnumValue(
+	TerminalEventKind.Semantic,
+	4
+);
+RequireEnumValue(
+	TerminalSemanticEventKind.Notification,
+	0
+);
+RequireEnumValue(
+	TerminalNotificationEventKind.Activated,
+	0
+);
+RequireEnumValue(
+	TerminalNotificationEventKind.ButtonActivated,
+	1
+);
+RequireEnumValue(
+	TerminalNotificationEventKind.Closed,
+	2
+);
+RequireEnumValue(
+	TerminalNotificationEventKind.CloseTrackingUnavailable,
+	3
+);
+RequireEnumValue(
 	KittyNotificationOccasion.Always,
 	0
 );
@@ -63,6 +103,9 @@ string[] requiredOptionProperties = [
 	nameof( KittyNotificationOptions.ApplicationName ),
 	nameof( KittyNotificationOptions.NotificationTypes ),
 	nameof( KittyNotificationOptions.FocusOnActivation ),
+	nameof( KittyNotificationOptions.ReportActivation ),
+	nameof( KittyNotificationOptions.ReportClose ),
+	nameof( KittyNotificationOptions.Buttons ),
 	nameof( KittyNotificationOptions.Occasion ),
 	nameof( KittyNotificationOptions.Urgency ),
 	nameof( KittyNotificationOptions.Expiration ),
@@ -100,6 +143,31 @@ foreach ( string propertyName in requiredSupportProperties ) {
 	);
 }
 
+RequirePublicProperty(
+	typeof( TerminalEvent ),
+	nameof( TerminalEvent.Semantic )
+);
+RequirePublicProperty(
+	typeof( TerminalSemanticEvent ),
+	nameof( TerminalSemanticEvent.Kind )
+);
+RequirePublicProperty(
+	typeof( TerminalSemanticEvent ),
+	nameof( TerminalSemanticEvent.Notification )
+);
+RequirePublicProperty(
+	typeof( TerminalNotificationEvent ),
+	nameof( TerminalNotificationEvent.Kind )
+);
+RequirePublicProperty(
+	typeof( TerminalNotificationEvent ),
+	nameof( TerminalNotificationEvent.Identifier )
+);
+RequirePublicProperty(
+	typeof( TerminalNotificationEvent ),
+	nameof( TerminalNotificationEvent.ButtonNumber )
+);
+
 MethodInfo[] publicMethods = typeof( TerminalSession ).GetMethods(
 	BindingFlags.Public | BindingFlags.Instance
 );
@@ -109,7 +177,10 @@ string[] forbiddenNames = [
 	"SendOsc99Async",
 	"SendRawKittyNotificationAsync",
 	"ReadKittyNotificationEventAsync",
-	"WaitForKittyNotificationEventAsync"
+	"WaitForKittyNotificationEventAsync",
+	"ReadSemanticEventAsync",
+	"ReadTerminalSemanticEventAsync",
+	"ReadRawTerminalEventAsync"
 ];
 foreach ( string forbiddenName in forbiddenNames ) {
 	if ( publicMethods.Any(
@@ -126,7 +197,7 @@ foreach ( string forbiddenName in forbiddenNames ) {
 }
 
 Console.WriteLine(
-	"Icod.Terminal 1.4 Kitty OSC 99 package API and exclusion smoke passed."
+	"Icod.Terminal 1.9 Kitty OSC 99 semantic-event package API and exclusion smoke passed."
 );
 
 static ValueTask BindSendKittyNotification(

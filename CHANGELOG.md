@@ -6,6 +6,37 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 No unreleased 1.x changes are currently recorded.
 
+## 1.9.0
+
+### Unsolicited semantic events
+
+- Adds `TerminalEventKind.Semantic = 4` as an additive event kind while preserving the existing `Input = 0`, `Lifecycle = 1`, `Timeout = 2`, and `Cancelled = 3` numeric values.
+- Adds protocol-neutral `TerminalSemanticEvent` and typed `TerminalNotificationEvent` payloads for activation, one-based button activation, close, and close-tracking-unavailable observations.
+- Delivers semantic events through the existing `TerminalSession.ReadEventAsync(...)` path; no second raw/semantic reader, callback stream, or arbitrary vendor-event dictionary is introduced.
+- Freezes authoritative framed-input ownership as active query response -> recognized unsolicited semantic event -> ordinary application input.
+- Keeps query responses and semantic events mutually exclusive: one frame is never double-delivered, and an OSC 99 notification report cannot satisfy an unrelated support/alive query merely because both share OSC 99.
+
+### Interactive Kitty OSC 99 notifications
+
+- Adds `KittyNotificationOptions.ReportActivation`, `ReportClose`, and `Buttons` as explicit opt-in interactive controls.
+- Requires a caller-supplied notification identifier when interaction reporting is requested so application correlation does not depend on an internal multipart identifier.
+- Encodes button labels using strict UTF-8 and the Kitty-defined U+2028 separator, bounded to 16 buttons, 512 UTF-8 bytes per label, and 2,048 UTF-8 bytes for the combined payload including separators.
+- Preserves existing noninteractive Kitty notification bytes/behavior when the new options are unused; `FocusOnActivation` remains independent of report generation.
+- Treats notification identifiers, activation reports, button numbers, close events, and `untracked` results as validated but unauthenticated terminal-controlled input rather than trusted desktop/user actions.
+
+### Hardening, package, and compatibility
+
+- Routes ordinary input and semantic events through the same bounded application-event coordinator so same-byte-stream ordering and backpressure remain deterministic without an unbounded semantic side queue.
+- Hardens every meaningful seven/eight-bit split point, malformed metadata/payloads, CAN/SUB cancellation, mixed termination, concatenation, repeated identifiers, oversize drain/recovery, repeated wait cancellation/timeouts, queue pressure, interleaving, and repeated lifecycle cycles.
+- Ensures malformed/oversized owned semantic reports are consumed/recovered boundedly rather than leaked into ordinary text or allowed to poison the coordinator.
+- Restarts routing at active-query precedence after semantic recovery so an immediately following correlated response cannot be skipped.
+- Retains notification requests/events as observations rather than reversible state: no hidden notification database, resume replay, synthetic interaction events, or automatic close-on-dispose is introduced.
+- Extends the existing notification sample with `--kitty-interactive` and extends fresh NuGet-only package/XML validation to the 1.9 semantic-event and interactive-notification surface on `net8.0`, `net9.0`, and `net10.0`.
+- Intentionally advances the final public API fingerprint to `e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315` while retaining every historical baseline unchanged.
+- Retains the stable `1.0.0` compatibility floor, Windows/Linux/macOS runtime validation, current `Icod.DCurses` acceptance/soak witnesses, and the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
+
+See `docs/releases/1.9.0.md`, `docs/Public-API-Baseline-1.9.md`, `docs/E190-Unsolicited-Semantic-Event-Contract-and-Reference-Freeze.md` through `docs/E199-1.9.0-Public-API-Documentation-Compatibility-and-Release-Closure.md`, and `Icod.Terminal-1.9.0-Development-Roadmap.md` for the complete 1.9 contract.
+
 ## 1.8.1
 
 ### Documentation and sample polish
