@@ -251,7 +251,7 @@ The event carries the validated terminal-reported identifier. The library does n
 
 Reports enter through the one authoritative `TerminalSession.ReadEventAsync(...)` stream. Same-stream ordering with ordinary input is preserved, active query ownership takes precedence, and there is no second unbounded semantic queue.
 
-Malformed or oversized owned report candidates are rejected/recovered within bounded parser rules and are not leaked into ordinary text.
+Malformed or oversized owned report candidates are rejected/recovered within bounded parser rules and are not leaked into ordinary text. After recovery, routing re-enters active-query precedence before later buffered traffic is considered.
 
 ## Redirected output
 
@@ -283,4 +283,4 @@ Late correlated query responses retain their bounded query ownership after calle
 
 The 1.9 interactive extension is additive. OSC 9 and OSC 777 notification APIs remain unchanged and independently explicit. Existing noninteractive Kitty OSC 99 calls retain their prior byte behavior when the new interactive options are unused. Existing OSC 633/1337 and all other stable 1.x contracts retain their prior meaning.
 
-The exact current 1.9 development API fingerprint is recorded in `Public-API-Baseline-1.9.md` / `.sha256`; historical stable public API baseline files remain retained unchanged.
+The final 1.9 API fingerprint is `e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315` and is recorded in `Public-API-Baseline-1.9.md` / `.sha256`; historical stable public API baseline files remain retained unchanged.
