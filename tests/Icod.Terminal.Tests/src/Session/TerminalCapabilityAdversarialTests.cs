@@ -29,7 +29,7 @@ using Xunit;
 /// </summary>
 public sealed class TerminalCapabilityAdversarialTests {
 	[Fact]
-	public async Task LiveUnsupportedEvidenceOverridesStaticAdvertisementUntilInvalidated() {
+	public async Task UnsupportedBackendDoesNotEraseIndependentStaticAlternate() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "capability-conflict" )
 			.SetExtendedString( "Ms", "\u001b]52;%p1%s;%p2%s\u001b\\" )
 			.Build();
@@ -55,15 +55,18 @@ public sealed class TerminalCapabilityAdversarialTests {
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
 
-		TerminalCapabilityStatus liveStatus = session.InspectCapability(
+		TerminalCapabilityStatus alternateStatus = session.InspectCapability(
 			TerminalCapability.ClipboardWrite
 		);
-		Assert.Equal( TerminalCapabilitySupport.Unsupported, liveStatus.Support );
 		Assert.Equal(
-			TerminalCapabilityEvidenceKind.LiveObservation,
-			liveStatus.EvidenceKind
+			TerminalCapabilitySupport.Advertised,
+			alternateStatus.Support
 		);
-		Assert.False( liveStatus.IsUsable );
+		Assert.Equal(
+			TerminalCapabilityEvidenceKind.StaticDescription,
+			alternateStatus.EvidenceKind
+		);
+		Assert.True( alternateStatus.IsUsable );
 
 		session.InvalidateState();
 
@@ -78,6 +81,7 @@ public sealed class TerminalCapabilityAdversarialTests {
 			TerminalCapabilityEvidenceKind.StaticDescription,
 			restoredStaticStatus.EvidenceKind
 		);
+		Assert.True( restoredStaticStatus.IsUsable );
 		Assert.Empty( output.Bytes );
 	}
 
