@@ -81,8 +81,6 @@ internal static class Program {
 	private static string FormatStatus(
 		TerminalCapabilityStatus status
 	) {
-		ArgumentNullException.ThrowIfNull( status );
-
 		return string.Concat(
 			status.Capability,
 			": support=",
