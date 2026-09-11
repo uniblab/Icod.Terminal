@@ -68,7 +68,12 @@ public enum TerminalCapability {
 	/// <summary>
 	/// Displaying backend-neutral raster graphics.
 	/// </summary>
-	RasterGraphics
+	RasterGraphics,
+
+	/// <summary>
+	/// Owning terminal-resident persistent raster resources and placements.
+	/// </summary>
+	PersistentRasterGraphics
 }
 
 /// <summary>
