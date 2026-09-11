@@ -2,7 +2,7 @@
 
 **Release:** `1.10.0`  
 **Theme:** semantic capability inspection and planning  
-**Status:** C100–C103 complete; C104 explicit bounded verification active  
+**Status:** C100–C104 complete; C105 lifecycle/invalidation/concurrency qualification active  
 **Development version:** `1.10.0-alpha.1`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.9.0`
@@ -60,7 +60,7 @@ C100 established:
 
 C100 changes no public runtime API.
 
-## C101–C103 result
+## C101–C104 result
 
 C101 froze a deliberately reduced, dependency-neutral public planning vocabulary in:
 
@@ -110,10 +110,21 @@ public TerminalCapabilityStatus InspectCapability(
 
 Inspection reads existing session knowledge only. It emits no terminal bytes and performs no hidden live probe. Support is resolved independently from endpoint availability so that, for example, an advertised output capability can remain `Advertised` while its endpoint is `Unavailable` and `IsUsable` is false.
 
-The C103 package project built successfully for `net8.0`, `net9.0`, and `net10.0` with zero warnings and zero errors. The deterministic public API snapshots were identical across all three TFMs and produced the current development fingerprint:
+C104 added the explicit bounded verification operation:
+
+```csharp
+public ValueTask<TerminalCapabilityStatus> VerifyCapabilityAsync(
+    TerminalCapability capability,
+    CancellationToken cancellationToken = default
+);
+```
+
+Verification attempts to strengthen evidence only for capabilities with an already-reviewed bounded probe. The initial probe set is `KeyboardReporting` and `RasterGraphics`. Other capabilities return their current inspection status without invented protocol traffic. Unavailable endpoints and already-decisive live evidence also short-circuit without probing.
+
+The reviewed C104 public API snapshot is identical across `net8.0`, `net9.0`, and `net10.0`, with provisional development fingerprint:
 
 ```text
-ebca3e14f21354429c956eca1e43e22230cf4dbf151de08ef126133e321e9e56
+ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 ```
 
 The current provisional 1.10 baseline is maintained in:
@@ -122,6 +133,12 @@ The current provisional 1.10 baseline is maintained in:
 - `docs/Public-API-Baseline-1.10.sha256`
 
 The final release baseline remains a C108 responsibility.
+
+## Prerelease packaging policy
+
+Development prereleases such as `1.10.0-alpha.1` must still produce a real NuGet artifact, generated XML documentation for every supported TFM, and a fresh NuGet-only consumer which restores and runs against the packed artifact.
+
+Final-release documentation ceremony is reserved for stable package versions. Curated final release-note text, stable changelog/README release links, and exact package-release-note release markers are not used as prerelease compatibility gates. Stable releases retain those stricter closure checks.
 
 ## Public capability-planning direction
 
@@ -173,8 +190,8 @@ C100  dependency-decoupling and validation hygiene                 complete
 C101  semantic capability vocabulary and API regret gate          complete
 C102  side-effect-free capability inspection model                complete
 C103  session inspection integration and evidence projection      complete
-C104  explicit bounded verification / preparation                 active
-C105  lifecycle, invalidation, and concurrent-query semantics     planned
+C104  explicit bounded verification / preparation                 complete
+C105  lifecycle, invalidation, and concurrent-query semantics     active
 C106  samples and downstream planning acceptance                  planned
 C107  adversarial/package hardening                               planned
 C108  public API/documentation/compatibility freeze               planned
@@ -195,33 +212,23 @@ Complete. `InspectCapability(...)` projects the existing internal evidence/routi
 
 ## C104 — explicit bounded verification / preparation
 
-Add an explicit async path for callers that want the session to attempt to strengthen current support knowledge.
-
-The C104 probe inventory is intentionally narrow:
-
-```text
-KeyboardReporting
-    existing reviewed bounded Kitty keyboard support probe
-
-RasterGraphics
-    existing reviewed bounded Kitty Graphics + Sixel probe orchestration
-```
-
-The other initial public capabilities do not currently have a clean, reviewed support probe. C104 must not fabricate terminal traffic for them. Calling verification for those capabilities should therefore return the current inspection result unchanged.
-
-Verification must:
-
-- validate the semantic capability at entry;
-- return immediately when the required endpoint is unavailable;
-- return immediately when current live evidence is already decisive;
-- use the existing authoritative query coordinator;
-- remain bounded by the existing reviewed probe deadlines and caller cancellation;
-- return the post-attempt `TerminalCapabilityStatus`;
-- never become a generic raw-query escape hatch.
+Complete. Verification validates the public capability at entry, honors caller cancellation, short-circuits unavailable endpoints and decisive live evidence, and reuses only the existing bounded Kitty keyboard / raster probe paths. No generic raw-query escape hatch was added.
 
 ## C105 — lifecycle, invalidation, and concurrent-query semantics
 
 Qualify suspend/resume generation changes, stale live evidence, concurrent inspection, concurrent verification, cancellation, timeout, disposal, and query ownership.
+
+At minimum C105 must prove:
+
+- generation invalidation removes stale live evidence without deleting valid static evidence;
+- concurrent inspection remains side-effect free and deterministic;
+- pre-cancelled verification emits no terminal traffic;
+- verification does not bypass suspended/closed query ownership;
+- unavailable endpoints do not trigger probe traffic;
+- capabilities without reviewed probes remain inspection-only;
+- disposal/query shutdown bounds any in-flight verification work.
+
+Production changes are required only where these tests reveal a real gap in the existing session/query machinery.
 
 ## C106 — samples and downstream planning acceptance
 
