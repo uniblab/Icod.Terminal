@@ -24,6 +24,7 @@ namespace Icod.Terminal;
 /// Tracks local ownership state for one persistent raster resource.
 /// </summary>
 internal sealed class TerminalPersistentRasterResourceState {
+	private int imageIdBits;
 	private int closed;
 
 	internal TerminalPersistentRasterResourceState(
@@ -45,6 +46,12 @@ internal sealed class TerminalPersistentRasterResourceState {
 		get;
 	}
 
+	internal uint ImageId {
+		get {
+			return unchecked( (uint)Volatile.Read( ref this.imageIdBits ) );
+		}
+	}
+
 	internal long Generation {
 		get;
 	}
@@ -52,6 +59,26 @@ internal sealed class TerminalPersistentRasterResourceState {
 	internal bool IsClosed {
 		get {
 			return 0 != Volatile.Read( ref this.closed );
+		}
+	}
+
+	internal void BindImageId(
+		uint imageId
+	) {
+		if ( 0u == imageId ) {
+			throw new ArgumentOutOfRangeException( nameof( imageId ) );
+		}
+
+		int bits = unchecked( (int)imageId );
+		int prior = Interlocked.CompareExchange(
+			ref this.imageIdBits,
+			bits,
+			0
+		);
+		if ( 0 != prior && imageId != unchecked( (uint)prior ) ) {
+			throw new InvalidOperationException(
+				"The persistent raster resource already has a different terminal-assigned image id."
+			);
 		}
 	}
 

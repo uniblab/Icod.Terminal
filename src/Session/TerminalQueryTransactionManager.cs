@@ -99,68 +99,49 @@ internal sealed class TerminalQueryTransactionManager {
 				$"A terminal query request cannot exceed {MaximumRequestBytes} bytes."
 			);
 		}
-		if ( TimeSpan.Zero > timeout || MaximumCallerTimeout < timeout ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( timeout ),
-				timeout,
-				$"A terminal query timeout must be between zero and {MaximumCallerTimeout}."
-			);
-		}
-		if ( TimeSpan.Zero >= lateResponseOwnership
-			|| MaximumLateResponseOwnership < lateResponseOwnership ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( lateResponseOwnership ),
-				lateResponseOwnership,
-				"Late-response ownership must be positive and no greater than "
-					+ $"{MaximumLateResponseOwnership}."
-			);
-		}
+		ValidateTiming(
+			timeout,
+			lateResponseOwnership
+		);
 		cancellationToken.ThrowIfCancellationRequested();
 
-		string? unavailable = this.session.GetQueryUnavailableReason();
-		if ( unavailable is not null ) {
-			throw new InvalidOperationException( unavailable );
-		}
-
-		TerminalQueryTransaction transaction;
-		long transactionGeneration;
-		lock ( this.sync ) {
-			this.ThrowIfClosed();
-			if ( this.suspended ) {
-				throw new InvalidOperationException(
-					"Terminal queries are unavailable while the session is suspended."
-				);
-			}
-			if ( MaximumPendingTransactions <= this.pendingCount ) {
-				throw new InvalidOperationException(
-					$"The terminal query queue is limited to {MaximumPendingTransactions} transactions."
-				);
-			}
-
-			transactionGeneration = this.generation;
-			transaction = new TerminalQueryTransaction(
-				request.ToArray(),
-				responsePlan,
-				timeout,
-				lateResponseOwnership,
-				this.session.Options.MonotonicClock,
-				cancellationToken
-			);
-
-			if ( 0 == this.pendingCount ) {
-				this.idleCompletion = new TaskCompletionSource(
-					TaskCreationOptions.RunContinuationsAsynchronously
-				);
-			}
-			++this.pendingCount;
-			this.transactions.Add( transaction );
-		}
-
-		_ = this.RunTransactionAsync(
-			transaction,
-			transactionGeneration
+		TerminalQueryTransaction transaction = new(
+			request.ToArray(),
+			responsePlan,
+			timeout,
+			lateResponseOwnership,
+			this.session.Options.MonotonicClock,
+			cancellationToken
 		);
-		return new ValueTask<TerminalQueryResponseResult>( transaction.CallerTask );
+		return this.EnqueueTransaction( transaction );
+	}
+
+	internal ValueTask<TerminalQueryResponseResult> ExecuteAsync(
+		Func<CancellationToken, ValueTask> emission,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership,
+		CancellationToken cancellationToken,
+		Action? abandonedCleanup = null
+	) {
+		ArgumentNullException.ThrowIfNull( emission );
+		ArgumentNullException.ThrowIfNull( responsePlan );
+		ValidateTiming(
+			timeout,
+			lateResponseOwnership
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalQueryTransaction transaction = new(
+			emission,
+			responsePlan,
+			timeout,
+			lateResponseOwnership,
+			this.session.Options.MonotonicClock,
+			cancellationToken,
+			abandonedCleanup
+		);
+		return this.EnqueueTransaction( transaction );
 	}
 
 	internal void Suspend() {
@@ -227,6 +208,50 @@ internal sealed class TerminalQueryTransactionManager {
 		}
 
 		await idleTask.ConfigureAwait( false );
+	}
+
+	private ValueTask<TerminalQueryResponseResult> EnqueueTransaction(
+		TerminalQueryTransaction transaction
+	) {
+		ArgumentNullException.ThrowIfNull( transaction );
+
+		string? unavailable = this.session.GetQueryUnavailableReason();
+		if ( unavailable is not null ) {
+			transaction.Dispose();
+			throw new InvalidOperationException( unavailable );
+		}
+
+		long transactionGeneration;
+		lock ( this.sync ) {
+			this.ThrowIfClosed();
+			if ( this.suspended ) {
+				transaction.Dispose();
+				throw new InvalidOperationException(
+					"Terminal queries are unavailable while the session is suspended."
+				);
+			}
+			if ( MaximumPendingTransactions <= this.pendingCount ) {
+				transaction.Dispose();
+				throw new InvalidOperationException(
+					$"The terminal query queue is limited to {MaximumPendingTransactions} transactions."
+				);
+			}
+
+			transactionGeneration = this.generation;
+			if ( 0 == this.pendingCount ) {
+				this.idleCompletion = new TaskCompletionSource(
+					TaskCreationOptions.RunContinuationsAsynchronously
+				);
+			}
+			++this.pendingCount;
+			this.transactions.Add( transaction );
+		}
+
+		_ = this.RunTransactionAsync(
+			transaction,
+			transactionGeneration
+		);
+		return new ValueTask<TerminalQueryResponseResult>( transaction.CallerTask );
 	}
 
 	private async ValueTask<TerminalResponseFrame> ExecuteSingleFamilyAsync(
@@ -315,13 +340,19 @@ internal sealed class TerminalQueryTransactionManager {
 				coordinator.ArmResponseExpectation( expectation );
 
 				try {
-					await this.session.Output.WriteAsync(
-						transaction.Request,
-						this.stop.Token
-					).ConfigureAwait( false );
-					await this.session.Output.FlushAsync(
-						this.stop.Token
-					).ConfigureAwait( false );
+					if ( transaction.Emission is not null ) {
+						await transaction.Emission(
+							this.stop.Token
+						).ConfigureAwait( false );
+					} else {
+						await this.session.Output.WriteAsync(
+							transaction.Request,
+							this.stop.Token
+						).ConfigureAwait( false );
+						await this.session.Output.FlushAsync(
+							this.stop.Token
+						).ConfigureAwait( false );
+					}
 				} catch ( OperationCanceledException ) when ( this.stop.IsCancellationRequested ) {
 					throw;
 				} catch ( Exception exception ) {
@@ -359,8 +390,12 @@ internal sealed class TerminalQueryTransactionManager {
 				this.ambiguityGate.Release();
 			}
 
-			transaction.Dispose();
-			this.CompletePendingTransaction( transaction );
+			try {
+				transaction.CompleteOwnership();
+			} finally {
+				transaction.Dispose();
+				this.CompletePendingTransaction( transaction );
+			}
 		}
 	}
 
@@ -453,6 +488,28 @@ internal sealed class TerminalQueryTransactionManager {
 		}
 	}
 
+	private static void ValidateTiming(
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership
+	) {
+		if ( TimeSpan.Zero > timeout || MaximumCallerTimeout < timeout ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( timeout ),
+				timeout,
+				$"A terminal query timeout must be between zero and {MaximumCallerTimeout}."
+			);
+		}
+		if ( TimeSpan.Zero >= lateResponseOwnership
+			|| MaximumLateResponseOwnership < lateResponseOwnership ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( lateResponseOwnership ),
+				lateResponseOwnership,
+				"Late-response ownership must be positive and no greater than "
+					+ $"{MaximumLateResponseOwnership}."
+			);
+		}
+	}
+
 	private static TaskCompletionSource CreateCompletedCompletion() {
 		TaskCompletionSource completion = new(
 			TaskCreationOptions.RunContinuationsAsynchronously
@@ -478,6 +535,7 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 		TaskCreationOptions.RunContinuationsAsynchronously
 	);
 	private readonly CancellationTokenRegistration callerCancellationRegistration;
+	private readonly Action? abandonedCleanup;
 
 	private long? callerStoppedTimestamp;
 	private bool callerTimedOut;
@@ -491,9 +549,59 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 		TimeSpan lateResponseOwnership,
 		IMonotonicClock monotonicClock,
 		CancellationToken callerCancellationToken
+	) : this(
+		request,
+		emission: null,
+		responsePlan,
+		timeout,
+		lateResponseOwnership,
+		monotonicClock,
+		callerCancellationToken,
+		abandonedCleanup: null
 	) {
-		ArgumentNullException.ThrowIfNull( request );
-		if ( 0 == request.Length ) {
+	}
+
+	internal TerminalQueryTransaction(
+		Func<CancellationToken, ValueTask> emission,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership,
+		IMonotonicClock monotonicClock,
+		CancellationToken callerCancellationToken,
+		Action? abandonedCleanup
+	) : this(
+		request: null,
+		emission,
+		responsePlan,
+		timeout,
+		lateResponseOwnership,
+		monotonicClock,
+		callerCancellationToken,
+		abandonedCleanup
+	) {
+	}
+
+	private TerminalQueryTransaction(
+		byte[]? request,
+		Func<CancellationToken, ValueTask>? emission,
+		TerminalQueryResponsePlan responsePlan,
+		TimeSpan timeout,
+		TimeSpan lateResponseOwnership,
+		IMonotonicClock monotonicClock,
+		CancellationToken callerCancellationToken,
+		Action? abandonedCleanup
+	) {
+		if ( request is null && emission is null ) {
+			throw new ArgumentException(
+				"A terminal query transaction requires request bytes or a committed emission callback."
+			);
+		}
+		if ( request is not null && emission is not null ) {
+			throw new ArgumentException(
+				"A terminal query transaction cannot own both request bytes and an emission callback."
+			);
+		}
+		if ( request is not null && 0 == request.Length ) {
 			throw new ArgumentException(
 				"A terminal query request cannot be empty.",
 				nameof( request )
@@ -508,13 +616,18 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 			throw new ArgumentOutOfRangeException( nameof( lateResponseOwnership ) );
 		}
 
-		this.Request = request.ToArray();
+		this.Request = request is null
+			? ReadOnlyMemory<byte>.Empty
+			: request.ToArray()
+		;
+		this.Emission = emission;
 		this.ResponsePlan = responsePlan;
 		this.monotonicClock = monotonicClock;
 		this.timeout = timeout;
 		this.lateResponseOwnership = lateResponseOwnership;
 		this.timeoutStartedTimestamp = monotonicClock.GetTimestamp();
 		this.callerCancellationToken = callerCancellationToken;
+		this.abandonedCleanup = abandonedCleanup;
 		this.callerCancellationRegistration = callerCancellationToken.Register(
 			static state => ( (TerminalQueryTransaction)state! ).CancelCaller(),
 			this
@@ -523,6 +636,10 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 	}
 
 	internal ReadOnlyMemory<byte> Request {
+		get;
+	}
+
+	internal Func<CancellationToken, ValueTask>? Emission {
 		get;
 	}
 
@@ -616,6 +733,14 @@ internal sealed class TerminalQueryTransaction : IDisposable {
 				: this.lateResponseOwnership - elapsed
 			;
 		}
+	}
+
+	internal void CompleteOwnership() {
+		if ( this.CallerTask.IsCompletedSuccessfully ) {
+			return;
+		}
+
+		this.abandonedCleanup?.Invoke();
 	}
 
 	public void Dispose() {

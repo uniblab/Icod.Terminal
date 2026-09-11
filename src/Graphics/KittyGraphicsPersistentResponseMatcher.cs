@@ -71,9 +71,10 @@ internal sealed class KittyGraphicsPersistentResponseMatcher :
 			return false;
 		}
 
-		KittyGraphicsResponse response = KittyGraphicsCodec.ParseResponse( frame );
-		return response.ImageNumber.HasValue
-			&& this.ImageNumber == response.ImageNumber.Value;
+		return ContainsExpectedImageNumberField(
+			payload[1..],
+			this.ImageNumber
+		);
 	}
 
 	public bool IsCorrelatedPrefix(
@@ -120,6 +121,61 @@ internal sealed class KittyGraphicsPersistentResponseMatcher :
 			fieldStart = index + 1;
 		}
 		return false;
+	}
+
+	private static bool ContainsExpectedImageNumberField(
+		ReadOnlySpan<byte> controlAndMessage,
+		uint imageNumber
+	) {
+		int fieldStart = 0;
+		for ( int index = 0; index < controlAndMessage.Length; index++ ) {
+			byte value = controlAndMessage[ index ];
+			if ( value is not (byte)',' and not (byte)';' ) {
+				continue;
+			}
+
+			ReadOnlySpan<byte> field = controlAndMessage.Slice(
+				fieldStart,
+				index - fieldStart
+			);
+			if ( IsExpectedImageNumberField(
+				field,
+				imageNumber
+			) ) {
+				return true;
+			}
+			if ( (byte)';' == value ) {
+				return false;
+			}
+			fieldStart = index + 1;
+		}
+		return false;
+	}
+
+	private static bool IsExpectedImageNumberField(
+		ReadOnlySpan<byte> field,
+		uint imageNumber
+	) {
+		if ( 3 > field.Length
+			|| (byte)'I' != field[ 0 ]
+			|| (byte)'=' != field[ 1 ] ) {
+			return false;
+		}
+
+		uint parsed = 0;
+		for ( int index = 2; index < field.Length; index++ ) {
+			byte item = field[ index ];
+			if ( item is < (byte)'0' or > (byte)'9' ) {
+				return false;
+			}
+
+			uint digit = (uint)( item - (byte)'0' );
+			if ( ( uint.MaxValue - digit ) / 10 < parsed ) {
+				return false;
+			}
+			parsed = ( parsed * 10 ) + digit;
+		}
+		return imageNumber == parsed;
 	}
 
 	private static bool IsExpectedImageNumberField(
