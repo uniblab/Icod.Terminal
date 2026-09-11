@@ -1,20 +1,18 @@
-# Icod.Terminal Public API Baseline — 1.10.0 Development
+# Icod.Terminal Public API Baseline — 1.10.0
 
 **Release:** `1.10.0`  
-**Status:** provisional C104 public API checkpoint; final freeze occurs at C108  
+**Status:** final C108 public API freeze  
 **Target frameworks:** `net8.0`, `net9.0`, `net10.0`
 
 ## Purpose
 
-This document records the current intentional additive public surface under development for `Icod.Terminal 1.10.0`. It is a development checkpoint, not the final release freeze. The final 1.10 public API baseline is frozen at C108 after capability inspection, verification, lifecycle, downstream acceptance, and hardening tranches are complete.
+This document records the final intentional additive public surface for `Icod.Terminal 1.10.0`. Historical baselines, including the final 1.9 baseline, remain unchanged.
 
-Historical baselines, including the final 1.9 baseline, remain unchanged.
-
-## Current machine fingerprint
+## Final machine fingerprint
 
 The deterministic reflection snapshot generated independently for `net8.0`, `net9.0`, and `net10.0` is identical across all three target frameworks.
 
-After normalizing line endings to LF, the C104 checkpoint fingerprint is:
+After normalizing line endings to LF, the final 1.10 fingerprint is:
 
 ```text
 ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
@@ -24,11 +22,11 @@ The machine-readable fingerprint is stored in:
 
 `docs/Public-API-Baseline-1.10.sha256`
 
-`packaging/VerifyPublicApiBaseline.ps1` uses that file as the current development baseline. The fingerprint is intentionally advanced only when a reviewed 1.10 tranche changes the public surface.
+`packaging/VerifyPublicApiBaseline.ps1` regenerates the public API snapshot independently for every supported target framework and verifies this exact fingerprint.
 
-## C102 additive capability model
+## Additive semantic capability model
 
-The current checkpoint retains the curated public semantic capability vocabulary:
+Version 1.10 adds the curated public semantic capability vocabulary:
 
 ```text
 TerminalCapability
@@ -43,7 +41,7 @@ TerminalCapability
     RasterGraphics
 ```
 
-It also retains these public planning types:
+It also adds:
 
 ```text
 TerminalCapabilitySupport
@@ -74,11 +72,11 @@ public TerminalCapabilityEvidenceKind EvidenceKind { get; }
 public bool IsUsable { get; }
 ```
 
-Construction is library-owned; the constructor is not public. This makes the type an inspection result rather than a caller-manufactured authority.
+Construction is library-owned; callers receive immutable planning snapshots rather than manufacturing authoritative capability state.
 
-## C103 side-effect-free session inspection
+## Side-effect-free session inspection
 
-C103 adds:
+Version 1.10 adds:
 
 ```csharp
 public TerminalCapabilityStatus InspectCapability(
@@ -86,13 +84,13 @@ public TerminalCapabilityStatus InspectCapability(
 );
 ```
 
-The operation is synchronous and side-effect free. It projects the session's existing semantic evidence and routing state only; it does not emit terminal bytes or perform a live probe.
+Inspection is synchronous and side-effect free. It projects the session's existing semantic evidence and routing state only; it emits no terminal bytes and performs no live probe.
 
-Support knowledge and endpoint availability remain separate. A statically advertised output capability may remain `Advertised` while its endpoint is `Unavailable`, in which case `IsUsable` is false without rewriting the support answer to `Unsupported`.
+Support knowledge and endpoint availability remain separate. A statically advertised output capability may remain `Advertised` while its endpoint is `Unavailable`, in which case `IsUsable` is false without rewriting truthful support knowledge to `Unsupported`.
 
-## C104 explicit bounded verification
+## Explicit bounded verification
 
-C104 adds:
+Version 1.10 also adds:
 
 ```csharp
 public ValueTask<TerminalCapabilityStatus> VerifyCapabilityAsync(
@@ -101,7 +99,7 @@ public ValueTask<TerminalCapabilityStatus> VerifyCapabilityAsync(
 );
 ```
 
-Verification attempts to strengthen current support knowledge only where an existing reviewed bounded live probe exists. In the initial 1.10 vocabulary those probe paths are:
+Verification attempts to strengthen current support knowledge only where an existing reviewed bounded live probe exists. The initial probe paths are:
 
 ```text
 KeyboardReporting
@@ -111,9 +109,26 @@ RasterGraphics
     existing Kitty Graphics + Sixel probe orchestration
 ```
 
-The operation returns immediately without probing when the required endpoint is unavailable or current live support evidence is already decisive. Capabilities without a reviewed support probe return their current inspection status unchanged; the public API does not invent protocol traffic merely to turn an unknown answer into a different state.
+The operation returns without probing when the required endpoint is unavailable or current live support evidence is already decisive. Capabilities without a reviewed support probe return their current inspection status unchanged; the public API does not invent protocol traffic merely to make every capability probeable.
 
 The method reuses the existing authoritative query coordinator and existing internally bounded probe deadlines while honoring caller cancellation.
+
+## Lifecycle and hardening result
+
+C105–C107 qualified the final surface for:
+
+- live-evidence generation invalidation;
+- static-evidence persistence;
+- concurrent side-effect-free inspection;
+- pre-cancelled verification with zero traffic;
+- suspended/closed query ownership;
+- unavailable endpoints with zero probe traffic;
+- inspection-only capabilities without reviewed probes;
+- repeated invalidation and repeated verification;
+- multi-backend evidence where negative evidence for one backend does not erase an independent viable alternate;
+- fresh NuGet-only consumption on `net8.0`, `net9.0`, and `net10.0`.
+
+No additional public API was required by those tranches.
 
 ## Dependency and protocol neutrality
 
@@ -130,4 +145,4 @@ Static implementation evidence projects to `StaticDescription`; current lifecycl
 
 ## Compatibility rule
 
-Version 1.10 remains an additive minor release over the stable 1.0 compatibility floor. Existing public members and existing enum numeric values remain unchanged. New 1.10 enum values/types are subject to the normal forward-compatible minor-release rules until C108 freezes the final release baseline.
+Version 1.10 is an additive minor release over the stable 1.0 compatibility floor. Existing public members and existing enum numeric values remain unchanged. The 1.10 additions are frozen by this baseline and the permanent capability-planning contract in `docs/Capability-Inspection-and-Planning.md`.
