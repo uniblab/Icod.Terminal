@@ -44,7 +44,8 @@ internal enum TerminalSemanticOperation {
 	MouseReporting,
 	FocusReporting,
 	BracketedPaste,
-	RasterGraphics
+	RasterGraphics,
+	PersistentRasterGraphics
 }
 
 /// <summary>
