@@ -1,29 +1,46 @@
 # Icod.Terminal Public API Baseline — 1.11.0
 
 **Release:** `1.11.0`  
-**Status:** C112 additive capability freeze  
+**Status:** C114 persistent-resource creation freeze  
 **Target frameworks:** `net8.0`, `net9.0`, `net10.0`
 
 ## Purpose
 
-This document records the first intentional public API addition for `Icod.Terminal 1.11.0`. Historical baselines remain unchanged.
+This document records the intentional public API additions accumulated for `Icod.Terminal 1.11.0`. Historical baselines remain unchanged.
 
-C112 adds exactly one public enum value:
+C112 added exactly one public enum value:
 
 ```text
 TerminalCapability.PersistentRasterGraphics = 9
 ```
 
-All existing `TerminalCapability` numeric values `0..8` remain unchanged. No public Kitty image id, image number, placement id, backend selector, raw APC writer, persistent-resource handle, or placement handle is introduced by C112.
+C114 adds the first opaque persistent-resource ownership surface approved by C110:
+
+```csharp
+public sealed class TerminalRasterResource : IAsyncDisposable {
+    public ValueTask DisposeAsync();
+}
+
+public sealed partial class TerminalSession {
+    public ValueTask<TerminalControlResult<TerminalRasterResource>> CreateRasterResourceAsync(
+        TerminalRasterImage image,
+        CancellationToken cancellationToken = default
+    );
+}
+```
+
+All existing `TerminalCapability` numeric values `0..8` remain unchanged. C114 exposes no Kitty image id, image number, placement id, backend selector, raw APC writer, registry, or mutable raster storage. Construction of `TerminalRasterResource` remains internal to the session.
+
+The approved placement surface is intentionally not present in this C114 snapshot; C115/C116 will add it under their own RED/GREEN gates and will require another intentional 1.11 fingerprint update.
 
 ## Machine fingerprint
 
 The deterministic reflection snapshot is required to remain identical across `net8.0`, `net9.0`, and `net10.0`.
 
-After normalizing line endings to LF, the C112 fingerprint is:
+After normalizing line endings to LF, the C114 fingerprint is:
 
 ```text
-c037c3088a86c93da6f74b8e1deb3769ff9f43252d2fb871562b0519f333bd18
+fbef4700d29613be7f6224a5349426c731412a851127bd529fc190ac3a562aeb
 ```
 
 The machine-readable fingerprint is stored in:
@@ -34,7 +51,7 @@ The machine-readable fingerprint is stored in:
 
 ## Semantic meaning
 
-`PersistentRasterGraphics` is intentionally distinct from ordinary `RasterGraphics`.
+`PersistentRasterGraphics` remains intentionally distinct from ordinary `RasterGraphics`.
 
 ```text
 RasterGraphics
@@ -48,8 +65,10 @@ Verified Sixel therefore does not imply persistent-resource support. Verified Ki
 
 `TerminalSession.InspectCapability(...)` remains side-effect free. `TerminalSession.VerifyCapabilityAsync(...)` verifies `PersistentRasterGraphics` only through the existing bounded Kitty Graphics support probe and does not probe Sixel for that semantic capability.
 
+`CreateRasterResourceAsync(...)` does not perform hidden capability probing. It requires current verified persistent-raster capability, reserves bounded session ownership before output, emits an acknowledged direct Kitty upload through the existing query authority, and publishes an opaque resource only after a correlated successful acknowledgement.
+
 ## Compatibility rule
 
-C112 is additive over the stable 1.0 compatibility floor. The new enum member is appended at numeric value `9`; no existing public type/member is removed or renumbered.
+C114 remains additive over the stable 1.0 compatibility floor. The enum member remains appended at numeric value `9`; no existing public type/member is removed or renumbered.
 
-Later 1.11 tranches may add the separately approved persistent-resource and placement object surface. Any such addition must intentionally replace this interim 1.11 fingerprint with a newly reviewed 1.11 fingerprint rather than mutating a historical baseline silently.
+Later 1.11 tranches may add only the separately approved placement/update surface. Each intentional addition must replace this interim 1.11 fingerprint with a newly reviewed fingerprint rather than mutating a historical baseline silently.

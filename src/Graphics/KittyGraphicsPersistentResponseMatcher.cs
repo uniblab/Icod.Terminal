@@ -70,11 +70,18 @@ internal sealed class KittyGraphicsPersistentResponseMatcher :
 			|| (byte)'G' != payload[ 0 ] ) {
 			return false;
 		}
-
-		return ContainsExpectedImageNumberField(
+		if ( !ContainsExpectedImageNumberField(
 			payload[1..],
 			this.ImageNumber
+		) ) {
+			return false;
+		}
+
+		_ = KittyGraphicsPersistentCreationResponse.Parse(
+			frame,
+			this.ImageNumber
 		);
+		return true;
 	}
 
 	public bool IsCorrelatedPrefix(
