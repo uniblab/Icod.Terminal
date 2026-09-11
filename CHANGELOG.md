@@ -1,8 +1,8 @@
 # Changelog
 
-Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, T-series records, and public-API baseline documents.
+Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
-## 1.10.0-alpha.1
+## 1.10.0
 
 ### Dependency decoupling and capability planning
 
@@ -13,10 +13,23 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Adds side-effect-free `TerminalSession.InspectCapability(...)`, which projects current semantic support evidence and endpoint availability without emitting terminal bytes or performing a hidden live query.
 - Adds explicit bounded `TerminalSession.VerifyCapabilityAsync(...)`; verification reuses only existing reviewed support probes, currently modern keyboard reporting and raster graphics, and does not invent protocol traffic for capabilities that lack a safe bounded probe.
 - Keeps endpoint availability separate from support knowledge so a capability may remain statically advertised while temporarily unavailable on the current endpoint.
-- Advances the provisional 1.10 public API fingerprint to `ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb` while retaining the final 1.9 baseline unchanged.
-- Retains `net8.0`, `net9.0`, and `net10.0` support and the stable `1.0.0` compatibility floor.
 
-See `docs/releases/1.10.0-alpha.1.md`, `docs/Public-API-Baseline-1.10.md`, `docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`, and `Icod.Terminal-1.10.0-Development-Roadmap.md` for the current 1.10 development contract.
+### Lifecycle, hardening, samples, and package acceptance
+
+- Keeps live observations generation-scoped: invalidation/resume expires stale live evidence while valid static terminal-description evidence survives.
+- Qualifies suspended/closed query ownership, caller cancellation, unavailable endpoints, concurrent side-effect-free inspection, repeated verification, and disposal/query shutdown behavior without adding another input reader or synchronization model.
+- Preserves viable multi-backend semantics: negative evidence for one backend does not erase a separate advertised/verified alternate capable of satisfying the same semantic operation.
+- Adds `Icod.Terminal.CapabilityPlanning.Sample`, demonstrating inspect-first planning and optional explicit verification without branching on terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
+- Adds a fresh NuGet-only capability-planning consumer which references only `Icod.Terminal`; NuGet resolves `Icod.TermInfo` and `Icod.Timing` transitively on `net8.0`, `net9.0`, and `net10.0`.
+- Simplifies prerelease package verification so development packages prove artifact shape, XML docs, restore, and executable package consumption without being forced through final-release documentation ceremony; stable releases retain the stricter closure checks.
+
+### Compatibility
+
+- Finalizes the 1.10 public API fingerprint as `ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb` while retaining every historical baseline unchanged.
+- Retains `net8.0`, `net9.0`, and `net10.0`, Windows/Linux/macOS runtime validation, existing `Icod.DCurses` acceptance/soak witnesses, and the stable `1.0.0` compatibility floor.
+- Adds no public protocol-backend selector, raw evidence ledger, arbitrary terminfo-capability-name API, terminal-brand heuristic, or requirement that every semantic capability have a live probe.
+
+See `docs/releases/1.10.0.md`, `docs/Capability-Inspection-and-Planning.md`, `docs/Public-API-Baseline-1.10.md`, `docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`, `docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md`, and `Icod.Terminal-1.10.0-Development-Roadmap.md` for the complete 1.10 contract.
 
 ## 1.9.0
 
