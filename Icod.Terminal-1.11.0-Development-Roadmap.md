@@ -2,8 +2,8 @@
 
 **Release:** `1.11.0`  
 **Theme:** persistent raster resources and placements  
-**Status:** C110 design/API-regret gate documented; written-spec review pending  
-**Development version:** `1.10.0` until implementation planning is approved  
+**Status:** C110 complete; C111 persistent Kitty protocol foundation active  
+**Development version:** `1.11.0-alpha.1`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.10.0`
 
@@ -18,6 +18,10 @@ The release deliberately does **not** turn `Icod.Terminal` into a virtual-screen
 The approved architectural specification is:
 
 [`docs/superpowers/specs/2026-09-11-1.11.0-persistent-raster-design.md`](docs/superpowers/specs/2026-09-11-1.11.0-persistent-raster-design.md)
+
+The implementation plan is:
+
+[`docs/superpowers/plans/2026-09-11-1.11.0-persistent-raster.md`](docs/superpowers/plans/2026-09-11-1.11.0-persistent-raster.md)
 
 ## Architectural objectives
 
@@ -65,11 +69,13 @@ The internal live-registry ceilings are frozen at:
 4096 persistent placements per session
 ```
 
+Persistent resource upload is acknowledged. It uses a private Kitty image number (`I`) and deliberately does not use quiet mode so the terminal can return the assigned nonzero image id (`i`). Existing ephemeral raster bytes remain unchanged.
+
 ## Tranche plan
 
 ```text
-C110  architecture and public API regret gate                     review pending
-C111  persistent Kitty protocol foundation                       planned
+C110  architecture and public API regret gate                     complete
+C111  persistent Kitty protocol foundation                       active
 C112  persistent capability integration                          planned
 C113  session-owned resource/placement registries                planned
 C114  persistent resource creation/upload                        planned
@@ -82,25 +88,26 @@ C119  public API/documentation/compatibility/release closure     planned
 
 ## C110 — architecture and public API regret gate
 
-Freeze the ownership model before production implementation.
+**Accepted.** The ownership model and public contract are frozen for implementation planning in:
 
-Acceptance requires:
+[`docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md`](docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md)
 
-- approved persistent-resource/placement design;
+C110 establishes:
+
 - explicit distinction between `RasterGraphics` and `PersistentRasterGraphics`;
-- opaque public identity;
+- opaque public resource/placement identity;
 - no public Kitty numeric identifiers;
 - no scene-graph/layout ownership;
 - no hidden replay contract;
 - defined parent/child lifetime rules;
-- defined lifecycle-generation invalidation;
+- generation-scoped terminal-resident certainty;
 - defined commit/cancellation/partial-failure semantics;
 - exact controlled-result/exception behavior;
-- `Columns` / `Rows` range frozen at `1..16384`;
-- registry ceilings frozen at 256 resources / 4096 placements;
-- public API surface reviewed for long-term regret.
+- `Columns` / `Rows` range `1..16384`;
+- registry ceilings of 256 resources / 4096 placements;
+- the additive public API shape approved before production implementation.
 
-C110 produces documentation/specification only. Production implementation begins after the written design and implementation plan are approved.
+C110 is design-only and intentionally changes no runtime API or behavior.
 
 ## C111 — persistent Kitty protocol foundation
 
@@ -119,12 +126,15 @@ remove terminal-side resource data
 Acceptance requires:
 
 - direct-transfer media only;
+- acknowledged transmit-only upload using `a=t` and private image number `I`;
+- no quiet-mode `q` on acknowledged upload;
 - bounded Base64 chunking retained;
 - image-number upload correlation;
 - acknowledgement parsing returning terminal image identity;
 - private placement-id encoding;
 - exact regression vectors for command/control-data bytes;
 - zero/overflow/duplicate-field rejection;
+- existing ephemeral `a=T,...,q=2` bytes remain unchanged;
 - no public raw Kitty writer.
 
 ## C112 — persistent capability integration
@@ -211,8 +221,8 @@ Acceptance requires:
 - callers reposition by moving the terminal cursor through ordinary terminal operations before update;
 - stale placement update returns controlled `Unavailable` before output;
 - disposed placement update throws `ObjectDisposedException`;
-- placement disposal is locally idempotent and sends at most one quiet targeted delete while current;
-- resource disposal closes child placements before freeing resource data;
+- placement disposal is locally idempotent and sends at most one targeted soft-delete command while current;
+- resource disposal closes child placements before freeing resource data with the uppercase image-delete selector;
 - local identity ownership is released even when terminal cleanup transport fails;
 - cleanup failures are surfaced/aggregated rather than hidden;
 - no stale numeric identity is reused while live ownership remains.
