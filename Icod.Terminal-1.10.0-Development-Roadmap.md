@@ -2,14 +2,14 @@
 
 **Release:** `1.10.0`  
 **Theme:** semantic capability inspection and planning  
-**Status:** C100–C104 complete; C105 lifecycle/invalidation/concurrency qualification active  
-**Development version:** `1.10.0-alpha.1`  
+**Status:** C100–C109 complete; release candidate awaiting maintainer merge/tag/publication  
+**Development version:** `1.10.0`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.9.0`
 
 ## Why this release exists
 
-Versions 1.5 through 1.9 built a mature internal model for terminal capability evidence, semantic operation routing, live observation, endpoint availability, and lifecycle invalidation. Higher-level consumers still cannot inspect that knowledge through a small public semantic contract without either performing protocol-specific queries themselves or learning implementation details that should remain internal to `Icod.Terminal`.
+Versions 1.5 through 1.9 built a mature internal model for terminal capability evidence, semantic operation routing, live observation, endpoint availability, and lifecycle invalidation. Higher-level consumers still could not inspect that knowledge through a small public semantic contract without either performing protocol-specific queries themselves or learning implementation details that should remain internal to `Icod.Terminal`.
 
 Version 1.10 exposes a deliberately reduced semantic planning surface while preserving the existing separation between static terminal descriptions and the live terminal conversation owned by `Icod.Terminal`.
 
@@ -121,24 +121,16 @@ public ValueTask<TerminalCapabilityStatus> VerifyCapabilityAsync(
 
 Verification attempts to strengthen evidence only for capabilities with an already-reviewed bounded probe. The initial probe set is `KeyboardReporting` and `RasterGraphics`. Other capabilities return their current inspection status without invented protocol traffic. Unavailable endpoints and already-decisive live evidence also short-circuit without probing.
 
-The reviewed C104 public API snapshot is identical across `net8.0`, `net9.0`, and `net10.0`, with provisional development fingerprint:
+The reviewed 1.10 public API snapshot is identical across `net8.0`, `net9.0`, and `net10.0`, with final fingerprint:
 
 ```text
 ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 ```
 
-The current provisional 1.10 baseline is maintained in:
+The final 1.10 baseline is maintained in:
 
 - [`docs/Public-API-Baseline-1.10.md`](docs/Public-API-Baseline-1.10.md)
 - `docs/Public-API-Baseline-1.10.sha256`
-
-The final release baseline remains a C108 responsibility.
-
-## Prerelease packaging policy
-
-Development prereleases such as `1.10.0-alpha.1` must still produce a real NuGet artifact, generated XML documentation for every supported TFM, and a fresh NuGet-only consumer which restores and runs against the packed artifact.
-
-Final-release documentation ceremony is reserved for stable package versions. Curated final release-note text, stable changelog/README release links, and exact package-release-note release markers are not used as prerelease compatibility gates. Stable releases retain those stricter closure checks.
 
 ## Public capability-planning direction
 
@@ -183,7 +175,7 @@ Those remain implementation details.
 11. A capability without a reviewed support probe is not assigned fabricated verification traffic merely to satisfy the public API.
 12. Existing 1.x APIs and enum numeric values remain stable unless an additive minor-version change is deliberately reviewed and baselined.
 
-## Tranche plan
+## Tranche result
 
 ```text
 C100  dependency-decoupling and validation hygiene                 complete
@@ -191,67 +183,53 @@ C101  semantic capability vocabulary and API regret gate          complete
 C102  side-effect-free capability inspection model                complete
 C103  session inspection integration and evidence projection      complete
 C104  explicit bounded verification / preparation                 complete
-C105  lifecycle, invalidation, and concurrent-query semantics     active
-C106  samples and downstream planning acceptance                  planned
-C107  adversarial/package hardening                               planned
-C108  public API/documentation/compatibility freeze               planned
-C109  1.10.0 release closure                                      planned
+C105  lifecycle, invalidation, and concurrent-query semantics     complete
+C106  samples and downstream planning acceptance                  complete
+C107  adversarial/package hardening                               complete
+C108  public API/documentation/compatibility freeze               complete
+C109  1.10.0 release closure                                      complete
 ```
 
-## C101 — semantic capability vocabulary and API regret gate
+## C105–C108 acceptance
 
-Complete. The public vocabulary is intentionally curated rather than exposing the internal 21-member semantic-operation enum. Evidence provenance is dependency-neutral and protocol-neutral.
+C105–C108 are accepted as recorded in:
 
-## C102 — side-effect-free capability inspection model
+[`docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md`](docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md)
 
-Complete. The immutable public result model separates support, endpoint availability, evidence lifetime, and current usability.
+The accepted feature head was:
 
-## C103 — session inspection integration and evidence projection
+```text
+f5272594f31188e4c3f096e61e226c7d550319b6
+```
 
-Complete. `InspectCapability(...)` projects the existing internal evidence/routing model without terminal I/O, hidden queries, backend leakage, or dependency leakage.
+Acceptance workflow:
 
-## C104 — explicit bounded verification / preparation
+```text
+#1518 / 34594556128
+```
 
-Complete. Verification validates the public capability at entry, honors caller cancellation, short-circuits unavailable endpoints and decisive live evidence, and reuses only the existing bounded Kitty keyboard / raster probe paths. No generic raw-query escape hatch was added.
-
-## C105 — lifecycle, invalidation, and concurrent-query semantics
-
-Qualify suspend/resume generation changes, stale live evidence, concurrent inspection, concurrent verification, cancellation, timeout, disposal, and query ownership.
-
-At minimum C105 must prove:
-
-- generation invalidation removes stale live evidence without deleting valid static evidence;
-- concurrent inspection remains side-effect free and deterministic;
-- pre-cancelled verification emits no terminal traffic;
-- verification does not bypass suspended/closed query ownership;
-- unavailable endpoints do not trigger probe traffic;
-- capabilities without reviewed probes remain inspection-only;
-- disposal/query shutdown bounds any in-flight verification work.
-
-Production changes are required only where these tests reveal a real gap in the existing session/query machinery.
-
-## C106 — samples and downstream planning acceptance
-
-Add a focused sample that demonstrates planning without protocol branching. A higher-level consumer should be able to choose a behavior from semantic capability knowledge without checking terminal brand or backend identity.
-
-Retain current `Icod.DCurses` acceptance as a downstream witness.
-
-## C107 — adversarial/package hardening
-
-Exercise malformed observations, conflicting evidence, lifecycle churn, repeated verification, redirected endpoints, fresh NuGet-only consumers, supported TFMs, and bounded-resource guarantees.
-
-## C108 — public API/documentation/compatibility freeze
-
-Freeze the final 1.10 public API fingerprint and align Architecture, capability/evidence documentation, Security/Privacy, Compatibility/Versioning, README, samples, and XML documentation.
+These tranches established lifecycle/invalidation/concurrency qualification, the capability-planning sample, downstream/package acceptance, adversarial hardening, and the final public API freeze.
 
 ## C109 — release closure
 
-Set final 1.10 package identity, changelog/release notes, run the complete unchanged-head Staging qualification, and hand the PR back to the maintainer for merge/tag/publication.
+C109 closes the development line as a stable `1.10.0` release candidate.
 
-Merge, tagging, GitHub Release creation, and NuGet publication remain maintainer actions.
+Release-facing state now records:
+
+- repository/package identity `1.10.0` with no prerelease suffix;
+- stable package release notes in `Icod.Terminal.csproj`;
+- stable 1.10 README installation and capability-planning guidance;
+- final `CHANGELOG.md` 1.10 entry;
+- curated `docs/releases/1.10.0.md` release notes;
+- permanent Architecture and Security/Privacy capability-planning contracts;
+- `docs/Compatibility-and-Versioning.md` promoted to the 1.10 baseline and 1.10 enum/API contract;
+- final public API fingerprint `ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb`;
+- this versioned roadmap closed and the long-range roadmap handed to 1.11 persistent raster resource/placement work.
+
+The final C109 exact-head Staging workflow is the final acceptance witness for merge readiness. Merge, tagging, GitHub Release creation, and NuGet publication remain maintainer actions.
 
 ## Explicit exclusions
 
 Version 1.10 does not expose the internal backend registry, routing preference scores, raw evidence ledger, arbitrary protocol frames, dependency-specific evidence identities, terminal-brand heuristics, persistent raster resources/placements, image codecs, PTY/ConPTY hosting, or DCurses virtual-screen policy.
 
-Persistent raster resource/placement lifecycle remains the planned 1.11 track after capability planning is stable.
+Persistent raster resource/placement lifecycle is the next planned 1.11 development track.
