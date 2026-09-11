@@ -27,8 +27,19 @@ namespace Icod.Terminal;
 internal sealed class KittyGraphicsPersistentResponseMatcher :
 	ITerminalResponseMatcher,
 	ICorrelatedTerminalResponseMatcher {
+	private readonly bool validateMatchedResponse;
+
 	internal KittyGraphicsPersistentResponseMatcher(
 		uint imageNumber
+	) : this(
+		imageNumber,
+		validateMatchedResponse: true
+	) {
+	}
+
+	internal KittyGraphicsPersistentResponseMatcher(
+		uint imageNumber,
+		bool validateMatchedResponse
 	) {
 		if ( 0 == imageNumber ) {
 			throw new ArgumentOutOfRangeException(
@@ -38,6 +49,7 @@ internal sealed class KittyGraphicsPersistentResponseMatcher :
 			);
 		}
 		this.ImageNumber = imageNumber;
+		this.validateMatchedResponse = validateMatchedResponse;
 	}
 
 	internal uint ImageNumber {
@@ -77,10 +89,12 @@ internal sealed class KittyGraphicsPersistentResponseMatcher :
 			return false;
 		}
 
-		_ = KittyGraphicsPersistentCreationResponse.Parse(
-			frame,
-			this.ImageNumber
-		);
+		if ( this.validateMatchedResponse ) {
+			_ = KittyGraphicsPersistentCreationResponse.Parse(
+				frame,
+				this.ImageNumber
+			);
+		}
 		return true;
 	}
 

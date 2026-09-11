@@ -86,7 +86,8 @@ public sealed partial class TerminalSession {
 		}
 
 		KittyGraphicsPersistentResponseMatcher matcher = new(
-			resourceState.ImageNumber
+			resourceState.ImageNumber,
+			validateMatchedResponse: false
 		);
 		ValueTask<TerminalQueryResponseResult> transaction;
 		try {
