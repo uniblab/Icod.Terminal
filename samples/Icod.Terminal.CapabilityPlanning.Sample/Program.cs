@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.CapabilityPlanning.Sample
-	Sample application demonstrating semantic capability planning with Icod.Terminal.
+	Sample application demonstrating Icod.Terminal CapabilityPlanning features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
