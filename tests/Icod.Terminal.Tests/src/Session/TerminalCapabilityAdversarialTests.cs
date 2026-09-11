@@ -1,0 +1,295 @@
+/*
+	Icod.Terminal.Tests
+	Automated test suite for the Icod.Terminal library.
+	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
+*/
+
+/*
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+namespace Icod.Terminal.Tests.Session;
+
+using Icod.Terminal;
+using Icod.TermInfo;
+using Xunit;
+
+/// <summary>
+/// Exercises C107 adversarial capability-planning evidence and repeated-use behavior.
+/// </summary>
+public sealed class TerminalCapabilityAdversarialTests {
+	[Fact]
+	public async Task UnsupportedBackendDoesNotEraseIndependentStaticAlternate() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "capability-conflict" )
+			.SetExtendedString( "Ms", "\u001b]52;%p1%s;%p2%s\u001b\\" )
+			.Build();
+		RecordingOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			terminal,
+			new RecordingTerminalControlProvider(),
+			output
+		);
+
+		TerminalCapabilityStatus staticStatus = session.InspectCapability(
+			TerminalCapability.ClipboardWrite
+		);
+		Assert.Equal( TerminalCapabilitySupport.Advertised, staticStatus.Support );
+		Assert.Equal(
+			TerminalCapabilityEvidenceKind.StaticDescription,
+			staticStatus.EvidenceKind
+		);
+
+		session.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.Osc52Clipboard,
+			TerminalCapabilitySupportState.Unsupported,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+
+		TerminalCapabilityStatus alternateStatus = session.InspectCapability(
+			TerminalCapability.ClipboardWrite
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Advertised,
+			alternateStatus.Support
+		);
+		Assert.Equal(
+			TerminalCapabilityEvidenceKind.StaticDescription,
+			alternateStatus.EvidenceKind
+		);
+		Assert.True( alternateStatus.IsUsable );
+
+		session.InvalidateState();
+
+		TerminalCapabilityStatus restoredStaticStatus = session.InspectCapability(
+			TerminalCapability.ClipboardWrite
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Advertised,
+			restoredStaticStatus.Support
+		);
+		Assert.Equal(
+			TerminalCapabilityEvidenceKind.StaticDescription,
+			restoredStaticStatus.EvidenceKind
+		);
+		Assert.True( restoredStaticStatus.IsUsable );
+		Assert.Empty( output.Bytes );
+	}
+
+	[Fact]
+	public async Task RepeatedInvalidationNeverRevivesStaleLiveEvidence() {
+		RecordingOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			TerminalProfiles.Dumb,
+			new RecordingTerminalControlProvider(),
+			output
+		);
+
+		for ( int generation = 0; generation < 4; ++generation ) {
+			session.RecordSemanticBackendEvidence(
+				TerminalProtocolBackend.ApcKittyGraphics,
+				TerminalCapabilitySupportState.Verified,
+				TerminalCapabilityEvidenceSource.ProtocolResponse
+			);
+			TerminalCapabilityStatus verified = session.InspectCapability(
+				TerminalCapability.RasterGraphics
+			);
+			Assert.Equal( TerminalCapabilitySupport.Verified, verified.Support );
+			Assert.Equal(
+				TerminalCapabilityEvidenceKind.LiveObservation,
+				verified.EvidenceKind
+			);
+
+			session.InvalidateState();
+
+			TerminalCapabilityStatus invalidated = session.InspectCapability(
+				TerminalCapability.RasterGraphics
+			);
+			Assert.Equal( TerminalCapabilitySupport.Unknown, invalidated.Support );
+			Assert.Equal(
+				TerminalCapabilityEvidenceKind.None,
+				invalidated.EvidenceKind
+			);
+		}
+		Assert.Empty( output.Bytes );
+	}
+
+	[Fact]
+	public async Task RepeatedVerificationOfDecisiveEvidenceEmitsNoTraffic() {
+		RecordingOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			TerminalProfiles.Dumb,
+			new RecordingTerminalControlProvider(),
+			output
+		);
+		session.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.ApcKittyGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+
+		for ( int attempt = 0; attempt < 16; ++attempt ) {
+			TerminalCapabilityStatus status = await session.VerifyCapabilityAsync(
+				TerminalCapability.RasterGraphics
+			);
+			Assert.Equal( TerminalCapabilitySupport.Verified, status.Support );
+			Assert.Equal(
+				TerminalCapabilityEvidenceKind.LiveObservation,
+				status.EvidenceKind
+			);
+			Assert.True( status.IsUsable );
+		}
+		Assert.Empty( output.Bytes );
+	}
+
+	[Fact]
+	public async Task UnknownCapabilityIsRejectedBeforeAnyTraffic() {
+		RecordingOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			TerminalProfiles.Dumb,
+			new RecordingTerminalControlProvider(),
+			output
+		);
+
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+			async () => await session.VerifyCapabilityAsync(
+				(TerminalCapability)int.MaxValue
+			)
+		);
+		Assert.Empty( output.Bytes );
+	}
+
+	private static ValueTask<TerminalSession> OpenSessionAsync(
+		TerminalDescription terminal,
+		ITerminalControlProvider controlProvider,
+		ITerminalOutput output
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+		ArgumentNullException.ThrowIfNull( controlProvider );
+		ArgumentNullException.ThrowIfNull( output );
+
+		return TerminalSession.OpenAsync(
+			controlProvider,
+			TerminalEndpoint.StandardInput,
+			TerminalEndpoint.StandardOutput,
+			new EmptyTerminalInput(),
+			output,
+			new TerminalSessionOptions {
+				TerminalOverride = terminal,
+				ConfigureOutput = false,
+				ObserveLifecycleEvents = false,
+				RequireInteractiveOutput = false
+			}
+		);
+	}
+
+	private sealed class EmptyTerminalInput : ITerminalInput {
+		public ValueTask<int> ReadAsync(
+			Memory<byte> buffer,
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			return ValueTask.FromResult( 0 );
+		}
+	}
+
+	private sealed class RecordingOutput : ITerminalOutput {
+		private readonly object sync = new();
+		private readonly List<byte> bytes = [];
+
+		internal IReadOnlyList<byte> Bytes {
+			get {
+				lock ( this.sync ) {
+					return this.bytes.ToArray();
+				}
+			}
+		}
+
+		public ValueTask WriteAsync(
+			ReadOnlyMemory<byte> buffer,
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			lock ( this.sync ) {
+				this.bytes.AddRange( buffer.ToArray() );
+			}
+			return ValueTask.CompletedTask;
+		}
+
+		public ValueTask FlushAsync(
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			return ValueTask.CompletedTask;
+		}
+	}
+
+	private sealed class RecordingTerminalControlProvider : ITerminalControlProvider {
+		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
+			0,
+			0,
+			0,
+			0x0002UL,
+			new byte[ 32 ],
+			0,
+			32,
+			0,
+			new TerminalSpeed( 13, 9600 ),
+			new TerminalSpeed( 13, 9600 )
+		);
+
+		public TerminalControlResult<TerminalEndpointObservation> Observe(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalEndpointObservation>.Available(
+				new TerminalEndpointObservation(
+					true,
+					null,
+					TerminalPlatformKind.PosixTermios,
+					TerminalControlCapabilities.Attachment
+						| TerminalControlCapabilities.ModeRead
+						| TerminalControlCapabilities.ModeWrite
+				)
+			);
+		}
+
+		public TerminalControlResult<TerminalSize> GetSize(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalSize>.Unsupported(
+				"Size is not required by this test."
+			);
+		}
+
+		public TerminalControlResult<TerminalModeSnapshot> GetMode(
+			TerminalEndpoint endpoint
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			return TerminalControlResult<TerminalModeSnapshot>.Available( this.baseline );
+		}
+
+		public TerminalControlMutationResult SetMode(
+			TerminalEndpoint endpoint,
+			TerminalModeSnapshot mode,
+			TerminalModeApplyTiming timing
+		) {
+			ArgumentNullException.ThrowIfNull( endpoint );
+			ArgumentNullException.ThrowIfNull( mode );
+			if ( !Enum.IsDefined( timing ) ) {
+				throw new ArgumentOutOfRangeException( nameof( timing ) );
+			}
+			return TerminalControlMutationResult.Success();
+		}
+	}
+}

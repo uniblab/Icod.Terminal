@@ -9,16 +9,16 @@
 
 ## Status
 
-`1.9.0` is the current release candidate on this development branch. It adds a **protocol-neutral unsolicited semantic-event path** to the existing authoritative terminal reader and completes interactive Kitty OSC 99 desktop notifications with typed activation, button, close, and close-tracking-unavailable reports.
+`1.10.0` is the current stable feature line. It adds protocol-neutral semantic capability inspection and explicit bounded verification while preserving the existing one-reader, lifecycle, routing, restoration, and security contracts.
 
-The stable `1.0.0` compatibility floor remains unchanged. Merge, post-merge Release validation, tagging, and publication are maintainer-controlled release actions and are not implied by this branch status.
+The stable `1.0.0` compatibility floor remains unchanged. `Icod.Terminal` treats successful restore/build of its declared package graph as dependency compatibility evidence rather than making one resolved `Icod.TermInfo` or `Icod.Timing` version a second test-level compatibility contract.
 
 ## Installation
 
-After `1.9.0` is published, install it with:
+Install the stable package with:
 
 ```text
-dotnet add package Icod.Terminal --version 1.9.0
+dotnet add package Icod.Terminal --version 1.10.0
 ```
 
 The package targets:
@@ -29,7 +29,7 @@ net9.0
 net10.0
 ```
 
-and depends on `Icod.TermInfo 1.10.0` and `Icod.Timing 1.0.0`.
+`Icod.Terminal` declares its direct NuGet requirements in package metadata. Tests, samples, and auxiliary verification tools do not independently pin those transitive dependencies merely to duplicate the package declaration.
 
 ## Architecture
 
@@ -47,7 +47,7 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and terminfo expansion.
-- `Icod.Terminal` owns the live terminal conversation: endpoint observation, native modes, input decoding, lifecycle, active query routing, unsolicited semantic events, capability evidence, semantic terminal output, protocol framing/routing, raster output, and scoped/reversible terminal state.
+- `Icod.Terminal` owns the live terminal conversation: endpoint observation, native modes, input decoding, lifecycle, active query routing, unsolicited semantic events, semantic capability evidence/planning, semantic output, protocol framing/routing, raster output, and scoped/reversible terminal state.
 - `Icod.DCurses` owns higher-level cells, windows, virtual-screen state, refresh/diff policy, and curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -74,9 +74,52 @@ A live `TerminalSession` owns the authoritative input reader for its transport. 
 
 For a curses-style virtual screen, prefer `Icod.DCurses` rather than rebuilding cell/window/refresh policy directly over `TerminalSession`.
 
+## Semantic capability inspection and planning
+
+Version 1.10 exposes a deliberately small semantic planning vocabulary. Callers ask about operations such as raster graphics or modern keyboard reporting without learning which protocol backend, terminal description source, or terminal brand is involved.
+
+Side-effect-free inspection reads only current session knowledge:
+
+```csharp
+TerminalCapabilityStatus raster = session.InspectCapability(
+	TerminalCapability.RasterGraphics
+);
+
+if ( raster.IsUsable ) {
+	// Offer or use the raster presentation path.
+} else {
+	// Choose a non-raster path.
+}
+```
+
+`TerminalCapabilityStatus` keeps support, endpoint availability, evidence lifetime, and current usability separate. Public evidence is intentionally only:
+
+```text
+None
+StaticDescription
+LiveObservation
+```
+
+When stronger evidence is worth terminal traffic, verification is explicit:
+
+```csharp
+if ( raster.Support == TerminalCapabilitySupport.Unknown
+	&& raster.EndpointAvailability
+		== TerminalCapabilityEndpointAvailability.Available ) {
+	raster = await session.VerifyCapabilityAsync(
+		TerminalCapability.RasterGraphics,
+		cancellationToken
+	);
+}
+```
+
+Version 1.10 performs live verification only for capabilities with existing reviewed bounded probes. Initially those are `KeyboardReporting` and `RasterGraphics`. Other capabilities return current inspection status rather than inventing probe traffic.
+
+See [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md) for the permanent contract.
+
 ## Unsolicited semantic events
 
-Version 1.9 extends the unified event model with `TerminalEventKind.Semantic` while preserving all existing enum numeric values.
+Version 1.9 extended the unified event model with `TerminalEventKind.Semantic` while preserving all existing enum numeric values.
 
 Incoming framed traffic is assigned in this order:
 
@@ -108,7 +151,7 @@ There is no second `ReadSemanticEventAsync(...)` path. Semantic events share the
 
 ## Interactive Kitty notifications
 
-The existing `SendKittyNotificationAsync(...)` API now supports explicit opt-in reporting through `KittyNotificationOptions`:
+`SendKittyNotificationAsync(...)` supports explicit opt-in reporting through `KittyNotificationOptions`:
 
 ```csharp
 await session.SendKittyNotificationAsync(
@@ -124,8 +167,6 @@ await session.SendKittyNotificationAsync(
 ```
 
 Reporting requires a caller-supplied identifier. Button reports are one-based. Notification identifiers and reported interactions are validated but unauthenticated terminal-controlled input; applications must not use them as an authorization boundary.
-
-When the new interactive options are unused, existing Kitty notification behavior remains compatible with the 1.4 surface.
 
 ## Raster graphics
 
@@ -152,11 +193,15 @@ The raster contract deliberately does not expose raw DCS/Sixel or APC/Kitty disp
 
 ### One authoritative input path
 
-Application input, semantic events, lifecycle traffic, and terminal query responses share one coordinated session. Queries are bounded and correlation-aware. No feature opens a competing terminal reader.
+Application input, semantic events, lifecycle traffic, and terminal query responses share one coordinated session. Queries and explicit capability verification reuse that same bounded, correlation-aware path. No feature opens a competing terminal reader.
 
 ### Deterministic ownership
 
 Active query responses have first refusal on matching framed traffic. Recognized unsolicited semantic reports are classified next, followed by ordinary application input. A frame is never intentionally double-delivered as both a query response and a semantic event.
+
+### Truthful capability evidence
+
+Static description evidence and generation-scoped live observation remain distinct. Timeout is not automatically `Unsupported`; endpoint unavailability is not rewritten as lack of terminal support; negative evidence for one backend does not erase an independent viable alternate.
 
 ### Bounded protocol handling
 
@@ -176,6 +221,7 @@ Committed multi-frame graphics operations do not intentionally truncate after co
 
 The stable 1.x surface includes:
 
+- protocol-neutral semantic capability inspection and explicit bounded verification;
 - application text and resolved terminfo capability output;
 - terminal input, lifecycle events, bracketed paste, focus, mouse, and negotiated modern keyboard reporting;
 - unsolicited protocol-neutral semantic events, beginning with interactive notification reports;
@@ -197,18 +243,21 @@ The stable 1.x surface includes:
 The [`samples`](samples/README.md) directory contains focused, buildable examples grouped by consumer goal. Recommended starting points are:
 
 - `Icod.Terminal.Sample` — session construction and basic event reading;
-- `Icod.Terminal.RichInput.Sample` — text, keys, paste, focus, mouse, and modern keyboard reporting;
+- `Icod.Terminal.RichInput.Sample` — text, keys, paste, focus, mouse, lifecycle, and semantic events;
+- `Icod.Terminal.CapabilityPlanning.Sample` — inspect-first semantic planning plus optional explicit verification;
 - `Icod.Terminal.Query.Sample` — bounded terminal queries;
 - `Icod.Terminal.Notification.Sample` — OSC 9/777/99 notification output plus `--kitty-interactive` semantic-event reporting;
 - `Icod.Terminal.RasterGraphics.Sample` — backend-neutral raster display without image-decoder dependencies;
 - `Icod.Terminal.SemanticPrompt.Sample` — portable prompt/command metadata;
 - `Icod.Terminal.VsCodeShellIntegration.Sample` and `Icod.Terminal.ITerm2ShellIntegration.Sample` — explicit vendor-specific shell-integration examples.
 
-Focused sample verifiers build the newer protocol and raster examples on every supported target framework during repository validation.
+Focused sample verifiers build capability planning and newer protocol/raster examples on every supported target framework during repository validation.
 
 ## Security and privacy
 
 Terminal protocol traffic is external input/output and must be treated accordingly. `Icod.Terminal` validates and bounds semantic protocol data and deliberately avoids generic raw vendor-command/event APIs as the normal extension mechanism.
+
+`InspectCapability(...)` emits no terminal traffic. `VerifyCapabilityAsync(...)` is explicit precisely because it may send bounded queries whose responses can reveal terminal/environment characteristics. A `Verified` result is support evidence, not authentication of the terminal, desktop session, or user.
 
 Notification interaction reports can be fabricated by the terminal path. An identifier is correlation data, not authentication. Successful notification emission does not prove that the desktop displayed the notification, and a later typed report does not prove a trusted user action.
 
@@ -218,12 +267,12 @@ See [Security and Privacy](docs/Security-and-Privacy.md).
 
 ## Compatibility
 
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control-language/query infrastructure; 1.7 introduced the public raster contract; 1.8 added Kitty Graphics beneath that unchanged raster surface; and 1.9 adds the protocol-neutral semantic-event envelope plus interactive Kitty notification request options.
+Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control-language/query infrastructure; 1.7 introduced the public raster contract; 1.8 added Kitty Graphics beneath that unchanged raster surface; 1.9 added the protocol-neutral semantic-event envelope plus interactive Kitty notification request options; and 1.10 adds the protocol-neutral capability-planning surface.
 
-The final 1.9 public API fingerprint is:
+The final 1.10 public API fingerprint is:
 
 ```text
-e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
+ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 ```
 
 See [Compatibility and Versioning](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [Migration to 1.0](docs/Migration-to-1.0.md).
@@ -232,9 +281,10 @@ See [Compatibility and Versioning](docs/Compatibility-and-Versioning.md). Consum
 
 Start with:
 
-- [1.9.0 release notes](docs/releases/1.9.0.md)
+- [1.10.0 release notes](docs/releases/1.10.0.md)
+- [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md)
+- [1.10.0 development roadmap](Icod.Terminal-1.10.0-Development-Roadmap.md)
 - [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
-- [1.9.0 development roadmap](Icod.Terminal-1.9.0-Development-Roadmap.md)
 - [Architecture](docs/Architecture.md)
 - [Input and Events](docs/Input-and-Events.md)
 - [Queries and Responses](docs/Queries-and-Responses.md)

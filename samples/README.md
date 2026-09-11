@@ -11,6 +11,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Open a session, inspect identity/endpoints, and read an event | `Icod.Terminal.Sample` |
 | Inspect rich input plus lifecycle and unsolicited semantic events | `Icod.Terminal.RichInput.Sample` |
 | Run bounded terminal queries and verify coexistence with the unified event stream | `Icod.Terminal.Query.Sample` |
+| Plan behavior from semantic capability knowledge without protocol branching | `Icod.Terminal.CapabilityPlanning.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples below |
@@ -57,6 +58,26 @@ dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Samp
 ```
 
 Timeout is not treated as proof that a terminal lacks support.
+
+### `Icod.Terminal.CapabilityPlanning.Sample`
+
+Demonstrates the 1.10 semantic capability-planning surface without terminal-brand, protocol-family, backend, or dependency-specific branching.
+
+By default the sample performs only side-effect-free inspection:
+
+```text
+dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj -f net10.0
+```
+
+Pass `--verify` to explicitly request bounded verification for the semantic capabilities which currently have reviewed probes:
+
+```text
+dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj -f net10.0 -- --verify
+```
+
+The sample reports support, endpoint availability, evidence kind, and current usability, then chooses a raster/non-raster presentation plan using only `TerminalCapabilityStatus.IsUsable`. It does not ask whether Kitty or Sixel won, inspect `TERM`, branch on emulator identity, or reference `Icod.TermInfo` directly.
+
+`packaging/VerifyCapabilityPlanningSample.ps1` builds this sample on every supported TFM during repository validation.
 
 ## Raster graphics
 
@@ -213,10 +234,11 @@ For a general terminal-aware application, a useful progression is:
 ```text
 Icod.Terminal.Sample
     -> Icod.Terminal.RichInput.Sample
+    -> Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.Query.Sample
     -> one focused state/output sample relevant to the application
 ```
 
-Applications interested in raster output can go directly from the basic session sample to `Icod.Terminal.RasterGraphics.Sample`. Shell integrations should prefer portable semantic APIs first, then use vendor-specific samples only when intentionally targeting those protocols.
+Applications interested in raster output can go directly from the basic session sample to `Icod.Terminal.CapabilityPlanning.Sample` and then `Icod.Terminal.RasterGraphics.Sample`. Shell integrations should prefer portable semantic APIs first, then use vendor-specific samples only when intentionally targeting those protocols.
 
 Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, or refresh policy directly.

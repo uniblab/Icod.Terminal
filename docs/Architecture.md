@@ -43,6 +43,7 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 - one authoritative input-reader/decoder path;
 - active query/response correlation;
 - unsolicited protocol-neutral semantic event routing;
+- semantic capability evidence, inspection, and bounded verification;
 - bounded incremental control-language parsing;
 - semantic terminal-output operations;
 - reversible presentation, rich-input, and color ownership;
@@ -55,7 +56,7 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 
 `Icod.DCurses` owns two-dimensional presentation policy: cells, styles, windows, pads, virtual-screen state, Unicode display width, clipping, wrapping, scrolling, damage tracking, desired-vs-physical screen comparison, and refresh strategy.
 
-DCurses may request semantic raster output from `Icod.Terminal`; it should not reimplement terminal modes, query routing, unsolicited semantic-event routing, Sixel/Kitty framing, graphics capability evidence, or lifecycle restoration.
+DCurses may request semantic capability planning and raster output from `Icod.Terminal`; it should not reimplement terminal modes, query routing, unsolicited semantic-event routing, Sixel/Kitty framing, capability evidence, or lifecycle restoration.
 
 ### Future `Icod.Pty`
 
@@ -70,6 +71,8 @@ This is the preferred level for applications.
 `TerminalSession` exposes semantic operations for:
 
 - reading normalized terminal events, including typed unsolicited semantic observations;
+- inspecting current semantic capability knowledge without terminal I/O;
+- explicitly requesting bounded verification where a reviewed live probe exists;
 - querying live terminal state through typed query methods;
 - writing application text;
 - emitting reviewed semantic terminal metadata/control operations;
@@ -104,6 +107,7 @@ protocol backend
 control family
 support state
 evidence source
+endpoint availability
 ```
 
 Static TermInfo/profile advertisement and generation-scoped live evidence are distinct. A terminal name, `TERM`, environment variable, host OS, emulator brand, registry order, or caller preference is not automatically capability proof.
@@ -113,6 +117,30 @@ For Sixel, Primary Device Attributes parameter `4` is positive protocol-response
 For Kitty Graphics in 1.8, the library uses the protocol-defined correlated Kitty query immediately followed by Primary DA as a barrier. A correlated Kitty APC response verifies `ApcKittyGraphics`; Primary DA arriving first is reviewed negative protocol-response evidence for that concrete probe. Silence before either authoritative result remains unknown.
 
 Capability evidence is generation-scoped where it describes live protocol behavior and expires on session invalidation/resume.
+
+### 3.1 Public capability planning in 1.10
+
+Version 1.10 exposes a deliberately reduced public projection over this internal model:
+
+```text
+TerminalCapability
+TerminalCapabilitySupport
+TerminalCapabilityEndpointAvailability
+TerminalCapabilityEvidenceKind
+TerminalCapabilityStatus
+```
+
+The public model answers semantic questions without exposing internal backend ids or dependency provenance. Static implementation evidence projects to `StaticDescription`; generation-scoped protocol/query evidence projects to `LiveObservation`.
+
+`TerminalSession.InspectCapability(...)` is side-effect free. It reads existing session knowledge only and emits no terminal bytes.
+
+`TerminalSession.VerifyCapabilityAsync(...)` is explicit because verification may emit bounded query traffic. It reuses only existing reviewed support probes, initially modern keyboard reporting and raster graphics. Capabilities without a reviewed probe remain inspection-only rather than gaining invented traffic merely to make every public enum value probeable.
+
+Support and endpoint availability remain separate dimensions. A statically advertised capability can remain `Advertised` while its required endpoint is `Unavailable`; `IsUsable` becomes false without rewriting truthful support knowledge to `Unsupported`.
+
+When one semantic operation has multiple viable backends, evidence is resolved per reviewed candidate. Negative evidence for one backend does not erase independent positive/static evidence for another backend that can still satisfy the semantic operation.
+
+The permanent public contract is documented in `Capability-Inspection-and-Planning.md`.
 
 ## 4. Control-language layering
 
@@ -145,6 +173,8 @@ RasterGraphics
 A caller therefore keeps the same `TerminalRasterImage` and `DisplayRasterAsync(...)` semantic contract regardless of which verified backend is selected.
 
 Version 1.9 applies the same layering to inbound unsolicited traffic: public semantic notification observations are not raw OSC frames and do not expose Kitty selector dictionaries merely because OSC 99 is the first dialect implemented beneath the semantic-event envelope.
+
+Version 1.10 applies the same rule to capability planning: public callers ask about `RasterGraphics` or `KeyboardReporting`, not `ApcKittyGraphics`, `DcsSixel`, OSC/CSI/DCS/APC, or a terminfo capability key.
 
 ## 5. Backend-neutral raster architecture
 
@@ -290,6 +320,8 @@ Both Sixel capability observation and Kitty Graphics probing reuse this existing
 
 For the Kitty support test, the active Primary DA query remains the barrier transaction while the input coordinator side-observes only the matching Kitty APC identified by its probe image id.
 
+Version 1.10 verification reuses those same reviewed probe/query paths. `InspectCapability(...)` never enters the input/query path because it emits no traffic.
+
 `ReadEventAsync(...)` is the unified application event path. `ReadLifecycleEventAsync(...)` consumes the same lifecycle queue rather than a duplicated event stream; applications should choose one lifecycle-consumption ownership pattern rather than run independent competing readers.
 
 ## 11. Correlated and semantic input ownership
@@ -331,7 +363,7 @@ Already-decoded semantic events remain application observations and are not retr
 
 Lifecycle failure may invalidate session state rather than falsely report recovery.
 
-Graphics capability evidence obtained from live protocol behavior expires with the same generation mechanism.
+Capability evidence obtained from live protocol behavior expires with the same generation mechanism. Static description evidence remains available. Already returned `TerminalCapabilityStatus` values are immutable snapshots; callers inspect again after invalidation/resume when they need current knowledge.
 
 ## 14. Failure and uncertainty
 
@@ -344,6 +376,8 @@ For committed raster output, a transport failure does not trigger automatic repl
 For notification semantics, `CloseTrackingUnavailable` remains distinct from `Closed`: inability to observe a future close is represented as uncertainty rather than a fabricated close event.
 
 Controlled `Unavailable` / `Unsupported` results represent capability/semantic limitations where appropriate; transport and malformed-response failures remain failures rather than being disguised as capability states.
+
+Version 1.10 makes the distinction explicit in the public planning model: `Unknown`, `Unsupported`, support evidence, endpoint availability, and current usability are separate concepts rather than one overloaded boolean.
 
 ## 15. Managed-first platform model
 
@@ -380,6 +414,8 @@ Version 1.8 owns semantic raster output through Sixel and Kitty Graphics. It sti
 
 Version 1.9 owns a protocol-neutral unsolicited semantic-event envelope and typed interactive notification observations. It still excludes a second semantic reader, callback stream competing with `ReadEventAsync(...)`, raw OSC event delivery, host-native notification ownership, notification authentication, persistent notification databases, replay, and automatic close-on-dispose.
 
+Version 1.10 owns a protocol-neutral semantic capability-planning projection. It still excludes the internal backend registry, routing preference scores, raw evidence-ledger entries, dependency-specific evidence identities, arbitrary terminfo capability names, terminal-brand heuristics, hidden/background probing, and a requirement that every semantic capability have a live probe.
+
 ## 18. Compatibility authority
 
 The public raster additions remain frozen by `docs/Public-API-Baseline-1.7.md` and `.sha256`. Versions 1.8.0 and 1.8.1 intentionally add no public API and retain that fingerprint.
@@ -397,6 +433,19 @@ with final fingerprint:
 e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
 ```
 
-The permanent versioning rules are in `Compatibility-and-Versioning.md`.
+Version 1.10's additive semantic capability-planning surface is frozen by:
+
+```text
+docs/Public-API-Baseline-1.10.md
+docs/Public-API-Baseline-1.10.sha256
+```
+
+with final fingerprint:
+
+```text
+ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
+```
+
+The permanent capability-planning semantics are in `Capability-Inspection-and-Planning.md`, and the permanent versioning rules are in `Compatibility-and-Versioning.md`.
 
 Architectural improvements may replace internal classes/algorithms without changing these documented semantic, ownership, evidence, serialization, security, and compatibility commitments.
