@@ -23,6 +23,7 @@ namespace Icod.Terminal.Tests.Graphics;
 using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
+using Icod.TermInfo;
 using Xunit;
 
 /// <summary>
