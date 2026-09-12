@@ -2,6 +2,28 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.11.1
+
+### TermInfo persistent-raster integration contract
+
+- Adds a dedicated three-TFM integration-contract test project which references `Icod.TermInfo.Inspection 1.11.0` without adding Inspection or Source to the production `Icod.Terminal` dependency graph.
+- Defines and tests the consumer-owned translation from conclusive live Terminal capability status to protocol-neutral TermInfo `Verified` lifecycle evidence. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability are not promoted.
+- Proves static persistent-raster lifecycle planning can transition from `Indeterminate` through Terminal-owned live verification and caller-owned evidence to a deterministic successful replan.
+- Proves verified persistent non-support produces an `Impossible` lifecycle plan without attempting persistent resource creation.
+- Proves exact static Icod lifecycle declarations can produce a successful TermInfo plan without planning I/O while Terminal independently retains authority over live endpoint usability and execution.
+- Adds `Icod.Terminal.TermInfoPersistentRaster.Sample`, executable architecture documentation for static inspection -> semantic planning -> optional live verification -> caller-owned evidence -> replan -> opaque Terminal resource/placement execution.
+
+### Compatibility and qualification
+
+- Adds no production public API and intentionally retains the final 1.11 public API fingerprint `9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2`.
+- Preserves production dependencies at `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0`; `Icod.TermInfo.Inspection 1.11.0` remains test/sample-only and `Icod.TermInfo.Source` is not introduced.
+- Makes no intentional change to the persistent-raster wire protocol, acknowledgement, ownership, generation invalidation, cleanup, routing, or bounded-resource semantics released in 1.11.0.
+- Retains `net8.0`, `net9.0`, and `net10.0`, Windows/Linux/macOS Staging validation, current package/downstream gates, and the stable `1.0.0` compatibility floor.
+- T1111-A through T1111-D completed full pull-request qualification on exact head `651af888875a0d2acababe46a4e1313532ec7ba6` in workflow `#1628 / 34704455179`.
+- Deliberately defers a table-driven `TerminalTermInfoSemanticEvidence` cleanup, static lifecycle-evidence ingestion, and any adapter package to later independent design work.
+
+See `docs/releases/1.11.1.md` and `Icod.Terminal-1.11.1-Development-Roadmap.md` for the complete patch-release integration contract.
+
 ## 1.11.0
 
 ### Persistent raster resources and placements

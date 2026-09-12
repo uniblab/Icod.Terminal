@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.11.0 adds backend-neutral persistent terminal-resident raster resources and placements through TerminalCapability.PersistentRasterGraphics, TerminalRasterResource, and TerminalRasterPlacement. It keeps Kitty protocol identities private, bounds ownership, invalidates stale terminal-resident identities instead of replaying hidden image copies, and preserves the stable 1.0 compatibility floor. Full notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.11.0.md ; compatibility: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.11.1 adds the executable TermInfo 1.11 to Terminal 1.11 persistent-raster integration contract through a dedicated three-TFM contract-test project and non-packable sample. It preserves the 1.11.0 public API, persistent-raster runtime semantics, and production dependencies; Icod.TermInfo.Inspection 1.11.0 remains test/sample-only. Full notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.11.1.md ; compatibility: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

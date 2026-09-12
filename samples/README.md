@@ -15,6 +15,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/dispose terminal-resident raster ownership | `Icod.Terminal.PersistentRaster.Sample` |
+| Plan persistent-raster lifecycle with TermInfo, optionally verify live support, then execute | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
 | Emit notifications and observe interactive semantic events | `Icod.Terminal.Notification.Sample` |
@@ -110,6 +111,20 @@ It does not mention Kitty, Sixel, image ids, image numbers, placement ids, or te
 `packaging/VerifyPersistentRasterSample.ps1` enforces those backend-neutral source rules and builds the sample on every supported TFM.
 
 See `docs/Persistent-Raster-Ownership.md` for the permanent ownership contract.
+
+### `Icod.Terminal.TermInfoPersistentRaster.Sample`
+
+Demonstrates the 1.11.1 loose-coupling path between static TermInfo lifecycle planning and live Terminal execution.
+
+```text
+dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0
+```
+
+The sample inspects `session.Terminal` with `Icod.TermInfo.Inspection 1.11.0`, builds a semantic persistent-lifecycle plan, asks Terminal for live verification only when the static plan is indeterminate and the endpoint is available, converts a conclusive Terminal result into caller-owned `Verified` evidence, replans, and executes through opaque Terminal resource/placement APIs only when the final plan succeeds and the live route is usable.
+
+`Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency, and the sample does not expose raw graphics commands, terminal-brand branches, backend ids, or protocol-private numeric identities.
+
+See `Icod.Terminal.TermInfoPersistentRaster.Sample/README.md` for the complete responsibility boundary and failure behavior.
 
 ## Reversible state and color
 
@@ -217,8 +232,9 @@ For graphics:
 
 ```text
 Icod.Terminal.CapabilityPlanning.Sample
-    -> Icod.Terminal.RasterGraphics.Sample          (ephemeral display)
-    -> Icod.Terminal.PersistentRaster.Sample        (terminal-resident ownership)
+    -> Icod.Terminal.RasterGraphics.Sample             (ephemeral display)
+    -> Icod.Terminal.PersistentRaster.Sample           (terminal-resident ownership)
+    -> Icod.Terminal.TermInfoPersistentRaster.Sample   (static lifecycle plan + live verification + execution)
 ```
 
 Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, layout, or refresh policy directly.
