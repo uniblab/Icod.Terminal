@@ -2,6 +2,31 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.12.0
+
+### Advanced persistent-raster placement geometry
+
+- Adds immutable `TerminalRasterSourceRectangle` with zero-based source-pixel `X` / `Y` and positive `Width` / `Height`.
+- Adds `TerminalRasterPlacementOptions.SourceRectangle` and `.ZIndex` while preserving all existing placement options and public signatures.
+- Validates source rectangles against immutable owning-resource dimensions before placement output; invalid create/update rectangles produce no new placement traffic.
+- Accepts the complete signed `int` z-order domain and formats it deterministically using invariant signed decimal output.
+- Routes source crop, cell extents, and z-order through the same acknowledged create/update placement transaction in deterministic `x,y,w,h,c,r,z` order.
+- Preserves existing 1.11 placement bytes and behavior when the advanced options are omitted.
+
+### Ownership, hardening, and qualification
+
+- Keeps terminal image/placement identities opaque, placement position at the current cursor, generation-scoped ownership, child-before-resource cleanup, direct transfer, and the existing 256-resource / 4096-placement ceilings.
+- Adds exact-edge crop, combined-option, invalid-no-output, `int.MinValue` / `int.MaxValue`, wrong-identity, malformed/duplicate-field, correlated `ENOENT`, timeout/late-response, generation-invalidation, stale-disposal, and repeated advanced ownership-cycle coverage.
+- Table-drives internal `TerminalTermInfoSemanticEvidence` rules without changing public evidence semantics, routing behavior, or package dependencies.
+- Extends the backend-neutral persistent-raster sample with source cropping and nonzero z-order while continuing to exclude protocol ids/backend branching.
+- Extends fresh NuGet-only package consumption and generated XML-documentation checks for the new source-rectangle/z-order surface on `net8.0`, `net9.0`, and `net10.0`.
+- Retains current `Icod.DCurses` downstream acceptance/hardening with no required downstream code change.
+- Finalizes the 1.12 public API fingerprint as `eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8` while retaining all historical baselines unchanged.
+- Preserves production dependencies at `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0`.
+- Continues to exclude automatic replay, Sixel persistent-resource emulation, public protocol ids, relative placement graphs, absolute screen-coordinate layout, Unicode placeholders, animation/frame lifecycle, image decoding/transcoding, and PTY/ConPTY hosting.
+
+See `docs/releases/1.12.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.12.md`, and `Icod.Terminal-1.12.0-Development-Roadmap.md` for the complete 1.12 contract.
+
 ## 1.11.1
 
 ### TermInfo persistent-raster integration contract
