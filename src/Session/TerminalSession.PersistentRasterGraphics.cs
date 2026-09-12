@@ -73,6 +73,8 @@ public sealed partial class TerminalSession {
 
 		KittyRasterData raster = KittyRasterAdapter.Adapt( image );
 		if ( !this.persistentRasterRegistry.TryReserveResource(
+			raster.Width,
+			raster.Height,
 			out TerminalPersistentRasterResourceState? resourceState
 		) ) {
 			return TerminalControlResult<TerminalRasterResource>.Unavailable(
@@ -163,7 +165,10 @@ public sealed partial class TerminalSession {
 		CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull( resourceState );
-		options?.Validate();
+		options?.Validate(
+			resourceState.SourceWidth,
+			resourceState.SourceHeight
+		);
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ThrowIfSessionOutputClosed();
 		if ( resourceState.IsClosed ) {
@@ -292,7 +297,10 @@ public sealed partial class TerminalSession {
 		CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull( placementState );
-		options?.Validate();
+		options?.Validate(
+			placementState.Resource.SourceWidth,
+			placementState.Resource.SourceHeight
+		);
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ThrowIfSessionOutputClosed();
 
