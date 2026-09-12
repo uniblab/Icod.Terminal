@@ -42,6 +42,37 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	}
 
 	/// <summary>
+	/// Creates one opaque placement of this resource at the terminal's current cursor position.
+	/// </summary>
+	/// <param name="options">Optional terminal-cell placement extents.</param>
+	/// <param name="cancellationToken">Cancellation observed before placement output commits.</param>
+	/// <returns>
+	/// An available opaque placement, or a controlled unavailable result when the session cannot
+	/// reserve another persistent placement.
+	/// </returns>
+	public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreatePlacementAsync(
+		TerminalRasterPlacementOptions? options = null,
+		CancellationToken cancellationToken = default
+	) {
+		options?.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.CreatePersistentRasterPlacementAsync(
+			this.State,
+			options,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
 	/// Releases this resource's local ownership. Terminal-side deletion is added by the
 	/// deterministic disposal tranche after placement ownership is available.
 	/// </summary>

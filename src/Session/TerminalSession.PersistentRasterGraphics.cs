@@ -151,11 +151,87 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	internal async ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreatePersistentRasterPlacementAsync(
+		TerminalPersistentRasterResourceState resourceState,
+		TerminalRasterPlacementOptions? options,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( resourceState );
+		options?.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ThrowIfSessionOutputClosed();
+		if ( resourceState.IsClosed ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+		if ( 0u == resourceState.ImageId ) {
+			throw new InvalidOperationException(
+				"The persistent raster resource does not have a terminal-assigned image id."
+			);
+		}
+
+		if ( !this.persistentRasterRegistry.TryReservePlacement(
+			resourceState,
+			out TerminalPersistentRasterPlacementState? placementState
+		) ) {
+			if ( resourceState.IsClosed ) {
+				throw new ObjectDisposedException(
+					nameof( TerminalRasterResource ),
+					"The persistent raster resource has already been disposed."
+				);
+			}
+			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+				$"The session already owns the maximum {TerminalPersistentRasterRegistry.MaximumPlacements} persistent raster placements."
+			);
+		}
+		if ( placementState is null ) {
+			throw new InvalidOperationException(
+				"The persistent raster registry reported a successful placement reservation without state."
+			);
+		}
+
+		try {
+			await KittyGraphicsPersistentPlacementTransaction.WriteAsync(
+				this,
+				resourceState.ImageId,
+				placementState.PlacementId,
+				options,
+				cancellationToken
+			).ConfigureAwait( false );
+		} catch {
+			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
+			throw;
+		}
+
+		if ( placementState.IsClosed ) {
+			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+				"The persistent raster placement lost local ownership before creation completed."
+			);
+		}
+
+		return TerminalControlResult<TerminalRasterPlacement>.Available(
+			new TerminalRasterPlacement(
+				this,
+				placementState
+			)
+		);
+	}
+
 	internal ValueTask ReleasePersistentRasterResourceAsync(
 		TerminalPersistentRasterResourceState resourceState
 	) {
 		ArgumentNullException.ThrowIfNull( resourceState );
 		_ = this.persistentRasterRegistry.TryReleaseResource( resourceState );
+		return ValueTask.CompletedTask;
+	}
+
+	internal ValueTask ReleasePersistentRasterPlacementAsync(
+		TerminalPersistentRasterPlacementState placementState
+	) {
+		ArgumentNullException.ThrowIfNull( placementState );
+		_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
 		return ValueTask.CompletedTask;
 	}
 }
