@@ -40,6 +40,7 @@ try {
         'VerifyITerm2ShellIntegrationSample.ps1',
         'VerifyVsCodeShellIntegrationSample.ps1',
         'VerifyRasterGraphicsSample.ps1',
+        'VerifyPersistentRasterSample.ps1',
         'VerifyCapabilityPlanningSample.ps1',
         'VerifyDCursesSynchronizedOutput.ps1',
         'VerifyDCursesProgress.ps1',

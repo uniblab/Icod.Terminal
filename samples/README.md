@@ -1,6 +1,6 @@
 # Icod.Terminal Samples
 
-The sample projects are small, focused repository consumers built through project references. They demonstrate the supported 1.x usage model; package-only compatibility is validated separately by the consumers under `tools/`, which restore only the freshly packed NuGet artifact.
+The sample projects are small, focused repository consumers built through project references. They demonstrate the supported 1.x usage model. Fresh package-only compatibility is validated separately by consumers under `tools/`.
 
 All samples target `net8.0`, `net9.0`, and `net10.0`.
 
@@ -8,16 +8,17 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 
 | Goal | Sample |
 | --- | --- |
-| Open a session, inspect identity/endpoints, and read an event | `Icod.Terminal.Sample` |
-| Inspect rich input plus lifecycle and unsolicited semantic events | `Icod.Terminal.RichInput.Sample` |
-| Run bounded terminal queries and verify coexistence with the unified event stream | `Icod.Terminal.Query.Sample` |
-| Plan behavior from semantic capability knowledge without protocol branching | `Icod.Terminal.CapabilityPlanning.Sample` |
+| Open a session and read an event | `Icod.Terminal.Sample` |
+| Inspect rich input, lifecycle, and semantic events | `Icod.Terminal.RichInput.Sample` |
+| Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
+| Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
-| Display a backend-neutral raster | `Icod.Terminal.RasterGraphics.Sample` |
-| Own cursor style, synchronized output, progress, or pointer shape | focused state samples below |
-| Publish title/location/prompt/shell metadata | focused metadata samples below |
+| Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
+| Create/update/dispose terminal-resident raster ownership | `Icod.Terminal.PersistentRaster.Sample` |
+| Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
+| Publish title/location/prompt/shell metadata | focused metadata samples |
 | Emit notifications and observe interactive semantic events | `Icod.Terminal.Notification.Sample` |
-| Emit hyperlinks or clipboard operations | focused output samples below |
+| Emit hyperlinks or clipboard operations | focused output samples |
 
 ## Sample rules
 
@@ -28,14 +29,16 @@ The examples follow the permanent 1.x contracts:
 - `TerminalSession.Output` is an advanced borrowed transport, not the normal application-output path;
 - scoped terminal state uses `await using` / `DisposeAsync()` for deterministic cleanup;
 - exact restoration is claimed only when the library first observed or captured a truthful baseline;
-- metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, and hyperlinks may disclose information outside the application;
-- event-loop samples handle the event kinds they understand explicitly and remain nonfatal when a newer compatible minor release introduces an unfamiliar outer `TerminalEventKind` value.
+- persistent raster identities are opaque and generation-scoped rather than exactly restorable state;
+- persistent samples do not branch on Kitty/Sixel/backend ids and do not teach hidden replay;
+- metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, hyperlinks, and raster content may disclose information outside the application;
+- event-loop samples remain nonfatal when a later compatible 1.x release introduces an unfamiliar outer event kind.
 
 ## Start here
 
 ### `Icod.Terminal.Sample`
 
-Minimal session example covering identity selection, endpoint observations, application text, a timed event read, and disposal-driven restoration of session-owned terminal state.
+Minimal session construction, endpoint/identity observation, application text, one timed event read, and disposal-driven restoration.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
@@ -43,7 +46,7 @@ dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f
 
 ### `Icod.Terminal.RichInput.Sample`
 
-Interactive inspector for text, keys, bracketed paste, focus, mouse, lifecycle, unsolicited semantic events, and negotiated modern keyboard reporting. Traditional keyboard decoding remains the compatibility fallback. The outer event switch also demonstrates a forward-compatible fallback for event kinds introduced by later compatible 1.x releases.
+Interactive inspector for text, keys, bracketed paste, focus, mouse, lifecycle, unsolicited semantic events, and negotiated modern keyboard reporting.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
@@ -51,7 +54,7 @@ dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichIn
 
 ### `Icod.Terminal.Query.Sample`
 
-Demonstrates explicit bounded Primary/Secondary DA, DSR, CPR, DECRQSS, and XTGETTCAP queries through the session's single response-correlation path, then reads one event from the same authoritative session stream to demonstrate coexistence with ordinary input, lifecycle, and semantic events.
+Demonstrates explicit bounded terminal queries through the same authoritative session stream used for application input and semantic/lifecycle events.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
@@ -61,39 +64,54 @@ Timeout is not treated as proof that a terminal lacks support.
 
 ### `Icod.Terminal.CapabilityPlanning.Sample`
 
-Demonstrates the 1.10 semantic capability-planning surface without terminal-brand, protocol-family, backend, or dependency-specific branching.
-
-By default the sample performs only side-effect-free inspection:
+Demonstrates protocol-neutral capability inspection and optional explicit verification.
 
 ```text
 dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj -f net10.0
-```
 
-Pass `--verify` to explicitly request bounded verification for the semantic capabilities which currently have reviewed probes:
-
-```text
 dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj -f net10.0 -- --verify
 ```
 
-The sample reports support, endpoint availability, evidence kind, and current usability, then chooses a raster/non-raster presentation plan using only `TerminalCapabilityStatus.IsUsable`. It does not ask whether Kitty or Sixel won, inspect `TERM`, branch on emulator identity, or reference `Icod.TermInfo` directly.
-
-`packaging/VerifyCapabilityPlanningSample.ps1` builds this sample on every supported TFM during repository validation.
+The sample does not inspect terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
 
 ## Raster graphics
 
 ### `Icod.Terminal.RasterGraphics.Sample`
 
-Generates a small RGB24 gradient in memory and passes it to the public backend-neutral `DisplayRasterAsync(...)` operation.
+Generates a small RGB24 gradient in memory and sends it through the backend-neutral ephemeral `DisplayRasterAsync(...)` API.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterGraphics.Sample/Icod.Terminal.RasterGraphics.Sample.csproj -f net10.0
 ```
 
-The sample does not select Sixel or Kitty Graphics, emit raw DCS/APC traffic, inspect terminal branding, load image files, or add an image-decoder dependency. The normal evidence-driven router may use verified Kitty Graphics or verified Sixel internally.
+The normal evidence-driven router may use verified Kitty Graphics or verified Sixel internally. The sample performs no backend selection and emits no raw DCS/APC traffic.
 
-`packaging/VerifyRasterGraphicsSample.ps1` builds this sample on every supported TFM during repository validation.
+`packaging/VerifyRasterGraphicsSample.ps1` builds the sample on every supported TFM.
 
-## Queries and reversible state
+### `Icod.Terminal.PersistentRaster.Sample`
+
+Demonstrates the 1.11 persistent-raster ownership model using semantic APIs only.
+
+```text
+dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
+```
+
+The sample:
+
+1. explicitly verifies `TerminalCapability.PersistentRasterGraphics`;
+2. creates a `TerminalRasterImage` in memory;
+3. creates an opaque `TerminalRasterResource`;
+4. creates a placement with a cell-column extent;
+5. updates the same placement at the current cursor;
+6. uses `await using` so placement/resource cleanup is deterministic.
+
+It does not mention Kitty, Sixel, image ids, image numbers, placement ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
+
+`packaging/VerifyPersistentRasterSample.ps1` enforces those backend-neutral source rules and builds the sample on every supported TFM.
+
+See `docs/Persistent-Raster-Ownership.md` for the permanent ownership contract.
+
+## Reversible state and color
 
 ### `Icod.Terminal.Color.Sample`
 
@@ -107,7 +125,7 @@ dotnet run --project samples/Icod.Terminal.Color.Sample/Icod.Terminal.Color.Samp
 
 ### `Icod.Terminal.CursorStyle.Sample`
 
-Typed DECSCUSR cursor-style observation, mutation, and scoped restoration.
+Typed cursor-style observation, mutation, and scoped restoration.
 
 ```text
 dotnet run --project samples/Icod.Terminal.CursorStyle.Sample/Icod.Terminal.CursorStyle.Sample.csproj -f net10.0 -- SteadyUnderline
@@ -131,7 +149,7 @@ dotnet run --project samples/Icod.Terminal.Progress.Sample/Icod.Terminal.Progres
 
 ### `Icod.Terminal.PointerShape.Sample`
 
-OSC 22 pointer-shape mutation, scoped ownership, nested fallback, terminal-policy reset, and bounded pointer queries.
+Pointer-shape mutation, scoped ownership, reset, and bounded pointer queries.
 
 ```text
 dotnet run --project samples/Icod.Terminal.PointerShape.Sample/Icod.Terminal.PointerShape.Sample.csproj -f net10.0
@@ -141,7 +159,7 @@ dotnet run --project samples/Icod.Terminal.PointerShape.Sample/Icod.Terminal.Poi
 
 ### `Icod.Terminal.Title.Sample`
 
-Semantic OSC 0/1/2 icon/window title operations.
+Semantic icon/window title operations.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Sample.csproj -f net10.0
@@ -149,96 +167,58 @@ dotnet run --project samples/Icod.Terminal.Title.Sample/Icod.Terminal.Title.Samp
 
 ### `Icod.Terminal.Location.Sample`
 
-Portable OSC 7 current-location publication plus the explicit Windows Terminal/ConEmu OSC 9;9 compatibility form.
-
-```text
-dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- posix /usr/local/src
-
-dotnet run --project samples/Icod.Terminal.Location.Sample/Icod.Terminal.Location.Sample.csproj -f net10.0 -- windows-osc9 C:\work\repo
-```
-
-OSC 7 remains the preferred portable location API. The sample does not inspect the process current directory or automatically emit multiple vendor protocols.
+Portable current-location publication plus the explicit Windows compatibility form.
 
 ### `Icod.Terminal.SemanticPrompt.Sample`
 
-Portable typed OSC 133 prompt/command-region metadata.
-
-```text
-dotnet run --project samples/Icod.Terminal.SemanticPrompt.Sample/Icod.Terminal.SemanticPrompt.Sample.csproj -f net10.0
-```
+Portable typed prompt/command-region metadata.
 
 ### `Icod.Terminal.VsCodeShellIntegration.Sample`
 
-Typed VS Code OSC 633 rich-command metadata, current directory, prompt/input/output boundaries, explicit command-line publication, and command completion.
-
-```text
-dotnet run --project samples/Icod.Terminal.VsCodeShellIntegration.Sample/Icod.Terminal.VsCodeShellIntegration.Sample.csproj -f net10.0 -- /srv/repo "dotnet test" optional-nonce
-```
-
-All potentially sensitive metadata is supplied explicitly. The sample does not inspect process arguments, environment variables, shell history, or the process current directory. OSC 133 and OSC 7 remain the preferred portable semantic APIs where applicable.
-
-`packaging/VerifyVsCodeShellIntegrationSample.ps1` builds this sample on every supported TFM during repository validation.
+Typed VS Code shell-integration metadata. Potentially sensitive metadata is supplied explicitly.
 
 ### `Icod.Terminal.ITerm2ShellIntegration.Sample`
 
-Typed iTerm2 OSC 1337 shell-integration and semantic-history metadata.
-
-```text
-dotnet run --project samples/Icod.Terminal.ITerm2ShellIntegration.Sample/Icod.Terminal.ITerm2ShellIntegration.Sample.csproj -f net10.0 -- /srv/repo alice host.example.test bash 20 branch main
-```
-
-Add `--clear-captured-output` only when intentionally demonstrating the destructive clear operation. User-variable Base64 is protocol framing, not confidentiality.
+Typed iTerm2 shell-integration and semantic-history metadata. User-variable Base64 is protocol framing, not confidentiality.
 
 ## Notifications and interactive output
 
 ### `Icod.Terminal.Notification.Sample`
 
-Demonstrates explicit OSC 9, OSC 777, and Kitty OSC 99 desktop-notification surfaces without terminal-brand routing. The interactive mode also demonstrates opt-in activation/button and close reporting through the same public `TerminalSession.ReadEventAsync(...)` event stream used for ordinary terminal input.
+Demonstrates desktop-notification output plus explicit opt-in interaction reporting through the unified event stream.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- "Build complete"
-
-dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --titled "Build" "Compilation complete"
-
-dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --kitty "Build" "Compilation complete"
-
-dotnet run --project samples/Icod.Terminal.Notification.Sample/Icod.Terminal.Notification.Sample.csproj -f net10.0 -- --kitty-interactive build-42 "Build" "Compilation complete"
 ```
 
-Interactive mode uses the caller-supplied identifier, requests activation/button and close reports, adds fixed `Acknowledge` and `Dismiss` sample buttons, and waits up to 30 seconds for a matching typed notification event. The event identifier and button number are validated but unauthenticated terminal-controlled input. A timeout does not prove that the terminal lacks support.
-
-Successful emission does not prove that the desktop displayed a notification. Notification text may be retained by the terminal or operating environment.
+Notification identifiers and button reports are validated but unauthenticated terminal-controlled input.
 
 ### `Icod.Terminal.Hyperlink.Sample`
 
-Bounded OSC 8 hyperlink output and scoped hyperlink ownership.
-
-```text
-dotnet run --project samples/Icod.Terminal.Hyperlink.Sample/Icod.Terminal.Hyperlink.Sample.csproj -f net10.0 -- https://example.com/ "example link" example-1
-```
+Bounded hyperlink output and scoped hyperlink ownership.
 
 ### `Icod.Terminal.Clipboard.Sample`
 
-Explicit OSC 52 clipboard/selection writes and privacy-sensitive reads.
-
-```text
-dotnet run --project samples/Icod.Terminal.Clipboard.Sample/Icod.Terminal.Clipboard.Sample.csproj -f net10.0 -- "copied text"
-```
-
-Clipboard reads are never automatic. Terminal-side policy may ignore or deny them, and a timeout is not permanent unsupported evidence.
+Explicit clipboard/selection writes and privacy-sensitive reads. Clipboard reads are never automatic.
 
 ## Choosing a sample
 
-For a general terminal-aware application, a useful progression is:
+For a general terminal-aware application:
 
 ```text
 Icod.Terminal.Sample
     -> Icod.Terminal.RichInput.Sample
     -> Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.Query.Sample
-    -> one focused state/output sample relevant to the application
+    -> one focused feature sample
 ```
 
-Applications interested in raster output can go directly from the basic session sample to `Icod.Terminal.CapabilityPlanning.Sample` and then `Icod.Terminal.RasterGraphics.Sample`. Shell integrations should prefer portable semantic APIs first, then use vendor-specific samples only when intentionally targeting those protocols.
+For graphics:
 
-Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, or refresh policy directly.
+```text
+Icod.Terminal.CapabilityPlanning.Sample
+    -> Icod.Terminal.RasterGraphics.Sample          (ephemeral display)
+    -> Icod.Terminal.PersistentRaster.Sample        (terminal-resident ownership)
+```
+
+Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, layout, or refresh policy directly.

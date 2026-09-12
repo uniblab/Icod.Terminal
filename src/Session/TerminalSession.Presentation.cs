@@ -59,6 +59,7 @@ public sealed partial class TerminalSession {
 		this.InvalidatePointerShapeState();
 		this.InvalidatePaletteColorState();
 		this.InvalidateDynamicColorState();
+		this.InvalidatePersistentRasterState();
 	}
 
 	private async ValueTask SuspendPresentationStateAsync() {
@@ -96,6 +97,12 @@ public sealed partial class TerminalSession {
 			).ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			exceptions.Add( exception );
+		}
+
+		Exception? persistentRasterException =
+			await this.ClosePersistentRasterStateAsync().ConfigureAwait( false );
+		if ( persistentRasterException is not null ) {
+			exceptions.Add( persistentRasterException );
 		}
 
 		Exception? cursorStyleException =

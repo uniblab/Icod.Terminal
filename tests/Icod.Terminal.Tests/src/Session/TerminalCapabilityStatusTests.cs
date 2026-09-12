@@ -38,7 +38,8 @@ public sealed class TerminalCapabilityStatusTests {
 				TerminalCapability.MouseReporting,
 				TerminalCapability.FocusReporting,
 				TerminalCapability.BracketedPaste,
-				TerminalCapability.RasterGraphics
+				TerminalCapability.RasterGraphics,
+				TerminalCapability.PersistentRasterGraphics
 			],
 			Enum.GetValues<TerminalCapability>()
 		);

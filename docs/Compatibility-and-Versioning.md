@@ -31,7 +31,8 @@ Compatible minor-release additions receive separate reviewed baselines rather th
 - `1.4` — additive typed Kitty OSC 99 notification/query surface;
 - `1.7` — additive backend-neutral raster-display surface;
 - `1.9` — additive protocol-neutral semantic-event envelope and interactive Kitty notification options;
-- `1.10` — additive protocol-neutral semantic capability inspection/planning surface.
+- `1.10` — additive protocol-neutral semantic capability inspection/planning surface;
+- `1.11` — additive persistent-raster capability and opaque resource/placement ownership surface.
 
 Versions `1.5.0` and `1.6.0` intentionally added no public API and retained the 1.4 fingerprint:
 
@@ -53,16 +54,22 @@ Version `1.9.0` advanced the fingerprint to:
 e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
 ```
 
-Version `1.10.0` intentionally advances the authoritative current public API fingerprint to:
+Version `1.10.0` advanced the fingerprint to:
 
 ```text
 ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 ```
 
+Version `1.11.0` intentionally advances the authoritative current public API fingerprint to:
+
+```text
+9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
+```
+
 The authoritative current baseline is:
 
-- `docs/Public-API-Baseline-1.10.md`;
-- `docs/Public-API-Baseline-1.10.sha256`.
+- `docs/Public-API-Baseline-1.11.md`;
+- `docs/Public-API-Baseline-1.11.sha256`.
 
 Historical baselines remain checked in unchanged as compatibility evidence.
 
@@ -108,15 +115,16 @@ TerminalRasterPixelFormat
     Indexed8   = 2
 
 TerminalCapability
-    ClipboardRead       = 0
-    ClipboardWrite      = 1
-    CursorStyle         = 2
-    SynchronizedOutput  = 3
-    KeyboardReporting   = 4
-    MouseReporting      = 5
-    FocusReporting      = 6
-    BracketedPaste      = 7
-    RasterGraphics      = 8
+    ClipboardRead              = 0
+    ClipboardWrite             = 1
+    CursorStyle                = 2
+    SynchronizedOutput         = 3
+    KeyboardReporting          = 4
+    MouseReporting             = 5
+    FocusReporting             = 6
+    BracketedPaste             = 7
+    RasterGraphics             = 8
+    PersistentRasterGraphics   = 9
 
 TerminalCapabilitySupport
     Unknown      = 0
@@ -134,7 +142,7 @@ TerminalCapabilityEvidenceKind
     LiveObservation    = 2
 ```
 
-These 1.10 capability-planning numerics are part of the stable 1.x compatibility contract from 1.10 onward.
+The 1.10 capability-planning numerics remain stable, and 1.11 appends `PersistentRasterGraphics = 9` without renumbering values `0..8`.
 
 ## 5. Behavioral compatibility
 
@@ -160,6 +168,10 @@ Stable guarantees include:
 - query timeout not automatically becoming unsupported truth;
 - committed graphics output not intentionally truncated by ordinary caller cancellation;
 - partial committed graphics failure surfaced without automatic replay/backend switching;
+- persistent raster identities scoped to the lifecycle generation that established them;
+- no automatic persistent-raster replay/re-upload after lifecycle uncertainty;
+- child placement cleanup preceding resource-data cleanup while identities are current;
+- stale persistent handles never emitting stale terminal identifiers during disposal;
 - teardown draining committed output before output-state restoration;
 - correlated terminal responses remaining untrusted and bounded after ownership is established.
 
@@ -167,7 +179,7 @@ Minor/patch releases may strengthen correctness while preserving these guarantee
 
 ## 6. Raster compatibility contract
 
-The public raster model is backend-neutral. It represents bounded raw image data plus semantic display intent, not “a Sixel image” or “a Kitty image.”
+The public raster model is backend-neutral. It represents bounded raw image data plus semantic graphics intent, not “a Sixel image” or “a Kitty image.”
 
 Version 1.7 added:
 
@@ -180,19 +192,37 @@ TerminalSession.DisplayRasterAsync(...)
 
 The raster object owns a snapshot of caller-provided pixel/palette storage. RGB24 is opaque; RGBA32 and indexed palette colors preserve straight alpha.
 
-Version 1.8 added Kitty Graphics below the unchanged semantic raster API while retaining Sixel fallback. The public contract still does not expose a raw DCS/APC writer, backend selector, persistent image id, placement id, source rectangle, z-order model, deletion/animation API, or scene graph.
+Version 1.8 added Kitty Graphics below the unchanged ephemeral raster API while retaining Sixel fallback. The public contract does not expose a raw DCS/APC writer, backend selector, Kitty numeric image id, Kitty image number, Kitty placement id, arbitrary control-data dictionary, or scene graph.
+
+Version 1.11 adds a separate persistent ownership domain:
+
+```text
+TerminalCapability.PersistentRasterGraphics
+TerminalRasterResource
+TerminalRasterPlacement
+TerminalRasterPlacementOptions
+TerminalSession.CreateRasterResourceAsync(...)
+TerminalRasterResource.CreatePlacementAsync(...)
+TerminalRasterPlacement.UpdateAsync(...)
+```
+
+Persistent resources and placements are opaque session-owned handles. Their backend protocol identities remain private. Placement creation/update uses current-cursor positioning and optional `Columns`/`Rows`; callers continue to use ordinary terminal operations for cursor movement rather than receiving a scene-coordinate API.
+
+The existing ephemeral `DisplayRasterAsync(...)` contract remains compatible and may still resolve through verified Kitty Graphics or Sixel. Persistent ownership is a distinct capability and is not emulated through Sixel.
 
 Fractional alpha remains valid common raster data. Kitty RGBA32 preserves it; Sixel returns controlled unsupported when equivalent semantics cannot be represented truthfully rather than silently compositing.
 
 ## 7. Sixel and Kitty Graphics protocol compatibility
 
-Sixel and Kitty Graphics remain internal backends beneath the public raster contract.
+Sixel and Kitty Graphics remain internal backends beneath public semantic graphics contracts.
 
 Stable Sixel behavior includes canonical seven-bit DCS framing, deterministic bounded quantization, bounded lazy payload generation, caller cancellation before commitment but not intentional frame truncation after commitment, serialization through final ST/flush, and no automatic retry after partial transport failure.
 
 Stable Kitty Graphics behavior includes canonical seven-bit APC framing, direct transfer (`t=d`), RGB24/RGBA32 raw transmission, deterministic Indexed8 expansion, Base64 image data bounded to 4096 bytes per protocol chunk, one logical multi-frame serialized transaction, no ordinary post-commit cancellation truncation, no automatic replay/Sixel switch after partial committed failure, and bounded correlated support-query ownership.
 
-File/temp-file/shared-memory Kitty transports and advanced placement/resource lifecycle are outside the 1.8–1.10 compatibility promise and require separate review before introduction.
+Version 1.11 additionally reviews the narrow persistent Kitty subset required to upload acknowledged terminal-resident image data, create/update placements, and delete placements/resources. Those commands remain internal implementation detail behind opaque public ownership objects.
+
+File/temp-file/shared-memory Kitty transports, source rectangles, z-order, Unicode placeholders, relative placements, pixel-coordinate placement, animation, and scene-graph policy remain outside the 1.11 compatibility promise unless separately reviewed in a later release.
 
 ## 8. Capability evidence and uncertainty
 
@@ -226,7 +256,7 @@ TerminalSession.VerifyCapabilityAsync(...)
 
 `InspectCapability(...)` is synchronous and side-effect free. It reads current in-memory semantic knowledge only and emits no terminal traffic.
 
-`VerifyCapabilityAsync(...)` is explicit and bounded. It may strengthen knowledge only through existing reviewed probe paths. In 1.10 those live verification paths are `KeyboardReporting` and `RasterGraphics`; capabilities without a reviewed probe remain inspection-only rather than receiving invented traffic.
+`VerifyCapabilityAsync(...)` is explicit and bounded. It may strengthen knowledge only through existing reviewed probe paths. Version 1.10 introduced live verification for `KeyboardReporting` and `RasterGraphics`; capabilities without a reviewed probe remain inspection-only rather than receiving invented traffic.
 
 Support knowledge and endpoint availability are separate compatibility dimensions. A statically advertised capability may remain `Advertised` while the required endpoint is `Unavailable`; this makes `IsUsable` false without rewriting truthful support knowledge to `Unsupported`.
 
@@ -244,6 +274,14 @@ Generation-scoped live observations expire on lifecycle invalidation/resume whil
 
 The permanent contract authority is `docs/Capability-Inspection-and-Planning.md`.
 
+### Version 1.11 persistent-raster capability
+
+Version 1.11 appends `PersistentRasterGraphics = 9` to that semantic capability vocabulary.
+
+`RasterGraphics` and `PersistentRasterGraphics` are intentionally distinct. Verified Sixel can satisfy ordinary raster display but does not imply terminal-resident persistent resource ownership. The persistent capability is verified only through the reviewed Kitty Graphics path and uses the same side-effect-free inspection / explicit bounded verification model introduced in 1.10.
+
+`CreateRasterResourceAsync(...)` does not hide a new background probe. It requires current verified persistent-raster capability and a usable endpoint before committing upload traffic.
+
 ## 10. Correlation and response ownership
 
 The one-reader/query ownership model is a stable 1.x behavioral contract.
@@ -253,6 +291,8 @@ A correlated response is transaction-owned but remains untrusted. Matching ident
 Version 1.9 extends the same ownership principle to unsolicited semantic reports. Active query ownership remains first; semantic ownership is second; ordinary input decoding follows. After bounded semantic recovery, routing restarts at query precedence.
 
 Version 1.10 verification reuses this established query/ownership machinery and does not introduce a second reader or generic raw probe API.
+
+Version 1.11 resource creation and acknowledged placement mutation reuse the same authoritative query ownership. Correlation includes the private image number/image id and, where relevant, the private placement id. A well-formed terminal `ENOENT` for a resource/placement believed current invalidates that local terminal-resident certainty and is surfaced as controlled `Unavailable`; other well-formed negative replies remain controlled failures rather than trusted statements about unrelated state.
 
 ## 11. Resource-bound compatibility
 
@@ -266,6 +306,16 @@ maximum pixel count      16 Mi
 maximum owned pixel data 64 MiB
 maximum indexed palette  256 entries
 ```
+
+Persistent-raster ownership adds these session-local ceilings:
+
+```text
+maximum live persistent resources   256
+maximum live persistent placements  4096
+placement Columns / Rows             1..16384 when supplied
+```
+
+The persistent registries are local bookkeeping limits, not claims about terminal storage quota. Exhaustion returns controlled `Unavailable` before protocol output rather than creating unbounded local state.
 
 Other stable bounds include the 4096-byte normal response frame, 4096-byte Kitty Base64 image-data chunk, bounded control-family frames, fixed Sixel histogram, bounded resynchronization state, and bounded semantic-event/application-event buffering.
 
@@ -294,11 +344,11 @@ Custom hosts remain possible through `ITerminalControlProvider`, `ITerminalInput
 Permanent layer boundaries remain part of the support model:
 
 - `Icod.TermInfo` owns immutable capability information;
-- `Icod.Terminal` owns the live terminal conversation, query/evidence model, capability planning, unsolicited semantic-event routing, semantic output, raster routing, and reversible session mechanics;
+- `Icod.Terminal` owns the live terminal conversation, query/evidence model, capability planning, unsolicited semantic-event routing, semantic output, ephemeral raster routing, persistent raster resource/placement ownership, and reversible session mechanics;
 - `Icod.DCurses` owns higher-level virtual-screen/curses presentation policy;
 - PTY/process hosting remains orthogonal.
 
-Kitty Graphics does not move virtual-screen/scene ownership into `Icod.Terminal`. Unsolicited semantic events do not make it a generic vendor-event bus. Capability planning does not make the internal backend registry, evidence ledger, or `Icod.TermInfo` provenance part of the public contract.
+Persistent Kitty Graphics does not move virtual-screen/scene ownership into `Icod.Terminal`. Opaque resources/placements are terminal-resident ownership handles, not cells, windows, layers, or a scene graph. Unsolicited semantic events do not make the library a generic vendor-event bus. Capability planning does not make the internal backend registry, evidence ledger, or `Icod.TermInfo` provenance part of the public contract.
 
 ## 14. Security compatibility
 
@@ -310,6 +360,7 @@ Stable 1.x does not quietly introduce through a minor/patch release:
 - hazardous host-affecting OSC 9 commands;
 - generic raw OSC 633/777/1337/99 dispatch replacing reviewed semantic surfaces;
 - arbitrary public Sixel/Kitty writers merely because internal grammars exist;
+- public Kitty numeric image ids/image numbers/placement ids as semantic graphics identity;
 - a generic raw unsolicited-event stream or arbitrary vendor-event dictionary;
 - terminal-brand-triggered activation presented as capability truth;
 - a competing protocol-specific input reader;
@@ -318,6 +369,7 @@ Stable 1.x does not quietly introduce through a minor/patch release:
 - authentication claims for terminal-supplied notification interaction reports;
 - automatic image-file decoding or network/process side effects in raster display;
 - hidden file/temp-file/shared-memory graphics transport;
+- hidden persistent-raster source-image caching or automatic replay after lifecycle uncertainty;
 - silent compositing of unsupported fractional-alpha raster data;
 - cancellation-driven truncation of already-committed graphics transfers;
 - automatic retry/backend switch after partial committed graphics output;
@@ -342,6 +394,8 @@ Direct consumers should use `TerminalSession` when they need live terminal/sessi
 
 Applications needing windows/cells/diff/refresh should normally use `Icod.DCurses` and allow that layer to own the supplied session according to its integration contract.
 
+Persistent raster resources/placements are appropriate building blocks for higher-level consumers, but layout, damage tracking, clipping policy, and virtual-screen/scene decisions remain higher-level responsibilities.
+
 Do not create independent state-owning sessions over the same physical terminal merely to divide responsibilities.
 
 ## 17. Deprecation policy
@@ -358,7 +412,7 @@ A release is not considered compatible merely because unit tests pass.
 
 The repository maintains layered evidence including:
 
-- retained historical public API fingerprints plus the authoritative current 1.10 fingerprint;
+- retained historical public API fingerprints plus the authoritative current 1.11 fingerprint;
 - Windows/Linux/macOS runtime/source validation;
 - exact multi-TFM API snapshot agreement;
 - fresh NuGet-only consumers for newly added or compatibility-critical semantic APIs;
@@ -370,7 +424,7 @@ The repository maintains layered evidence including:
 - resource-bound tests;
 - release/distribution validation on configured architectures.
 
-Version 1.9 qualified semantic-event ownership and interactive Kitty notification reporting. Version 1.10 qualifies side-effect-free semantic capability inspection, explicit bounded verification, lifecycle invalidation, concurrency/cancellation, package-only consumption, loose dependency coupling, and downstream compatibility.
+Version 1.9 qualified semantic-event ownership and interactive Kitty notification reporting. Version 1.10 qualified side-effect-free semantic capability inspection, explicit bounded verification, lifecycle invalidation, concurrency/cancellation, package-only consumption, loose dependency coupling, and downstream compatibility. Version 1.11 qualifies persistent-raster acknowledgement/correlation, bounded resource/placement ownership, placement replacement, deterministic disposal, lifecycle invalidation/no-replay behavior, adversarial terminal replies, package-only consumption/XML documentation, a protocol-neutral sample, and current DCurses acceptance.
 
 Exact release qualification evidence belongs to the relevant pull-request workflow, merged `main` workflow, release notes, and GitHub Release rather than being hard-coded permanently into this policy document.
 

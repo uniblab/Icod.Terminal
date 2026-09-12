@@ -73,11 +73,11 @@ public sealed partial class TerminalSession {
 	/// capability through an existing reviewed bounded live probe when such a probe exists.
 	/// </summary>
 	/// <remarks>
-	/// Verification is intentionally narrower than inspection. In version 1.10, live support
-	/// verification is available for modern keyboard reporting and raster graphics. Other semantic
-	/// capabilities return their current inspection status unchanged rather than emitting invented
-	/// or behavior-changing probe traffic. Existing decisive live evidence and unavailable endpoints
-	/// are also returned without probing.
+	/// Verification is intentionally narrower than inspection. Live support verification is
+	/// available for modern keyboard reporting, raster graphics, and persistent raster graphics.
+	/// Other semantic capabilities return their current inspection status unchanged rather than
+	/// emitting invented or behavior-changing probe traffic. Existing decisive live evidence and
+	/// unavailable endpoints are also returned without probing.
 	/// </remarks>
 	/// <param name="capability">The semantic capability to verify when a reviewed probe exists.</param>
 	/// <param name="cancellationToken">Cancellation for any live verification attempt.</param>
@@ -122,6 +122,12 @@ public sealed partial class TerminalSession {
 				).ConfigureAwait( false );
 				break;
 
+			case TerminalCapability.PersistentRasterGraphics:
+				_ = await this.ProbeKittyGraphicsSupportAsync(
+					cancellationToken
+				).ConfigureAwait( false );
+				break;
+
 			default:
 				return status;
 		}
@@ -143,6 +149,7 @@ public sealed partial class TerminalSession {
 			TerminalCapability.FocusReporting => TerminalSemanticOperation.FocusReporting,
 			TerminalCapability.BracketedPaste => TerminalSemanticOperation.BracketedPaste,
 			TerminalCapability.RasterGraphics => TerminalSemanticOperation.RasterGraphics,
+			TerminalCapability.PersistentRasterGraphics => TerminalSemanticOperation.PersistentRasterGraphics,
 			_ => throw new ArgumentOutOfRangeException(
 				nameof( capability ),
 				capability,

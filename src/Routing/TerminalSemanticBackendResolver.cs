@@ -493,6 +493,11 @@ internal static class TerminalSemanticBackendResolver {
 			( TerminalProtocolBackend.ApcKittyGraphics, false ),
 			( TerminalProtocolBackend.DcsSixel, false )
 		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			( TerminalProtocolBackend.ApcKittyGraphics, false )
+		);
 
 		ValidatePolicies( policies );
 		return new ReadOnlyDictionary<

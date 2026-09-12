@@ -206,6 +206,10 @@ internal static class TerminalSemanticBackendRegistry {
 				TerminalSemanticOperation.RasterGraphics,
 				TerminalProtocolBackend.DcsSixel,
 				TerminalProtocolBackend.ApcKittyGraphics
+			),
+			[ TerminalSemanticOperation.PersistentRasterGraphics ] = CreateCandidates(
+				TerminalSemanticOperation.PersistentRasterGraphics,
+				TerminalProtocolBackend.ApcKittyGraphics
 			)
 		};
 
