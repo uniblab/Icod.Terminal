@@ -117,6 +117,7 @@ Contract:
 - `X` and `Y` are zero-based and non-negative;
 - `Width` and `Height` are positive;
 - scalar values respect `TerminalRasterImage.MaximumDimension`;
+- every present rectangle is revalidated by placement options, including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor;
 - the right and bottom edges must not exceed the actual source resource dimensions;
 - `SourceRectangle == null` means the full source image;
 - a present rectangle is emitted as all four crop fields together rather than partially;
@@ -135,7 +136,7 @@ Source cropping selects source pixels only. It does not define terminal screen p
 - `null` means backend/default stacking order;
 - wire formatting uses invariant signed decimal representation.
 
-Z-order is relative stacking intent for one placement. It does not create parent/child placement identity, graph lifetime ownership, cycle detection, or a general scene-composition model.
+Z-order expresses signed stacking order for one placement. It does not create parent/child placement identity, graph lifetime ownership, cycle detection, or a general scene-composition model.
 
 ## 7. Complete replacement semantics
 
