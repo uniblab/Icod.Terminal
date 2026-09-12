@@ -49,7 +49,7 @@ maximum live persistent placements  4096
 placement Columns / Rows             1..16384 when supplied
 ```
 
-Version 1.12 adds source rectangles without increasing source raster ceilings. Rectangle scalar values are bounded, dimensions must be positive, coordinates non-negative, and the complete rectangle must fit inside the owning resource before output. Signed z-order consumes only a bounded `int` value and adds no unbounded layer registry.
+Version 1.12 adds source rectangles without increasing source raster ceilings. Rectangle scalar values are bounded, dimensions must be positive, coordinates non-negative, and every present rectangle—including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor—is revalidated before the complete rectangle is checked against the owning resource and before output. Signed z-order consumes only a bounded `int` value and adds no unbounded layer registry.
 
 Relevant framing/resource ceilings remain bounded, including normal response frames, APC/DCS frames, Kitty Base64 chunk data, notification metadata, and Sixel quantization state.
 
@@ -97,7 +97,7 @@ For unacknowledged protocols, successful completion generally means requested by
 
 For acknowledged persistent resource/placement operations, success means a well-formed correlated response was accepted under the protocol contract. It still does not authenticate the terminal or guarantee future persistence/visual stacking.
 
-`ZIndex` is therefore a requested relative stacking intent, not a verified global scene order.
+`ZIndex` is therefore a requested signed stacking order, not a verified global scene order and not a relative-placement relationship.
 
 ## 8. Raster input and source cropping
 
@@ -141,7 +141,8 @@ While current, cleanup is child-first: placements are deleted before resource da
 
 Security-relevant guarantees:
 
-- rectangle scalar validation is performed by constructors/options before output;
+- constructor validation enforces the public rectangle scalar contract;
+- placement options revalidate every present rectangle, including default struct values that bypass the constructor;
 - resource-aware validation prevents a crop from escaping the uploaded raster dimensions;
 - widened arithmetic prevents boundary arithmetic from overflowing before comparison;
 - a present crop is encoded as one complete reviewed four-field tuple;
