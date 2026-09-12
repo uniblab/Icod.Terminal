@@ -45,14 +45,17 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 	/// Replaces this placement at the terminal's current cursor position while retaining its
 	/// private resource and placement identities.
 	/// </summary>
-	/// <param name="options">Optional terminal-cell placement extents.</param>
+	/// <param name="options">Optional persistent-raster placement geometry.</param>
 	/// <param name="cancellationToken">Cancellation observed before replacement output commits.</param>
 	/// <returns>The controlled mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> UpdateAsync(
 		TerminalRasterPlacementOptions? options = null,
 		CancellationToken cancellationToken = default
 	) {
-		options?.Validate();
+		options?.Validate(
+			this.State.Resource.SourceWidth,
+			this.State.Resource.SourceHeight
+		);
 		cancellationToken.ThrowIfCancellationRequested();
 
 		TerminalSession? owner = Volatile.Read( ref this.session );
