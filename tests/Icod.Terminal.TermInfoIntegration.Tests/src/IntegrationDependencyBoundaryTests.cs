@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.TermInfoIntegration.Tests
-	TermInfo persistent-raster integration contract tests for Icod.Terminal.
+	Validation utility for Icod.Terminal release and integration contracts.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
