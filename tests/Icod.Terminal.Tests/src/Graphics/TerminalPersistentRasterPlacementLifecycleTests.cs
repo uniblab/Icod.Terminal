@@ -60,9 +60,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			transport,
 			imageId: 77
 		);
-		TerminalRasterPlacement placement = await CreatePlacementAsync(
-			resource
-		);
+		TerminalRasterPlacement placement = await CreatePlacementAsync( resource );
 
 		TerminalControlMutationResult result = await placement.UpdateAsync(
 			new TerminalRasterPlacementOptions {
@@ -97,9 +95,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			transport,
 			imageId: 77
 		);
-		TerminalRasterPlacement placement = await CreatePlacementAsync(
-			resource
-		);
+		TerminalRasterPlacement placement = await CreatePlacementAsync( resource );
 		int baselineWrites = transport.Writes.Count;
 
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
@@ -110,7 +106,6 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 				}
 			)
 		);
-
 		Assert.Equal( baselineWrites, transport.Writes.Count );
 	}
 
@@ -123,9 +118,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			transport,
 			imageId: 77
 		);
-		TerminalRasterPlacement placement = await CreatePlacementAsync(
-			resource
-		);
+		TerminalRasterPlacement placement = await CreatePlacementAsync( resource );
 		await placement.DisposeAsync();
 		int baselineWrites = transport.Writes.Count;
 
@@ -144,9 +137,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			transport,
 			imageId: 77
 		);
-		TerminalRasterPlacement placement = await CreatePlacementAsync(
-			resource
-		);
+		TerminalRasterPlacement placement = await CreatePlacementAsync( resource );
 
 		await placement.DisposeAsync();
 		await transport.WaitForWriteCountAsync( 3 );
@@ -212,9 +203,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			transport,
 			imageId: 77
 		);
-		TerminalRasterPlacement placement = await CreatePlacementAsync(
-			resource
-		);
+		TerminalRasterPlacement placement = await CreatePlacementAsync( resource );
 		await resource.DisposeAsync();
 		int baselineWrites = transport.Writes.Count;
 
@@ -233,9 +222,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			transport,
 			imageId: 77
 		);
-		TerminalRasterPlacement placement = await CreatePlacementAsync(
-			resource
-		);
+		TerminalRasterPlacement placement = await CreatePlacementAsync( resource );
 		transport.FailOnWriteNumber = 3;
 
 		await Assert.ThrowsAsync<IOException>(
@@ -264,7 +251,6 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 			async () => await resource.DisposeAsync()
 		);
 		await transport.WaitForWriteCountAsync( 6 );
-
 		Assert.Equal(
 			Encoding.ASCII.GetBytes(
 				"\u001b_Ga=d,d=I,i=91,q=2\u001b\\"
@@ -365,6 +351,7 @@ public sealed class TerminalPersistentRasterPlacementLifecycleTests {
 						static item => item.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
