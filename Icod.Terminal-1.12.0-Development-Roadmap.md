@@ -2,7 +2,7 @@
 
 **Release:** `1.12.0`  
 **Theme:** bounded advanced persistent-raster placement geometry  
-**Status:** T120–T126 accepted; T127 stable release-candidate qualification pending  
+**Status:** T120–T126 accepted; T127 stable release candidate accepted; closure-only exact-head qualification is the final gate  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** published `1.11.1`
 
@@ -76,7 +76,7 @@ T123  z-order public contract + validation                                 accep
 T124  create/update encoder and acknowledged placement integration         accepted
 T125  lifecycle/adversarial/boundary hardening                             accepted
 T126  sample/package-only consumer/XML docs/downstream qualification       accepted
-T127  API freeze/release docs/three-OS/package release closure             in progress
+T127  API freeze/release docs/three-OS/package release closure             release candidate accepted; final closure matrix pending
 ```
 
 ## Accepted checkpoints
@@ -162,37 +162,58 @@ Acceptance includes:
 - generated XML documentation checks for the new type, constructor, four properties, and both new placement-option members on all package TFMs;
 - current Stable 1.x downstream `Icod.DCurses` acceptance/hardening soak with no downstream code change.
 
+### T127 — stable release candidate
+
+Accepted release candidate exact head:
+
+```text
+0b7961f6d8151253be57f65a69e17a12ec4bdec5
+```
+
+Workflow:
+
+```text
+#1659 / 34717812704
+```
+
+All nine PR jobs passed, including stable `1.12.0` package metadata, final API freeze, current downstream soak, and validated package artifact.
+
+Validated package artifact:
+
+```text
+id:     10305651607
+digest: sha256:ed5faa549819e89b35e03dc06a5e1061371a15fbd4336a46fbe25d6631408bbe
+```
+
+Package candidate artifact:
+
+```text
+id:     10305430874
+digest: sha256:700dac08d2a7655d77e113b5051391a05a88ef7cefc1c2c542841534adab37be
+```
+
+The final T127 evidence authority is [`docs/T127-1.12.0-Release-Closure.md`](docs/T127-1.12.0-Release-Closure.md).
+
 ## T127 — stable release closure
 
-The stable release candidate must:
+The accepted stable release candidate:
 
-1. keep the public API fingerprint exactly `eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8`;
-2. set package version metadata to stable `1.12.0`;
-3. synchronize README, changelog, release notes, current roadmap, architecture, persistent ownership, security/privacy, and compatibility authorities;
-4. preserve production dependencies exactly:
+1. keeps the public API fingerprint exactly `eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8`;
+2. sets package version metadata to stable `1.12.0`;
+3. synchronizes README, changelog, release notes, current roadmap, architecture, persistent ownership, security/privacy, and compatibility authorities;
+4. preserves production dependencies exactly:
 
 ```text
 Icod.TermInfo 1.11.0
 Icod.Timing   1.0.0
 ```
 
-5. pass the exact-head full Staging matrix:
+5. passed the exact-head full Staging matrix on `0b7961f6d8151253be57f65a69e17a12ec4bdec5` in workflow `#1659 / 34717812704`;
+6. records the accepted candidate SHA/workflow/fingerprint/dependency/downstream evidence in `docs/T127-1.12.0-Release-Closure.md`;
+7. requires the same full matrix once more on the closure-only status-documentation head;
+8. leaves merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication to the maintainer/release workflow.
 
-```text
-Runtime Windows
-Runtime Linux
-Runtime macOS
-Package candidate / public API freeze
-Package Foundation
-Package Presentation
-Package Semantic and hardening
-Package Stable 1.x release line
-Validated package artifact
-```
-
-6. record the accepted candidate SHA/workflow/fingerprint/dependency/downstream evidence in a final closure document;
-7. run the same full matrix once more after closure-only status documentation;
-8. leave merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication to the maintainer/release workflow.
+The final closure-only head changes documentation status only; production code, package metadata, dependencies, and the public API remain identical to the accepted release candidate.
 
 ## Compatibility guardrails
 
@@ -236,9 +257,8 @@ T120 accepted
                 -> T124 accepted
                     -> T125 accepted
                         -> T126 accepted
-                            -> T127 stable candidate
-                                -> exact-head matrix
-                                    -> closure-only record
-                                        -> final exact-head matrix
-                                            -> maintainer handoff
+                            -> T127 stable candidate accepted (#1659)
+                                -> closure-only record
+                                    -> final exact-head matrix
+                                        -> maintainer handoff
 ```
