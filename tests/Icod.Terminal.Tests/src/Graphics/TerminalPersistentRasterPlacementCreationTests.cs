@@ -370,7 +370,6 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 						static item => item.ToArray()
 					).ToArray();
 				}
-			}
 		}
 
 		public async ValueTask<int> ReadAsync(
@@ -399,6 +398,7 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 				this.writes.Add( buffer.ToArray() );
 			}
 			this.writeSignal.Release();
+			this.PublishPlacementAcknowledgement( buffer.Span );
 			return ValueTask.CompletedTask;
 		}
 
@@ -434,6 +434,65 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 					timeout.Token
 				).ConfigureAwait( false );
 			}
+		}
+
+		private void PublishPlacementAcknowledgement(
+			ReadOnlySpan<byte> frame
+		) {
+			string text = Encoding.ASCII.GetString( frame );
+			if ( !text.StartsWith(
+				"\u001b_Ga=p,",
+				StringComparison.Ordinal
+			) || !TryReadIdentityField(
+				text,
+				",i=",
+				out uint imageId
+			) || !TryReadIdentityField(
+				text,
+				",p=",
+				out uint placementId
+			) ) {
+				return;
+			}
+
+			this.Publish(
+				Encoding.ASCII.GetBytes(
+					$"\u001b_Gi={imageId},p={placementId};OK\u001b\\"
+				)
+			);
+		}
+
+		private static bool TryReadIdentityField(
+			string text,
+			string marker,
+			out uint value
+		) {
+			ArgumentNullException.ThrowIfNull( text );
+			ArgumentException.ThrowIfNullOrEmpty( marker );
+
+			int start = text.IndexOf(
+				marker,
+				StringComparison.Ordinal
+			);
+			if ( 0 > start ) {
+				value = 0u;
+				return false;
+			}
+			start += marker.Length;
+			int end = start;
+			while ( end < text.Length
+				&& text[ end ] is >= '0' and <= '9' ) {
+				++end;
+			}
+			return start < end
+				&& uint.TryParse(
+					text.AsSpan(
+						start,
+						end - start
+					),
+					out value
+				)
+			;
 		}
 	}
 
