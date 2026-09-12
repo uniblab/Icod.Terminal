@@ -370,6 +370,7 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 						static item => item.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
