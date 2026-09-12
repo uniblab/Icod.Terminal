@@ -308,6 +308,7 @@ public sealed class TerminalPersistentRasterLifecycleTests {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
 				LifecycleSource = lifecycle,
+				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
 			}
@@ -382,7 +383,6 @@ public sealed class TerminalPersistentRasterLifecycleTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
-			}
 		}
 
 		public async ValueTask<int> ReadAsync(

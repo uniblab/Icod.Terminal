@@ -339,6 +339,7 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
 			}
@@ -370,7 +371,6 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 						static item => item.ToArray()
 					).ToArray();
 				}
-			}
 		}
 
 		public async ValueTask<int> ReadAsync(
