@@ -42,6 +42,36 @@ internal static class TerminalTermInfoSemanticEvidence {
 	private const string SgrMousePrefix = "\u001b[<";
 	private const string LegacyMousePrefix = "\u001b[M";
 
+	private static readonly ExactSemanticContract[] ExactSemanticContracts = [
+		new(
+			TerminalSemanticOperation.ClipboardWrite,
+			HasClipboardWrite
+		),
+		new(
+			TerminalSemanticOperation.CursorStyle,
+			HasCursorStyle
+		),
+		new(
+			TerminalSemanticOperation.PaletteColor,
+			HasPaletteColor
+		)
+	];
+
+	private static readonly BackendAdvertisementContract[] BackendAdvertisementContracts = [
+		new(
+			TerminalProtocolBackend.CsiFocusReporting,
+			HasFocusReporting
+		),
+		new(
+			TerminalProtocolBackend.CsiBracketedPaste,
+			HasBracketedPaste
+		),
+		new(
+			TerminalProtocolBackend.CsiMouseReporting,
+			HasAdvertisedMouseProtocol
+		)
+	];
+
 	/// <summary>
 	/// Seeds static TermInfo evidence for exact semantic equivalents and reviewed
 	/// metadata-backed protocol implementations selected by N158.
@@ -53,67 +83,22 @@ internal static class TerminalTermInfoSemanticEvidence {
 		ArgumentNullException.ThrowIfNull( terminal );
 		ArgumentNullException.ThrowIfNull( evidence );
 
-		if ( HasExtendedString(
-			terminal,
-			ClipboardWriteCapability
-		) ) {
-			AdvertiseSemantic(
-				evidence,
-				TerminalSemanticOperation.ClipboardWrite
-			);
+		foreach ( ExactSemanticContract contract in ExactSemanticContracts ) {
+			if ( contract.IsAdvertised( terminal ) ) {
+				AdvertiseSemantic(
+					evidence,
+					contract.Operation
+				);
+			}
 		}
 
-		if ( HasExtendedString(
-			terminal,
-			CursorStyleCapability
-		) ) {
-			AdvertiseSemantic(
-				evidence,
-				TerminalSemanticOperation.CursorStyle
-			);
-		}
-
-		if ( terminal.GetBoolean( BooleanCapability.CanChangeColor )
-			&& !string.IsNullOrEmpty(
-				terminal.GetString( StringCapability.InitializeColor )
-			) ) {
-			AdvertiseSemantic(
-				evidence,
-				TerminalSemanticOperation.PaletteColor
-			);
-		}
-
-		if ( HasExtendedStringContract(
-			terminal,
-			FocusEnableCapability,
-			FocusDisableCapability,
-			FocusInCapability,
-			FocusOutCapability
-		) ) {
-			AdvertiseBackend(
-				evidence,
-				TerminalProtocolBackend.CsiFocusReporting
-			);
-		}
-
-		if ( HasExtendedStringContract(
-			terminal,
-			BracketedPasteEnableCapability,
-			BracketedPasteDisableCapability,
-			BracketedPasteStartCapability,
-			BracketedPasteEndCapability
-		) ) {
-			AdvertiseBackend(
-				evidence,
-				TerminalProtocolBackend.CsiBracketedPaste
-			);
-		}
-
-		if ( HasAdvertisedMouseProtocol( terminal ) ) {
-			AdvertiseBackend(
-				evidence,
-				TerminalProtocolBackend.CsiMouseReporting
-			);
+		foreach ( BackendAdvertisementContract contract in BackendAdvertisementContracts ) {
+			if ( contract.IsAdvertised( terminal ) ) {
+				AdvertiseBackend(
+					evidence,
+					contract.Backend
+				);
+			}
 		}
 	}
 
@@ -134,24 +119,12 @@ internal static class TerminalTermInfoSemanticEvidence {
 			);
 		}
 
-		return operation switch {
-			TerminalSemanticOperation.ClipboardWrite
-				=> HasExtendedString(
-					terminal,
-					ClipboardWriteCapability
-				),
-			TerminalSemanticOperation.CursorStyle
-				=> HasExtendedString(
-					terminal,
-					CursorStyleCapability
-				),
-			TerminalSemanticOperation.PaletteColor
-				=> terminal.GetBoolean( BooleanCapability.CanChangeColor )
-					&& !string.IsNullOrEmpty(
-						terminal.GetString( StringCapability.InitializeColor )
-					),
-			_ => false
-		};
+		foreach ( ExactSemanticContract contract in ExactSemanticContracts ) {
+			if ( contract.Operation == operation ) {
+				return contract.IsAdvertised( terminal );
+			}
+		}
+		return false;
 	}
 
 	/// <summary>
@@ -181,6 +154,67 @@ internal static class TerminalTermInfoSemanticEvidence {
 		) || keyMouse.StartsWith(
 			LegacyMousePrefix,
 			StringComparison.Ordinal
+		);
+	}
+
+	private static bool HasClipboardWrite(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		return HasExtendedString(
+			terminal,
+			ClipboardWriteCapability
+		);
+	}
+
+	private static bool HasCursorStyle(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		return HasExtendedString(
+			terminal,
+			CursorStyleCapability
+		);
+	}
+
+	private static bool HasPaletteColor(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		return terminal.GetBoolean( BooleanCapability.CanChangeColor )
+			&& !string.IsNullOrEmpty(
+				terminal.GetString( StringCapability.InitializeColor )
+			);
+	}
+
+	private static bool HasFocusReporting(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		return HasExtendedStringContract(
+			terminal,
+			FocusEnableCapability,
+			FocusDisableCapability,
+			FocusInCapability,
+			FocusOutCapability
+		);
+	}
+
+	private static bool HasBracketedPaste(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		return HasExtendedStringContract(
+			terminal,
+			BracketedPasteEnableCapability,
+			BracketedPasteDisableCapability,
+			BracketedPasteStartCapability,
+			BracketedPasteEndCapability
 		);
 	}
 
@@ -241,4 +275,14 @@ internal static class TerminalTermInfoSemanticEvidence {
 			out string? value
 		) && !string.IsNullOrEmpty( value );
 	}
+
+	private readonly record struct ExactSemanticContract(
+		TerminalSemanticOperation Operation,
+		Func<TerminalDescription, bool> IsAdvertised
+	);
+
+	private readonly record struct BackendAdvertisementContract(
+		TerminalProtocolBackend Backend,
+		Func<TerminalDescription, bool> IsAdvertised
+	);
 }
