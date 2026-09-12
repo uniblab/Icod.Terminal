@@ -132,7 +132,7 @@ Supported public storage forms are `Rgb24`, `Rgba32`, and `Indexed8` with an RGB
 
 ### Persistent resources and placements
 
-Version 1.11 established a separate ownership model for terminal-resident raster data; version 1.12 adds bounded source-pixel cropping and relative z-order to the existing placement options:
+Version 1.11 established a separate ownership model for terminal-resident raster data; version 1.12 adds bounded source-pixel cropping and signed z-order to the existing placement options:
 
 ```csharp
 TerminalCapabilityStatus capability = await session.VerifyCapabilityAsync(
