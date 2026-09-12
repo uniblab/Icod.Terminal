@@ -21,7 +21,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Configures the cell extents of one persistent raster placement.
+/// Configures the geometry of one persistent raster placement.
 /// </summary>
 public sealed class TerminalRasterPlacementOptions {
 	/// <summary>
@@ -42,6 +42,15 @@ public sealed class TerminalRasterPlacementOptions {
 		set;
 	}
 
+	/// <summary>
+	/// Gets or sets the source-pixel rectangle to display, or <see langword="null"/>
+	/// to place the complete source raster.
+	/// </summary>
+	public TerminalRasterSourceRectangle? SourceRectangle {
+		get;
+		set;
+	}
+
 	internal void Validate() {
 		ValidateExtent(
 			this.Columns,
@@ -51,6 +60,36 @@ public sealed class TerminalRasterPlacementOptions {
 			this.Rows,
 			nameof( this.Rows )
 		);
+	}
+
+	internal void Validate(
+		int sourceWidth,
+		int sourceHeight
+	) {
+		ValidateSourceDimension(
+			sourceWidth,
+			nameof( sourceWidth )
+		);
+		ValidateSourceDimension(
+			sourceHeight,
+			nameof( sourceHeight )
+		);
+		this.Validate();
+
+		if ( !this.SourceRectangle.HasValue ) {
+			return;
+		}
+
+		TerminalRasterSourceRectangle rectangle = this.SourceRectangle.Value;
+		long right = (long)rectangle.X + rectangle.Width;
+		long bottom = (long)rectangle.Y + rectangle.Height;
+		if ( sourceWidth < right || sourceHeight < bottom ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( this.SourceRectangle ),
+				this.SourceRectangle,
+				"The raster source rectangle must fit completely inside the persistent raster resource."
+			);
+		}
 	}
 
 	private static void ValidateExtent(
@@ -66,6 +105,20 @@ public sealed class TerminalRasterPlacementOptions {
 				parameterName,
 				value,
 				$"A persistent raster placement extent must be between 1 and {TerminalRasterImage.MaximumDimension}."
+			);
+		}
+	}
+
+	private static void ValidateSourceDimension(
+		int value,
+		string parameterName
+	) {
+		ArgumentException.ThrowIfNullOrEmpty( parameterName );
+		if ( value is < 1 or > TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException(
+				parameterName,
+				value,
+				$"A persistent raster source dimension must be between 1 and {TerminalRasterImage.MaximumDimension}."
 			);
 		}
 	}
