@@ -181,6 +181,30 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	internal bool InvalidateResource(
+		TerminalPersistentRasterResourceState resource
+	) {
+		ArgumentNullException.ThrowIfNull( resource );
+
+		lock ( this.synchronization ) {
+			if ( !this.resources.TryGetValue(
+				resource,
+				out HashSet<TerminalPersistentRasterPlacementState>? children
+			) ) {
+				return false;
+			}
+
+			foreach ( TerminalPersistentRasterPlacementState placement in children ) {
+				this.placements.Remove( placement );
+				this.placementIds.Remove( placement.PlacementId );
+			}
+			children.Clear();
+			this.resources.Remove( resource );
+			this.imageNumbers.Remove( resource.ImageNumber );
+			return true;
+		}
+	}
+
 	internal void DrainCurrent(
 		out TerminalPersistentRasterPlacementState[] releasedPlacements,
 		out TerminalPersistentRasterResourceState[] releasedResources

@@ -177,7 +177,9 @@ public sealed partial class TerminalSession {
 				"The persistent raster resource is no longer current for this session generation."
 			);
 		}
-		if ( 0u == resourceState.ImageId ) {
+
+		uint imageId = resourceState.ImageId;
+		if ( 0u == imageId ) {
 			throw new InvalidOperationException(
 				"The persistent raster resource does not have a terminal-assigned image id."
 			);
@@ -208,17 +210,66 @@ public sealed partial class TerminalSession {
 			);
 		}
 
+		KittyGraphicsPersistentPlacementResponseMatcher matcher = new(
+			imageId,
+			placementState.PlacementId
+		);
+		ValueTask<TerminalQueryResponseResult> transaction;
 		try {
-			await KittyGraphicsPersistentPlacementTransaction.WriteAsync(
-				this,
-				resourceState.ImageId,
-				placementState.PlacementId,
-				options,
-				cancellationToken
-			).ConfigureAwait( false );
+			transaction = this.GetQueryTransactionManager().ExecuteAsync(
+				_ => KittyGraphicsPersistentPlacementTransaction.WriteCoreAsync(
+					this,
+					imageId,
+					placementState.PlacementId,
+					options
+				),
+				TerminalQueryResponsePlan.ForCompletion( matcher ),
+				PersistentRasterCreationTimeout,
+				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+				cancellationToken,
+				abandonedCleanup: () => {
+					_ = this.persistentRasterRegistry.TryReleasePlacement(
+						placementState
+					);
+				}
+			);
 		} catch {
 			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
 			throw;
+		}
+
+		TerminalQueryResponseResult queryResult;
+		try {
+			queryResult = await transaction.ConfigureAwait( false );
+		} catch {
+			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
+			throw;
+		}
+
+		KittyGraphicsPersistentPlacementResponse response;
+		try {
+			response = KittyGraphicsPersistentPlacementResponse.Parse(
+				queryResult.Frame,
+				imageId,
+				placementState.PlacementId
+			);
+		} catch {
+			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
+			throw;
+		}
+
+		if ( !response.IsSuccess ) {
+			if ( response.IsUnavailable ) {
+				_ = this.persistentRasterRegistry.InvalidateResource( resourceState );
+				return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+					response.Message
+				);
+			}
+
+			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
+			return TerminalControlResult<TerminalRasterPlacement>.Failed(
+				response.Message
+			);
 		}
 
 		if ( !this.persistentRasterRegistry.IsPlacementCurrent( placementState ) ) {
@@ -245,11 +296,6 @@ public sealed partial class TerminalSession {
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ThrowIfSessionOutputClosed();
 
-		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
-			cancellationToken
-		).ConfigureAwait( false );
-		cancellationToken.ThrowIfCancellationRequested();
-
 		if ( !this.persistentRasterRegistry.IsPlacementCurrent( placementState ) ) {
 			return TerminalControlMutationResult.Unavailable(
 				"The persistent raster placement is no longer current for this session generation."
@@ -263,12 +309,49 @@ public sealed partial class TerminalSession {
 			);
 		}
 
-		await KittyGraphicsPersistentPlacementTransaction.WriteCoreAsync(
-			this,
+		KittyGraphicsPersistentPlacementResponseMatcher matcher = new(
 			imageId,
-			placementState.PlacementId,
-			options
+			placementState.PlacementId
+		);
+		TerminalQueryResponseResult queryResult = await this.GetQueryTransactionManager().ExecuteAsync(
+			_ => KittyGraphicsPersistentPlacementTransaction.WriteCoreAsync(
+				this,
+				imageId,
+				placementState.PlacementId,
+				options
+			),
+			TerminalQueryResponsePlan.ForCompletion( matcher ),
+			PersistentRasterCreationTimeout,
+			TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+			cancellationToken
 		).ConfigureAwait( false );
+
+		KittyGraphicsPersistentPlacementResponse response =
+			KittyGraphicsPersistentPlacementResponse.Parse(
+				queryResult.Frame,
+				imageId,
+				placementState.PlacementId
+			);
+		if ( !response.IsSuccess ) {
+			if ( response.IsUnavailable ) {
+				_ = this.persistentRasterRegistry.InvalidateResource(
+					placementState.Resource
+				);
+				return TerminalControlMutationResult.Unavailable(
+					response.Message
+				);
+			}
+
+			return TerminalControlMutationResult.Failed(
+				response.Message
+			);
+		}
+
+		if ( !this.persistentRasterRegistry.IsPlacementCurrent( placementState ) ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The persistent raster placement is no longer current for this session generation."
+			);
+		}
 		return TerminalControlMutationResult.Success();
 	}
 
