@@ -299,6 +299,7 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 					return this.writes.ToArray();
 				}
 		}
+		}
 
 		internal Task<string> WaitForWriteAsync() {
 			return this.firstWrite.Task;
@@ -374,6 +375,7 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 				lock ( this.sync ) {
 					return this.bytes.ToArray();
 				}
+		}
 		}
 
 		public ValueTask WriteAsync(
