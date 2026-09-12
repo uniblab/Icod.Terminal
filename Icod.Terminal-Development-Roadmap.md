@@ -4,8 +4,8 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable release:** `1.11.0`
-- **Next development line:** `1.12.0` — conditional advanced raster placement/lifecycle work
+- **Current stable release:** `1.11.1`
+- **Next development line:** `1.12.0` — bounded advanced persistent-raster placement geometry
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -96,7 +96,7 @@ ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 
 ## Published 1.11 result
 
-Version 1.11 adds a separate persistent raster ownership domain above the existing `TerminalRasterImage` and capability-planning contracts.
+Version 1.11 established a separate persistent raster ownership domain above the existing `TerminalRasterImage` and capability-planning contracts.
 
 The stable semantic flow is:
 
@@ -113,22 +113,6 @@ PersistentRasterGraphics verification
 
 The public model remains opaque. Kitty image ids, image numbers, placement ids, raw APC command dictionaries, and backend selection stay internal.
 
-Stable 1.11 guarantees include:
-
-- `TerminalCapability.PersistentRasterGraphics = 9` with values `0..8` unchanged;
-- explicit separation between ephemeral `RasterGraphics` and persistent ownership;
-- acknowledged resource creation before a public handle is returned;
-- correlated placement create/update responses through the existing one-reader/query path;
-- current-cursor placement with optional `Columns` / `Rows` in `1..16384` and no text-cursor movement;
-- 256 live resources and 4096 live placements per session;
-- nonzero private collision-safe identities with wraparound handling;
-- generation-scoped terminal-resident certainty;
-- no hidden source-image retention or automatic replay after invalidation/resume;
-- `ENOENT` invalidation when the terminal no longer recognizes a believed-current resource;
-- child-first cleanup, locally idempotent disposal, and stale local-only cleanup;
-- direct transfer only; no file/temp-file/shared-memory transport;
-- no scene-graph, cell/window/layout, z-order, animation, source-rectangle, or PTY ownership.
-
 Final 1.11 public API fingerprint:
 
 ```text
@@ -141,32 +125,78 @@ Detailed 1.11 authorities:
 - [`docs/releases/1.11.0.md`](docs/releases/1.11.0.md)
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
 - [`docs/Public-API-Baseline-1.11.md`](docs/Public-API-Baseline-1.11.md)
-- [`docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`](docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md)
-- [`docs/C119-1.11.0-Release-Closure.md`](docs/C119-1.11.0-Release-Closure.md)
 
-## Next development line: 1.12.0
+## Published 1.11.1 integration patch
 
-Advanced raster placement/lifecycle features remain candidates rather than promises.
+Version 1.11.1 kept the 1.11 public API and persistent-raster runtime semantics unchanged while proving the intended loose-coupling integration with `Icod.TermInfo.Inspection 1.11.0`.
 
-Potential areas include:
+The accepted consumer flow is:
 
-- source rectangles;
-- z-order;
-- Unicode placeholders;
-- relative placement;
-- richer placement geometry;
-- animation or frame lifecycle;
-- additional terminal-resident resource operations.
+```text
+TermInfo static inspection / classification / planning
+    -> optional Terminal live verification
+    -> caller-owned Verified lifecycle evidence
+    -> TermInfo reclassification / replanning
+    -> Terminal runtime resource / placement execution
+```
 
-They should enter the core only when:
+Inspection remains a consumer/test/sample-only dependency. The production package graph remains `Icod.TermInfo 1.11.0` plus `Icod.Timing 1.0.0`.
 
-1. a concrete downstream requirement exists;
-2. ownership/lifecycle semantics can be stated precisely;
-3. bounded-resource behavior can be specified and tested;
-4. the semantic abstraction is useful beyond raw vendor command exposure, or is deliberately isolated as optional protocol-specific functionality;
-5. the feature does not turn `Icod.Terminal` into a virtual-screen or scene-graph library.
+Detailed 1.11.1 authorities:
 
-The default position after 1.11 is therefore **measure and justify**, not automatically expand.
+- [`Icod.Terminal-1.11.1-Development-Roadmap.md`](Icod.Terminal-1.11.1-Development-Roadmap.md)
+- [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md)
+- [`docs/T1111-E-1.11.1-Release-Closure.md`](docs/T1111-E-1.11.1-Release-Closure.md)
+
+## Current development line: 1.12.0
+
+Version 1.12 is intentionally bounded to advanced placement geometry that extends the existing opaque placement object without adding a placement graph or virtual-screen ownership.
+
+Approved additions:
+
+```text
+pixel-space source rectangles
+signed z-order
+```
+
+Before those public additions, T121 performs the behavior-preserving table-driven cleanup of `TerminalTermInfoSemanticEvidence` approved at 1.11.1 closure.
+
+The 1.12 sequence is:
+
+```text
+T120  architecture/API regret gate + roadmap normalization
+T121  table-driven TermInfo semantic evidence
+T122  source-rectangle public contract + resource-aware validation
+T123  z-order public contract
+T124  acknowledged create/update encoder integration
+T125  lifecycle/adversarial/boundary hardening
+T126  sample/package/downstream qualification
+T127  API freeze and stable release closure
+```
+
+The versioned roadmap is:
+
+[`Icod.Terminal-1.12.0-Development-Roadmap.md`](Icod.Terminal-1.12.0-Development-Roadmap.md)
+
+The design authority is:
+
+[`docs/superpowers/specs/2026-09-12-1.12.0-advanced-raster-placement-design.md`](docs/superpowers/specs/2026-09-12-1.12.0-advanced-raster-placement-design.md)
+
+### 1.12 boundaries
+
+Source rectangles are zero-based source-image pixel rectangles and must fit completely inside the uploaded raster. The library rejects invalid rectangles before output rather than exposing backend-specific clipping behavior.
+
+Z-order is a nullable signed 32-bit placement property. The existing current-cursor/no-cursor-movement placement semantics remain intact.
+
+The following remain deferred beyond 1.12:
+
+- relative placements and parent identities;
+- placement chains, cycles, and depth limits;
+- Unicode placeholder/virtual placements;
+- animation/frame lifecycle;
+- scene/window/cell/layout ownership;
+- source-image caches/replay;
+- caller-selected raster backends and raw Kitty dispatch.
 
 ## Parallel evidence tracks
 
@@ -205,7 +235,8 @@ The stable 1.x program preserves these boundaries:
 event ownership                    completed in 1.9
     -> capability visibility       completed in 1.10
         -> persistent ownership    completed in 1.11
-            -> advanced placement only if justified in 1.12+
+            -> loose lifecycle planning integration completed in 1.11.1
+                -> bounded advanced placement geometry in 1.12
 ```
 
 `Icod.DCurses` remains the primary downstream witness for richer presentation needs. It should consume `Icod.Terminal` semantic resource/placement ownership rather than force the terminal layer to absorb virtual-screen or scene-graph responsibilities.
