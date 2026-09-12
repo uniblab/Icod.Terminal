@@ -485,6 +485,7 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 				&& text[ end ] is >= '0' and <= '9' ) {
 				++end;
 			}
+			value = 0u;
 			return start < end
 				&& uint.TryParse(
 					text.AsSpan(
