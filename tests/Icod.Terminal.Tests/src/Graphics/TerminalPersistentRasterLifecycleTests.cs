@@ -279,9 +279,10 @@ public sealed class TerminalPersistentRasterLifecycleTests {
 			throw new ArgumentOutOfRangeException( nameof( imageNumber ) );
 		}
 
+		int expectedWriteCount = transport.Writes.Count + 1;
 		Task<TerminalControlResult<TerminalRasterResource>> creation =
 			session.CreateRasterResourceAsync( CreateSmallImage() ).AsTask();
-		await transport.WaitForWriteCountAsync( transport.Writes.Count + 1 );
+		await transport.WaitForWriteCountAsync( expectedWriteCount );
 		transport.Publish(
 			Encoding.ASCII.GetBytes(
 				$"\u001b_Gi={imageId},I={imageNumber};OK\u001b\\"
@@ -381,6 +382,7 @@ public sealed class TerminalPersistentRasterLifecycleTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
