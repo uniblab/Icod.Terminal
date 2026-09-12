@@ -284,8 +284,12 @@ public sealed class TerminalDecrqssQueryTests {
 
 	[Fact]
 	public async Task CancellationRetainsLateDcsOwnership() {
+		ManualMonotonicClock clock = new();
 		DcsTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			clock
+		);
 		using CancellationTokenSource cancellation = new();
 
 		Task<TerminalStatusStringResponse> first = session.QueryStatusStringAsync(
