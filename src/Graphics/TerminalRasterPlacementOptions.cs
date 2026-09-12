@@ -69,6 +69,9 @@ public sealed class TerminalRasterPlacementOptions {
 			this.Rows,
 			nameof( this.Rows )
 		);
+		if ( this.SourceRectangle is TerminalRasterSourceRectangle rectangle ) {
+			rectangle.Validate();
+		}
 	}
 
 	internal void Validate(

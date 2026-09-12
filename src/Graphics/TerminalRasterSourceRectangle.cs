@@ -37,20 +37,14 @@ public readonly struct TerminalRasterSourceRectangle {
 		int width,
 		int height
 	) {
-		ValidateCoordinate(
+		Validate(
 			x,
-			nameof( x )
-		);
-		ValidateCoordinate(
 			y,
-			nameof( y )
-		);
-		ValidateExtent(
 			width,
-			nameof( width )
-		);
-		ValidateExtent(
 			height,
+			nameof( x ),
+			nameof( y ),
+			nameof( width ),
 			nameof( height )
 		);
 
@@ -86,6 +80,47 @@ public readonly struct TerminalRasterSourceRectangle {
 	/// </summary>
 	public int Height {
 		get;
+	}
+
+	internal void Validate() {
+		Validate(
+			this.X,
+			this.Y,
+			this.Width,
+			this.Height,
+			nameof( this.X ),
+			nameof( this.Y ),
+			nameof( this.Width ),
+			nameof( this.Height )
+		);
+	}
+
+	private static void Validate(
+		int x,
+		int y,
+		int width,
+		int height,
+		string xParameterName,
+		string yParameterName,
+		string widthParameterName,
+		string heightParameterName
+	) {
+		ValidateCoordinate(
+			x,
+			xParameterName
+		);
+		ValidateCoordinate(
+			y,
+			yParameterName
+		);
+		ValidateExtent(
+			width,
+			widthParameterName
+		);
+		ValidateExtent(
+			height,
+			heightParameterName
+		);
 	}
 
 	private static void ValidateCoordinate(

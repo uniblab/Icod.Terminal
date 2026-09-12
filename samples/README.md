@@ -91,7 +91,7 @@ The normal evidence-driven router may use verified Kitty Graphics or verified Si
 
 ### `Icod.Terminal.PersistentRaster.Sample`
 
-Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and relative z-order.
+Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and signed z-order.
 
 ```text
 dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
@@ -106,7 +106,7 @@ The sample:
 5. updates the same placement at the current cursor with a different crop, extent, and z-order;
 6. uses `await using` so placement/resource cleanup is deterministic.
 
-`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses relative stacking intent. Neither option turns `Icod.Terminal` into a scene-layout engine: 1.12 still does not own relative placement graphs, screen-coordinate layout, or automatic composition policy.
+`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses signed stacking order. Neither option turns `Icod.Terminal` into a scene-layout engine: 1.12 still does not own relative placement graphs, screen-coordinate layout, or automatic composition policy.
 
 The sample does not mention Kitty, Sixel, image ids, image numbers, placement ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
 

@@ -111,7 +111,7 @@ if ( TerminalControlStatus.Available != placementResult.Status
 await using TerminalRasterPlacement placement = placementResult.Value;
 
 await session.WriteTextAsync(
-	"\r\nThe placement uses a source-pixel crop and relative z-order while the terminal-resident resource remains owned.\r\n"
+	"\r\nThe placement uses a source-pixel crop and signed z-order while the terminal-resident resource remains owned.\r\n"
 );
 TerminalControlMutationResult update = await placement.UpdateAsync(
 	new TerminalRasterPlacementOptions {
@@ -137,7 +137,7 @@ if ( !update.Succeeded ) {
 }
 
 await session.WriteTextAsync(
-	"\r\nThe crop and relative stacking intent were updated; disposal will release placement and resource ownership.\r\n"
+	"\r\nThe crop and stacking order were updated; disposal will release placement and resource ownership.\r\n"
 );
 return 0;
 
