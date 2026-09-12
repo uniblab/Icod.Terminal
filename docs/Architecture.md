@@ -160,7 +160,7 @@ Placement position remains the terminal's current cursor location. `Columns` and
 
 Version 1.12 adds `TerminalRasterSourceRectangle` and `TerminalRasterPlacementOptions.SourceRectangle`.
 
-Coordinates are zero-based source-image pixels. `Width` and `Height` are positive. Scalar values remain within the raster dimension ceiling, and the complete rectangle must fit inside the owning resource before placement output commits.
+Coordinates are zero-based source-image pixels. `Width` and `Height` are positive. Scalar values remain within the raster dimension ceiling, and every present rectangle is revalidated by placement options—including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor—before the complete rectangle is checked against the owning resource and before placement output commits.
 
 The resource state stores immutable source width/height metadata needed for this validation. It does not retain source pixel bytes for replay.
 
@@ -170,7 +170,7 @@ Source cropping does **not** change screen placement ownership: the placement st
 
 `TerminalRasterPlacementOptions.ZIndex` is nullable signed `int` and accepts the full CLR `int` domain.
 
-It expresses relative stacking intent to the reviewed persistent backend. It is not a scene graph, parent/child placement chain, or global composition policy.
+It expresses signed stacking order to the reviewed persistent backend. It is not a scene graph, parent/child placement chain, or global composition policy.
 
 ### 7.3 Shared placement transaction
 
