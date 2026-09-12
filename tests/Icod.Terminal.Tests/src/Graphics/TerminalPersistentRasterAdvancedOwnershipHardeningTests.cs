@@ -34,7 +34,7 @@ public sealed class TerminalPersistentRasterAdvancedOwnershipHardeningTests {
 	private const int OwnershipCycleCount = 24;
 
 	[Fact]
-	public async Task TimedOutAdvancedPlacementRetainsWireSlotUntilLateResponseIsConsumed() {
+	public async Task TimedOutAdvancedPlacementDoesNotAcceptLateResponseForLaterPlacement() {
 		ManualMonotonicClock clock = new();
 		AcknowledgingTransport transport = new() {
 			AutoAcknowledgePlacements = false
@@ -77,12 +77,6 @@ public sealed class TerminalPersistentRasterAdvancedOwnershipHardeningTests {
 			};
 			Task<TerminalControlResult<TerminalRasterPlacement>> second =
 				resource.CreatePlacementAsync( secondOptions ).AsTask();
-			await YieldSeveralTimesAsync();
-			Assert.Equal( 2, transport.Writes.Count );
-
-			transport.Publish(
-				Encoding.ASCII.GetBytes( "\u001b_Gi=1001,p=1;OK\u001b\\" )
-			);
 			await transport.WaitForWriteCountAsync( 3 );
 			Assert.Equal(
 				Encoding.ASCII.GetBytes(
@@ -90,10 +84,16 @@ public sealed class TerminalPersistentRasterAdvancedOwnershipHardeningTests {
 				),
 				transport.Writes[ 2 ]
 			);
+
+			transport.Publish(
+				Encoding.ASCII.GetBytes( "\u001b_Gi=1001,p=1;OK\u001b\\" )
+			);
+			await YieldSeveralTimesAsync();
+			Assert.False( second.IsCompleted );
+
 			transport.Publish(
 				Encoding.ASCII.GetBytes( "\u001b_Gi=1001,p=2;OK\u001b\\" )
 			);
-
 			TerminalControlResult<TerminalRasterPlacement> result = await second;
 			Assert.Equal( TerminalControlStatus.Available, result.Status );
 			TerminalRasterPlacement placement = Assert.IsType<TerminalRasterPlacement>(
