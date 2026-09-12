@@ -2,7 +2,7 @@
 
 **Release:** `1.12.0`  
 **Theme:** bounded advanced persistent-raster placement geometry  
-**Status:** T120–T126 accepted; T127 stable release candidate accepted; closure-only exact-head qualification is the final gate  
+**Status:** T120–T127 implemented; post-closure default-value hardening accepted; final documentation-only exact-head qualification pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** published `1.11.1`
 
@@ -56,11 +56,11 @@ public sealed class TerminalRasterPlacementOptions {
 }
 ```
 
-No public API was added after T123.
+No public API was added after T123. The post-closure default-value hardening is internal-only and preserves this surface.
 
-Source rectangles use zero-based source-image pixels and must fit completely within the owning resource. `ZIndex` accepts the full signed `int` domain. `UpdateAsync(...)` remains a complete replacement of the placement at the current cursor position, not a partial patch against prior options.
+Source rectangles use zero-based source-image pixels and must fit completely within the owning resource. Every present rectangle is revalidated by placement options, including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor. `ZIndex` accepts the full signed `int` domain. `UpdateAsync(...)` remains a complete replacement of the placement at the current cursor position, not a partial patch against prior options.
 
-The final reviewed public API fingerprint is:
+The final reviewed public API fingerprint remains:
 
 ```text
 eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8
@@ -76,18 +76,14 @@ T123  z-order public contract + validation                                 accep
 T124  create/update encoder and acknowledged placement integration         accepted
 T125  lifecycle/adversarial/boundary hardening                             accepted
 T126  sample/package-only consumer/XML docs/downstream qualification       accepted
-T127  API freeze/release docs/three-OS/package release closure             release candidate accepted; final closure matrix pending
+T127  API freeze/release docs/three-OS/package release closure             accepted, then pre-merge hardening extended qualification
 ```
 
 ## Accepted checkpoints
 
-### T120–T123
-
-The design/API-regret gate, behavior-preserving TermInfo evidence cleanup, source-rectangle contract/resource-aware validation, z-order contract, and final public API freeze are accepted. The only intended public additions are the eight members recorded in `docs/Public-API-Baseline-1.12.md`.
-
 ### T124 — placement integration
 
-Accepted on exact head:
+Accepted exact head:
 
 ```text
 aba1f7c0989d2c451294edf75590637c227a7e05
@@ -101,7 +97,7 @@ Workflow:
 
 All nine PR jobs passed.
 
-The accepted backend-neutral semantic contract is implemented by one shared acknowledged placement path. The reviewed wire order is:
+The reviewed wire order is:
 
 ```text
 Ga=p,i=<id>,p=<id>,C=1[,x=...[,y=...[,w=...[,h=...]]]][,c=...][,r=...][,z=...]
@@ -111,7 +107,7 @@ A present source rectangle emits all four crop fields together. Signed z-order u
 
 ### T125 — hardening
 
-Accepted on exact head:
+Accepted exact head:
 
 ```text
 799d096fa439c43b4f31399a551c4524fe40fa10
@@ -125,22 +121,11 @@ Workflow:
 
 All nine PR jobs passed.
 
-Acceptance covers:
-
-- source rectangles ending exactly at the source right/bottom edge;
-- combined rectangle + Columns + Rows + signed z-order;
-- invalid create/update rectangles rejected before new output;
-- `int.MinValue` and `int.MaxValue` through real acknowledged placement operations;
-- wrong identity, duplicate-field malformed response, correlated `ENOENT`, timeout, and late-response ownership;
-- generation invalidation with controlled `Unavailable` and stale local-only disposal;
-- 24 repeated advanced create/place/update/delete ownership cycles;
-- unchanged 256-resource / 4096-placement ceilings and registry behavior.
-
-The Windows scheduler-sensitive scripted placement witness was made deterministic with the existing frozen monotonic clock; production timeout semantics were not changed.
+Acceptance covers exact-edge crops, combined options, invalid-before-output behavior, `int.MinValue` / `int.MaxValue`, wrong identity, malformed/duplicate fields, correlated `ENOENT`, timeout/late-response ownership, generation invalidation, stale local-only disposal, repeated advanced ownership cycles, and unchanged capacity ceilings.
 
 ### T126 — sample/package/downstream qualification
 
-Accepted on exact head:
+Accepted exact head:
 
 ```text
 7b38994c1ba936df5887d1aa015394c4ed626ddf
@@ -156,15 +141,15 @@ All nine PR jobs passed.
 
 Acceptance includes:
 
-- backend-neutral `Icod.Terminal.PersistentRaster.Sample` source cropping and z-order create/update usage;
-- sample documentation explaining source-pixel crops and relative stacking intent without scene-layout claims;
+- backend-neutral persistent-raster source cropping and z-order create/update usage;
+- sample documentation explaining source-pixel crops and signed stacking order without scene-layout claims;
 - fresh NuGet-only consumption of `TerminalRasterSourceRectangle`, `SourceRectangle`, and `ZIndex` on `net8.0`, `net9.0`, and `net10.0`;
-- generated XML documentation checks for the new type, constructor, four properties, and both new placement-option members on all package TFMs;
+- generated XML documentation checks for the complete new public surface;
 - current Stable 1.x downstream `Icod.DCurses` acceptance/hardening soak with no downstream code change.
 
-### T127 — stable release candidate
+### T127 — original stable release candidate
 
-Accepted release candidate exact head:
+Accepted exact head:
 
 ```text
 0b7961f6d8151253be57f65a69e17a12ec4bdec5
@@ -176,44 +161,59 @@ Workflow:
 #1659 / 34717812704
 ```
 
-All nine PR jobs passed, including stable `1.12.0` package metadata, final API freeze, current downstream soak, and validated package artifact.
+All nine PR jobs passed with stable `1.12.0` package metadata, the frozen public API, downstream soak, and validated package artifact.
 
-Validated package artifact:
-
-```text
-id:     10305651607
-digest: sha256:ed5faa549819e89b35e03dc06a5e1061371a15fbd4336a46fbe25d6631408bbe
-```
-
-Package candidate artifact:
+The first closure-only exact head was:
 
 ```text
-id:     10305430874
-digest: sha256:700dac08d2a7655d77e113b5051391a05a88ef7cefc1c2c542841534adab37be
+ef02714bcbd9ab84572a7ed8200a0ad8071d831a
+#1660 / 34718248621
 ```
 
-The final T127 evidence authority is [`docs/T127-1.12.0-Release-Closure.md`](docs/T127-1.12.0-Release-Closure.md).
+That head also passed all nine jobs.
 
-## T127 — stable release closure
+## Pre-merge default-value hardening
 
-The accepted stable release candidate:
+A final documentation/sample/test audit identified one value-type edge case: callers can construct `default(TerminalRasterSourceRectangle)` without executing the validating public constructor. Before the fix, that zero-sized value could pass options validation and reach placement encoding.
 
-1. keeps the public API fingerprint exactly `eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8`;
-2. sets package version metadata to stable `1.12.0`;
-3. synchronizes README, changelog, release notes, current roadmap, architecture, persistent ownership, security/privacy, and compatibility authorities;
-4. preserves production dependencies exactly:
+The deterministic RED witness was established on:
 
 ```text
-Icod.TermInfo 1.11.0
-Icod.Timing   1.0.0
+f5f0a4f69d3571083f63654acd35b9893e8807dd
+#1662 / 34720241497
 ```
 
-5. passed the exact-head full Staging matrix on `0b7961f6d8151253be57f65a69e17a12ec4bdec5` in workflow `#1659 / 34717812704`;
-6. records the accepted candidate SHA/workflow/fingerprint/dependency/downstream evidence in `docs/T127-1.12.0-Release-Closure.md`;
-7. requires the same full matrix once more on the closure-only status-documentation head;
-8. leaves merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication to the maintainer/release workflow.
+The three new regression tests failed on every runtime TFM because no `ArgumentOutOfRangeException` was thrown:
 
-The final closure-only head changes documentation status only; production code, package metadata, dependencies, and the public API remain identical to the accepted release candidate.
+```text
+ResourceAwareValidationRejectsDefaultRectangle
+EncoderRejectsDefaultRectangle
+PublicCreateAndUpdateRejectDefaultRectangleBeforeOutput
+```
+
+The minimal root fix makes `TerminalRasterSourceRectangle` own one reusable intrinsic validator and makes `TerminalRasterPlacementOptions.Validate()` revalidate every present rectangle before encoding or resource-aware bounds checks.
+
+The GREEN implementation head was:
+
+```text
+4d509c75decc37d280a92769fe668d3c6fbd41ce
+#1663 / 34720415393
+```
+
+All nine jobs passed. The public API/package freeze remained green, proving the fingerprint stayed unchanged.
+
+The same commit also normalized the executable sample and sample catalog from ambiguous “relative z-order” wording to **signed z-order / stacking order**, reserving “relative placement” for the explicitly excluded parent-relative placement feature.
+
+## Final documentation consistency pass
+
+After #1663, current consumer/permanent authorities are synchronized to:
+
+- describe `ZIndex` as signed z-order / signed stacking order rather than relative placement;
+- explicitly document that placement options revalidate default struct rectangle values;
+- record #1662 as the RED regression witness and #1663 as the accepted GREEN functional head;
+- preserve the final public API fingerprint and dependency graph.
+
+This pass is documentation-only. Its exact head must pass the complete nine-job PR matrix before merge.
 
 ## Compatibility guardrails
 
@@ -250,15 +250,15 @@ Version 1.12.0 does not include:
 ## Release gate
 
 ```text
-T120 accepted
-    -> T121 accepted
-        -> T122 accepted
-            -> T123 accepted / API frozen
-                -> T124 accepted
-                    -> T125 accepted
-                        -> T126 accepted
-                            -> T127 stable candidate accepted (#1659)
-                                -> closure-only record
-                                    -> final exact-head matrix
-                                        -> maintainer handoff
+T120–T126 accepted
+    -> T127 original stable candidate #1659 green
+        -> closure-only #1660 green
+            -> pre-merge audit finds default-value edge case
+                -> RED #1662
+                    -> GREEN #1663
+                        -> documentation consistency pass
+                            -> final exact-head nine-job matrix
+                                -> maintainer handoff
 ```
+
+After the final exact-head green result, merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication remain maintainer/release-workflow actions.
