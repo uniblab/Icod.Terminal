@@ -339,6 +339,7 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
 			}
