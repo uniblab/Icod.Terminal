@@ -296,6 +296,16 @@ Start with:
 
 Historical release and tranche records remain in the repository for design evidence, while the root README and current roadmap are maintained as concise consumer/contributor entry points.
 
+## Authors
+
+Inspired by original work from Bill Joy, author of the original `termcap`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and `ncurses`.
+
+Managed .NET implementation by Timothy J. Bruce <uniblab@hotmail.com>.
+
+## Copyright
+
+Copyright (c) 2026 Timothy J. Bruce
+
 ## License
 
 `Icod.Terminal` is licensed under the GNU Lesser General Public License, version 3 or later. Sample applications are licensed under the GNU General Public License, version 3 or later, as stated in their source headers.
