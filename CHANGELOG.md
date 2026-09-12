@@ -72,7 +72,7 @@ See `docs/releases/1.11.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Keeps live observations generation-scoped: invalidation/resume expires stale live evidence while valid static terminal-description evidence survives.
 - Qualifies suspended/closed query ownership, caller cancellation, unavailable endpoints, concurrent side-effect-free inspection, repeated verification, and disposal/query shutdown behavior without adding another input reader or synchronization model.
 - Preserves viable multi-backend semantics: negative evidence for one backend does not erase a separate advertised/verified alternate capable of satisfying the same semantic operation.
-- Adds `Icod.Terminal.CapabilityPlanning.Sample`, demonstrating inspect-first semantic planning and optional explicit verification without branching on terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
+- Adds `Icod.Terminal.CapabilityPlanning.Sample`, demonstrating inspect-first planning and optional explicit verification without branching on terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
 - Adds a fresh NuGet-only capability-planning consumer which references only `Icod.Terminal`; NuGet resolves `Icod.TermInfo` and `Icod.Timing` transitively on `net8.0`, `net9.0`, and `net10.0`.
 - Simplifies prerelease package verification so development packages prove artifact shape, XML docs, restore, and executable package consumption without being forced through final-release documentation ceremony; stable releases retain the stricter closure checks.
 
