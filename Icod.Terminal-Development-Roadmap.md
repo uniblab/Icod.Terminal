@@ -76,7 +76,7 @@ T123  z-order public contract                                               acce
 T124  acknowledged create/update encoder integration                       accepted
 T125  lifecycle/adversarial/boundary hardening                             accepted
 T126  sample/package/downstream qualification                              accepted
-T127  API freeze and stable release closure                                in progress
+T127  API freeze and stable release closure                                accepted, with post-closure pre-merge hardening
 ```
 
 The public 1.12 additions are exactly:
@@ -104,9 +104,17 @@ Accepted implementation/qualification checkpoints:
 T124  aba1f7c0989d2c451294edf75590637c227a7e05  #1653 / 34713178166
 T125  799d096fa439c43b4f31399a551c4524fe40fa10  #1657 / 34716833678
 T126  7b38994c1ba936df5887d1aa015394c4ed626ddf  #1658 / 34717103814
+T127 candidate
+      0b7961f6d8151253be57f65a69e17a12ec4bdec5  #1659 / 34717812704
+T127 first closure
+      ef02714bcbd9ab84572a7ed8200a0ad8071d831a  #1660 / 34718248621
+Pre-merge hardening
+      4d509c75decc37d280a92769fe668d3c6fbd41ce  #1663 / 34720415393
 ```
 
-Each listed workflow passed the full nine-job PR matrix.
+Each listed GREEN workflow passed the full nine-job PR matrix.
+
+The pre-merge audit also preserved the TDD RED witness for default-valued source rectangles at `f5f0a4f69d3571083f63654acd35b9893e8807dd`, workflow `#1662 / 34720241497`. The accepted fix revalidates every present `TerminalRasterSourceRectangle`, including `default(...)` values that bypass the public constructor, without changing the public API fingerprint.
 
 The production dependency graph remains:
 
@@ -118,6 +126,7 @@ Icod.Timing   1.0.0
 The versioned roadmap and release authorities are:
 
 - [`Icod.Terminal-1.12.0-Development-Roadmap.md`](Icod.Terminal-1.12.0-Development-Roadmap.md)
+- [`docs/T127-1.12.0-Release-Closure.md`](docs/T127-1.12.0-Release-Closure.md)
 - [`docs/releases/1.12.0.md`](docs/releases/1.12.0.md)
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
 - [`docs/Public-API-Baseline-1.12.md`](docs/Public-API-Baseline-1.12.md)
@@ -150,4 +159,6 @@ Advanced raster features beyond 1.12—relative placement graphs, Unicode placeh
 
 ## Maintainer handoff rule
 
-For the 1.12 stable candidate, merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication remain maintainer/release-workflow actions after PR exact-head qualification and closure are complete.
+The post-hardening release-facing documentation consistency pass is the final branch change. Its exact head must pass the complete nine-job PR matrix before merge.
+
+After that qualification, merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication remain maintainer/release-workflow actions.
