@@ -2,7 +2,7 @@
 
 **Release:** `1.12.0`  
 **Theme:** bounded advanced persistent-raster placement geometry  
-**Status:** design approved; implementation starting  
+**Status:** T120 accepted; T121 implementation starting  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** published `1.11.1`
 
@@ -65,8 +65,8 @@ Source rectangles are expressed in source-image pixels and must fit completely i
 ## Tranche roadmap
 
 ```text
-T120  1.12 architecture/API regret gate + roadmap normalization            in progress
-T121  table-drive TerminalTermInfoSemanticEvidence                         planned
+T120  1.12 architecture/API regret gate + roadmap normalization            accepted
+T121  table-drive TerminalTermInfoSemanticEvidence                         in progress
 T122  source-rectangle public contract + resource-aware validation          planned
 T123  z-order public contract + validation                                  planned
 T124  create/update encoder and acknowledged placement integration          planned
@@ -77,7 +77,7 @@ T127  API freeze/release docs/three-OS/package release closure              plan
 
 ## T120 — architecture/API regret gate
 
-Record the 1.12 contract before production changes.
+Accepted. The design, implementation plan, current-roadmap normalization, and T120 authority record freeze source rectangle + z-order as the complete 1.12 feature scope.
 
 Acceptance:
 
@@ -88,6 +88,8 @@ Acceptance:
 - no production dependency change is planned;
 - stable compatibility floor remains `1.0.0`;
 - the current long-range roadmap is normalized from stale 1.11.0 wording to published 1.11.1 and this 1.12 line.
+
+See [`docs/T120-1.12.0-Architecture-and-API-Regret-Gate.md`](docs/T120-1.12.0-Architecture-and-API-Regret-Gate.md).
 
 ## T121 — table-driven TermInfo semantic evidence
 
