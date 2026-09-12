@@ -1,7 +1,7 @@
 # Icod.Terminal Public API Baseline — 1.11.0
 
 **Release:** `1.11.0`  
-**Status:** C114 persistent-resource creation freeze  
+**Status:** C115 placement-creation freeze  
 **Target frameworks:** `net8.0`, `net9.0`, `net10.0`
 
 ## Purpose
@@ -14,10 +14,15 @@ C112 added exactly one public enum value:
 TerminalCapability.PersistentRasterGraphics = 9
 ```
 
-C114 adds the first opaque persistent-resource ownership surface approved by C110:
+C114 added the first opaque persistent-resource ownership surface approved by C110:
 
 ```csharp
 public sealed class TerminalRasterResource : IAsyncDisposable {
+    public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreatePlacementAsync(
+        TerminalRasterPlacementOptions? options = null,
+        CancellationToken cancellationToken = default
+    );
+
     public ValueTask DisposeAsync();
 }
 
@@ -29,18 +34,33 @@ public sealed partial class TerminalSession {
 }
 ```
 
-All existing `TerminalCapability` numeric values `0..8` remain unchanged. C114 exposes no Kitty image id, image number, placement id, backend selector, raw APC writer, registry, or mutable raster storage. Construction of `TerminalRasterResource` remains internal to the session.
+C115 adds the approved opaque placement-creation surface:
 
-The approved placement surface is intentionally not present in this C114 snapshot; C115/C116 will add it under their own RED/GREEN gates and will require another intentional 1.11 fingerprint update.
+```csharp
+public sealed class TerminalRasterPlacementOptions {
+    public int? Columns { get; set; }
+    public int? Rows { get; set; }
+}
+
+public sealed class TerminalRasterPlacement : IAsyncDisposable {
+    public ValueTask DisposeAsync();
+}
+```
+
+All existing `TerminalCapability` numeric values `0..8` remain unchanged. C115 exposes no Kitty image id, image number, placement id, backend selector, raw APC writer, registry, cursor coordinate, or mutable raster storage. Construction of `TerminalRasterResource` and `TerminalRasterPlacement` remains internal to the owning session.
+
+`TerminalRasterPlacementOptions.Columns` and `.Rows` are independently optional and are validated when a placement operation begins. Each supplied value is bounded to `1..16384`. Placement occurs at the terminal's current cursor position and the reviewed Kitty path emits `C=1`, so placement creation does not move the text cursor.
+
+The approved placement-update and deterministic terminal-delete surface is intentionally not present in this C115 snapshot; C116 will add it under its own RED/GREEN gate and will require another intentional 1.11 fingerprint update.
 
 ## Machine fingerprint
 
 The deterministic reflection snapshot is required to remain identical across `net8.0`, `net9.0`, and `net10.0`.
 
-After normalizing line endings to LF, the C114 fingerprint is:
+After normalizing line endings to LF, the C115 fingerprint is:
 
 ```text
-fbef4700d29613be7f6224a5349426c731412a851127bd529fc190ac3a562aeb
+e88c867e252c4acc24e3c718ddbc75ac52e167537c7f1495e8aec37649a372f3
 ```
 
 The machine-readable fingerprint is stored in:
@@ -67,8 +87,10 @@ Verified Sixel therefore does not imply persistent-resource support. Verified Ki
 
 `CreateRasterResourceAsync(...)` does not perform hidden capability probing. It requires current verified persistent-raster capability, reserves bounded session ownership before output, emits an acknowledged direct Kitty upload through the existing query authority, and publishes an opaque resource only after a correlated successful acknowledgement.
 
+`TerminalRasterResource.CreatePlacementAsync(...)` performs no backend selection and exposes no protocol identity. It reserves one bounded session-owned placement, emits one serialized Kitty placement frame at the current cursor, rolls the reservation back on failure, and returns only an opaque placement handle.
+
 ## Compatibility rule
 
-C114 remains additive over the stable 1.0 compatibility floor. The enum member remains appended at numeric value `9`; no existing public type/member is removed or renumbered.
+C115 remains additive over the stable 1.0 compatibility floor. The enum member remains appended at numeric value `9`; no existing public type/member is removed or renumbered.
 
-Later 1.11 tranches may add only the separately approved placement/update surface. Each intentional addition must replace this interim 1.11 fingerprint with a newly reviewed fingerprint rather than mutating a historical baseline silently.
+Later 1.11 tranches may add only the separately approved placement-update/disposal surface. Each intentional addition must replace this interim 1.11 fingerprint with a newly reviewed fingerprint rather than mutating a historical baseline silently.
