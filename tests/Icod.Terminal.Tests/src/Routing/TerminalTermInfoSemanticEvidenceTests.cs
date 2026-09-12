@@ -52,6 +52,71 @@ public sealed class TerminalTermInfoSemanticEvidenceTests {
 	}
 
 	[Fact]
+	public void ExactSemanticRecipesRequireCompleteMetadata() {
+		TerminalDescription clipboardOnly = new TerminalDescriptionBuilder( "clipboard-only" )
+			.SetExtendedString( "Ms", "clipboard" )
+			.Build();
+		TerminalDescription cursorOnly = new TerminalDescriptionBuilder( "cursor-only" )
+			.SetExtendedString( "Ss", "cursor-style" )
+			.Build();
+		TerminalDescription paletteBooleanOnly = new TerminalDescriptionBuilder( "palette-boolean-only" )
+			.SetBoolean( BooleanCapability.CanChangeColor )
+			.Build();
+		TerminalDescription paletteStringOnly = new TerminalDescriptionBuilder( "palette-string-only" )
+			.SetString(
+				StringCapability.InitializeColor,
+				"palette"
+			)
+			.Build();
+
+		Assert.True(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				clipboardOnly,
+				TerminalSemanticOperation.ClipboardWrite
+			)
+		);
+		Assert.False(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				clipboardOnly,
+				TerminalSemanticOperation.CursorStyle
+			)
+		);
+		Assert.True(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				cursorOnly,
+				TerminalSemanticOperation.CursorStyle
+			)
+		);
+		Assert.False(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				cursorOnly,
+				TerminalSemanticOperation.ClipboardWrite
+			)
+		);
+		Assert.False(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				paletteBooleanOnly,
+				TerminalSemanticOperation.PaletteColor
+			)
+		);
+		Assert.False(
+			TerminalTermInfoSemanticEvidence.HasExactImplementation(
+				paletteStringOnly,
+				TerminalSemanticOperation.PaletteColor
+			)
+		);
+
+		AssertUnknownSemantic(
+			TerminalSemanticOperation.PaletteColor,
+			Seed( paletteBooleanOnly )
+		);
+		AssertUnknownSemantic(
+			TerminalSemanticOperation.PaletteColor,
+			Seed( paletteStringOnly )
+		);
+	}
+
+	[Fact]
 	public void TermInfoMetadataAdvertisesExistingInputProtocolBackends() {
 		TerminalCapabilityEvidenceLedger evidence = new();
 		TerminalTermInfoSemanticEvidence.Seed(
@@ -73,6 +138,35 @@ public sealed class TerminalTermInfoSemanticEvidenceTests {
 			TerminalSemanticOperation.MouseReporting,
 			TerminalProtocolBackend.CsiMouseReporting,
 			evidence
+		);
+	}
+
+	[Fact]
+	public void LegacyMousePrefixAdvertisesMouseBackend() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "legacy-mouse" )
+			.SetExtendedString( "XM", "mouse-mode" )
+			.SetExtendedString( "xm", "mouse-event" )
+			.SetString( StringCapability.KeyMouse, "\u001b[M" )
+			.Build();
+
+		AssertAdvertisedBackend(
+			TerminalSemanticOperation.MouseReporting,
+			TerminalProtocolBackend.CsiMouseReporting,
+			Seed( terminal )
+		);
+	}
+
+	[Fact]
+	public void UnrecognizedMousePrefixDoesNotAdvertiseMouseBackend() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "unknown-mouse" )
+			.SetExtendedString( "XM", "mouse-mode" )
+			.SetExtendedString( "xm", "mouse-event" )
+			.SetString( StringCapability.KeyMouse, "\u001b[?1000h" )
+			.Build();
+
+		AssertUnknownBackend(
+			TerminalProtocolBackend.CsiMouseReporting,
+			Seed( terminal )
 		);
 	}
 
@@ -182,6 +276,19 @@ public sealed class TerminalTermInfoSemanticEvidenceTests {
 		);
 	}
 
+	private static TerminalCapabilityEvidenceLedger Seed(
+		TerminalDescription terminal
+	) {
+		ArgumentNullException.ThrowIfNull( terminal );
+
+		TerminalCapabilityEvidenceLedger evidence = new();
+		TerminalTermInfoSemanticEvidence.Seed(
+			terminal,
+			evidence
+		);
+		return evidence;
+	}
+
 	private static TerminalDescription CreateCompleteTerminal() {
 		return new TerminalDescriptionBuilder( "n158-complete" )
 			.SetExtendedString( "Ms", "\u001b]52;%p1%s;%p2%s\u001b\\" )
@@ -239,6 +346,17 @@ public sealed class TerminalTermInfoSemanticEvidenceTests {
 		Assert.Equal( TerminalCapabilitySupportState.Advertised, resolution.State );
 		Assert.Equal( TerminalCapabilityEvidenceSource.TermInfo, resolution.EvidenceSource );
 		Assert.Equal( TerminalBackendSelectionReason.Advertised, resolution.SelectionReason );
+	}
+
+	private static void AssertUnknownSemantic(
+		TerminalSemanticOperation operation,
+		TerminalCapabilityEvidenceLedger evidence
+	) {
+		TerminalCapabilityResolution resolution = evidence.Resolve(
+			TerminalCapabilitySubject.ForSemanticOperation( operation )
+		);
+
+		Assert.Equal( TerminalCapabilitySupportState.Unknown, resolution.State );
 	}
 
 	private static void AssertUnknownBackend(

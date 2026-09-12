@@ -37,9 +37,17 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
 
 $requiredMembers = @(
 	'F:Icod.Terminal.TerminalCapability.PersistentRasterGraphics',
+	'T:Icod.Terminal.TerminalRasterSourceRectangle',
+	'M:Icod.Terminal.TerminalRasterSourceRectangle.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)',
+	'P:Icod.Terminal.TerminalRasterSourceRectangle.X',
+	'P:Icod.Terminal.TerminalRasterSourceRectangle.Y',
+	'P:Icod.Terminal.TerminalRasterSourceRectangle.Width',
+	'P:Icod.Terminal.TerminalRasterSourceRectangle.Height',
 	'T:Icod.Terminal.TerminalRasterPlacementOptions',
+	'P:Icod.Terminal.TerminalRasterPlacementOptions.SourceRectangle',
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.Columns',
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.Rows',
+	'P:Icod.Terminal.TerminalRasterPlacementOptions.ZIndex',
 	'T:Icod.Terminal.TerminalRasterResource',
 	'M:Icod.Terminal.TerminalRasterResource.CreatePlacementAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterResource.DisposeAsync',
@@ -130,4 +138,4 @@ try {
 	}
 }
 
-Write-Host "1.11 persistent-raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.12 advanced persistent-raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

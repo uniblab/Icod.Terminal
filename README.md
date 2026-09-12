@@ -9,14 +9,14 @@
 
 ## Status
 
-`1.11.1` is the current stable patch line. It preserves the 1.11.0 backend-neutral persistent terminal-resident raster API while adding executable documentation and deterministic contract tests for loose coupling with `Icod.TermInfo.Inspection 1.11.0` lifecycle planning.
+`1.12.0` is the current stable line. It extends the backend-neutral persistent terminal-resident raster placement API with bounded source-pixel rectangles and signed z-order while preserving opaque identities, acknowledged create/update, generation-scoped ownership, deterministic cleanup, and the existing production dependency graph.
 
-The stable `1.0.0` compatibility floor remains unchanged. `Icod.Terminal` continues to preserve one authoritative live input path, bounded query/protocol handling, lifecycle-aware ownership, deterministic cleanup, and protocol-neutral public planning surfaces. Version 1.11.1 adds no production public API and does not add Inspection or Source to the production dependency graph.
+The stable `1.0.0` compatibility floor remains unchanged. `Icod.Terminal` continues to preserve one authoritative live input path, bounded query/protocol handling, lifecycle-aware ownership, deterministic cleanup, and protocol-neutral public planning surfaces. Version 1.12 adds no public backend selector, scene graph, automatic replay, or production dependency.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.11.1
+dotnet add package Icod.Terminal --version 1.12.0
 ```
 
 The package targets:
@@ -132,7 +132,7 @@ Supported public storage forms are `Rgb24`, `Rgba32`, and `Indexed8` with an RGB
 
 ### Persistent resources and placements
 
-Version 1.11 adds a separate ownership model for terminal-resident raster data:
+Version 1.11 established a separate ownership model for terminal-resident raster data; version 1.12 adds bounded source-pixel cropping and signed z-order to the existing placement options:
 
 ```csharp
 TerminalCapabilityStatus capability = await session.VerifyCapabilityAsync(
@@ -149,7 +149,14 @@ if ( capability.IsUsable ) {
 	TerminalControlResult<TerminalRasterPlacement> placementResult =
 		await resource.CreatePlacementAsync(
 			new TerminalRasterPlacementOptions {
-				Columns = 24
+				SourceRectangle = new TerminalRasterSourceRectangle(
+					0,
+					0,
+					1,
+					1
+				),
+				Columns = 24,
+				ZIndex = -1
 			}
 		);
 
@@ -158,7 +165,14 @@ if ( capability.IsUsable ) {
 
 	TerminalControlMutationResult update = await placement.UpdateAsync(
 		new TerminalRasterPlacementOptions {
-			Columns = 16
+			SourceRectangle = new TerminalRasterSourceRectangle(
+				1,
+				0,
+				1,
+				1
+			),
+			Columns = 16,
+			ZIndex = 1
 		}
 	);
 }
@@ -166,9 +180,9 @@ if ( capability.IsUsable ) {
 
 Resource and placement identity is opaque. The public API does not expose Kitty image ids, image numbers, placement ids, raw APC commands, or backend selection.
 
-`Columns` and `Rows` are independently optional and each supplied value is bounded to `1..16384`. Placement uses the terminal's current cursor location and does not move the text cursor. To reposition a placement, move the cursor through ordinary terminal semantics and call `UpdateAsync(...)`.
+`Columns` and `Rows` are independently optional and each supplied value is bounded to `1..16384`. `SourceRectangle` is measured in source-image pixels, must satisfy its intrinsic scalar contract, must fit completely within the resource, and is validated before placement output. Placement options revalidate every present rectangle, including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor. `ZIndex` is nullable and accepts the full signed 32-bit range. Placement still uses the terminal's current cursor location and does not move the text cursor; source cropping and z-order do not create an absolute layout or scene-graph contract.
 
-Persistent identities are session-generation scoped. Explicit invalidation and lifecycle generation changes stale existing handles. Version 1.11 does not retain hidden raster copies for automatic replay or re-upload after suspend/resume uncertainty.
+Persistent identities are session-generation scoped. Explicit invalidation and lifecycle generation changes stale existing handles. Version 1.12 does not retain hidden raster copies for automatic replay or re-upload after suspend/resume uncertainty.
 
 The library bounds live ownership to 256 persistent resources and 4096 placements per session. Current cleanup deletes placements before resource data; stale cleanup is local-only and never emits stale numeric protocol identities.
 
@@ -190,7 +204,7 @@ session.Terminal
 
 The consumer-owned evidence bridge promotes only conclusive live observations. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability remain distinct and are not converted into verified support or non-support.
 
-See [`samples/Icod.Terminal.TermInfoPersistentRaster.Sample`](samples/Icod.Terminal.TermInfoPersistentRaster.Sample/README.md) for executable documentation and [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md) for the patch-release contract.
+See [`samples/Icod.Terminal.TermInfoPersistentRaster.Sample`](samples/Icod.Terminal.TermInfoPersistentRaster.Sample/README.md) for executable documentation and [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md) for the integration-patch contract.
 
 ## Core 1.x guarantees
 
@@ -231,7 +245,7 @@ The stable 1.x surface includes:
 - bounded device/status/cursor/style/color/clipboard/notification queries;
 - titles, current location, hyperlinks, clipboard operations, cursor style, synchronized output, progress, pointer shape, notifications, prompt/shell metadata, and terminal colors;
 - backend-neutral ephemeral raster display through verified Sixel and Kitty Graphics;
-- backend-neutral persistent raster resources and placements with bounded generation-scoped ownership;
+- backend-neutral persistent raster resources and placements with bounded generation-scoped ownership, source-pixel cropping, and signed z-order;
 - optional consumer-owned TermInfo lifecycle planning integration without adding Inspection to the production package graph.
 
 The library deliberately does not expose generic raw vendor dispatch as the ordinary extension model.
@@ -245,7 +259,7 @@ The [`samples`](samples/README.md) directory contains focused examples. Recommen
 - `Icod.Terminal.CapabilityPlanning.Sample` — inspect-first semantic planning plus optional explicit verification;
 - `Icod.Terminal.Query.Sample` — bounded terminal queries;
 - `Icod.Terminal.RasterGraphics.Sample` — backend-neutral ephemeral raster display;
-- `Icod.Terminal.PersistentRaster.Sample` — verify, create, place, update, and dispose persistent raster ownership without protocol ids/backend branching;
+- `Icod.Terminal.PersistentRaster.Sample` — verify, create, crop/place, update z-order, and dispose persistent raster ownership without protocol ids/backend branching;
 - `Icod.Terminal.TermInfoPersistentRaster.Sample` — static TermInfo lifecycle plan, optional live Terminal verification, caller-owned replan, and persistent execution;
 - focused state, color, notification, prompt, and shell-integration samples described in the sample catalog.
 
@@ -259,7 +273,7 @@ Terminal protocol traffic is external input/output. `Icod.Terminal` validates an
 
 Persistent raster acknowledgement correlation establishes transaction ownership, not trust. A terminal may independently evict stored image data; correlated `ENOENT` invalidates local terminal-resident certainty rather than triggering hidden replay.
 
-Kitty direct transfer remains the reviewed persistent transport. Version 1.11 does not silently use file, temporary-file, or shared-memory transport and does not retain arbitrary source images after successful creation.
+Kitty direct transfer remains the reviewed persistent transport. Version 1.12 does not silently use file, temporary-file, or shared-memory transport and does not retain arbitrary source images after successful creation. Source rectangles select already-owned source pixels; they do not create a new filesystem or external-memory transport.
 
 Several APIs intentionally publish caller-supplied metadata such as filesystem locations, hyperlinks, clipboard contents, notifications, shell metadata, command lines, and raster pixels. Applications decide what is appropriate to disclose.
 
@@ -267,12 +281,12 @@ See [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md).
 
 ## Compatibility
 
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 adds opaque persistent raster resource/placement ownership; and 1.11.1 adds no production API, instead qualifying the optional TermInfo persistent-raster lifecycle integration boundary.
+Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 added opaque persistent raster resource/placement ownership; 1.11.1 qualified the optional TermInfo persistent-raster lifecycle integration boundary; and 1.12 adds bounded source-pixel cropping and signed z-order without widening ownership into scene layout.
 
-The final 1.11 public API fingerprint, retained by 1.11.1, is:
+The final 1.12 public API fingerprint is:
 
 ```text
-9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
+eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8
 ```
 
 See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).
@@ -281,10 +295,10 @@ See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.m
 
 Start with:
 
-- [1.11.1 release notes](docs/releases/1.11.1.md)
+- [1.12.0 release notes](docs/releases/1.12.0.md)
 - [Persistent Raster Ownership](docs/Persistent-Raster-Ownership.md)
 - [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md)
-- [1.11.1 development roadmap](Icod.Terminal-1.11.1-Development-Roadmap.md)
+- [1.12.0 development roadmap](Icod.Terminal-1.12.0-Development-Roadmap.md)
 - [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
 - [Architecture](docs/Architecture.md)
 - [Input and Events](docs/Input-and-Events.md)

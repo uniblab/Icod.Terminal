@@ -30,6 +30,19 @@ internal sealed class TerminalPersistentRasterResourceState {
 	internal TerminalPersistentRasterResourceState(
 		uint imageNumber,
 		long generation
+	) : this(
+		imageNumber,
+		generation,
+		TerminalRasterImage.MaximumDimension,
+		TerminalRasterImage.MaximumDimension
+	) {
+	}
+
+	internal TerminalPersistentRasterResourceState(
+		uint imageNumber,
+		long generation,
+		int sourceWidth,
+		int sourceHeight
 	) {
 		if ( 0u == imageNumber ) {
 			throw new ArgumentOutOfRangeException( nameof( imageNumber ) );
@@ -37,9 +50,19 @@ internal sealed class TerminalPersistentRasterResourceState {
 		if ( generation < 0 ) {
 			throw new ArgumentOutOfRangeException( nameof( generation ) );
 		}
+		ValidateSourceDimension(
+			sourceWidth,
+			nameof( sourceWidth )
+		);
+		ValidateSourceDimension(
+			sourceHeight,
+			nameof( sourceHeight )
+		);
 
 		this.ImageNumber = imageNumber;
 		this.Generation = generation;
+		this.SourceWidth = sourceWidth;
+		this.SourceHeight = sourceHeight;
 	}
 
 	internal uint ImageNumber {
@@ -53,6 +76,14 @@ internal sealed class TerminalPersistentRasterResourceState {
 	}
 
 	internal long Generation {
+		get;
+	}
+
+	internal int SourceWidth {
+		get;
+	}
+
+	internal int SourceHeight {
 		get;
 	}
 
@@ -87,5 +118,19 @@ internal sealed class TerminalPersistentRasterResourceState {
 			ref this.closed,
 			1
 		);
+	}
+
+	private static void ValidateSourceDimension(
+		int value,
+		string parameterName
+	) {
+		ArgumentException.ThrowIfNullOrEmpty( parameterName );
+		if ( value is < 1 or > TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException(
+				parameterName,
+				value,
+				$"A persistent raster source dimension must be between 1 and {TerminalRasterImage.MaximumDimension}."
+			);
+		}
 	}
 }

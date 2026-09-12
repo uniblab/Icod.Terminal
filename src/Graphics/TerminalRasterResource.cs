@@ -44,7 +44,7 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	/// <summary>
 	/// Creates one opaque placement of this resource at the terminal's current cursor position.
 	/// </summary>
-	/// <param name="options">Optional terminal-cell placement extents.</param>
+	/// <param name="options">Optional persistent-raster placement geometry.</param>
 	/// <param name="cancellationToken">Cancellation observed before placement output commits.</param>
 	/// <returns>
 	/// An available opaque placement, or a controlled unavailable result when the session cannot
@@ -54,7 +54,10 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		TerminalRasterPlacementOptions? options = null,
 		CancellationToken cancellationToken = default
 	) {
-		options?.Validate();
+		options?.Validate(
+			this.State.SourceWidth,
+			this.State.SourceHeight
+		);
 		cancellationToken.ThrowIfCancellationRequested();
 
 		TerminalSession? owner = Volatile.Read( ref this.session );

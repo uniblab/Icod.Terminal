@@ -4,8 +4,7 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable release:** `1.11.0`
-- **Next development line:** `1.12.0` — conditional advanced raster placement/lifecycle work
+- **Current stable candidate:** `1.12.0` — bounded advanced persistent-raster placement geometry
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -36,196 +35,130 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Published 1.8 result
-
-The 1.5–1.8 program established normalized control families, complete CSI grammar/pixel geometry, backend-neutral raster images, Sixel, and Kitty Graphics routing.
+## Published release sequence through 1.11.1
 
 ```text
-1.5.0  normalized control families / capability evidence / semantic routing
-1.6.0  complete CSI grammar / terminal and cell pixel geometry
-1.7.0  DCS / Sixel / public backend-neutral raster contract
-1.8.0  APC / Kitty Graphics / verified multi-backend raster routing
-1.8.1  documentation and sample maintenance
+1.5.0   normalized control families / capability evidence / semantic routing
+1.6.0   complete CSI grammar / terminal and cell pixel geometry
+1.7.0   DCS / Sixel / public backend-neutral raster contract
+1.8.0   APC / Kitty Graphics / verified multi-backend raster routing
+1.8.1   documentation and sample maintenance
+1.9.0   unsolicited protocol-neutral semantic events
+1.10.0  semantic capability inspection and explicit bounded verification
+1.11.0  opaque persistent raster resources and placements
+1.11.1  TermInfo persistent-raster lifecycle integration contract
 ```
 
-The 1.7/1.8 raster fingerprint is:
-
-```text
-847441fb4a8cdc89979aca9e96178f939895b93ec19a973232210af09716f700
-```
-
-## Published 1.9 result
-
-Version 1.9 established unsolicited semantic-event ownership through the unified session event stream:
-
-```text
-active query response
-    -> recognized unsolicited semantic event
-        -> ordinary application input
-```
-
-It added the protocol-neutral semantic event envelope and interactive notification reporting while retaining one authoritative input reader.
-
-Final 1.9 fingerprint:
-
-```text
-e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315
-```
-
-## Published 1.10 result
-
-Version 1.10 added protocol-neutral semantic capability inspection and explicit bounded verification:
-
-```text
-inspect
-    side-effect free
-    reports what the session currently knows
-
-verify
-    explicit and bounded
-    strengthens knowledge only through reviewed live probes
-```
-
-It also froze loose dependency coupling: `Icod.Terminal.csproj` remains the direct dependency authority, while restore/build is the compatibility witness for the package graph.
-
-Final 1.10 fingerprint:
-
-```text
-ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
-```
-
-## Published 1.11 result
-
-Version 1.11 adds a separate persistent raster ownership domain above the existing `TerminalRasterImage` and capability-planning contracts.
-
-The stable semantic flow is:
-
-```text
-PersistentRasterGraphics verification
-    -> CreateRasterResourceAsync(...)
-        -> TerminalRasterResource
-            -> CreatePlacementAsync(...)
-                -> TerminalRasterPlacement
-                    -> UpdateAsync(...)
-                    -> DisposeAsync()
-            -> DisposeAsync()
-```
-
-The public model remains opaque. Kitty image ids, image numbers, placement ids, raw APC command dictionaries, and backend selection stay internal.
-
-Stable 1.11 guarantees include:
-
-- `TerminalCapability.PersistentRasterGraphics = 9` with values `0..8` unchanged;
-- explicit separation between ephemeral `RasterGraphics` and persistent ownership;
-- acknowledged resource creation before a public handle is returned;
-- correlated placement create/update responses through the existing one-reader/query path;
-- current-cursor placement with optional `Columns` / `Rows` in `1..16384` and no text-cursor movement;
-- 256 live resources and 4096 live placements per session;
-- nonzero private collision-safe identities with wraparound handling;
-- generation-scoped terminal-resident certainty;
-- no hidden source-image retention or automatic replay after invalidation/resume;
-- `ENOENT` invalidation when the terminal no longer recognizes a believed-current resource;
-- child-first cleanup, locally idempotent disposal, and stale local-only cleanup;
-- direct transfer only; no file/temp-file/shared-memory transport;
-- no scene-graph, cell/window/layout, z-order, animation, source-rectangle, or PTY ownership.
-
-Final 1.11 public API fingerprint:
+Final 1.11 public API fingerprint, retained by 1.11.1:
 
 ```text
 9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
 ```
 
-Detailed 1.11 authorities:
+## 1.12.0 stable candidate
 
-- [`Icod.Terminal-1.11.0-Development-Roadmap.md`](Icod.Terminal-1.11.0-Development-Roadmap.md)
-- [`docs/releases/1.11.0.md`](docs/releases/1.11.0.md)
-- [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
-- [`docs/Public-API-Baseline-1.11.md`](docs/Public-API-Baseline-1.11.md)
-- [`docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`](docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md)
-- [`docs/C119-1.11.0-Release-Closure.md`](docs/C119-1.11.0-Release-Closure.md)
-
-## Next development line: 1.12.0
-
-Advanced raster placement/lifecycle features remain candidates rather than promises.
-
-Potential areas include:
-
-- source rectangles;
-- z-order;
-- Unicode placeholders;
-- relative placement;
-- richer placement geometry;
-- animation or frame lifecycle;
-- additional terminal-resident resource operations.
-
-They should enter the core only when:
-
-1. a concrete downstream requirement exists;
-2. ownership/lifecycle semantics can be stated precisely;
-3. bounded-resource behavior can be specified and tested;
-4. the semantic abstraction is useful beyond raw vendor command exposure, or is deliberately isolated as optional protocol-specific functionality;
-5. the feature does not turn `Icod.Terminal` into a virtual-screen or scene-graph library.
-
-The default position after 1.11 is therefore **measure and justify**, not automatically expand.
-
-## Parallel evidence tracks
-
-### Graphics performance
-
-Kitty direct transfer remains the portability/security default. Compression or alternate transport should be adopted only after benchmark evidence across representative icons, diagrams, screenshots, gradients, photographs, and high-entropy rasters.
-
-Measure wire bytes, CPU time, allocations, first-frame latency, and total transfer latency. File, temporary-file, and shared-memory transports remain excluded unless direct-transfer measurements demonstrate a concrete problem that justifies their filesystem/IPC complexity.
-
-### Diagnostics and observability
-
-Future diagnostic surfaces may explain semantic operations, support-state changes, probe lifecycle, backend selection, lifecycle generations, restoration failures, and committed graphics failures.
-
-They must not expose keyboard text, paste contents, clipboard data, notification contents, hyperlinks, shell command lines, or raster payload bytes by default, and must preserve the protocol-neutral public planning model.
-
-## Long-range architectural guardrails
-
-The stable 1.x program preserves these boundaries:
-
-- no process-global current terminal;
-- no second live input reader;
-- no raw control-family dispatcher as the ordinary extension mechanism;
-- no generic vendor-event/raw-frame stream as the ordinary semantic model;
-- no support selection based solely on terminal brand, `TERM`, host OS, or environment variables;
-- no tests/verifiers that duplicate exact transitive dependency pins merely to restate package metadata;
-- no PTY/ConPTY process hosting in `Icod.Terminal`;
-- no cells/windows/damage/layout/widget ownership that belongs in `Icod.DCurses`;
-- no image-file decoding/transcoding requirement in the core terminal package;
-- no hidden replay of persistent terminal state without a separately reviewed contract;
-- no unbounded terminal-controlled input, event buffering, query state, graphics state, resource registry, or placement registry;
-- no public persistent-graphics abstraction exposing backend-specific numeric identifiers as its common identity model.
-
-## Sequencing rationale
+Version 1.12 deliberately extends the existing opaque placement object with only:
 
 ```text
-event ownership                    completed in 1.9
-    -> capability visibility       completed in 1.10
-        -> persistent ownership    completed in 1.11
-            -> advanced placement only if justified in 1.12+
+pixel-space source rectangles
+signed z-order
 ```
 
-`Icod.DCurses` remains the primary downstream witness for richer presentation needs. It should consume `Icod.Terminal` semantic resource/placement ownership rather than force the terminal layer to absorb virtual-screen or scene-graph responsibilities.
+It does not add a scene graph, relative placement chain, Unicode placeholder model, animation/frame lifecycle, absolute screen-coordinate placement, public backend selector, or replay cache.
 
-## Permanent 1.x authorities
+The accepted sequence is:
 
-Current contract authorities include:
+```text
+T120  architecture/API regret gate + roadmap normalization                 accepted
+T121  table-driven TermInfo semantic evidence                              accepted
+T122  source-rectangle public contract + resource-aware validation         accepted
+T123  z-order public contract                                               accepted
+T124  acknowledged create/update encoder integration                       accepted
+T125  lifecycle/adversarial/boundary hardening                             accepted
+T126  sample/package/downstream qualification                              accepted
+T127  API freeze and stable release closure                                accepted, with post-closure pre-merge hardening
+```
 
-- [`docs/Architecture.md`](docs/Architecture.md)
-- [`docs/Terminal-Session-and-Ownership.md`](docs/Terminal-Session-and-Ownership.md)
-- [`docs/Lifecycle-and-Restoration.md`](docs/Lifecycle-and-Restoration.md)
-- [`docs/Input-and-Events.md`](docs/Input-and-Events.md)
-- [`docs/Queries-and-Responses.md`](docs/Queries-and-Responses.md)
-- [`docs/Presentation-and-Reversible-State.md`](docs/Presentation-and-Reversible-State.md)
-- [`docs/Semantic-Output-Protocols.md`](docs/Semantic-Output-Protocols.md)
-- [`docs/Control-Language-Normalization-and-Graphics-Roadmap.md`](docs/Control-Language-Normalization-and-Graphics-Roadmap.md)
-- [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md)
+The public 1.12 additions are exactly:
+
+```text
+TerminalRasterSourceRectangle
+TerminalRasterSourceRectangle..ctor(int,int,int,int)
+TerminalRasterSourceRectangle.X
+TerminalRasterSourceRectangle.Y
+TerminalRasterSourceRectangle.Width
+TerminalRasterSourceRectangle.Height
+TerminalRasterPlacementOptions.SourceRectangle
+TerminalRasterPlacementOptions.ZIndex
+```
+
+Final 1.12 public API fingerprint:
+
+```text
+eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8
+```
+
+Accepted implementation/qualification checkpoints:
+
+```text
+T124  aba1f7c0989d2c451294edf75590637c227a7e05  #1653 / 34713178166
+T125  799d096fa439c43b4f31399a551c4524fe40fa10  #1657 / 34716833678
+T126  7b38994c1ba936df5887d1aa015394c4ed626ddf  #1658 / 34717103814
+T127 candidate
+      0b7961f6d8151253be57f65a69e17a12ec4bdec5  #1659 / 34717812704
+T127 first closure
+      ef02714bcbd9ab84572a7ed8200a0ad8071d831a  #1660 / 34718248621
+Pre-merge hardening
+      4d509c75decc37d280a92769fe668d3c6fbd41ce  #1663 / 34720415393
+```
+
+Each listed GREEN workflow passed the full nine-job PR matrix.
+
+The pre-merge audit also preserved the TDD RED witness for default-valued source rectangles at `f5f0a4f69d3571083f63654acd35b9893e8807dd`, workflow `#1662 / 34720241497`. The accepted fix revalidates every present `TerminalRasterSourceRectangle`, including `default(...)` values that bypass the public constructor, without changing the public API fingerprint.
+
+The production dependency graph remains:
+
+```text
+Icod.TermInfo 1.11.0
+Icod.Timing   1.0.0
+```
+
+The versioned roadmap and release authorities are:
+
+- [`Icod.Terminal-1.12.0-Development-Roadmap.md`](Icod.Terminal-1.12.0-Development-Roadmap.md)
+- [`docs/T127-1.12.0-Release-Closure.md`](docs/T127-1.12.0-Release-Closure.md)
+- [`docs/releases/1.12.0.md`](docs/releases/1.12.0.md)
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
-- [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
-- [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
-- [`samples/README.md`](samples/README.md)
+- [`docs/Public-API-Baseline-1.12.md`](docs/Public-API-Baseline-1.12.md)
 
-Versioned roadmaps and tranche documents remain historical design evidence and should not be rewritten merely to make their pre-release status language look current after publication.
+## Stable architecture guardrails
+
+The 1.x line continues to preserve:
+
+- one authoritative input/query/event path per live session;
+- semantic capability planning rather than terminal-brand guessing;
+- bounded parsers, queries, semantic events, raster work, and persistent registries;
+- backend-neutral public raster semantics;
+- opaque persistent resource/placement identities;
+- current-cursor placement rather than a Terminal-owned layout engine;
+- generation-scoped persistent ownership with no automatic replay;
+- deterministic cleanup and committed-output integrity;
+- production package dependencies declared centrally by `Icod.Terminal.csproj`.
+
+## Long-range directions
+
+Future development may consider only independently justified, separately reviewed tracks such as:
+
+- richer terminal observations where the wire contract is sufficiently portable;
+- additional semantic capability planning where truthful evidence exists;
+- additional bounded output/state semantics with deterministic cleanup;
+- higher-level integration needed by `Icod.DCurses` without moving cells/windows/layout into `Icod.Terminal`;
+- PTY/ConPTY integration through the separate `Icod.Pty` project rather than by expanding this package’s runtime ownership.
+
+Advanced raster features beyond 1.12—relative placement graphs, Unicode placeholders, animation, frame lifecycle, or scene ownership—remain future design questions rather than implied extensions of source cropping/z-order.
+
+## Maintainer handoff rule
+
+The post-hardening release-facing documentation consistency pass is the final branch change. Its exact head must pass the complete nine-job PR matrix before merge.
+
+After that qualification, merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication remain maintainer/release-workflow actions.

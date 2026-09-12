@@ -24,75 +24,49 @@ future Icod.Pty is adjacent: it may create child-process PTYs/ConPTYs,
 but it is not part of the Icod.Terminal runtime dependency chain.
 ```
 
-### `Icod.TermInfo`
-
-`Icod.TermInfo` owns immutable terminal capability data, terminfo interpretation/expansion, and description resolution. `Icod.Terminal` consumes that information; it does not maintain a competing capability database.
-
-### `Icod.Terminal`
+`Icod.TermInfo` owns immutable terminal capability data and expansion. `Icod.Terminal` consumes that information; it does not maintain a competing description database.
 
 `Icod.Terminal` owns one live terminal conversation and the mechanics required to use it safely:
 
 - endpoint observation and native platform identity;
 - terminal-mode capture and semantic input policy;
-- exact restoration of captured host state where promised;
-- live dimensions and lifecycle observation;
+- lifecycle and exact-restoration ownership where promised;
 - one authoritative input-reader/decoder path;
 - active query/response correlation;
 - unsolicited protocol-neutral semantic event routing;
 - semantic capability evidence, side-effect-free inspection, and bounded explicit verification;
 - bounded incremental control-language parsing;
 - semantic terminal-output operations;
-- reversible presentation, rich-input, and color ownership;
+- reversible presentation/input/color ownership;
 - backend-neutral ephemeral raster output;
 - persistent terminal-resident raster resource and placement ownership;
+- bounded source-pixel placement cropping and signed z-order;
 - evidence-driven backend selection behind semantic operations;
-- serialization of session-managed terminal output;
-- lifecycle-aware invalidation, re-entry, and deterministic cleanup.
-
-### `Icod.DCurses`
+- lifecycle-aware invalidation and deterministic cleanup.
 
 `Icod.DCurses` owns two-dimensional presentation policy: cells, styles, windows, pads, virtual-screen state, Unicode display width, clipping, wrapping, scrolling, damage tracking, desired-vs-physical screen comparison, refresh strategy, and higher-level scene/layout policy.
 
-It may consume semantic capability planning, ephemeral raster display, or persistent raster resources from `Icod.Terminal`; it should not reimplement terminal modes, query routing, semantic-event routing, Sixel/Kitty framing, capability evidence, persistent protocol identity, or lifecycle restoration.
+Pseudo-terminal creation, child-process hosting, ConPTY/PTY plumbing, and process ownership remain outside the `Icod.Terminal` 1.x runtime dependency chain.
 
-### Future `Icod.Pty`
+## 2. Abstraction levels
 
-Pseudo-terminal creation, child-process hosting, ConPTY/PTY plumbing, and process ownership remain outside the `Icod.Terminal` 1.x contract.
+### 2.1 Semantic session API
 
-## 2. Three abstraction levels
-
-### 2.1 Ordinary semantic session API
-
-This is the preferred level for applications.
-
-`TerminalSession` exposes semantic operations for:
-
-- reading normalized terminal events;
-- inspecting current semantic capability knowledge without terminal I/O;
-- explicitly requesting bounded verification where a reviewed live probe exists;
-- querying live terminal state through typed query methods;
-- writing application text and reviewed semantic terminal metadata/control operations;
-- acquiring reversible presentation/input/color state;
-- displaying backend-neutral raw raster images ephemerally;
-- creating generation-scoped persistent raster resources and placements where explicitly verified.
+Applications normally use `TerminalSession` for normalized input/events, typed queries, semantic output/state operations, capability planning, raster display, and persistent resource/placement ownership.
 
 These APIs participate in session ordering, validation, resource bounds, capability evidence, lifecycle, and cleanup semantics.
 
 ### 2.2 Advanced transport/provider API
 
-`ITerminalInput`, `ITerminalOutput`, `ITerminalControlProvider`, `TerminalEndpoint`, native mode snapshots, and controlled result types remain public for custom hosts, injected transports, diagnostics, and higher-level libraries operating below the semantic layer.
+`ITerminalInput`, `ITerminalOutput`, `ITerminalControlProvider`, `TerminalEndpoint`, native mode snapshots, and controlled result types remain public for injected transports, diagnostics, and higher-level libraries.
 
-These contracts do not imply that a live session can be bypassed safely. In particular, a `TerminalSession` owns the authoritative input-reader path while active.
-
-`TerminalSession.Output` is a borrowed advanced escape hatch. Direct use is outside session serialization; callers accept responsibility for avoiding interleaving with session-managed traffic.
+A live session still owns the authoritative reader. `TerminalSession.Output` is a borrowed advanced escape hatch outside ordinary session serialization.
 
 ### 2.3 Internal wire/platform machinery
 
-Protocol encoders/parsers, control-family writers, Sixel quantization/encoding, Kitty Graphics adaptation/chunking/persistent ids, semantic-event recognition, query transactions, capability evidence storage, lifecycle signal sources, presentation/input managers, and OS plumbing remain implementation details unless represented separately by a public semantic contract.
+Protocol encoders/parsers, control-family writers, Sixel quantization/encoding, Kitty Graphics adaptation/chunking/persistent ids, semantic-event recognition, query transactions, capability evidence storage, lifecycle sources, and OS plumbing remain implementation details unless represented separately by a public semantic contract.
 
-Internal selectors and numeric protocol identities are not compatibility promises merely because public semantic APIs ultimately use them.
-
-## 3. Capability-driven, not terminal-brand-driven
+## 3. Capability-driven routing
 
 The normalized model separates:
 
@@ -105,31 +79,11 @@ evidence source
 endpoint availability
 ```
 
-Static TermInfo/profile advertisement and generation-scoped live evidence are distinct. A terminal name, `TERM`, environment variable, host OS, emulator brand, registry order, or caller preference is not automatically capability proof.
+Static terminal-description evidence and generation-scoped live evidence are distinct. Terminal names, `TERM`, environment variables, host OS, emulator brands, registry order, and caller preferences are not automatically capability proof.
 
-For Sixel, Primary Device Attributes parameter `4` may provide positive support evidence. A valid response without `4`, silence, timeout, or caller cancellation does not automatically prove terminal-wide unsupported Sixel.
+`TerminalSession.InspectCapability(...)` is side-effect free. `VerifyCapabilityAsync(...)` is explicit because it may emit a bounded reviewed live probe.
 
-For Kitty Graphics, the reviewed support path uses the protocol-defined correlated query plus Primary DA barrier semantics. A valid correlated Kitty response verifies that backend for the current generation; Primary DA arriving first is reviewed negative evidence for that concrete probe; silence before either authoritative result remains unknown.
-
-### Public capability planning
-
-The public vocabulary is deliberately reduced:
-
-```text
-TerminalCapability
-TerminalCapabilitySupport
-TerminalCapabilityEndpointAvailability
-TerminalCapabilityEvidenceKind
-TerminalCapabilityStatus
-```
-
-`TerminalSession.InspectCapability(...)` is synchronous and side-effect free. It projects existing knowledge only.
-
-`TerminalSession.VerifyCapabilityAsync(...)` is explicit because it may emit bounded probe traffic. It reuses reviewed existing probe paths rather than inventing traffic for every semantic capability.
-
-Public evidence is only `None`, `StaticDescription`, or `LiveObservation`; backend ids, routing scores, raw protocol frames, and `Icod.TermInfo` provenance remain private.
-
-Version 1.11 adds `PersistentRasterGraphics = 9`. It is separate from ordinary `RasterGraphics`: Sixel may satisfy ephemeral raster display, while persistent terminal-resident resource ownership requires the reviewed persistent-capable Kitty Graphics path.
+`PersistentRasterGraphics = 9` is separate from ordinary `RasterGraphics`: verified Sixel may satisfy ephemeral raster display while persistent terminal-resident ownership requires the reviewed persistent-capable Kitty Graphics path.
 
 ## 4. Control-language layering
 
@@ -145,42 +99,29 @@ semantic intent
 
 The normalized framing vocabulary includes CSI, DCS, OSC, APC, PM, and SOS.
 
-Raster examples make the separation concrete:
+Raster routing illustrates the boundary:
 
 ```text
 RasterGraphics
-    -> DcsSixel
-        -> DCS
-            -> Sixel
+    -> DcsSixel -> DCS -> Sixel
 
 RasterGraphics
-    -> ApcKittyGraphics
-        -> APC
-            -> Kitty Graphics
+    -> ApcKittyGraphics -> APC -> Kitty Graphics
 
 PersistentRasterGraphics
-    -> ApcKittyGraphics
-        -> APC
-            -> private resource / placement protocol identity
+    -> ApcKittyGraphics -> APC
+        -> private resource / placement protocol identity
 ```
 
 The public raster/resource contracts remain semantic even though the current persistent implementation is Kitty-specific internally.
 
 ## 5. Backend-neutral raster data
 
-`TerminalRasterImage`, `TerminalRasterPixelFormat`, and `TerminalRasterColor` represent bounded raw image data, not a Sixel/Kitty payload container.
+`TerminalRasterImage`, `TerminalRasterPixelFormat`, and `TerminalRasterColor` represent bounded raw image data rather than protocol payload containers.
 
-Supported storage forms are:
+Supported storage forms are `Rgb24`, `Rgba32`, and `Indexed8` plus RGBA8 palette.
 
-```text
-Rgb24
-Rgba32
-Indexed8 + RGBA8 palette
-```
-
-The raster object owns a snapshot of caller-provided pixel/palette storage. Straight alpha is preserved. Mutable backing buffers are not exposed publicly.
-
-Raster ceilings are explicit:
+Raster ceilings remain:
 
 ```text
 maximum dimension        16,384
@@ -193,46 +134,15 @@ Image-file decoding, gamma/color-profile processing, and hidden background compo
 
 ## 6. Ephemeral raster display
 
-`TerminalSession.DisplayRasterAsync(...)` represents ephemeral display intent.
+`TerminalSession.DisplayRasterAsync(...)` represents ephemeral display intent. Reviewed backends are verified Kitty Graphics and verified Sixel.
 
-Its reviewed internal backends are:
+Routing happens before commitment. Once a backend commits output, transport/protocol failure is surfaced and the library does not replay through another backend because the terminal may have applied an unknown prefix.
 
-```text
-verified ApcKittyGraphics
-verified DcsSixel
-```
+Large Sixel and Kitty transfers are emitted as bounded lazy segments/chunks rather than requiring one complete encoded transfer allocation.
 
-When both are verified, Kitty Graphics is preferred; verified Sixel remains fallback. Routing decisions happen before commitment.
+## 7. Persistent raster ownership — 1.11+
 
-Once a backend commits output, transport/protocol failure is surfaced. The library does not replay through another backend because the terminal may have applied an unknown prefix.
-
-The Sixel pipeline is:
-
-```text
-TerminalRasterImage
-    -> deterministic bounded quantization
-        -> SixelPaletteImage
-            -> bounded lazy payload segments
-                -> serialized DCS transaction
-```
-
-The Kitty direct-transfer pipeline is:
-
-```text
-TerminalRasterImage
-    -> checked raw adaptation
-        -> RGB24 or RGBA32 byte stream
-            -> bounded lazy Base64 chunks
-                -> serialized APC frame sequence
-```
-
-Large images do not require one giant encoded string/allocation.
-
-## 7. Persistent raster ownership — 1.11
-
-Version 1.11 adds a separate terminal-resident ownership domain rather than widening `DisplayRasterAsync(...)` into a scene graph.
-
-The semantic ownership graph is:
+Version 1.11 established a separate terminal-resident ownership domain:
 
 ```text
 TerminalSession
@@ -242,60 +152,54 @@ TerminalSession
         -> ...
 ```
 
-`TerminalSession.CreateRasterResourceAsync(...)` publishes a public resource only after acknowledged upload establishes a private terminal identity.
+A public resource is published only after acknowledged upload establishes a private terminal identity. Placement create/update likewise uses correlated acknowledgement through the authoritative query/input path.
 
-`TerminalRasterResource.CreatePlacementAsync(...)` creates opaque child ownership. `TerminalRasterPlacement.UpdateAsync(...)` replaces the same private placement at the terminal's current cursor position.
+Placement position remains the terminal's current cursor location. `Columns` and `Rows` are independently optional and bounded to `1..16384`.
 
-`TerminalRasterPlacementOptions.Columns` and `.Rows` are independently optional and bounded to `1..16384`. The reviewed backend uses no-cursor-movement placement semantics.
+### 7.1 Source-pixel cropping — 1.12
 
-### Private identity
+Version 1.12 adds `TerminalRasterSourceRectangle` and `TerminalRasterPlacementOptions.SourceRectangle`.
 
-Internally, resource upload uses a nonzero private image number for acknowledgement correlation and receives a nonzero terminal-assigned image id. Placement identity is likewise private and nonzero.
+Coordinates are zero-based source-image pixels. `Width` and `Height` are positive. Scalar values remain within the raster dimension ceiling, and every present rectangle is revalidated by placement options—including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor—before the complete rectangle is checked against the owning resource and before placement output commits.
 
-Public resources/placements never expose those ids. Callers cannot manufacture raw resource/placement protocol identity.
+The resource state stores immutable source width/height metadata needed for this validation. It does not retain source pixel bytes for replay.
 
-### Bounded registries
+Source cropping does **not** change screen placement ownership: the placement still occurs at the current cursor.
 
-Session bookkeeping is bounded:
+### 7.2 Signed z-order — 1.12
+
+`TerminalRasterPlacementOptions.ZIndex` is nullable signed `int` and accepts the full CLR `int` domain.
+
+It expresses signed stacking order to the reviewed persistent backend. It is not a scene graph, parent/child placement chain, or global composition policy.
+
+### 7.3 Shared placement transaction
+
+Create and update use the same acknowledged placement transaction. The reviewed deterministic backend order is:
+
+```text
+Ga=p,i=<id>,p=<id>,C=1[,x=...[,y=...[,w=...[,h=...]]]][,c=...][,r=...][,z=...]
+```
+
+When a source rectangle is present, all four crop fields are emitted together. Signed z-order uses invariant decimal formatting. When 1.12 options are absent, existing 1.11 bytes/behavior are preserved.
+
+### 7.4 Private identity and bounded registries
+
+Image numbers, terminal image ids, and placement ids remain private and nonzero. Public callers cannot manufacture them.
+
+Session bookkeeping remains bounded:
 
 ```text
 256  live persistent resources
 4096 live persistent placements
 ```
 
-Allocation avoids live collisions and handles numeric wraparound. These are local ownership bounds, not terminal storage-quota promises.
+These are local ownership bounds, not terminal storage-quota promises.
 
-### No hidden raster cache
+## 8. One authoritative input conversation
 
-After successful creation, the persistent registry retains ownership metadata, not an arbitrary hidden `TerminalRasterImage` copy. Version 1.11 therefore does not promise automatic re-upload/rebind.
+A live session owns one incremental byte stream containing ordinary input, lifecycle traffic, active query responses, unsolicited semantic reports, graphics probe replies, and persistent graphics acknowledgements.
 
-See `Persistent-Raster-Ownership.md` for the full public ownership contract.
-
-## 8. Alpha and image semantics
-
-Kitty direct RGBA32 can preserve fractional alpha. Sixel cannot represent equivalent semantics without external compositing policy, so fractional-alpha display through Sixel is controlled unsupported rather than silently flattened.
-
-Indexed input expands for Kitty only as required by its raw direct formats: opaque referenced palette colors permit RGB24; any referenced non-opaque color requires RGBA32.
-
-Persistent resource creation reuses the same bounded raw adaptation semantics and does not add image decoding/transcoding.
-
-## 9. Session-managed output ordering
-
-High-level application text, semantic output, query requests, reversible state traffic, ephemeral raster output, and persistent raster transactions use session-owned serialization domains appropriate to their contracts.
-
-Committed Sixel output holds the session output gate through final ST/flush. Committed Kitty direct output holds it across all APC frames through final flush.
-
-Persistent resource upload is also one logical committed transfer. Placement create/update are serialized operations coordinated with acknowledgement through the existing query manager.
-
-Caller cancellation is honored before commitment. After commitment, ordinary cancellation does not intentionally truncate the logical graphics transaction.
-
-Session teardown drains committed output before final output-state restoration continues.
-
-## 10. One authoritative input conversation
-
-A live session owns one incremental byte stream containing ordinary text/keys/paste/mouse/focus data, lifecycle traffic, active query responses, unsolicited semantic reports, graphics probe responses, and persistent graphics acknowledgements.
-
-The stable precedence is:
+Stable precedence remains:
 
 ```text
 active query/response ownership
@@ -303,108 +207,85 @@ active query/response ownership
         -> ordinary application-input decoding
 ```
 
-No raster or persistent-resource feature creates a graphics-specific reader.
+No raster or persistent-resource feature creates a competing reader.
 
-Resource upload and placement create/update acknowledgements are correlated through the same transaction/query authority. Wrong private identities do not satisfy another transaction.
+Wrong persistent identities do not satisfy another transaction. Timeout/late-response correlation remains bounded and does not allow a stale acknowledgement to complete a later placement.
 
-## 11. Correlation grants ownership, not trust
+## 9. Correlation grants ownership, not trust
 
-Terminal responses remain untrusted after they become transaction-owned.
+Matching identifiers establish bounded routing ownership, not terminal authenticity. Malformed framing, numeric overflow, duplicate fields, size bounds, and response grammar remain validated after correlation.
 
-Matching identifiers do not bypass grammar, termination, size, duplicate-field, or numeric-overflow validation. Malformed/oversized owned responses are recovered boundedly rather than leaked into ordinary application input.
+A well-formed correlated `ENOENT` means the terminal no longer recognizes an object the session believed current. That invalidates terminal-resident certainty; it does not authorize hidden replay or imply anything about unrelated state.
 
-For persistent graphics, a well-formed correlated `ENOENT` means the terminal no longer recognizes an object the session believed current. That invalidates terminal-resident certainty; it is not permission for hidden replay.
+## 10. Output commitment
 
-## 12. Ownership and reversible state
+Caller cancellation is honored before commitment where possible. Once a logical graphics transaction commits, ordinary cancellation does not intentionally truncate it.
 
-A `TerminalSession` owns terminal state transitions, not necessarily the underlying descriptor/stream/transport.
+Persistent resource upload is one committed acknowledged transaction. Placement create/update uses the same serialized session/query authority. Post-commit transport failure is surfaced without blind replay, automatic backend switching, or invented terminal certainty.
 
-Supplied transports remain borrowed. Disposal restores state the session changed but does not close caller-owned transports.
+## 11. Generation-scoped ownership
 
-Reversible terminal features use leases when consumers may overlap. Exact restoration is based on observed/captured state rather than guessed defaults.
+Persistent raster resources and placements are not exactly restorable state. They are explicit generation-scoped terminal-resident ownership.
 
-Ephemeral raster display is output, not reversible state.
+`InvalidateState()` and lifecycle generation changes make existing identities stale. Thereafter:
 
-Persistent raster resources are also **not exactly restorable state**. They are explicit generation-scoped terminal-resident ownership. While identity is current, the session can target cleanup. Once lifecycle uncertainty invalidates identity, stale handles perform local-only cleanup and no stale numeric identifiers are emitted.
+- placement update returns controlled `Unavailable` before output;
+- new placement creation from a stale resource returns controlled `Unavailable` before output;
+- stale disposal releases local ownership only;
+- no stale numeric protocol identity is emitted;
+- no hidden source raster is replayed or re-uploaded.
 
-The library does not retain/replay resources merely to simulate restoration.
+Applications explicitly create new resources when current persistent ownership is needed again.
 
-## 13. Lifecycle as a trust boundary
+## 12. Deterministic cleanup
 
-Suspend/resume and explicit invalidation are state transitions.
+Placement disposal is locally idempotent and, while current, attempts one quiet targeted delete.
 
-Before suspension, reversible owned state is restored as required. After resume, generation-scoped live observations and persistent terminal-resident identity certainty expire; configured reversible state is re-established according to its own contract.
+Resource disposal prevents new children, closes child ownership first, attempts child deletion before resource-data deletion, releases local ownership even if cleanup transport fails, and aggregates multiple cleanup failures where necessary.
 
-Already-returned capability statuses are immutable snapshots. Callers inspect/verify again when current knowledge matters.
+Session teardown drains committed transactions and deletes current placements before current resource data. Already-stale state receives local-only cleanup.
 
-Persistent handles do not revive automatically after generation invalidation. Applications create new resources explicitly if they still need them.
+## 13. Security-sensitive transport choices
 
-## 14. Deterministic persistent cleanup
-
-Placement disposal releases local ownership once and, while current, attempts one targeted quiet delete. It is locally idempotent even when terminal cleanup transport fails.
-
-Resource disposal prevents new children, closes child ownership first, attempts child cleanup before resource-data deletion, and aggregates multiple cleanup failures if necessary.
-
-Session teardown deletes current placements before current resource data. If persistent state is already stale, teardown performs local bookkeeping only.
-
-## 15. Failure and uncertainty
-
-The architecture favors truthful uncertainty over optimistic advancement.
-
-- query silence does not automatically become unsupported truth;
-- unavailable endpoints are distinct from unsupported capability;
-- correlated malformed responses are failures, not support evidence;
-- partial committed graphics output is not replayed automatically;
-- terminal `ENOENT` invalidates current resource certainty;
-- cleanup failures are surfaced rather than hidden behind invented success;
-- stale resource identity is not emitted after lifecycle invalidation.
-
-## 16. Bounded work and storage
-
-Documented bounds are part of the safety architecture:
-
-```text
-normal terminal response frame       4,096 bytes
-small complete DCS frame              4,096 bytes
-small complete APC frame              8,192 bytes
-Kitty Base64 image data per APC chunk 4,096 bytes
-persistent resources                    256/session
-persistent placements                  4096/session
-```
-
-Parser, query, semantic-event, raster conversion, and ownership registries remain bounded.
-
-## 17. Security-sensitive transport choices
-
-Kitty direct transfer remains the reviewed raster transport. The library does not silently choose file, temporary-file, or shared-memory transfer because those introduce path naming, permissions, lifetime, visibility, race, and cross-process concerns.
+Kitty direct transfer remains the reviewed persistent transport. File, temporary-file, and shared-memory transfer are not selected silently because they introduce path, permissions, lifetime, visibility, race, and cross-process concerns.
 
 Base64 is protocol framing, not encryption.
 
-Persistent storage is owned by the terminal and may be evicted according to terminal policy; local registry bounds do not imply terminal storage reservation.
+Persistent source cropping operates on already-owned source pixels and does not introduce an external storage transport.
 
-## 18. Stable architectural exclusions
+## 14. Stable exclusions after 1.12
 
-Stable 1.x does not treat the following as ordinary `Icod.Terminal` responsibilities:
+Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 
 - process-global current-terminal state;
 - competing live input readers;
 - generic raw vendor control/event buses;
 - terminal-brand-driven capability proof;
 - image-file decoding/transcoding;
-- hidden graphics replay;
+- hidden graphics replay or retained persistent source-image cache;
 - unbounded graphics/query/event state;
+- public raster backend selection or public Kitty ids;
+- relative placement graphs or parent placement identities;
+- absolute screen-coordinate placement / Terminal-owned layout;
+- Unicode placeholder/virtual placements;
+- animation/frame lifecycle;
 - PTY/ConPTY process hosting;
 - cells, windows, layout, damage, or scene-graph ownership.
 
-Advanced persistent placement features such as source rectangles, z-order, Unicode placeholders, relative/pixel placement, and animation require separate review and downstream justification.
+Source rectangles and z-order are the complete 1.12 advanced placement feature set; they do not imply the excluded scene-layout features.
 
-## 19. Dependency boundary
+## 15. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. Tests, samples, package consumers, and verification tools do not independently pin exact transitive runtime dependency versions merely to duplicate package metadata.
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The 1.12 production graph remains:
 
-Successful restore/build of the declared package graph remains the normal dependency-compatibility witness.
+```text
+Icod.TermInfo 1.11.0
+Icod.Timing   1.0.0
+```
 
-## 20. Permanent authorities
+Tests, samples, and package consumers may use additional dependencies for qualification without widening the production graph.
+
+## 16. Permanent authorities
 
 Related 1.x authorities include:
 

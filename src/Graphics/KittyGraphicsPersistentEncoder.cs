@@ -49,8 +49,7 @@ internal static class KittyGraphicsPersistentEncoder {
 	internal static ReadOnlyMemory<byte> EncodePlacementPayload(
 		uint imageId,
 		uint placementId,
-		int? columns,
-		int? rows
+		TerminalRasterPlacementOptions? options
 	) {
 		ValidateNonZeroIdentity(
 			imageId,
@@ -62,14 +61,7 @@ internal static class KittyGraphicsPersistentEncoder {
 			nameof( placementId ),
 			"A persistent Kitty Graphics placement id must be non-zero."
 		);
-		ValidatePlacementExtent(
-			columns,
-			nameof( columns )
-		);
-		ValidatePlacementExtent(
-			rows,
-			nameof( rows )
-		);
+		options?.Validate();
 
 		StringBuilder value = new();
 		_ = value.Append( "Ga=p,i=" );
@@ -77,15 +69,45 @@ internal static class KittyGraphicsPersistentEncoder {
 		_ = value.Append( ",p=" );
 		_ = value.Append( placementId.ToString( CultureInfo.InvariantCulture ) );
 		_ = value.Append( ",C=1" );
-		if ( columns.HasValue ) {
-			_ = value.Append( ",c=" );
-			_ = value.Append( columns.Value.ToString( CultureInfo.InvariantCulture ) );
+		if ( options?.SourceRectangle is TerminalRasterSourceRectangle rectangle ) {
+			_ = value.Append( ",x=" );
+			_ = value.Append( rectangle.X.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( ",y=" );
+			_ = value.Append( rectangle.Y.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( ",w=" );
+			_ = value.Append( rectangle.Width.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( ",h=" );
+			_ = value.Append( rectangle.Height.ToString( CultureInfo.InvariantCulture ) );
 		}
-		if ( rows.HasValue ) {
+		if ( options?.Columns is int columns ) {
+			_ = value.Append( ",c=" );
+			_ = value.Append( columns.ToString( CultureInfo.InvariantCulture ) );
+		}
+		if ( options?.Rows is int rows ) {
 			_ = value.Append( ",r=" );
-			_ = value.Append( rows.Value.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( rows.ToString( CultureInfo.InvariantCulture ) );
+		}
+		if ( options?.ZIndex is int zIndex ) {
+			_ = value.Append( ",z=" );
+			_ = value.Append( zIndex.ToString( CultureInfo.InvariantCulture ) );
 		}
 		return Encoding.ASCII.GetBytes( value.ToString() );
+	}
+
+	internal static ReadOnlyMemory<byte> EncodePlacementPayload(
+		uint imageId,
+		uint placementId,
+		int? columns,
+		int? rows
+	) {
+		return EncodePlacementPayload(
+			imageId,
+			placementId,
+			new TerminalRasterPlacementOptions {
+				Columns = columns,
+				Rows = rows
+			}
+		);
 	}
 
 	internal static ReadOnlyMemory<byte> EncodeDeletePlacementPayload(

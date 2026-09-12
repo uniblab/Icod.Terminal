@@ -80,6 +80,25 @@ internal sealed class TerminalPersistentRasterRegistry {
 	internal bool TryReserveResource(
 		out TerminalPersistentRasterResourceState? resource
 	) {
+		return this.TryReserveResource(
+			TerminalRasterImage.MaximumDimension,
+			TerminalRasterImage.MaximumDimension,
+			out resource
+		);
+	}
+
+	internal bool TryReserveResource(
+		int sourceWidth,
+		int sourceHeight,
+		out TerminalPersistentRasterResourceState? resource
+	) {
+		if ( sourceWidth is < 1 or > TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException( nameof( sourceWidth ) );
+		}
+		if ( sourceHeight is < 1 or > TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException( nameof( sourceHeight ) );
+		}
+
 		lock ( this.synchronization ) {
 			if ( MaximumResources <= this.resources.Count ) {
 				resource = null;
@@ -92,7 +111,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 			);
 			resource = new TerminalPersistentRasterResourceState(
 				imageNumber,
-				this.generation
+				this.generation,
+				sourceWidth,
+				sourceHeight
 			);
 			this.imageNumbers.Add( imageNumber );
 			this.resources.Add(

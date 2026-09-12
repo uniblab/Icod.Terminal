@@ -69,13 +69,33 @@ Require(
 	"PersistentRasterGraphics must retain the reviewed additive enum value 9."
 );
 
+TerminalRasterSourceRectangle rectangle = new(
+	0,
+	0,
+	1,
+	1
+);
 TerminalRasterPlacementOptions options = new() {
+	SourceRectangle = rectangle,
 	Columns = 12,
-	Rows = 6
+	Rows = 6,
+	ZIndex = -1
 };
 Require(
 	12 == options.Columns && 6 == options.Rows,
 	"TerminalRasterPlacementOptions did not preserve caller-supplied cell extents."
+);
+Require(
+	options.SourceRectangle is TerminalRasterSourceRectangle storedRectangle
+		&& 0 == storedRectangle.X
+		&& 0 == storedRectangle.Y
+		&& 1 == storedRectangle.Width
+		&& 1 == storedRectangle.Height,
+	"TerminalRasterPlacementOptions did not preserve the caller-supplied source rectangle."
+);
+Require(
+	-1 == options.ZIndex,
+	"TerminalRasterPlacementOptions did not preserve caller-supplied z-order."
 );
 Require(
 	typeof( IAsyncDisposable ).IsAssignableFrom( typeof( TerminalRasterResource ) ),
