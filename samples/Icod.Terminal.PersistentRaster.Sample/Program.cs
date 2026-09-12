@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.PersistentRaster.Sample
-	Sample application demonstrating persistent backend-neutral raster ownership.
+	Sample application demonstrating Icod.Terminal PersistentRaster features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
