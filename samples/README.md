@@ -14,7 +14,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
-| Create/update/dispose terminal-resident raster ownership | `Icod.Terminal.PersistentRaster.Sample` |
+| Create/update/dispose terminal-resident raster ownership with source crops and z-order | `Icod.Terminal.PersistentRaster.Sample` |
 | Plan persistent-raster lifecycle with TermInfo, optionally verify live support, then execute | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
@@ -91,7 +91,7 @@ The normal evidence-driven router may use verified Kitty Graphics or verified Si
 
 ### `Icod.Terminal.PersistentRaster.Sample`
 
-Demonstrates the 1.11 persistent-raster ownership model using semantic APIs only.
+Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and relative z-order.
 
 ```text
 dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
@@ -102,11 +102,13 @@ The sample:
 1. explicitly verifies `TerminalCapability.PersistentRasterGraphics`;
 2. creates a `TerminalRasterImage` in memory;
 3. creates an opaque `TerminalRasterResource`;
-4. creates a placement with a cell-column extent;
-5. updates the same placement at the current cursor;
+4. creates a placement from a bounded source-pixel crop with a cell-column extent and nonzero z-order;
+5. updates the same placement at the current cursor with a different crop, extent, and z-order;
 6. uses `await using` so placement/resource cleanup is deterministic.
 
-It does not mention Kitty, Sixel, image ids, image numbers, placement ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
+`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses relative stacking intent. Neither option turns `Icod.Terminal` into a scene-layout engine: 1.12 still does not own relative placement graphs, screen-coordinate layout, or automatic composition policy.
+
+The sample does not mention Kitty, Sixel, image ids, image numbers, placement ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
 
 `packaging/VerifyPersistentRasterSample.ps1` enforces those backend-neutral source rules and builds the sample on every supported TFM.
 
