@@ -382,6 +382,7 @@ public sealed class TerminalPersistentRasterLifecycleTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
