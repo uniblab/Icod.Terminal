@@ -21,6 +21,7 @@
 namespace Icod.Terminal.Tests.Graphics;
 
 using Icod.Terminal;
+using Icod.TermInfo;
 
 /// <summary>
 /// Provides the minimal interactive terminal-control surface required by persistent-raster tests.
