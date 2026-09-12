@@ -143,6 +143,12 @@ public sealed partial class TerminalSession {
 		}
 
 		resourceState.BindImageId( response.ImageId.Value );
+		if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState ) ) {
+			return TerminalControlResult<TerminalRasterResource>.Unavailable(
+				"The persistent raster resource lost generation ownership before creation completed."
+			);
+		}
+
 		return TerminalControlResult<TerminalRasterResource>.Available(
 			new TerminalRasterResource(
 				this,
@@ -166,6 +172,11 @@ public sealed partial class TerminalSession {
 				"The persistent raster resource has already been disposed."
 			);
 		}
+		if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState ) ) {
+			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+				"The persistent raster resource is no longer current for this session generation."
+			);
+		}
 		if ( 0u == resourceState.ImageId ) {
 			throw new InvalidOperationException(
 				"The persistent raster resource does not have a terminal-assigned image id."
@@ -180,6 +191,11 @@ public sealed partial class TerminalSession {
 				throw new ObjectDisposedException(
 					nameof( TerminalRasterResource ),
 					"The persistent raster resource has already been disposed."
+				);
+			}
+			if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState ) ) {
+				return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+					"The persistent raster resource is no longer current for this session generation."
 				);
 			}
 			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
@@ -205,9 +221,9 @@ public sealed partial class TerminalSession {
 			throw;
 		}
 
-		if ( placementState.IsClosed ) {
+		if ( !this.persistentRasterRegistry.IsPlacementCurrent( placementState ) ) {
 			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
-				"The persistent raster placement lost local ownership before creation completed."
+				"The persistent raster placement lost generation ownership before creation completed."
 			);
 		}
 
@@ -260,10 +276,14 @@ public sealed partial class TerminalSession {
 		TerminalPersistentRasterResourceState resourceState
 	) {
 		ArgumentNullException.ThrowIfNull( resourceState );
+		if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState ) ) {
+			_ = this.persistentRasterRegistry.TryReleaseResource( resourceState );
+			return;
+		}
 
 		IDisposable outputLease;
 		try {
-			outputLease = await this.AcquireSessionOutputAsync(
+			outputLease = await this.AcquireControlOutputAsync(
 				CancellationToken.None
 			).ConfigureAwait( false );
 		} catch {
@@ -329,10 +349,14 @@ public sealed partial class TerminalSession {
 		TerminalPersistentRasterPlacementState placementState
 	) {
 		ArgumentNullException.ThrowIfNull( placementState );
+		if ( !this.persistentRasterRegistry.IsPlacementCurrent( placementState ) ) {
+			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
+			return;
+		}
 
 		IDisposable outputLease;
 		try {
-			outputLease = await this.AcquireSessionOutputAsync(
+			outputLease = await this.AcquireControlOutputAsync(
 				CancellationToken.None
 			).ConfigureAwait( false );
 		} catch {
@@ -359,6 +383,89 @@ public sealed partial class TerminalSession {
 			await this.Output.FlushAsync(
 				CancellationToken.None
 			).ConfigureAwait( false );
+		}
+	}
+
+	private void InvalidatePersistentRasterState() {
+		this.persistentRasterRegistry.Invalidate();
+	}
+
+	private async ValueTask<Exception?> ClosePersistentRasterStateAsync() {
+		IDisposable outputLease;
+		try {
+			outputLease = await this.AcquireControlOutputAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			this.persistentRasterRegistry.DrainCurrent(
+				out _,
+				out _
+			);
+			return exception;
+		}
+
+		using ( outputLease ) {
+			this.persistentRasterRegistry.DrainCurrent(
+				out TerminalPersistentRasterPlacementState[] releasedPlacements,
+				out TerminalPersistentRasterResourceState[] releasedResources
+			);
+			if ( 0 == releasedPlacements.Length
+				&& 0 == releasedResources.Length ) {
+				return null;
+			}
+
+			List<Exception> failures = [];
+			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				uint imageId = placement.Resource.ImageId;
+				if ( 0u == imageId ) {
+					continue;
+				}
+
+				try {
+					await this.WritePersistentRasterControlFrameCoreAsync(
+						KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
+							imageId,
+							placement.PlacementId
+						)
+					).ConfigureAwait( false );
+				} catch ( Exception exception ) {
+					failures.Add( exception );
+				}
+			}
+
+			foreach ( TerminalPersistentRasterResourceState resource in releasedResources ) {
+				uint imageId = resource.ImageId;
+				if ( 0u == imageId ) {
+					continue;
+				}
+
+				try {
+					await this.WritePersistentRasterControlFrameCoreAsync(
+						KittyGraphicsPersistentEncoder.EncodeDeleteResourcePayload(
+							imageId
+						)
+					).ConfigureAwait( false );
+				} catch ( Exception exception ) {
+					failures.Add( exception );
+				}
+			}
+
+			try {
+				await this.Output.FlushAsync(
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception exception ) {
+				failures.Add( exception );
+			}
+
+			return failures.Count switch {
+				0 => null,
+				1 => failures[ 0 ],
+				_ => new AggregateException(
+					"Multiple persistent raster cleanup operations failed.",
+					failures
+				)
+			};
 		}
 	}
 

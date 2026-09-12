@@ -37,6 +37,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 	private readonly HashSet<uint> placementIds = [];
 	private uint nextImageNumber;
 	private uint nextPlacementId;
+	private long generation;
 
 	internal TerminalPersistentRasterRegistry(
 		uint initialImageNumber = 1,
@@ -49,11 +50,15 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 		this.nextImageNumber = NormalizeIdentity( initialImageNumber );
 		this.nextPlacementId = NormalizeIdentity( initialPlacementId );
-		this.Generation = initialGeneration;
+		this.generation = initialGeneration;
 	}
 
 	internal long Generation {
-		get;
+		get {
+			lock ( this.synchronization ) {
+				return this.generation;
+			}
+		}
 	}
 
 	internal int LiveResourceCount {
@@ -87,7 +92,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 			);
 			resource = new TerminalPersistentRasterResourceState(
 				imageNumber,
-				this.Generation
+				this.generation
 			);
 			this.imageNumbers.Add( imageNumber );
 			this.resources.Add(
@@ -106,6 +111,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 		lock ( this.synchronization ) {
 			if ( resource.IsClosed
+				|| resource.Generation != this.generation
 				|| !this.resources.TryGetValue(
 					resource,
 					out HashSet<TerminalPersistentRasterPlacementState>? children
@@ -122,12 +128,24 @@ internal sealed class TerminalPersistentRasterRegistry {
 			placement = new TerminalPersistentRasterPlacementState(
 				resource,
 				placementId,
-				this.Generation
+				this.generation
 			);
 			this.placementIds.Add( placementId );
 			this.placements.Add( placement );
 			children.Add( placement );
 			return true;
+		}
+	}
+
+	internal bool IsResourceCurrent(
+		TerminalPersistentRasterResourceState resource
+	) {
+		ArgumentNullException.ThrowIfNull( resource );
+
+		lock ( this.synchronization ) {
+			return !resource.IsClosed
+				&& resource.Generation == this.generation
+				&& this.resources.ContainsKey( resource );
 		}
 	}
 
@@ -139,8 +157,8 @@ internal sealed class TerminalPersistentRasterRegistry {
 		lock ( this.synchronization ) {
 			if ( placement.IsClosed
 				|| placement.Resource.IsClosed
-				|| placement.Generation != this.Generation
-				|| placement.Resource.Generation != this.Generation
+				|| placement.Generation != this.generation
+				|| placement.Resource.Generation != this.generation
 				|| !this.placements.Contains( placement )
 				|| !this.resources.TryGetValue(
 					placement.Resource,
@@ -150,6 +168,55 @@ internal sealed class TerminalPersistentRasterRegistry {
 			}
 
 			return children.Contains( placement );
+		}
+	}
+
+	internal void Invalidate() {
+		lock ( this.synchronization ) {
+			this.generation = AdvanceGeneration( this.generation );
+			this.resources.Clear();
+			this.placements.Clear();
+			this.imageNumbers.Clear();
+			this.placementIds.Clear();
+		}
+	}
+
+	internal void DrainCurrent(
+		out TerminalPersistentRasterPlacementState[] releasedPlacements,
+		out TerminalPersistentRasterResourceState[] releasedResources
+	) {
+		lock ( this.synchronization ) {
+			releasedPlacements = this.placements.ToArray();
+			Array.Sort(
+				releasedPlacements,
+				static ( left, right ) => {
+					int resourceOrder = left.Resource.ImageNumber.CompareTo(
+						right.Resource.ImageNumber
+					);
+					return 0 != resourceOrder
+						? resourceOrder
+						: left.PlacementId.CompareTo( right.PlacementId )
+					;
+				}
+			);
+
+			releasedResources = this.resources.Keys.ToArray();
+			Array.Sort(
+				releasedResources,
+				static ( left, right ) => left.ImageNumber.CompareTo( right.ImageNumber )
+			);
+
+			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				placement.Close();
+			}
+			foreach ( TerminalPersistentRasterResourceState resource in releasedResources ) {
+				resource.Close();
+			}
+
+			this.resources.Clear();
+			this.placements.Clear();
+			this.imageNumbers.Clear();
+			this.placementIds.Clear();
 		}
 	}
 
@@ -257,6 +324,19 @@ internal sealed class TerminalPersistentRasterRegistry {
 		return ( uint.MaxValue == identity )
 			? 1u
 			: identity + 1u
+		;
+	}
+
+	private static long AdvanceGeneration(
+		long value
+	) {
+		if ( 0 > value ) {
+			throw new ArgumentOutOfRangeException( nameof( value ) );
+		}
+
+		return long.MaxValue == value
+			? 0L
+			: value + 1L
 		;
 	}
 }
