@@ -308,6 +308,7 @@ public sealed class TerminalPersistentRasterLifecycleTests {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
 				LifecycleSource = lifecycle,
+				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
 			}
