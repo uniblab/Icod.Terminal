@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 	Icod.Terminal
-	Managed, cross-platform live-terminal session and terminal-control library for .NET.
+	Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 -->
 
@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.11.1 adds the executable TermInfo 1.11 to Terminal 1.11 persistent-raster integration contract through a dedicated three-TFM contract-test project and non-packable sample. It preserves the 1.11.0 public API, persistent-raster runtime semantics, and production dependencies; Icod.TermInfo.Inspection 1.11.0 remains test/sample-only. Full notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.11.1.md ; compatibility: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.12.0-alpha.1 begins bounded advanced persistent-raster placement development. The line first table-drives existing TermInfo semantic-evidence reconciliation with behavior parity, then adds source rectangles and signed z-order to the opaque placement options surface without relative-placement graphs, Unicode placeholders, animation, new capability values, or new production dependencies. Development roadmap: https://github.com/uniblab/Icod.Terminal/blob/feature/1.12.0-advanced-raster-placement/Icod.Terminal-1.12.0-Development-Roadmap.md</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
