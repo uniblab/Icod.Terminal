@@ -180,7 +180,7 @@ if ( capability.IsUsable ) {
 
 Resource and placement identity is opaque. The public API does not expose Kitty image ids, image numbers, placement ids, raw APC commands, or backend selection.
 
-`Columns` and `Rows` are independently optional and each supplied value is bounded to `1..16384`. `SourceRectangle` is measured in source-image pixels, must fit completely within the resource, and is validated before placement output. `ZIndex` is nullable and accepts the full signed 32-bit range. Placement still uses the terminal's current cursor location and does not move the text cursor; source cropping and z-order do not create an absolute layout or scene-graph contract.
+`Columns` and `Rows` are independently optional and each supplied value is bounded to `1..16384`. `SourceRectangle` is measured in source-image pixels, must satisfy its intrinsic scalar contract, must fit completely within the resource, and is validated before placement output. Placement options revalidate every present rectangle, including `default(TerminalRasterSourceRectangle)` values that bypass the public constructor. `ZIndex` is nullable and accepts the full signed 32-bit range. Placement still uses the terminal's current cursor location and does not move the text cursor; source cropping and z-order do not create an absolute layout or scene-graph contract.
 
 Persistent identities are session-generation scoped. Explicit invalidation and lifecycle generation changes stale existing handles. Version 1.12 does not retain hidden raster copies for automatic replay or re-upload after suspend/resume uncertainty.
 
