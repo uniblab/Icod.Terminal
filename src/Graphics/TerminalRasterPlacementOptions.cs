@@ -51,6 +51,15 @@ public sealed class TerminalRasterPlacementOptions {
 		set;
 	}
 
+	/// <summary>
+	/// Gets or sets the signed placement z-order, or <see langword="null"/> to use the
+	/// terminal backend's default placement order.
+	/// </summary>
+	public int? ZIndex {
+		get;
+		set;
+	}
+
 	internal void Validate() {
 		ValidateExtent(
 			this.Columns,
