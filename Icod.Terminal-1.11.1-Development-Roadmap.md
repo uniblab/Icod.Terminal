@@ -2,8 +2,8 @@
 
 **Release:** `1.11.1`  
 **Theme:** TermInfo 1.11 ↔ Terminal 1.11 persistent-raster integration contract  
-**Status:** planning complete; implementation intentionally paused pending maintainer questions  
-**Development version:** target `1.11.1`; package metadata not yet advanced  
+**Status:** T1111-A through T1111-D accepted; T1111-E release candidate prepared for exact-head qualification  
+**Development version:** stable `1.11.1` release candidate  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.11.0`  
 **TermInfo Runtime dependency:** `Icod.TermInfo 1.11.0`
@@ -134,31 +134,57 @@ This mapping is sample/test integration policy, not a new TermInfo or Terminal p
 ## Tranche roadmap
 
 ```text
-T1111-A  integration dependency boundary and dedicated contract-test project   planned
-T1111-B  consumer-owned live-evidence mapping contract                         planned
-T1111-C  static-plan → live-verification → replan contract tests                planned
-T1111-D  protocol-neutral executable integration sample                         planned
-T1111-E  package/downstream qualification and 1.11.1 release closure            planned
+T1111-A  integration dependency boundary and dedicated contract-test project   accepted
+T1111-B  consumer-owned live-evidence mapping contract                         accepted
+T1111-C  static-plan → live-verification → replan contract tests                accepted
+T1111-D  protocol-neutral executable integration sample                         accepted
+T1111-E  package/downstream qualification and 1.11.1 release closure            in progress
 ```
 
-Implementation is intentionally paused before `T1111-A` pending maintainer discussion.
+## Accepted A–D integration checkpoint
+
+T1111-A through T1111-D are accepted on exact head:
+
+```text
+651af888875a0d2acababe46a4e1313532ec7ba6
+```
+
+by pull-request workflow:
+
+```text
+#1628 / 34704455179
+```
+
+That exact head passed:
+
+- Runtime Windows;
+- Runtime Linux;
+- Runtime macOS;
+- package candidate/public API freeze;
+- Package Foundation;
+- Package Presentation;
+- Package Semantic and hardening;
+- Package Stable 1.x release line;
+- validated package artifact.
+
+The accepted checkpoint includes the dedicated integration-contract tests and solution-built executable sample on `net8.0`, `net9.0`, and `net10.0`.
 
 ## T1111-A — integration dependency boundary
 
-Create a dedicated integration-contract test project which references `Icod.Terminal` plus `Icod.TermInfo.Inspection 1.11.0` without adding Inspection or Source to `Icod.Terminal.csproj`.
+Completed. The dedicated `Icod.Terminal.TermInfoIntegration.Tests` project references `Icod.Terminal` plus `Icod.TermInfo.Inspection 1.11.0` without adding Inspection or Source to `Icod.Terminal.csproj`.
 
-Acceptance must prove:
+Acceptance proves:
 
 - the production package graph is unchanged;
-- the test-only integration project builds on all three TFMs;
+- the integration project builds/tests on all three TFMs;
 - the project is part of normal solution/CI verification;
 - package verification continues to reject unexpected production dependencies.
 
 ## T1111-B — consumer-owned live-evidence mapping
 
-Define and test the integration-only translation from Terminal's live semantic capability results to TermInfo `PersistentRasterLifecycleEvidenceKind.Verified` assertions.
+Completed. The integration-only bridge maps only conclusive live Terminal status into TermInfo `PersistentRasterLifecycleEvidenceKind.Verified` assertions.
 
-Acceptance must cover:
+Acceptance covers:
 
 - positive persistent verification;
 - verified persistent non-support;
@@ -170,7 +196,7 @@ Acceptance must cover:
 
 ## T1111-C — plan/verify/replan contract
 
-Add deterministic integration tests proving:
+Completed with deterministic integration tests proving:
 
 1. an ordinary terminal description with no lifecycle declarations produces an `Indeterminate` persistent request;
 2. Terminal-owned live verification strengthens knowledge through caller-owned evidence;
@@ -181,13 +207,13 @@ Add deterministic integration tests proving:
 
 ## T1111-D — executable integration sample
 
-Create a non-packable sample under:
+Completed under:
 
 ```text
 samples/Icod.Terminal.TermInfoPersistentRaster.Sample/
 ```
 
-The sample must be readable as executable architecture documentation and show:
+The sample is executable architecture documentation for:
 
 ```text
 selected TerminalDescription
@@ -200,20 +226,21 @@ selected TerminalDescription
     -> placement create/update/dispose
 ```
 
-The sample must not expose Kitty image ids, placement ids, raw APC commands, or backend-selection policy in its user-facing flow.
+It does not expose Kitty image ids, placement ids, raw APC commands, terminal-brand tests, or backend-selection policy in its user-facing flow. When execution is unavailable or the semantic plan is not successful, it reports the semantic state and does not pretend the persistent operation ran.
 
-When execution is unavailable or the semantic plan is not successful, the sample must report the semantic state and avoid pretending the persistent operation ran.
-
-CI must compile the sample for all supported TFMs; deterministic contract tests own simulated live execution coverage.
+The solution compiles the sample for all supported TFMs; deterministic contract tests own simulated live execution coverage.
 
 ## T1111-E — qualification and release closure
 
-After T1111-A through T1111-D are accepted:
+The stable `1.11.1` release candidate now advances:
 
-- advance the release metadata to stable `1.11.1`;
-- preserve `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0` production dependencies;
-- preserve the stable `1.0.0` compatibility floor;
-- require the normalized public API fingerprint to remain:
+- repository/package version to `1.11.1` with no prerelease suffix;
+- NuGet release notes to the 1.11.1 integration contract;
+- root README installation/integration guidance;
+- final `CHANGELOG.md` 1.11.1 entry;
+- curated `docs/releases/1.11.1.md` notes.
+
+The release candidate must continue to preserve `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0` production dependencies, the stable `1.0.0` compatibility floor, and the normalized public API fingerprint:
 
 ```text
 9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
@@ -221,7 +248,7 @@ After T1111-A through T1111-D are accepted:
 
 Any public API change is a stop/review condition, not an automatic baseline update.
 
-Final qualification must include:
+Exact-head qualification is pending for the release-candidate documentation/version commit and must include:
 
 - Runtime Windows;
 - Runtime Linux;
@@ -269,4 +296,4 @@ written contract
                     -> exact-head acceptance
 ```
 
-No implementation begins until the maintainer's pending questions are resolved.
+T1111-A through T1111-D have crossed the full matrix. T1111-E is now at the stable release-candidate qualification gate; merge, mainline Release validation, tag, and publication remain maintainer actions.

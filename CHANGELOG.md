@@ -2,6 +2,28 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.11.1
+
+### TermInfo persistent-raster integration contract
+
+- Adds a dedicated three-TFM integration-contract test project which references `Icod.TermInfo.Inspection 1.11.0` without adding Inspection or Source to the production `Icod.Terminal` dependency graph.
+- Defines and tests the consumer-owned translation from conclusive live Terminal capability status to protocol-neutral TermInfo `Verified` lifecycle evidence. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability are not promoted.
+- Proves static persistent-raster lifecycle planning can transition from `Indeterminate` through Terminal-owned live verification and caller-owned evidence to a deterministic successful replan.
+- Proves verified persistent non-support produces an `Impossible` lifecycle plan without attempting persistent resource creation.
+- Proves exact static Icod lifecycle declarations can produce a successful TermInfo plan without planning I/O while Terminal independently retains authority over live endpoint usability and execution.
+- Adds `Icod.Terminal.TermInfoPersistentRaster.Sample`, executable architecture documentation for static inspection -> semantic planning -> optional live verification -> caller-owned evidence -> replan -> opaque Terminal resource/placement execution.
+
+### Compatibility and qualification
+
+- Adds no production public API and intentionally retains the final 1.11 public API fingerprint `9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2`.
+- Preserves production dependencies at `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0`; `Icod.TermInfo.Inspection 1.11.0` remains test/sample-only and `Icod.TermInfo.Source` is not introduced.
+- Makes no intentional change to the persistent-raster wire protocol, acknowledgement, ownership, generation invalidation, cleanup, routing, or bounded-resource semantics released in 1.11.0.
+- Retains `net8.0`, `net9.0`, and `net10.0`, Windows/Linux/macOS Staging validation, current package/downstream gates, and the stable `1.0.0` compatibility floor.
+- T1111-A through T1111-D completed full pull-request qualification on exact head `651af888875a0d2acababe46a4e1313532ec7ba6` in workflow `#1628 / 34704455179`.
+- Deliberately defers a table-driven `TerminalTermInfoSemanticEvidence` cleanup, static lifecycle-evidence ingestion, and any adapter package to later independent design work.
+
+See `docs/releases/1.11.1.md` and `Icod.Terminal-1.11.1-Development-Roadmap.md` for the complete patch-release integration contract.
+
 ## 1.11.0
 
 ### Persistent raster resources and placements
@@ -50,7 +72,7 @@ See `docs/releases/1.11.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Keeps live observations generation-scoped: invalidation/resume expires stale live evidence while valid static terminal-description evidence survives.
 - Qualifies suspended/closed query ownership, caller cancellation, unavailable endpoints, concurrent side-effect-free inspection, repeated verification, and disposal/query shutdown behavior without adding another input reader or synchronization model.
 - Preserves viable multi-backend semantics: negative evidence for one backend does not erase a separate advertised/verified alternate capable of satisfying the same semantic operation.
-- Adds `Icod.Terminal.CapabilityPlanning.Sample`, demonstrating inspect-first planning and optional explicit verification without branching on terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
+- Adds `Icod.Terminal.CapabilityPlanning.Sample`, demonstrating inspect-first semantic planning and optional explicit verification without branching on terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
 - Adds a fresh NuGet-only capability-planning consumer which references only `Icod.Terminal`; NuGet resolves `Icod.TermInfo` and `Icod.Timing` transitively on `net8.0`, `net9.0`, and `net10.0`.
 - Simplifies prerelease package verification so development packages prove artifact shape, XML docs, restore, and executable package consumption without being forced through final-release documentation ceremony; stable releases retain the stricter closure checks.
 

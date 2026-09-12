@@ -9,14 +9,14 @@
 
 ## Status
 
-`1.11.0` is the current stable feature line. It adds backend-neutral persistent terminal-resident raster resources and placements above the existing raw-raster and semantic capability-planning foundations.
+`1.11.1` is the current stable patch line. It preserves the 1.11.0 backend-neutral persistent terminal-resident raster API while adding executable documentation and deterministic contract tests for loose coupling with `Icod.TermInfo.Inspection 1.11.0` lifecycle planning.
 
-The stable `1.0.0` compatibility floor remains unchanged. `Icod.Terminal` continues to preserve one authoritative live input path, bounded query/protocol handling, lifecycle-aware ownership, deterministic cleanup, and protocol-neutral public planning surfaces.
+The stable `1.0.0` compatibility floor remains unchanged. `Icod.Terminal` continues to preserve one authoritative live input path, bounded query/protocol handling, lifecycle-aware ownership, deterministic cleanup, and protocol-neutral public planning surfaces. Version 1.11.1 adds no production public API and does not add Inspection or Source to the production dependency graph.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.11.0
+dotnet add package Icod.Terminal --version 1.11.1
 ```
 
 The package targets:
@@ -48,6 +48,8 @@ terminal applications
 - `Icod.Terminal` owns the live terminal conversation: endpoint observation, modes, input decoding, lifecycle, active queries, unsolicited semantic events, semantic capability evidence/planning, semantic output, raster output, persistent raster resource/placement ownership, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns higher-level cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
+
+`Icod.TermInfo.Inspection` may be used by consumers for richer static planning, but it remains an optional consumer/test/sample dependency rather than a dependency of the `Icod.Terminal` package itself.
 
 See [`docs/Architecture.md`](docs/Architecture.md).
 
@@ -172,6 +174,24 @@ The library bounds live ownership to 256 persistent resources and 4096 placement
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
 
+### TermInfo persistent-raster lifecycle integration
+
+Version 1.11.1 demonstrates how a consumer can combine `Icod.TermInfo.Inspection 1.11.0` static lifecycle planning with Terminal-owned live verification without making Inspection a production dependency:
+
+```text
+session.Terminal
+    -> TermInfo lifecycle inspection
+    -> plan
+    -> if Indeterminate, optionally VerifyCapabilityAsync(PersistentRasterGraphics)
+    -> caller-owned Verified lifecycle evidence
+    -> reclassify / replan
+    -> if Success and live Terminal state is usable, execute resource/placement operations
+```
+
+The consumer-owned evidence bridge promotes only conclusive live observations. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability remain distinct and are not converted into verified support or non-support.
+
+See [`samples/Icod.Terminal.TermInfoPersistentRaster.Sample`](samples/Icod.Terminal.TermInfoPersistentRaster.Sample/README.md) for executable documentation and [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md) for the patch-release contract.
+
 ## Core 1.x guarantees
 
 ### One authoritative input path
@@ -211,7 +231,8 @@ The stable 1.x surface includes:
 - bounded device/status/cursor/style/color/clipboard/notification queries;
 - titles, current location, hyperlinks, clipboard operations, cursor style, synchronized output, progress, pointer shape, notifications, prompt/shell metadata, and terminal colors;
 - backend-neutral ephemeral raster display through verified Sixel and Kitty Graphics;
-- backend-neutral persistent raster resources and placements with bounded generation-scoped ownership.
+- backend-neutral persistent raster resources and placements with bounded generation-scoped ownership;
+- optional consumer-owned TermInfo lifecycle planning integration without adding Inspection to the production package graph.
 
 The library deliberately does not expose generic raw vendor dispatch as the ordinary extension model.
 
@@ -225,6 +246,7 @@ The [`samples`](samples/README.md) directory contains focused examples. Recommen
 - `Icod.Terminal.Query.Sample` — bounded terminal queries;
 - `Icod.Terminal.RasterGraphics.Sample` — backend-neutral ephemeral raster display;
 - `Icod.Terminal.PersistentRaster.Sample` — verify, create, place, update, and dispose persistent raster ownership without protocol ids/backend branching;
+- `Icod.Terminal.TermInfoPersistentRaster.Sample` — static TermInfo lifecycle plan, optional live Terminal verification, caller-owned replan, and persistent execution;
 - focused state, color, notification, prompt, and shell-integration samples described in the sample catalog.
 
 Focused sample verifiers build newer semantic/raster examples on every supported target framework during repository validation.
@@ -245,9 +267,9 @@ See [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md).
 
 ## Compatibility
 
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; and 1.11 adds opaque persistent raster resource/placement ownership.
+Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 adds opaque persistent raster resource/placement ownership; and 1.11.1 adds no production API, instead qualifying the optional TermInfo persistent-raster lifecycle integration boundary.
 
-The final 1.11 public API fingerprint is:
+The final 1.11 public API fingerprint, retained by 1.11.1, is:
 
 ```text
 9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
@@ -259,10 +281,10 @@ See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.m
 
 Start with:
 
-- [1.11.0 release notes](docs/releases/1.11.0.md)
+- [1.11.1 release notes](docs/releases/1.11.1.md)
 - [Persistent Raster Ownership](docs/Persistent-Raster-Ownership.md)
 - [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md)
-- [1.11.0 development roadmap](Icod.Terminal-1.11.0-Development-Roadmap.md)
+- [1.11.1 development roadmap](Icod.Terminal-1.11.1-Development-Roadmap.md)
 - [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
 - [Architecture](docs/Architecture.md)
 - [Input and Events](docs/Input-and-Events.md)
