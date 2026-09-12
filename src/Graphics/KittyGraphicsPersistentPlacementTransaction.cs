@@ -60,8 +60,7 @@ internal static class KittyGraphicsPersistentPlacementTransaction {
 		ReadOnlyMemory<byte> payload = KittyGraphicsPersistentEncoder.EncodePlacementPayload(
 			imageId,
 			placementId,
-			options?.Columns,
-			options?.Rows
+			options
 		);
 		byte[] frame = ApcWriter.EncodeFrame( payload.Span );
 
