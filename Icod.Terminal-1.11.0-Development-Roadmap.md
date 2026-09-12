@@ -2,7 +2,7 @@
 
 **Release:** `1.11.0`  
 **Theme:** persistent raster resources and placements  
-**Status:** C119 release-closure implementation complete; final exact-head Staging qualification pending  
+**Status:** complete; C119 accepted and ready for maintainer review  
 **Development version:** `1.11.0`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.10.0`
@@ -83,7 +83,7 @@ C115  placement creation and multi-placement ownership           complete
 C116  placement update and deterministic disposal                complete
 C117  lifecycle invalidation, teardown, and failure semantics    complete
 C118  adversarial/downstream/package qualification               complete
-C119  public API/documentation/compatibility/release closure     qualification pending
+C119  public API/documentation/compatibility/release closure     complete
 ```
 
 ## C118 feature acceptance
@@ -158,9 +158,9 @@ See the C118 acceptance record linked above.
 
 ## C119 — public API/documentation/compatibility/release closure
 
-**Release-closure implementation complete; exact-head qualification pending.**
+**Accepted.**
 
-The release-facing state now includes:
+The release-facing state includes:
 
 - final multi-TFM public API fingerprint `9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2`;
 - stable `1.11.0` package identity with no prerelease suffix;
@@ -173,7 +173,19 @@ The release-facing state now includes:
 - long-range roadmap handoff to conditional 1.12 advanced placement/lifecycle work;
 - release-closure record at [`docs/C119-1.11.0-Release-Closure.md`](docs/C119-1.11.0-Release-Closure.md).
 
-C119 becomes accepted only after one unchanged final PR head passes the complete Staging matrix on Windows, Linux, macOS, package candidate/API freeze, all package shards, and the validated package artifact.
+C119 code/release acceptance is frozen on exact head:
+
+```text
+66002280a3e5c800b9b8d230de483f63945d571d
+```
+
+with pull-request workflow:
+
+```text
+#1611 / 34698727655
+```
+
+Workflow #1611 completed successfully on that unchanged SHA. Windows, Linux, macOS, package candidate/API freeze, Package Foundation, Package Presentation, Package Semantic and hardening, Package Stable 1.x release line, and the validated package artifact all passed. The successful macOS rerun used the same SHA and introduced no source change.
 
 Merge, `main` Release validation, tagging, GitHub Release creation, and NuGet publication remain maintainer actions.
 
@@ -212,4 +224,4 @@ reviewed contract
                 -> exact-head acceptance evidence
 ```
 
-The final 1.11 release requires Windows/Linux/macOS Staging validation on one unchanged final PR head before maintainer handoff.
+The final 1.11 code/release head satisfied the complete Windows/Linux/macOS Staging matrix before maintainer handoff. This documentation-only acceptance commit is the final repository-state qualification step before PR #52 leaves draft.
