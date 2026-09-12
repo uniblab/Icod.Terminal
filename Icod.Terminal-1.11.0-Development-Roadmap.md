@@ -2,8 +2,8 @@
 
 **Release:** `1.11.0`  
 **Theme:** persistent raster resources and placements  
-**Status:** C118 accepted; C119 public API/documentation/compatibility/release closure active  
-**Development version:** `1.11.0-alpha.1`  
+**Status:** C119 release-closure implementation complete; final exact-head Staging qualification pending  
+**Development version:** `1.11.0`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.10.0`
 
@@ -37,9 +37,9 @@ The 1.11 contract must:
 8. preserve the stable 1.x compatibility floor and existing enum numerics;
 9. keep higher-level layout/cell/window/scene policy in `Icod.DCurses`.
 
-## Frozen C110 public direction
+## Frozen public direction
 
-The public model is:
+The final public model is:
 
 ```text
 TerminalCapability.PersistentRasterGraphics = 9
@@ -62,14 +62,14 @@ TerminalRasterPlacement.UpdateAsync(...)
 
 No public Kitty image id, image number, placement id, backend selector, raw APC control dictionary, or scene graph is introduced.
 
-The internal live-registry ceilings are frozen at:
+The internal live-registry ceilings are:
 
 ```text
 256  persistent resources per session
 4096 persistent placements per session
 ```
 
-Persistent resource upload is acknowledged. It uses a private Kitty image number (`I`) and deliberately does not use quiet mode so the terminal can return the assigned nonzero image id (`i`). Existing ephemeral raster bytes remain unchanged.
+Persistent resource upload is acknowledged. It uses a private Kitty image number (`I`) so the terminal can return the assigned nonzero image id (`i`). Existing ephemeral raster bytes remain unchanged.
 
 ## Tranche plan
 
@@ -83,12 +83,12 @@ C115  placement creation and multi-placement ownership           complete
 C116  placement update and deterministic disposal                complete
 C117  lifecycle invalidation, teardown, and failure semantics    complete
 C118  adversarial/downstream/package qualification               complete
-C119  public API/documentation/compatibility/release closure     active
+C119  public API/documentation/compatibility/release closure     qualification pending
 ```
 
-## Implementation checkpoint through C118
+## C118 feature acceptance
 
-C111–C117 implemented the frozen persistent-raster protocol, capability, ownership, lifecycle, and cleanup contracts. C118 then requalified that complete surface under adversarial responses, repeated lifetime churn, package-only consumption, generated documentation, the backend-neutral sample, downstream DCurses acceptance, and all supported target frameworks.
+C111–C117 implemented the frozen persistent-raster protocol, capability, ownership, lifecycle, and cleanup contracts. C118 requalified that complete surface under adversarial responses, repeated lifetime churn, package-only consumption, generated documentation, the backend-neutral sample, downstream DCurses acceptance, and all supported target frameworks.
 
 The C118 acceptance record is:
 
@@ -106,196 +106,74 @@ Acceptance workflow:
 #1602 / 34695867877
 ```
 
-That unchanged feature head passed Windows, Linux, macOS, package/API candidate, all four package-contract shards, and the validated package artifact. C119 is therefore the only remaining 1.11 tranche.
+That unchanged feature head passed Windows, Linux, macOS, package/API candidate, all four package-contract shards, and the validated package artifact.
 
 ## C110 — architecture and public API regret gate
 
-**Accepted.** The ownership model and public contract are frozen for implementation planning in:
+**Accepted.** C110 froze the ownership model, public API, capability separation, generation-scoped certainty, cancellation/commit semantics, resource bounds, and exclusions before production implementation.
+
+The record is:
 
 [`docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md`](docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md)
 
-C110 establishes:
-
-- explicit distinction between `RasterGraphics` and `PersistentRasterGraphics`;
-- opaque public resource/placement identity;
-- no public Kitty numeric identifiers;
-- no scene-graph/layout ownership;
-- no hidden replay contract;
-- defined parent/child lifetime rules;
-- generation-scoped terminal-resident certainty;
-- defined commit/cancellation/partial-failure semantics;
-- exact controlled-result/exception behavior;
-- `Columns` / `Rows` range `1..16384`;
-- registry ceilings of 256 resources / 4096 placements;
-- the additive public API shape approved before production implementation.
-
-C110 is design-only and intentionally changes no runtime API or behavior.
-
 ## C111 — persistent Kitty protocol foundation
 
-**Complete.** Typed internal Kitty Graphics encoding/parsing supports persistent ownership while preserving existing ephemeral raster bytes.
-
-Required protocol operations:
-
-```text
-transmit resource without automatic display
-create placement for an existing acknowledged resource
-replace/update an existing placement
-remove one placement
-remove terminal-side resource data
-```
-
-The implementation preserves:
-
-- direct-transfer media only;
-- acknowledged transmit-only upload using `a=t` and private image number `I`;
-- no quiet-mode `q` on acknowledged upload;
-- bounded Base64 chunking;
-- image-number upload correlation;
-- acknowledgement parsing returning terminal image identity;
-- private placement-id encoding;
-- exact command/control-data regression vectors;
-- zero/overflow/duplicate-field rejection;
-- unchanged ephemeral `a=T,...,q=2` bytes;
-- no public raw Kitty writer.
+**Complete.** Typed internal Kitty Graphics encoding/parsing supports transmit-only acknowledged resource upload, placement create/update, targeted placement deletion, resource-data deletion, direct transfer, bounded Base64 chunking, private ids, duplicate/overflow rejection, and unchanged ephemeral raster bytes.
 
 ## C112 — persistent capability integration
 
-**Complete.** The semantic capability is additive:
-
-```text
-PersistentRasterGraphics = 9
-```
-
-The 1.10 capability-planning contract remains intact:
-
-- `InspectCapability(...)` is side-effect free;
-- `VerifyCapabilityAsync(...)` strengthens persistent capability knowledge only through the reviewed bounded Kitty path;
-- ordinary `RasterGraphics` remains independently satisfiable by Sixel or Kitty;
-- verified Sixel alone never implies persistent-raster support;
-- existing `TerminalCapability` numeric values `0..8` remain unchanged.
+**Complete.** `PersistentRasterGraphics = 9` is additive. `InspectCapability(...)` remains side-effect free; `VerifyCapabilityAsync(...)` uses only the reviewed bounded Kitty support path; Sixel remains valid for ordinary raster without implying persistent ownership.
 
 ## C113 — session-owned resource and placement registries
 
-**Complete.** Bounded internal registries and opaque ownership state provide:
-
-- nonzero private resource/image-number identity allocation;
-- nonzero private placement-id allocation;
-- collision avoidance among live entries;
-- explicit wraparound handling;
-- maximum 256 live resources per session;
-- maximum 4096 live placements per session;
-- controlled `Unavailable` before output when either registry is full;
-- generation stamping;
-- parent/child association;
-- concurrency-safe local state transitions;
-- no retained arbitrary source-image cache.
+**Complete.** Bounded internal registries provide nonzero collision-safe resource/image-number and placement identities, explicit wraparound, 256/4096 capacity ceilings, generation stamping, parent/child association, concurrency-safe transitions, and no arbitrary source-image cache.
 
 ## C114 — persistent resource creation/upload
 
-**Complete.** `TerminalSession.CreateRasterResourceAsync(...)` implements the reviewed persistent Kitty subset and:
-
-- returns `TerminalControlResult<TerminalRasterResource>`;
-- validates image/capability/endpoint/cancellation before commitment;
-- adapts `TerminalRasterImage` through the existing Kitty raw-raster machinery;
-- uploads with `a=t`, direct transfer, and a private image number without automatic placement;
-- correlates the required terminal acknowledgement;
-- requires matching image number plus nonzero terminal-assigned image id;
-- publishes a public resource only after acknowledgement establishes terminal-side identity;
-- preserves output-gate serialization through the logical upload transaction;
-- surfaces partial transport failure without automatic replay or Sixel switching;
-- returns no usable resource after ambiguous failed creation;
-- retains no hidden image copy after successful creation.
+**Complete.** `CreateRasterResourceAsync(...)` validates capability/state/cancellation, uploads direct raw raster data with a private image number, correlates the terminal acknowledgement, publishes a handle only after nonzero terminal identity is established, preserves committed-output semantics, and does not replay or switch backend after partial failure.
 
 ## C115 — placement creation and multi-placement ownership
 
-**Complete.** Placement creation from a live resource:
-
-- returns `TerminalControlResult<TerminalRasterPlacement>`;
-- uses current-cursor positioning;
-- accepts optional `Columns` / `Rows` sizing in `1..16384`;
-- uses `C=1` no-cursor-movement behavior;
-- supports multiple placements per resource;
-- returns one opaque public placement per accepted placement;
-- blocks new child creation after parent disposal;
-- returns controlled `Unavailable` for stale resources before terminal output;
-- throws `ObjectDisposedException` for disposed resources;
-- keeps placement identifiers private.
+**Complete.** Resource placement creation uses current-cursor positioning, `Columns`/`Rows` in `1..16384`, no-cursor-movement semantics, multiple placements per resource, opaque handles, bounded reservation, and stale/disposed behavior without public protocol ids.
 
 ## C116 — placement update and deterministic disposal
 
-**Complete.** Semantic placement replacement and targeted cleanup:
+**Complete.** `TerminalRasterPlacement.UpdateAsync(...)` replaces the same private `(image, placement)` identity at the current cursor. Placement/resource disposal is locally idempotent, releases ownership exactly once, cleans children before resource data, and surfaces cleanup transport failures without restoring uncertain local ownership.
 
-- `TerminalRasterPlacement.UpdateAsync(...)` returns `TerminalControlMutationResult`;
-- update reuses the same private image-id/placement-id pair;
-- callers reposition through ordinary terminal cursor operations before update;
-- stale placement update returns controlled `Unavailable` before output;
-- disposed placement update throws `ObjectDisposedException`;
-- placement disposal is locally idempotent and sends at most one targeted soft-delete while current;
-- resource disposal closes child placements before freeing resource data;
-- local identity ownership is released even when cleanup transport fails;
-- cleanup failures are surfaced/aggregated rather than hidden;
-- stale numeric identity is never reused while live ownership remains.
+The public API fingerprint frozen here and retained through release closure is:
+
+```text
+9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
+```
 
 ## C117 — lifecycle invalidation, teardown, and failure semantics
 
-**Complete.** Persistent objects are integrated with explicit invalidation, suspend/resume, session disposal, and compound failure paths:
-
-- persistent identities are generation-scoped;
-- `InvalidateState()` makes existing persistent handles stale;
-- managed lifecycle generation changes make existing handles stale;
-- no automatic image replay/re-upload occurs;
-- no source-image retention is introduced for hidden restoration;
-- stale-handle disposal performs local cleanup without sending stale terminal identifiers;
-- current-generation session teardown deletes placements before resources;
-- accepted committed transactions drain before final output restoration;
-- session cleanup aggregates persistent-graphics failures with existing cleanup failures;
-- concurrent ownership transitions remain bounded by the existing session/query synchronization model.
+**Complete.** Persistent identities are generation-scoped. `InvalidateState()` and managed lifecycle changes stale existing handles; no automatic replay/source-image retention occurs; stale disposal is local-only; current session teardown deletes placements before resources and integrates failures with existing cleanup/restoration.
 
 ## C118 — adversarial, downstream, and package qualification
 
-**Accepted.** Full details and exact-head evidence are recorded in:
+**Accepted.** Qualification covers malformed/oversized acknowledgements, wrong ids, duplicate fields, capacity/wraparound boundaries, `ENOENT`, repeated ownership cycles, generation invalidation, registry churn, transport/cancellation/redirection boundaries, fresh NuGet-only package consumption, all TFMs, generated XML docs, DCurses acceptance/soak, and the backend-neutral persistent-raster sample.
 
-[`docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`](docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md)
-
-Qualification covers:
-
-- malformed/oversized acknowledgements;
-- wrong image-number/image-id/placement-id correlation;
-- duplicate response fields;
-- 256-resource / 4096-placement exhaustion boundaries;
-- image/placement id wraparound and collision avoidance;
-- terminal `ENOENT` invalidation;
-- repeated create/place/update/delete cycles;
-- repeated generation invalidation;
-- repeated disposal;
-- transport failure at meaningful commitment boundaries;
-- redirected/noninteractive output;
-- cancellation before commitment and committed-output cancellation semantics;
-- fresh NuGet-only persistent-raster consumption;
-- `net8.0`, `net9.0`, and `net10.0`;
-- generated XML documentation from the produced package;
-- current `Icod.DCurses` integration/ownership acceptance and hardening soak;
-- a focused persistent-raster sample without terminal-brand/backend branching.
-
-No sample exposes protocol ids or teaches Kitty-specific application logic.
+See the C118 acceptance record linked above.
 
 ## C119 — public API/documentation/compatibility/release closure
 
-**Active.** Freeze the final 1.11 public surface and release-facing repository state.
+**Release-closure implementation complete; exact-head qualification pending.**
 
-Acceptance requires:
+The release-facing state now includes:
 
-- final multi-TFM public API snapshot and fingerprint;
-- stable `1.11.0` package identity;
-- final README/changelog/release notes;
-- permanent Architecture updates;
-- permanent Security/Privacy updates;
-- permanent Compatibility/Versioning updates;
-- persistent-raster ownership documentation;
-- final sample documentation;
-- no prerelease metadata remaining;
-- one unchanged final PR head passing the complete Staging matrix.
+- final multi-TFM public API fingerprint `9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2`;
+- stable `1.11.0` package identity with no prerelease suffix;
+- final package release notes;
+- final README and changelog entry;
+- curated `docs/releases/1.11.0.md`;
+- permanent `docs/Persistent-Raster-Ownership.md`;
+- 1.11 Architecture/Security/Compatibility authority updates;
+- final sample catalog and backend-neutral sample verification;
+- long-range roadmap handoff to conditional 1.12 advanced placement/lifecycle work;
+- release-closure record at [`docs/C119-1.11.0-Release-Closure.md`](docs/C119-1.11.0-Release-Closure.md).
+
+C119 becomes accepted only after one unchanged final PR head passes the complete Staging matrix on Windows, Linux, macOS, package candidate/API freeze, all package shards, and the validated package artifact.
 
 Merge, `main` Release validation, tagging, GitHub Release creation, and NuGet publication remain maintainer actions.
 
@@ -324,7 +202,7 @@ These remain excluded unless separately reviewed in a later release.
 
 ## Release gate
 
-A tranche is not accepted merely because its implementation compiles. Each tranche must preserve the established repository policy:
+The established repository policy remains:
 
 ```text
 reviewed contract
@@ -334,4 +212,4 @@ reviewed contract
                 -> exact-head acceptance evidence
 ```
 
-The final release additionally requires Windows/Linux/macOS Staging validation on one unchanged final PR head.
+The final 1.11 release requires Windows/Linux/macOS Staging validation on one unchanged final PR head before maintainer handoff.

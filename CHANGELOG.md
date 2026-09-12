@@ -2,6 +2,37 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.11.0
+
+### Persistent raster resources and placements
+
+- Adds `TerminalCapability.PersistentRasterGraphics = 9` while preserving all existing `TerminalCapability` numeric values.
+- Adds opaque `TerminalRasterResource` and `TerminalRasterPlacement` ownership plus `TerminalRasterPlacementOptions` and `TerminalSession.CreateRasterResourceAsync(...)`.
+- Supports multiple placements per terminal-resident resource, current-cursor placement, independently optional `Columns` / `Rows` in `1..16384`, and semantic placement replacement through `TerminalRasterPlacement.UpdateAsync(...)`.
+- Keeps Kitty image ids, image numbers, placement ids, APC control dictionaries, and backend selection private to the implementation; the common public API remains semantic and backend-neutral.
+- Keeps ordinary `RasterGraphics` separate from `PersistentRasterGraphics`, so verified Sixel can satisfy ephemeral raster display without pretending to provide persistent terminal-resident ownership.
+
+### Acknowledgement, lifecycle, and bounded ownership
+
+- Requires correlated acknowledgement before publishing a persistent resource and correlates placement create/update replies by the private terminal image id and placement id through the existing authoritative query/input path.
+- Treats correlated terminal replies as untrusted input: wrong identities do not complete another transaction, malformed/duplicate identity fields are rejected, and response processing remains bounded.
+- Treats a well-formed correlated `ENOENT` as loss of terminal-resident certainty, invalidating the affected resource/placement so later operations return controlled `Unavailable` without emitting stale identifiers.
+- Bounds live ownership to 256 persistent resources and 4096 placements per session with nonzero collision-safe private identities and explicit wraparound handling.
+- Makes persistent identities session-generation scoped: explicit invalidation and lifecycle generation changes stale existing handles without automatic replay, re-upload, or hidden raster retention.
+- Makes placement/resource disposal locally idempotent, deletes children before resource data while current, performs local-only cleanup when stale, and surfaces/aggregates cleanup transport failures without uncertain retry ownership.
+- Retains Kitty direct transfer only and introduces no file/temp-file/shared-memory transport or source-image cache.
+
+### Qualification and compatibility
+
+- Adds repeated create/place/update/delete stress, repeated generation invalidation, and 8,192-placement registry churn coverage alongside the existing capacity, wraparound, cancellation, transport-failure, redirected-output, and malformed-response tests.
+- Adds a fresh NuGet-only persistent-raster consumer and generated XML-documentation validation for `net8.0`, `net9.0`, and `net10.0`.
+- Adds `Icod.Terminal.PersistentRaster.Sample`, demonstrating capability verification plus create/place/update/dispose without Kitty/Sixel/backend/id branching.
+- Retains Windows/Linux/macOS Staging validation, current `Icod.DCurses` downstream acceptance/soak, and the stable `1.0.0` compatibility floor.
+- Finalizes the 1.11 public API fingerprint as `9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2` while retaining all historical baselines unchanged.
+- Deliberately excludes automatic replay, Sixel persistence emulation, public protocol ids, source rectangles, z-order, Unicode placeholders, relative/pixel placement, animation, scene-graph ownership, image decoding/transcoding, and PTY/ConPTY hosting.
+
+See `docs/releases/1.11.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.11.md`, `docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`, `docs/C119-1.11.0-Release-Closure.md`, and `Icod.Terminal-1.11.0-Development-Roadmap.md` for the complete 1.11 contract.
+
 ## 1.10.0
 
 ### Dependency decoupling and capability planning

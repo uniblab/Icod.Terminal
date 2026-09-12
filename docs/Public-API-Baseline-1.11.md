@@ -1,20 +1,26 @@
 # Icod.Terminal Public API Baseline — 1.11.0
 
 **Release:** `1.11.0`  
-**Status:** C116 placement-update and deterministic-cleanup freeze  
+**Status:** final C119 public API freeze  
 **Target frameworks:** `net8.0`, `net9.0`, `net10.0`
 
 ## Purpose
 
-This document records the intentional public API additions accumulated for `Icod.Terminal 1.11.0`. Historical baselines remain unchanged.
+This document records the final intentional additive public surface for `Icod.Terminal 1.11.0`. Historical baselines remain unchanged.
 
-C112 added exactly one public enum value:
+Version 1.11 adds exactly one semantic capability value and one opaque persistent-raster ownership domain above the internal Kitty Graphics identifiers used by the implementation.
+
+## Final public additions
+
+The capability vocabulary gains:
 
 ```text
 TerminalCapability.PersistentRasterGraphics = 9
 ```
 
-C114 added the first opaque persistent-resource ownership surface approved by C110:
+Existing values `0..8` remain unchanged.
+
+The persistent resource surface is:
 
 ```csharp
 public sealed class TerminalRasterResource : IAsyncDisposable {
@@ -34,7 +40,7 @@ public sealed partial class TerminalSession {
 }
 ```
 
-C115 added the approved opaque placement-creation surface, and C116 adds the approved semantic placement-replacement method:
+The placement surface is:
 
 ```csharp
 public sealed class TerminalRasterPlacementOptions {
@@ -52,17 +58,15 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 }
 ```
 
-All existing `TerminalCapability` numeric values `0..8` remain unchanged. C116 exposes no Kitty image id, image number, placement id, backend selector, raw APC writer, registry, cursor coordinate, or mutable raster storage. Construction of `TerminalRasterResource` and `TerminalRasterPlacement` remains internal to the owning session.
+Construction of resource and placement handles remains library-owned. No public image id, image number, placement id, backend selector, raw APC control dictionary, registry, pixel-coordinate placement, or mutable raster storage is introduced.
 
-`TerminalRasterPlacementOptions.Columns` and `.Rows` are independently optional and are validated when a placement operation begins. Each supplied value is bounded to `1..16384`. Placement creation and replacement occur at the terminal's current cursor position and the reviewed Kitty path emits `C=1`, so these graphics operations do not move the text cursor.
+`Columns` and `Rows` are independently optional and each supplied value is bounded to `1..16384`. Placement creation and update use the terminal's current cursor location while the reviewed backend uses no-cursor-movement semantics.
 
-`TerminalRasterPlacement.UpdateAsync(...)` reuses the placement's private resource/placement identity pair and returns the existing `TerminalControlMutationResult` vocabulary. Disposal remains represented solely by `IAsyncDisposable`; C116 changes its implementation to deterministic one-shot terminal cleanup without adding another public cleanup API.
+## Final machine fingerprint
 
-## Machine fingerprint
+The deterministic reflection snapshot is identical across `net8.0`, `net9.0`, and `net10.0`.
 
-The deterministic reflection snapshot is required to remain identical across `net8.0`, `net9.0`, and `net10.0`.
-
-After normalizing line endings to LF, the C116 fingerprint is:
+After normalizing line endings to LF, the final 1.11 fingerprint is:
 
 ```text
 9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
@@ -72,32 +76,45 @@ The machine-readable fingerprint is stored in:
 
 `docs/Public-API-Baseline-1.11.sha256`
 
-`packaging/VerifyPublicApiBaseline.ps1` regenerates the snapshot independently for every supported target framework and verifies this fingerprint.
+`packaging/VerifyPublicApiBaseline.ps1` regenerates the public API snapshot independently for every supported target framework and verifies this exact fingerprint.
 
-## Semantic meaning
+## Semantic capability distinction
 
-`PersistentRasterGraphics` remains intentionally distinct from ordinary `RasterGraphics`.
+`PersistentRasterGraphics` is intentionally separate from ordinary `RasterGraphics`.
 
 ```text
 RasterGraphics
     may be satisfied by verified Sixel or verified Kitty Graphics
 
 PersistentRasterGraphics
-    may be satisfied only by the reviewed persistent-capable Kitty Graphics path
+    is satisfied only by the reviewed persistent-capable Kitty Graphics path
 ```
 
-Verified Sixel therefore does not imply persistent-resource support. Verified Kitty Graphics may satisfy both semantic capabilities.
+Verified Sixel therefore does not imply persistent terminal-resident resource support. The public API does not expose which concrete backend satisfied a semantic capability.
 
-`TerminalSession.InspectCapability(...)` remains side-effect free. `TerminalSession.VerifyCapabilityAsync(...)` verifies `PersistentRasterGraphics` only through the existing bounded Kitty Graphics support probe and does not probe Sixel for that semantic capability.
+`TerminalSession.InspectCapability(...)` remains side-effect free. `TerminalSession.VerifyCapabilityAsync(...)` uses the reviewed bounded Kitty support path for `PersistentRasterGraphics`; it does not add broad terminal fingerprinting.
 
-`CreateRasterResourceAsync(...)` does not perform hidden capability probing. It requires current verified persistent-raster capability, reserves bounded session ownership before output, emits an acknowledged direct Kitty upload through the existing query authority, and publishes an opaque resource only after a correlated successful acknowledgement.
+## Ownership and lifecycle meaning
 
-`TerminalRasterResource.CreatePlacementAsync(...)` performs no backend selection and exposes no protocol identity. It reserves one bounded session-owned placement, emits one serialized Kitty placement frame at the current cursor, rolls the reservation back on failure, and returns only an opaque placement handle.
+`CreateRasterResourceAsync(...)` requires current verified persistent-raster capability and publishes a public resource only after a correlated terminal acknowledgement establishes terminal-side identity.
 
-`TerminalRasterPlacement.UpdateAsync(...)` serializes replacement through the same session output gate and reuses the same private image/placement identity pair. Placement disposal removes local ownership exactly once and attempts one quiet targeted placement delete while current. Resource disposal closes child ownership first, attempts quiet child deletes, then attempts the hard image-data delete; cleanup failures do not restore local protocol ownership for retry.
+A resource may own multiple placements. Placement creation and update retain opaque internal identity and use the existing query/input authority for correlated acknowledgement. A well-formed terminal `ENOENT` for an object believed current invalidates that terminal-resident certainty and produces controlled `Unavailable` semantics.
 
-## Compatibility rule
+Persistent identities are session-generation scoped. Explicit invalidation and lifecycle generation changes make existing handles stale. Version 1.11 does not retain arbitrary raster payloads for hidden re-upload and does not automatically replay terminal-resident resources after suspend/resume uncertainty.
 
-C116 remains additive over the stable 1.0 compatibility floor. The enum member remains appended at numeric value `9`; no existing public type/member is removed or renumbered.
+Disposal is locally idempotent. Current placements are cleaned before their resource data; stale handles perform local cleanup only and do not emit stale protocol identifiers.
 
-C117 and later 1.11 tranches must not expand this public surface except through a separately reviewed API-regret decision. Lifecycle invalidation, teardown ordering, and hardening should remain behavioral/internal additions against this frozen C116 public ownership contract.
+## Bounded compatibility contract
+
+The internal live ownership ceilings are:
+
+```text
+256  persistent raster resources per session
+4096 persistent raster placements per session
+```
+
+These are library bookkeeping bounds, not claims about terminal storage quotas. The terminal may independently evict stored image data.
+
+Version 1.11 remains additive over the stable `1.0.0` compatibility floor. It removes or renumbers no existing public member. C117–C118 hardening, package-only consumption, lifecycle tests, downstream acceptance, and final release closure required no additional public API beyond the C116 freeze recorded by this final baseline.
+
+The permanent ownership contract is `docs/Persistent-Raster-Ownership.md` and the broader compatibility authority remains `docs/Compatibility-and-Versioning.md`.
