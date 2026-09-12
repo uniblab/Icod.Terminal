@@ -2,7 +2,7 @@
 
 **Release:** `1.11.1`  
 **Theme:** TermInfo 1.11 ↔ Terminal 1.11 persistent-raster integration contract  
-**Status:** T1111-A through T1111-D accepted; T1111-E release candidate prepared for exact-head qualification  
+**Status:** T1111-A through T1111-E accepted; final status-only PR head qualification pending  
 **Development version:** stable `1.11.1` release candidate  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** `1.11.0`  
@@ -53,6 +53,10 @@ The TermInfo semantic authority is:
 https://github.com/uniblab/Icod.TermInfo/blob/main/docs/1.11.0-PERSISTENT-RASTER-LIFECYCLE-GUIDE.md
 ```
 
+The release-closure record is:
+
+[`docs/T1111-E-1.11.1-Release-Closure.md`](docs/T1111-E-1.11.1-Release-Closure.md)
+
 ## Release objectives
 
 Version 1.11.1 must:
@@ -67,6 +71,8 @@ Version 1.11.1 must:
 8. preserve the exact 1.11.0 public API and stable 1.0 compatibility floor;
 9. preserve the production package graph: Runtime `Icod.TermInfo 1.11.0` plus `Icod.Timing 1.0.0`, with no new Inspection/Source production dependency;
 10. qualify the complete integration contract on Windows, Linux, macOS and `net8.0`, `net9.0`, `net10.0`.
+
+All ten objectives are satisfied by the accepted T1111-E release candidate described below.
 
 ## Frozen integration direction
 
@@ -138,7 +144,7 @@ T1111-A  integration dependency boundary and dedicated contract-test project   a
 T1111-B  consumer-owned live-evidence mapping contract                         accepted
 T1111-C  static-plan → live-verification → replan contract tests                accepted
 T1111-D  protocol-neutral executable integration sample                         accepted
-T1111-E  package/downstream qualification and 1.11.1 release closure            in progress
+T1111-E  package/downstream qualification and 1.11.1 release closure            accepted
 ```
 
 ## Accepted A–D integration checkpoint
@@ -232,23 +238,28 @@ The solution compiles the sample for all supported TFMs; deterministic contract 
 
 ## T1111-E — qualification and release closure
 
-The stable `1.11.1` release candidate now advances:
+Completed. The stable `1.11.1` release candidate advances:
 
 - repository/package version to `1.11.1` with no prerelease suffix;
 - NuGet release notes to the 1.11.1 integration contract;
 - root README installation/integration guidance;
 - final `CHANGELOG.md` 1.11.1 entry;
-- curated `docs/releases/1.11.1.md` notes.
+- curated `docs/releases/1.11.1.md` notes;
+- dedicated release-closure record at `docs/T1111-E-1.11.1-Release-Closure.md`.
 
-The release candidate must continue to preserve `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0` production dependencies, the stable `1.0.0` compatibility floor, and the normalized public API fingerprint:
+The accepted stable release-candidate code/metadata head is:
 
 ```text
-9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
+53ded168ae03d14e5490d290fe7730579a1456b3
 ```
 
-Any public API change is a stop/review condition, not an automatic baseline update.
+and the qualifying pull-request workflow is:
 
-Exact-head qualification is pending for the release-candidate documentation/version commit and must include:
+```text
+#1630 / 34705075656
+```
+
+That exact head passed:
 
 - Runtime Windows;
 - Runtime Linux;
@@ -258,9 +269,24 @@ Exact-head qualification is pending for the release-candidate documentation/vers
 - Package Presentation;
 - Package Semantic and hardening;
 - Package Stable 1.x release line;
-- validated package artifact;
-- dedicated TermInfo/Terminal integration tests on all TFMs;
-- integration sample builds on all TFMs.
+- validated package artifact.
+
+The package-candidate gate generated identical normalized public API snapshots for `net8.0`, `net9.0`, and `net10.0`, all matching the frozen fingerprint:
+
+```text
+9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
+```
+
+Inspection of the produced `Icod.Terminal.1.11.1.nupkg` confirms every TFM dependency group contains only:
+
+```text
+Icod.TermInfo 1.11.0
+Icod.Timing   1.0.0
+```
+
+`Icod.TermInfo.Inspection` and `Icod.TermInfo.Source` are absent from the production package graph. The stable release-line package consumer and published `Icod.DCurses` hardening soak also passed on all three TFMs.
+
+This roadmap/status-only closure update contains no production code or release-metadata change. Its own pull-request workflow must pass the same matrix before PR #54 leaves draft status; no further roadmap mutation is required merely to insert that later run number.
 
 ## Explicit exclusions
 
@@ -296,4 +322,4 @@ written contract
                     -> exact-head acceptance
 ```
 
-T1111-A through T1111-D have crossed the full matrix. T1111-E is now at the stable release-candidate qualification gate; merge, mainline Release validation, tag, and publication remain maintainer actions.
+T1111-A through T1111-E are accepted. Once this status-only closure head passes the same Staging matrix, PR #54 may be marked ready for maintainer review. Merge, mainline Release validation, tag, and publication remain maintainer actions.
