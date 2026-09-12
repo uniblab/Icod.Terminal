@@ -156,26 +156,26 @@ public sealed class KittyGraphicsPersistentEncoderTests {
 	}
 
 	[Fact]
-	public void PlacementDeleteKeepsResourceData() {
+	public void PlacementDeleteKeepsResourceDataAndSuppressesReply() {
 		ReadOnlyMemory<byte> payload = KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
 			imageId: 99,
 			placementId: 7
 		);
 
 		Assert.Equal(
-			"Ga=d,d=i,i=99,p=7",
+			"Ga=d,d=i,i=99,p=7,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
 
 	[Fact]
-	public void ResourceDeleteUsesHardImageSelector() {
+	public void ResourceDeleteUsesHardImageSelectorAndSuppressesReply() {
 		ReadOnlyMemory<byte> payload = KittyGraphicsPersistentEncoder.EncodeDeleteResourcePayload(
 			imageId: 99
 		);
 
 		Assert.Equal(
-			"Ga=d,d=I,i=99",
+			"Ga=d,d=I,i=99,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}

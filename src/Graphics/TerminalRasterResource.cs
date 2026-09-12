@@ -73,8 +73,8 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Releases this resource's local ownership. Terminal-side deletion is added by the
-	/// deterministic disposal tranche after placement ownership is available.
+	/// Releases this resource's local ownership, deletes its current placements, and then attempts
+	/// one terminal-side resource-data deletion while its terminal identity remains current.
 	/// </summary>
 	public ValueTask DisposeAsync() {
 		TerminalSession? owner = Interlocked.Exchange(

@@ -131,8 +131,40 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	internal bool IsPlacementCurrent(
+		TerminalPersistentRasterPlacementState placement
+	) {
+		ArgumentNullException.ThrowIfNull( placement );
+
+		lock ( this.synchronization ) {
+			if ( placement.IsClosed
+				|| placement.Resource.IsClosed
+				|| placement.Generation != this.Generation
+				|| placement.Resource.Generation != this.Generation
+				|| !this.placements.Contains( placement )
+				|| !this.resources.TryGetValue(
+					placement.Resource,
+					out HashSet<TerminalPersistentRasterPlacementState>? children
+				) ) {
+				return false;
+			}
+
+			return children.Contains( placement );
+		}
+	}
+
 	internal bool TryReleaseResource(
 		TerminalPersistentRasterResourceState resource
+	) {
+		return this.TryReleaseResource(
+			resource,
+			out _
+		);
+	}
+
+	internal bool TryReleaseResource(
+		TerminalPersistentRasterResourceState resource,
+		out TerminalPersistentRasterPlacementState[] releasedPlacements
 	) {
 		ArgumentNullException.ThrowIfNull( resource );
 
@@ -141,10 +173,20 @@ internal sealed class TerminalPersistentRasterRegistry {
 				resource,
 				out HashSet<TerminalPersistentRasterPlacementState>? children
 			) ) {
+				releasedPlacements = [];
 				return false;
 			}
 
-			foreach ( TerminalPersistentRasterPlacementState placement in children ) {
+			releasedPlacements = new TerminalPersistentRasterPlacementState[
+				children.Count
+			];
+			children.CopyTo( releasedPlacements );
+			Array.Sort(
+				releasedPlacements,
+				static ( left, right ) => left.PlacementId.CompareTo( right.PlacementId )
+			);
+
+			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
 				this.placements.Remove( placement );
 				this.placementIds.Remove( placement.PlacementId );
 				placement.Close();

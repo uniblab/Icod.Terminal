@@ -35,6 +35,28 @@ internal static class KittyGraphicsPersistentPlacementTransaction {
 		options?.Validate();
 		cancellationToken.ThrowIfCancellationRequested();
 
+		using IDisposable outputLease = await session.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		await WriteCoreAsync(
+			session,
+			imageId,
+			placementId,
+			options
+		).ConfigureAwait( false );
+	}
+
+	internal static async ValueTask WriteCoreAsync(
+		TerminalSession session,
+		uint imageId,
+		uint placementId,
+		TerminalRasterPlacementOptions? options
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		options?.Validate();
+
 		ReadOnlyMemory<byte> payload = KittyGraphicsPersistentEncoder.EncodePlacementPayload(
 			imageId,
 			placementId,
@@ -42,11 +64,6 @@ internal static class KittyGraphicsPersistentPlacementTransaction {
 			options?.Rows
 		);
 		byte[] frame = ApcWriter.EncodeFrame( payload.Span );
-
-		using IDisposable outputLease = await session.AcquireSessionOutputAsync(
-			cancellationToken
-		).ConfigureAwait( false );
-		cancellationToken.ThrowIfCancellationRequested();
 
 		await session.Output.WriteAsync(
 			frame,

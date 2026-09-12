@@ -219,19 +219,162 @@ public sealed partial class TerminalSession {
 		);
 	}
 
-	internal ValueTask ReleasePersistentRasterResourceAsync(
+	internal async ValueTask<TerminalControlMutationResult> UpdatePersistentRasterPlacementAsync(
+		TerminalPersistentRasterPlacementState placementState,
+		TerminalRasterPlacementOptions? options,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( placementState );
+		options?.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ThrowIfSessionOutputClosed();
+
+		using IDisposable outputLease = await this.AcquireSessionOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		if ( !this.persistentRasterRegistry.IsPlacementCurrent( placementState ) ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The persistent raster placement is no longer current for this session generation."
+			);
+		}
+
+		uint imageId = placementState.Resource.ImageId;
+		if ( 0u == imageId ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The persistent raster resource no longer has a usable terminal image identity."
+			);
+		}
+
+		await KittyGraphicsPersistentPlacementTransaction.WriteCoreAsync(
+			this,
+			imageId,
+			placementState.PlacementId,
+			options
+		).ConfigureAwait( false );
+		return TerminalControlMutationResult.Success();
+	}
+
+	internal async ValueTask ReleasePersistentRasterResourceAsync(
 		TerminalPersistentRasterResourceState resourceState
 	) {
 		ArgumentNullException.ThrowIfNull( resourceState );
-		_ = this.persistentRasterRegistry.TryReleaseResource( resourceState );
-		return ValueTask.CompletedTask;
+
+		IDisposable outputLease;
+		try {
+			outputLease = await this.AcquireSessionOutputAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
+		} catch {
+			_ = this.persistentRasterRegistry.TryReleaseResource( resourceState );
+			throw;
+		}
+
+		using ( outputLease ) {
+			if ( !this.persistentRasterRegistry.TryReleaseResource(
+				resourceState,
+				out TerminalPersistentRasterPlacementState[] releasedPlacements
+			) ) {
+				return;
+			}
+
+			uint imageId = resourceState.ImageId;
+			if ( 0u == imageId ) {
+				return;
+			}
+
+			List<Exception> failures = [];
+			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				try {
+					await this.WritePersistentRasterControlFrameCoreAsync(
+						KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
+							imageId,
+							placement.PlacementId
+						)
+					).ConfigureAwait( false );
+				} catch ( Exception exception ) {
+					failures.Add( exception );
+				}
+			}
+
+			try {
+				await this.WritePersistentRasterControlFrameCoreAsync(
+					KittyGraphicsPersistentEncoder.EncodeDeleteResourcePayload(
+						imageId
+					)
+				).ConfigureAwait( false );
+			} catch ( Exception exception ) {
+				failures.Add( exception );
+			}
+
+			try {
+				await this.Output.FlushAsync(
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception exception ) {
+				failures.Add( exception );
+			}
+
+			if ( 0 < failures.Count ) {
+				throw new AggregateException(
+					"One or more persistent raster resource cleanup operations failed.",
+					failures
+				);
+			}
+		}
 	}
 
-	internal ValueTask ReleasePersistentRasterPlacementAsync(
+	internal async ValueTask ReleasePersistentRasterPlacementAsync(
 		TerminalPersistentRasterPlacementState placementState
 	) {
 		ArgumentNullException.ThrowIfNull( placementState );
-		_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
-		return ValueTask.CompletedTask;
+
+		IDisposable outputLease;
+		try {
+			outputLease = await this.AcquireSessionOutputAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
+		} catch {
+			_ = this.persistentRasterRegistry.TryReleasePlacement( placementState );
+			throw;
+		}
+
+		using ( outputLease ) {
+			if ( !this.persistentRasterRegistry.TryReleasePlacement( placementState ) ) {
+				return;
+			}
+
+			uint imageId = placementState.Resource.ImageId;
+			if ( 0u == imageId ) {
+				return;
+			}
+
+			await this.WritePersistentRasterControlFrameCoreAsync(
+				KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
+					imageId,
+					placementState.PlacementId
+				)
+			).ConfigureAwait( false );
+			await this.Output.FlushAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
+		}
+	}
+
+	private ValueTask WritePersistentRasterControlFrameCoreAsync(
+		ReadOnlyMemory<byte> payload
+	) {
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent raster control payload cannot be empty.",
+				nameof( payload )
+			);
+		}
+
+		return this.Output.WriteAsync(
+			ApcWriter.EncodeFrame( payload.Span ),
+			CancellationToken.None
+		);
 	}
 }

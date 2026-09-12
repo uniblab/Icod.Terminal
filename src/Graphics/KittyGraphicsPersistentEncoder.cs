@@ -108,6 +108,7 @@ internal static class KittyGraphicsPersistentEncoder {
 			+ imageId.ToString( CultureInfo.InvariantCulture )
 			+ ",p="
 			+ placementId.ToString( CultureInfo.InvariantCulture )
+			+ ",q=2"
 		);
 	}
 
@@ -123,6 +124,7 @@ internal static class KittyGraphicsPersistentEncoder {
 		return Encoding.ASCII.GetBytes(
 			"Ga=d,d=I,i="
 			+ imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",q=2"
 		);
 	}
 

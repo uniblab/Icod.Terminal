@@ -42,8 +42,37 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Releases this placement's local ownership. Terminal-side deletion is added by the
-	/// deterministic disposal tranche.
+	/// Replaces this placement at the terminal's current cursor position while retaining its
+	/// private resource and placement identities.
+	/// </summary>
+	/// <param name="options">Optional terminal-cell placement extents.</param>
+	/// <param name="cancellationToken">Cancellation observed before replacement output commits.</param>
+	/// <returns>The controlled mutation result.</returns>
+	public ValueTask<TerminalControlMutationResult> UpdateAsync(
+		TerminalRasterPlacementOptions? options = null,
+		CancellationToken cancellationToken = default
+	) {
+		options?.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterPlacement ),
+				"The persistent raster placement has already been disposed."
+			);
+		}
+
+		return owner.UpdatePersistentRasterPlacementAsync(
+			this.State,
+			options,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Releases this placement's local ownership and, while its terminal identity remains current,
+	/// attempts one targeted terminal-side placement deletion.
 	/// </summary>
 	public ValueTask DisposeAsync() {
 		TerminalSession? owner = Interlocked.Exchange(
