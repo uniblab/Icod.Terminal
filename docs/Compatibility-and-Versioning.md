@@ -83,11 +83,12 @@ A caller upgrading from 1.11 does not need to change existing placement code.
 When `SourceRectangle` is supplied:
 
 - it selects a source-image pixel region;
+- its intrinsic scalar contract is revalidated even when the value came from `default(TerminalRasterSourceRectangle)` rather than the public constructor;
 - it must fit completely inside the owning resource;
 - invalid rectangles are rejected before new placement output;
 - source dimensions are retained as metadata only, not as a replay pixel cache.
 
-When `ZIndex` is supplied, its complete signed `int` value is preserved as relative stacking intent. This does not create a general scene-layout contract.
+When `ZIndex` is supplied, its complete signed `int` value is preserved as signed stacking order. This does not create a general scene-layout contract or relative-placement graph.
 
 ## 6. Query/input compatibility
 
@@ -188,7 +189,7 @@ Validated package artifact
 
 The Stable 1.x package shard includes fresh package-only consumption and downstream acceptance/hardening where defined by the repository release contract.
 
-After closure-only documentation changes, the same exact-head matrix is run again before the PR is marked ready for review.
+Any post-closure pre-merge code or documentation change requires the same exact-head matrix again before the PR is considered merge-ready.
 
 ## 13. Maintainer release actions
 
