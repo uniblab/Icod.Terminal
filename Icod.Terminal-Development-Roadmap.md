@@ -4,12 +4,13 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable candidate:** `1.12.0` — bounded advanced persistent-raster placement geometry
+- **Current stable release:** `1.12.0` — bounded advanced persistent-raster placement geometry
+- **Current development line:** `1.13.0` — relative persistent-raster placement ownership
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
 
-This file is the concise entry point for current `Icod.Terminal` development and long-range release planning. Detailed historical design evidence remains in the versioned roadmaps and tranche documents rather than being duplicated here.
+This file is the concise entry point for current `Icod.Terminal` development and long-range release planning. Detailed historical design evidence remains in versioned roadmaps, tranche records, and release authorities rather than being duplicated here.
 
 The original pre-1.0 roadmap is preserved at:
 
@@ -35,7 +36,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Published release sequence through 1.11.1
+## Published release sequence through 1.12.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -47,89 +48,88 @@ terminal applications
 1.10.0  semantic capability inspection and explicit bounded verification
 1.11.0  opaque persistent raster resources and placements
 1.11.1  TermInfo persistent-raster lifecycle integration contract
+1.12.0  bounded source-pixel cropping and signed z-order
 ```
 
-Final 1.11 public API fingerprint, retained by 1.11.1:
-
-```text
-9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
-```
-
-## 1.12.0 stable candidate
-
-Version 1.12 deliberately extends the existing opaque placement object with only:
-
-```text
-pixel-space source rectangles
-signed z-order
-```
-
-It does not add a scene graph, relative placement chain, Unicode placeholder model, animation/frame lifecycle, absolute screen-coordinate placement, public backend selector, or replay cache.
-
-The accepted sequence is:
-
-```text
-T120  architecture/API regret gate + roadmap normalization                 accepted
-T121  table-driven TermInfo semantic evidence                              accepted
-T122  source-rectangle public contract + resource-aware validation         accepted
-T123  z-order public contract                                               accepted
-T124  acknowledged create/update encoder integration                       accepted
-T125  lifecycle/adversarial/boundary hardening                             accepted
-T126  sample/package/downstream qualification                              accepted
-T127  API freeze and stable release closure                                accepted, with post-closure pre-merge hardening
-```
-
-The public 1.12 additions are exactly:
-
-```text
-TerminalRasterSourceRectangle
-TerminalRasterSourceRectangle..ctor(int,int,int,int)
-TerminalRasterSourceRectangle.X
-TerminalRasterSourceRectangle.Y
-TerminalRasterSourceRectangle.Width
-TerminalRasterSourceRectangle.Height
-TerminalRasterPlacementOptions.SourceRectangle
-TerminalRasterPlacementOptions.ZIndex
-```
-
-Final 1.12 public API fingerprint:
+The final 1.12 public API fingerprint is:
 
 ```text
 eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8
 ```
 
-Accepted implementation/qualification checkpoints:
+The final 1.12 exact-head PR qualification was:
 
 ```text
-T124  aba1f7c0989d2c451294edf75590637c227a7e05  #1653 / 34713178166
-T125  799d096fa439c43b4f31399a551c4524fe40fa10  #1657 / 34716833678
-T126  7b38994c1ba936df5887d1aa015394c4ed626ddf  #1658 / 34717103814
-T127 candidate
-      0b7961f6d8151253be57f65a69e17a12ec4bdec5  #1659 / 34717812704
-T127 first closure
-      ef02714bcbd9ab84572a7ed8200a0ad8071d831a  #1660 / 34718248621
-Pre-merge hardening
-      4d509c75decc37d280a92769fe668d3c6fbd41ce  #1663 / 34720415393
+cc0508d53e6c16133f638f9f71e65d4d805c6b65  #1673 / 34721041633
 ```
 
-Each listed GREEN workflow passed the full nine-job PR matrix.
+Version `v1.12.0` is published. Its stable ownership guarantees remain the base for 1.13.
 
-The pre-merge audit also preserved the TDD RED witness for default-valued source rectangles at `f5f0a4f69d3571083f63654acd35b9893e8807dd`, workflow `#1662 / 34720241497`. The accepted fix revalidates every present `TerminalRasterSourceRectangle`, including `default(...)` values that bypass the public constructor, without changing the public API fingerprint.
+## 1.13.0 — Relative Persistent-Raster Placement Ownership
 
-The production dependency graph remains:
+Version 1.13 extends the opaque persistent-placement model with one new positioning/lifetime mode: a placement may be created relative to another current placement.
+
+The 1.13 design deliberately treats this as an ownership problem rather than merely exposing Kitty `P`, `Q`, `H`, and `V` fields.
+
+### Frozen architectural decisions
+
+- Parentage is **immutable** from successful creation through disposal.
+- Relative parent/child lifetime is orthogonal to raster-resource ownership: a relative child may place a different resource than its parent.
+- A child raster resource remains independently owned even when one relative placement of that resource dies with its parent.
+- The portable maximum relative-placement depth is **8**; deeper creation is rejected locally before output.
+- Cycles are impossible through the public create-only immutable-parent API; internal invariants still reject any inconsistent graph state defensively.
+- Relative offsets are signed terminal-cell column/row offsets, not pixels and not absolute screen coordinates.
+- Existing `TerminalRasterPlacementOptions` remains the single common crop/extents/z-order contract.
+- `CreateRelativePlacementAsync(...)` is distinct from current-cursor `CreatePlacementAsync(...)` so coordinate systems cannot change implicitly.
+- `TerminalRasterPlacement.UpdateAsync(...)` preserves the placement's established positioning mode. For a relative placement it retains the immutable parent and current relative offsets while replacing common placement options.
+- `UpdateRelativeAsync(...)` may change the signed column/row offsets and common placement options, but never the parent.
+- No raw terminal image/placement identity becomes public.
+- Parent loss, disposal, resource disposal, generation invalidation, and terminal `ENOPARENT` handling must update the local placement graph coherently.
+
+### Planned public additions
+
+Subject to the T130 API-regret gate, the intended additive surface is:
+
+```csharp
+TerminalRasterResource.CreateRelativePlacementAsync(
+    TerminalRasterPlacement parent,
+    int columnOffset,
+    int rowOffset,
+    TerminalRasterPlacementOptions? options = null,
+    CancellationToken cancellationToken = default
+)
+
+TerminalRasterPlacement.UpdateRelativeAsync(
+    int columnOffset,
+    int rowOffset,
+    TerminalRasterPlacementOptions? options = null,
+    CancellationToken cancellationToken = default
+)
+```
+
+No new capability enum is planned. Verified `PersistentRasterGraphics` remains the coarse runtime gate for the reviewed persistent backend.
+
+### Tranche sequence
 
 ```text
-Icod.TermInfo 1.11.0
-Icod.Timing   1.0.0
+T130  architecture/API regret gate + 1.13 roadmap/spec/plan
+T131  internal immutable parent/depth graph model
+T132  public relative-placement API contract + API freeze candidate
+T133  local parent/current/depth validation and no-output rejection
+T134  Kitty P/Q/H/V encoding + acknowledged create/update integration
+T135  cascading parent/subtree cleanup + resource/session teardown ordering
+T136  ENOPARENT/ECYCLE/ETOODEEP and lifecycle/adversarial hardening
+T137  graph boundary/capacity/concurrency regression matrix
+T138  sample/package/XML/downstream qualification
+T139  final API freeze, release docs, three-OS/package closure
 ```
 
-The versioned roadmap and release authorities are:
+The versioned roadmap is [`Icod.Terminal-1.13.0-Development-Roadmap.md`](Icod.Terminal-1.13.0-Development-Roadmap.md).
 
-- [`Icod.Terminal-1.12.0-Development-Roadmap.md`](Icod.Terminal-1.12.0-Development-Roadmap.md)
-- [`docs/T127-1.12.0-Release-Closure.md`](docs/T127-1.12.0-Release-Closure.md)
-- [`docs/releases/1.12.0.md`](docs/releases/1.12.0.md)
-- [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
-- [`docs/Public-API-Baseline-1.12.md`](docs/Public-API-Baseline-1.12.md)
+The design and implementation authorities are:
+
+- [`docs/superpowers/specs/2026-09-12-1.13.0-relative-persistent-raster-placement-design.md`](docs/superpowers/specs/2026-09-12-1.13.0-relative-persistent-raster-placement-design.md)
+- [`docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md`](docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md)
 
 ## Stable architecture guardrails
 
@@ -140,25 +140,26 @@ The 1.x line continues to preserve:
 - bounded parsers, queries, semantic events, raster work, and persistent registries;
 - backend-neutral public raster semantics;
 - opaque persistent resource/placement identities;
-- current-cursor placement rather than a Terminal-owned layout engine;
 - generation-scoped persistent ownership with no automatic replay;
 - deterministic cleanup and committed-output integrity;
-- production package dependencies declared centrally by `Icod.Terminal.csproj`.
+- production package dependencies declared centrally by `Icod.Terminal.csproj`;
+- cells/windows/layout/damage ownership in `Icod.DCurses`, not `Icod.Terminal`.
 
-## Long-range directions
+## Deferred tracks after 1.13
 
-Future development may consider only independently justified, separately reviewed tracks such as:
+The following remain separate future design questions and are not implied by relative placement ownership:
 
-- richer terminal observations where the wire contract is sufficiently portable;
-- additional semantic capability planning where truthful evidence exists;
-- additional bounded output/state semantics with deterministic cleanup;
-- higher-level integration needed by `Icod.DCurses` without moving cells/windows/layout into `Icod.Terminal`;
-- PTY/ConPTY integration through the separate `Icod.Pty` project rather than by expanding this package’s runtime ownership.
+- Unicode placeholder / virtual placements;
+- animation and frame lifecycle;
+- absolute screen-coordinate placement;
+- pixel-within-cell positioning;
+- scene/window/cell ownership;
+- hidden source-raster replay caches;
+- image-file decoding/transcoding;
+- PTY/ConPTY process hosting inside `Icod.Terminal`.
 
-Advanced raster features beyond 1.12—relative placement graphs, Unicode placeholders, animation, frame lifecycle, or scene ownership—remain future design questions rather than implied extensions of source cropping/z-order.
+A likely future sequence is to consider virtual/Unicode-placeholder anchoring only after the relative-placement ownership graph is stable and a downstream text-grid consumer is ready to use it.
 
-## Maintainer handoff rule
+## Release discipline
 
-The post-hardening release-facing documentation consistency pass is the final branch change. Its exact head must pass the complete nine-job PR matrix before merge.
-
-After that qualification, merge, mainline Release validation, `v1.12.0` tagging, GitHub Release creation, and NuGet publication remain maintainer/release-workflow actions.
+Every 1.13 implementation tranche must preserve the normal Staging matrix. Stable release closure again requires exact-head Windows/Linux/macOS runtime validation, public API/package freeze, package contract shards, downstream Stable 1.x acceptance, and a validated package artifact before maintainer merge/tag/publish actions.
