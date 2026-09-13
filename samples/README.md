@@ -14,7 +14,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
-| Create/update/dispose terminal-resident raster ownership with source crops and z-order | `Icod.Terminal.PersistentRaster.Sample` |
+| Create/update/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | `Icod.Terminal.PersistentRaster.Sample` |
 | Plan persistent-raster lifecycle with TermInfo, optionally verify live support, then execute | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
@@ -91,7 +91,7 @@ The normal evidence-driven router may use verified Kitty Graphics or verified Si
 
 ### `Icod.Terminal.PersistentRaster.Sample`
 
-Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and signed z-order.
+Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and signed z-order plus 1.13 immutable-parent relative placement ownership.
 
 ```text
 dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
@@ -100,13 +100,16 @@ dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal
 The sample:
 
 1. explicitly verifies `TerminalCapability.PersistentRasterGraphics`;
-2. creates a `TerminalRasterImage` in memory;
-3. creates an opaque `TerminalRasterResource`;
-4. creates a placement from a bounded source-pixel crop with a cell-column extent and nonzero z-order;
-5. updates the same placement at the current cursor with a different crop, extent, and z-order;
-6. uses `await using` so placement/resource cleanup is deterministic.
+2. creates a first opaque `TerminalRasterResource` and an ordinary current-cursor parent placement;
+3. creates a second independently owned raster resource;
+4. creates a relative child placement from the second resource using signed terminal-cell offsets from the first placement plus crop/extents/z-order geometry;
+5. updates the child offsets and common geometry without changing its immutable parent;
+6. explicitly disposes the parent placement, demonstrating descendant-placement cleanup while the child's raster resource remains independently owned;
+7. uses `await using` so all remaining placement/resource cleanup is deterministic and repeated disposal is harmless.
 
-`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses signed stacking order. Neither option turns `Icod.Terminal` into a scene-layout engine: 1.12 still does not own relative placement graphs, screen-coordinate layout, or automatic composition policy.
+`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses signed stacking order. Relative `columnOffset` / `rowOffset` values are measured in terminal cells, parentage is immutable, and the portable relative-depth ceiling is 8. Resource ownership and parent-placement lifetime are separate axes: deleting a parent removes its relative-placement subtree but does not by itself dispose descendant raster resources.
+
+These options do not turn `Icod.Terminal` into a scene-layout engine. Version 1.13 does not add reparenting, absolute screen-coordinate layout, Unicode placeholder placements, animation/frame ownership, or automatic composition policy.
 
 The sample does not mention Kitty, Sixel, image ids, image numbers, placement ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
 
