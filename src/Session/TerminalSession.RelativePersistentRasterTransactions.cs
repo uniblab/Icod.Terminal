@@ -149,8 +149,16 @@ public sealed partial class TerminalSession {
 		}
 
 		if ( !response.IsSuccess ) {
-			if ( response.IsUnavailable ) {
+			if ( response.IsMissingResource ) {
 				_ = this.persistentRasterRegistry.InvalidateResource( resourceState );
+				return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+					response.Message
+				);
+			}
+			if ( response.IsMissingParent ) {
+				_ = this.persistentRasterRegistry.InvalidatePlacementSubtree(
+					parentState
+				);
 				return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
 					response.Message
 				);
@@ -249,9 +257,17 @@ public sealed partial class TerminalSession {
 				placementState.PlacementId
 			);
 		if ( !response.IsSuccess ) {
-			if ( response.IsUnavailable ) {
+			if ( response.IsMissingResource ) {
 				_ = this.persistentRasterRegistry.InvalidateResource(
 					placementState.Resource
+				);
+				return TerminalControlMutationResult.Unavailable(
+					response.Message
+				);
+			}
+			if ( response.IsMissingParent ) {
+				_ = this.persistentRasterRegistry.InvalidatePlacementSubtree(
+					parentState
 				);
 				return TerminalControlMutationResult.Unavailable(
 					response.Message

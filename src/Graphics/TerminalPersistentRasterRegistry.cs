@@ -266,6 +266,28 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	internal bool InvalidatePlacementSubtree(
+		TerminalPersistentRasterPlacementState placement
+	) {
+		ArgumentNullException.ThrowIfNull( placement );
+
+		lock ( this.synchronization ) {
+			if ( !this.placements.Contains( placement ) ) {
+				return false;
+			}
+
+			TerminalPersistentRasterPlacementState[] affectedPlacements =
+				this.CollectPlacementSubtreeUnsafe( placement );
+			foreach ( TerminalPersistentRasterPlacementState affectedPlacement in affectedPlacements ) {
+				this.RemovePlacementUnsafe(
+					affectedPlacement,
+					close: false
+				);
+			}
+			return true;
+		}
+	}
+
 	internal void DrainCurrent(
 		out TerminalPersistentRasterPlacementState[] releasedPlacements,
 		out TerminalPersistentRasterResourceState[] releasedResources
