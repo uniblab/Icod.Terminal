@@ -20,6 +20,8 @@
 */
 namespace Icod.Terminal;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Owns bounded, generation-scoped bookkeeping for persistent raster resources and placements.
 /// </summary>
@@ -371,7 +373,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 	private bool TryGetCurrentResourcePlacementsUnsafe(
 		TerminalPersistentRasterResourceState resource,
-		out HashSet<TerminalPersistentRasterPlacementState>? resourcePlacements
+		[NotNullWhen( true )] out HashSet<TerminalPersistentRasterPlacementState>? resourcePlacements
 	) {
 		resourcePlacements = null;
 		if ( !this.IsResourceCurrentUnsafe( resource ) ) {
