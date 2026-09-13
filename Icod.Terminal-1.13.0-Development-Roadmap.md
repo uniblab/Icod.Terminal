@@ -2,7 +2,7 @@
 
 **Release:** `1.13.0`  
 **Theme:** relative persistent-raster placement ownership  
-**Status:** stable release candidate; T139 exact-head qualification pending  
+**Status:** stable release candidate; implementation and release authorities complete  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** published `1.12.0`
 
@@ -248,7 +248,7 @@ Package Stable 1.x release line
 Validated package artifact
 ```
 
-### T139 — Stable release closure — in progress
+### T139 — Stable release closure — complete pending current-head PR status
 
 Release-facing authorities are synchronized around the frozen 1.13 contract:
 
@@ -261,7 +261,16 @@ Release-facing authorities are synchronized around the frozen 1.13 contract:
 - root and versioned development roadmaps;
 - stable package version.
 
-The final T139 gate is one exact-head stable `1.13.0` PR workflow containing the same nine required jobs above. Merge/tag/publish remain maintainer actions after that gate is green.
+The stable release-candidate tree before this final bookkeeping commit was:
+
+```text
+a3a6fb167bd1369212e340551f9b6dc83c1c66fd
+workflow #1711 / 34767363405
+```
+
+That stable `1.13.0` workflow passed the complete nine-job matrix, including the stable-only release-line verifier for curated release notes, changelog, packed README, NuGet release metadata, fresh package consumers, and downstream `Icod.DCurses` acceptance.
+
+This roadmap intentionally does not self-certify the commit that contains it. The pull-request workflow status for the current PR head is the authoritative final exact-head release gate. Merge, tag, and publish remain maintainer actions after that current-head gate is green.
 
 ## Explicit 1.13 non-goals
 
