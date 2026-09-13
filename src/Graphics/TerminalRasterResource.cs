@@ -139,6 +139,18 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 			);
 		}
 
+		string? unavailableMessage = owner.GetRelativePersistentRasterPlacementCreationUnavailableMessage(
+			this.State,
+			parent.State
+		);
+		if ( unavailableMessage is not null ) {
+			return ValueTask.FromResult(
+				TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+					unavailableMessage
+				)
+			);
+		}
+
 		_ = columnOffset;
 		_ = rowOffset;
 		return ValueTask.FromResult(
