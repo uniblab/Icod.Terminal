@@ -11,7 +11,7 @@
 
 `1.13.0` is the current stable line. It adds bounded relative persistent-raster placement ownership with immutable parentage, signed terminal-cell offsets, a portable depth ceiling of 8, descendant-first graph cleanup, and separate raster-resource versus parent-placement lifetime ownership.
 
-The stable `1.0.0` compatibility floor remains unchanged. Existing 1.12 current-cursor persistent placement, source cropping, and signed z-order remain compatible when the relative APIs are unused. Version 1.13 adds no public protocol ids/backend selector, reparenting, scene graph, automatic raster replay, or production dependency.
+The stable `1.0.0` compatibility floor remains unchanged. Existing 1.12 current-cursor persistent placement, source cropping, and signed z-order remain compatible when the relative APIs are unused. Version 1.13 adds no new production package, public protocol ids/backend selector, reparenting, scene graph, or automatic raster replay; the direct `Icod.TermInfo` dependency advances from 1.11.0 to 1.12.0.
 
 ## Installation
 
@@ -27,7 +27,14 @@ net9.0
 net10.0
 ```
 
-`Icod.Terminal.csproj` is the package authority for direct NuGet dependencies. Tests, samples, and auxiliary tools do not independently pin transitive runtime versions merely to duplicate package metadata.
+The direct production dependency graph for 1.13 is:
+
+```text
+Icod.TermInfo 1.12.0
+Icod.Timing   1.0.0
+```
+
+`Icod.Terminal.csproj` is the package authority for direct NuGet dependencies. Tests, samples, and auxiliary tools may add qualification-only dependencies such as `Icod.TermInfo.Inspection`, but those do not widen the production package graph.
 
 ## Architecture
 
@@ -198,7 +205,7 @@ TerminalControlMutationResult update = await child.UpdateRelativeAsync(
 
 Parentage is immutable. Relative offsets are signed terminal-cell offsets, and the portable relative-depth ceiling is 8. `UpdateAsync(...)` preserves the established positioning mode; on a relative placement it retains the immutable parent and last acknowledged offsets while replacing common geometry. `UpdateRelativeAsync(...)` changes offsets and common geometry but never the parent.
 
-Resource ownership and parent-placement lifetime are separate axes. Disposing a parent placement removes its relative descendant placements deepest-first, but a raster resource used by one of those descendants remains independently owned until separately disposed or invalidated.
+Resource ownership and parent-placement lifetime are separate axes. Disposing a parent placement removes its relative descendant placements deepest-first, but a raster resource used by one of those descendants remains independently owned until separately disposed or invalidated. The persistent-raster sample demonstrates this concretely by creating a new ordinary placement from the surviving child resource after the parent cascade.
 
 Resource and placement identity remains opaque. The public API does not expose Kitty image ids, image numbers, placement ids, parent numeric identities, raw APC commands, or backend selection. There is no public reparent API.
 
@@ -210,23 +217,27 @@ Live ownership remains bounded to 256 persistent resources and 4096 placements p
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
 
-### TermInfo persistent-raster lifecycle integration
+### TermInfo persistent-raster lifecycle and placement integration
 
-Version 1.11.1 demonstrates how a consumer can combine `Icod.TermInfo.Inspection 1.11.0` static lifecycle planning with Terminal-owned live verification without making Inspection a production dependency:
+Version 1.11.1 introduced the loose-coupling pattern between TermInfo lifecycle planning and Terminal-owned live verification/execution. The current executable integration sample uses `Icod.TermInfo.Inspection 1.12.0`, retaining that lifecycle boundary while also demonstrating the additive 1.12 source-rectangle and signed-z-order placement planner without making Inspection a production dependency:
 
 ```text
 session.Terminal
-    -> TermInfo lifecycle inspection
-    -> plan
+    -> TermInfo lifecycle inspection / plan
     -> if Indeterminate, optionally VerifyCapabilityAsync(PersistentRasterGraphics)
     -> caller-owned Verified lifecycle evidence
-    -> reclassify / replan
-    -> if Success and live Terminal state is usable, execute resource/placement operations
+    -> reclassify / replan lifecycle
+    -> TermInfo advanced-placement inspection / plan
+    -> if placement semantics are Unknown, caller-owned Terminal-contract evidence
+    -> reclassify / replan placement
+    -> if lifecycle Success + placement Satisfied + live route usable, execute Terminal geometry values
 ```
 
-The consumer-owned evidence bridge promotes only conclusive live observations. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability remain distinct and are not converted into verified support or non-support.
+The lifecycle evidence bridge promotes only conclusive live observations. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability remain distinct and are not converted into verified support or non-support. The advanced-placement bridge is deliberately separate: the coarse `PersistentRasterGraphics` observation is not mislabeled as a source-rectangle or z-order probe.
 
-See [`samples/Icod.Terminal.TermInfoPersistentRaster.Sample`](samples/Icod.Terminal.TermInfoPersistentRaster.Sample/README.md) for executable documentation and [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md) for the integration-patch contract.
+TermInfo owns semantic evidence, classification, and planning; the application and Terminal own concrete rectangle coordinates, signed z-order values, acknowledgements, and execution. Icod.TermInfo 1.12 deliberately does not plan the relative-parent graph added by Terminal 1.13, so immutable parentage and relative-placement lifetime remain Terminal runtime concerns.
+
+See [`samples/Icod.Terminal.TermInfoPersistentRaster.Sample`](samples/Icod.Terminal.TermInfoPersistentRaster.Sample/README.md) for current executable documentation and [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md) for the historical integration-patch contract.
 
 ## Core 1.x guarantees
 
@@ -270,7 +281,7 @@ The stable 1.x surface includes:
 - titles, current location, hyperlinks, clipboard operations, cursor style, synchronized output, progress, pointer shape, notifications, prompt/shell metadata, and terminal colors;
 - backend-neutral ephemeral raster display through verified Sixel and Kitty Graphics;
 - backend-neutral persistent raster resources and placements with generation-scoped ownership, source-pixel cropping, signed z-order, and bounded immutable-parent relative placement;
-- optional consumer-owned TermInfo lifecycle planning integration without adding Inspection to the production package graph.
+- optional consumer-owned TermInfo lifecycle and advanced-placement planning integration without adding Inspection to the production package graph.
 
 The library deliberately does not expose generic raw vendor dispatch as the ordinary extension model.
 
@@ -283,8 +294,8 @@ The [`samples`](samples/README.md) directory contains focused examples. Recommen
 - `Icod.Terminal.CapabilityPlanning.Sample` — inspect-first semantic planning plus optional explicit verification;
 - `Icod.Terminal.Query.Sample` — bounded terminal queries;
 - `Icod.Terminal.RasterGraphics.Sample` — backend-neutral ephemeral raster display;
-- `Icod.Terminal.PersistentRaster.Sample` — ordinary and relative persistent placement, signed offsets, crop/z-order, immutable parentage, and deterministic subtree/resource cleanup without protocol ids/backend branching;
-- `Icod.Terminal.TermInfoPersistentRaster.Sample` — static TermInfo lifecycle plan, optional live Terminal verification, caller-owned replan, and persistent execution;
+- `Icod.Terminal.PersistentRaster.Sample` — ordinary and relative persistent placement, both relative update modes, signed offsets, crop/z-order, immutable parentage, parent-cascade cleanup, and independent descendant-resource reuse without protocol ids/backend branching;
+- `Icod.Terminal.TermInfoPersistentRaster.Sample` — Inspection 1.12 lifecycle plus advanced-placement planning, optional live Terminal verification, caller-owned evidence/replanning, and concrete persistent execution;
 - focused state, color, notification, prompt, and shell-integration samples described in the sample catalog.
 
 Focused sample verifiers build newer semantic/raster examples on every supported target framework during repository validation.
