@@ -38,7 +38,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo.Inspection" Version="1.11.0" />
+		<PackageReference Include="Icod.TermInfo.Inspection" Version="1.12.0" />
 		<ProjectReference Include="..\..\Icod.Terminal.csproj" />
 	</ItemGroup>
 </Project>
