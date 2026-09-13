@@ -70,22 +70,22 @@ if ( !capability.IsUsable ) {
 	return 1;
 }
 
-TerminalControlResult<TerminalRasterResource> resourceResult =
+TerminalControlResult<TerminalRasterResource> parentResourceResult =
 	await session.CreateRasterResourceAsync( image );
-if ( TerminalControlStatus.Available != resourceResult.Status
-	|| resourceResult.Value is null ) {
+if ( TerminalControlStatus.Available != parentResourceResult.Status
+	|| parentResourceResult.Value is null ) {
 	await session.WriteTextAsync(
 		FormatFailure(
-			"Persistent raster resource creation",
-			resourceResult.Status,
-			resourceResult.Message
+			"Parent raster resource creation",
+			parentResourceResult.Status,
+			parentResourceResult.Message
 		)
 	);
 	return 1;
 }
-await using TerminalRasterResource resource = resourceResult.Value;
+await using TerminalRasterResource parentResource = parentResourceResult.Value;
 
-TerminalRasterPlacementOptions placementOptions = new() {
+TerminalRasterPlacementOptions parentOptions = new() {
 	SourceRectangle = new TerminalRasterSourceRectangle(
 		0,
 		0,
@@ -95,40 +95,88 @@ TerminalRasterPlacementOptions placementOptions = new() {
 	Columns = 24,
 	ZIndex = -1
 };
-TerminalControlResult<TerminalRasterPlacement> placementResult =
-	await resource.CreatePlacementAsync( placementOptions );
-if ( TerminalControlStatus.Available != placementResult.Status
-	|| placementResult.Value is null ) {
+TerminalControlResult<TerminalRasterPlacement> parentPlacementResult =
+	await parentResource.CreatePlacementAsync( parentOptions );
+if ( TerminalControlStatus.Available != parentPlacementResult.Status
+	|| parentPlacementResult.Value is null ) {
 	await session.WriteTextAsync(
 		FormatFailure(
-			"Persistent raster placement creation",
-			placementResult.Status,
-			placementResult.Message
+			"Parent raster placement creation",
+			parentPlacementResult.Status,
+			parentPlacementResult.Message
 		)
 	);
 	return 1;
 }
-await using TerminalRasterPlacement placement = placementResult.Value;
+await using TerminalRasterPlacement parentPlacement = parentPlacementResult.Value;
+
+TerminalControlResult<TerminalRasterResource> childResourceResult =
+	await session.CreateRasterResourceAsync( image );
+if ( TerminalControlStatus.Available != childResourceResult.Status
+	|| childResourceResult.Value is null ) {
+	await session.WriteTextAsync(
+		FormatFailure(
+			"Child raster resource creation",
+			childResourceResult.Status,
+			childResourceResult.Message
+		)
+	);
+	return 1;
+}
+await using TerminalRasterResource childResource = childResourceResult.Value;
+
+TerminalControlResult<TerminalRasterPlacement> childPlacementResult =
+	await childResource.CreateRelativePlacementAsync(
+		parentPlacement,
+		columnOffset: 2,
+		rowOffset: -1,
+		new TerminalRasterPlacementOptions {
+			SourceRectangle = new TerminalRasterSourceRectangle(
+				12,
+				0,
+				24,
+				24
+			),
+			Columns = 12,
+			Rows = 6,
+			ZIndex = 1
+		}
+	);
+if ( TerminalControlStatus.Available != childPlacementResult.Status
+	|| childPlacementResult.Value is null ) {
+	await session.WriteTextAsync(
+		FormatFailure(
+			"Relative raster placement creation",
+			childPlacementResult.Status,
+			childPlacementResult.Message
+		)
+	);
+	return 1;
+}
+await using TerminalRasterPlacement childPlacement = childPlacementResult.Value;
 
 await session.WriteTextAsync(
-	"\r\nThe placement uses a source-pixel crop and signed z-order while the terminal-resident resource remains owned.\r\n"
+	"\r\nResource B now owns a placement positioned by signed cell offsets from Resource A's placement.\r\n"
 );
-TerminalControlMutationResult update = await placement.UpdateAsync(
+TerminalControlMutationResult update = await childPlacement.UpdateRelativeAsync(
+	columnOffset: -3,
+	rowOffset: 2,
 	new TerminalRasterPlacementOptions {
 		SourceRectangle = new TerminalRasterSourceRectangle(
-			12,
+			18,
 			0,
-			36,
+			24,
 			24
 		),
-		Columns = 16,
-		ZIndex = 1
+		Columns = 10,
+		Rows = 5,
+		ZIndex = 2
 	}
 );
 if ( !update.Succeeded ) {
 	await session.WriteTextAsync(
 		FormatFailure(
-			"Persistent raster placement update",
+			"Relative raster placement update",
 			update.Status,
 			update.Message
 		)
@@ -137,7 +185,11 @@ if ( !update.Succeeded ) {
 }
 
 await session.WriteTextAsync(
-	"\r\nThe crop and stacking order were updated; disposal will release placement and resource ownership.\r\n"
+	"\r\nThe relative offsets, crop, extents, and stacking order were updated without changing parentage.\r\n"
+);
+await parentPlacement.DisposeAsync();
+await session.WriteTextAsync(
+	"Disposing the parent placement cascaded placement cleanup; Resource B remains independently owned until its own disposal.\r\n"
 );
 return 0;
 
