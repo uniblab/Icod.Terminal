@@ -48,6 +48,28 @@ Func<
 	cancellationToken
 );
 Func<
+	TerminalRasterResource,
+	TerminalRasterPlacement,
+	int,
+	int,
+	TerminalRasterPlacementOptions?,
+	CancellationToken,
+	ValueTask<TerminalControlResult<TerminalRasterPlacement>>
+> createRelativePlacement = static (
+	TerminalRasterResource resource,
+	TerminalRasterPlacement parent,
+	int columnOffset,
+	int rowOffset,
+	TerminalRasterPlacementOptions? options,
+	CancellationToken cancellationToken
+) => resource.CreateRelativePlacementAsync(
+	parent,
+	columnOffset,
+	rowOffset,
+	options,
+	cancellationToken
+);
+Func<
 	TerminalRasterPlacement,
 	TerminalRasterPlacementOptions?,
 	CancellationToken,
@@ -60,9 +82,30 @@ Func<
 	options,
 	cancellationToken
 );
+Func<
+	TerminalRasterPlacement,
+	int,
+	int,
+	TerminalRasterPlacementOptions?,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> updateRelativePlacement = static (
+	TerminalRasterPlacement placement,
+	int columnOffset,
+	int rowOffset,
+	TerminalRasterPlacementOptions? options,
+	CancellationToken cancellationToken
+) => placement.UpdateRelativeAsync(
+	columnOffset,
+	rowOffset,
+	options,
+	cancellationToken
+);
 _ = createResource;
 _ = createPlacement;
+_ = createRelativePlacement;
 _ = updatePlacement;
+_ = updateRelativePlacement;
 
 Require(
 	9 == (int)TerminalCapability.PersistentRasterGraphics,
@@ -108,6 +151,13 @@ Require(
 
 AssertOpaquePublicSurface( typeof( TerminalRasterResource ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
+Require(
+	typeof( TerminalRasterPlacement ).GetProperty(
+		"Parent",
+		BindingFlags.Instance | BindingFlags.Public
+	) is null,
+	"TerminalRasterPlacement must not expose parentage as mutable or protocol-facing public state."
+);
 
 static void AssertOpaquePublicSurface(
 	Type type
