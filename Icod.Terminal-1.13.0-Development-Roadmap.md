@@ -2,17 +2,17 @@
 
 **Release:** `1.13.0`  
 **Theme:** relative persistent-raster placement ownership  
-**Status:** approved architecture; T130 starting  
+**Status:** stable release candidate; T139 exact-head qualification pending  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** published `1.12.0`
 
 ## Release objective
 
-Version 1.13 extends the persistent-raster ownership model with a bounded, explicit parent/child placement graph.
+Version 1.13 extends persistent-raster ownership with a bounded, explicit parent/child placement-lifetime graph while keeping raster-resource ownership separate.
 
-A relative placement belongs to its own raster resource exactly as in 1.11/1.12, but its terminal positioning and lifetime additionally depend on one immutable parent placement. This relationship is intentionally separate from resource ownership so a child resource can outlive one relative placement and continue to participate in other placements.
+A relative placement belongs to its own raster resource exactly as in 1.11/1.12, but its terminal positioning and placement lifetime additionally depend on one immutable parent placement. A child placement may therefore use Resource B while being relative to a placement of Resource A, and Resource B remains independently owned if that child placement later dies with its parent.
 
-The release is about ownership and lifecycle, not a scene graph. It does not move cells, windows, layout, damage, virtual-screen state, or composition policy into `Icod.Terminal`.
+The release is about ownership and lifecycle, not a scene graph. It does not move cells, windows, layout, damage, virtual-screen state, animation, or composition policy into `Icod.Terminal`.
 
 Design authority:
 
@@ -22,9 +22,13 @@ Implementation plan:
 
 [`docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md`](docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md)
 
-Permanent 1.x ownership authority remains:
+Permanent ownership authority:
 
 [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+
+Release notes:
+
+[`docs/releases/1.13.0.md`](docs/releases/1.13.0.md)
 
 ## Frozen architecture decisions
 
@@ -32,47 +36,37 @@ Permanent 1.x ownership authority remains:
 
 Parentage is selected once during relative placement creation and never changes.
 
-This is the central 1.13 simplification:
-
 - no reparent API;
 - no mutable parent property;
 - no public operation can create a graph cycle after creation;
 - relative updates may change offsets and common placement geometry only;
-- ordinary updates preserve whichever positioning mode the placement was created with.
+- ordinary `UpdateAsync(...)` preserves the placement's established positioning mode.
 
 ### Two independent ownership axes
 
-The local model has two simultaneous relationships:
-
 ```text
 TerminalRasterResource
-    -> owns placement identity/storage membership
+    -> owns placement resource/storage membership
 
 TerminalRasterPlacement parent
     -> owns relative-placement lifetime subtree
 ```
 
-A relative placement can therefore place Resource B while being a child of a placement of Resource A.
-
-Deleting/disposal/invalidation of the parent placement removes the relative child placement and its descendants, but does not automatically dispose Resource B.
+Deleting/disposal/invalidation of a parent placement removes the relative child placement and its descendants but does not automatically dispose descendant raster resources.
 
 ### Bounded graph depth
 
-The public contract uses a portable maximum relative depth of:
+The portable maximum relative depth is:
 
 ```text
 8
 ```
 
-Ordinary current-cursor placements have depth 0. A direct relative child has depth 1. Creation that would produce depth 9 is rejected before output.
-
-The limit is deliberately independent of a terminal implementation's potentially larger private ceiling.
+Ordinary current-cursor placements have depth 0. A direct relative child has depth 1. Creation that would produce depth 9 is rejected locally before output.
 
 ### Cycle policy
 
-Because a new child can reference only an already-existing current parent and parentage is immutable, public API construction cannot form a cycle.
-
-The registry still validates parent ancestry defensively so corrupted/internal inconsistent state fails closed rather than emitting terminal traffic.
+A new child can reference only an already-existing current parent and parentage is immutable, so supported public construction cannot form a cycle. Registry ancestry is still validated defensively so inconsistent internal state fails closed rather than emitting terminal traffic.
 
 ### Offset semantics
 
@@ -83,13 +77,11 @@ columnOffset  horizontal offset in terminal cells
 rowOffset     vertical offset in terminal cells
 ```
 
-The full signed `int` domain is retained unless protocol qualification proves a narrower truthful portable contract is required.
-
-Offsets are not source pixels, terminal screen coordinates, or pixel-within-cell offsets.
+The complete signed `int` domain is supported. Offsets are not source pixels, absolute terminal screen coordinates, or pixel-within-cell offsets.
 
 ### Shared common geometry
 
-`TerminalRasterPlacementOptions` remains the only public common placement-geometry type:
+`TerminalRasterPlacementOptions` remains the single common placement-geometry type:
 
 ```text
 Columns
@@ -98,11 +90,11 @@ SourceRectangle
 ZIndex
 ```
 
-1.13 does not add a duplicated relative-placement options class.
+No duplicate relative-placement options type is introduced.
 
-## Intended public API
+## Final public API
 
-T130 reviews this exact shape before T132 freezes the API candidate:
+Version 1.13 adds exactly:
 
 ```csharp
 public ValueTask<TerminalControlResult<TerminalRasterPlacement>>
@@ -126,217 +118,123 @@ public ValueTask<TerminalControlMutationResult>
 Semantics:
 
 - `CreatePlacementAsync(...)` continues to create a current-cursor placement.
-- `CreateRelativePlacementAsync(...)` creates a child whose terminal position is relative to `parent`.
-- The parent must belong to the same live `TerminalSession` and current generation.
-- A child may belong to a different raster resource from its parent.
-- `UpdateAsync(...)` preserves the established positioning mode. On a relative placement it preserves immutable parent and current offsets while replacing common placement geometry.
-- `UpdateRelativeAsync(...)` is valid only for a relative placement and replaces signed offsets plus common placement geometry while preserving parent.
-- Reparenting is impossible.
+- `CreateRelativePlacementAsync(...)` creates a child relative to `parent`.
+- parent and child resource must belong to the same live `TerminalSession` generation.
+- parent and child may belong to different raster resources.
+- `UpdateAsync(...)` preserves ordinary-vs-relative positioning mode.
+- `UpdateRelativeAsync(...)` replaces signed offsets plus common geometry while preserving immutable parentage.
+- no public protocol IDs, parent identity, backend selector, or reparent operation is added.
 
-No public protocol IDs or backend selector are added.
-
-## T130 — Architecture and API regret gate
-
-**Goal:** convert the approved design into repository authorities and reject API shapes that would make ownership ambiguous later.
-
-Required conclusions:
-
-- immutable parentage remains final;
-- separate create API remains final;
-- common geometry reuses `TerminalRasterPlacementOptions`;
-- direct signed column/row parameters are preferred over a duplicate options type;
-- ordinary `UpdateAsync` preserves positioning mode rather than silently converting relative placements to cursor placement;
-- `UpdateRelativeAsync` changes offsets but not parent;
-- no public parent/image/placement numeric identity;
-- no new capability enum;
-- depth limit 8;
-- cycle prevention by construction plus defensive internal validation.
-
-Deliverables:
-
-- this roadmap;
-- updated root development roadmap;
-- approved design spec;
-- executable implementation plan;
-- draft 1.13 PR.
-
-## T131 — Internal immutable parent/depth graph model
-
-**Goal:** teach the local persistent-raster registry about parent/child placement lifetime without emitting new wire fields or changing public API.
-
-Add placement state for:
+Final public API fingerprint:
 
 ```text
-Parent         nullable TerminalPersistentRasterPlacementState
-RelativeDepth integer 0..8
-ColumnOffset   signed int
-RowOffset      signed int
+c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-The registry must maintain:
+See [`docs/Public-API-Baseline-1.13.md`](docs/Public-API-Baseline-1.13.md).
 
-- resource -> direct placements, as today;
-- placement -> relative children;
-- placement membership in the global bounded placement set;
-- parent/child relationships across different resources.
+## Tranche record
 
-Required behavior:
+### T130 — Architecture and API regret gate — complete
 
-- current-cursor placement reservation produces `Parent == null`, depth 0, offsets 0/0;
-- relative reservation requires current parent and current child resource;
-- same-session/generation is mandatory;
-- relative depth is parent depth + 1;
-- depth > 8 is rejected without reservation/output;
-- public construction cannot form cycles;
-- releasing a parent releases its entire descendant subtree locally;
-- releasing a resource releases that resource's placements plus any relative descendants they own, even when descendant placements belong to other still-live resources;
-- descendant resources themselves remain owned unless separately disposed/invalidated.
+Frozen immutable parentage, separate create API, shared geometry, signed cell offsets, depth 8, defensive cycle handling, and no new capability enum/public protocol identity.
 
-Tests are registry/state-only and establish RED before production changes.
+Primary authorities were added to the branch and PR #56 was opened as the 1.13 development line.
 
-## T132 — Public relative-placement API contract
+### T131 — Internal immutable parent/depth graph model — complete
 
-**Goal:** add the minimal additive public API and freeze its semantics before protocol integration.
+Added internal placement parent/depth/offset state plus resource-to-placement and placement-to-relative-child membership.
 
-Add:
+Qualified:
+
+- depth-0 ordinary state;
+- current parent/resource requirements;
+- cross-resource descendants;
+- depth accounting/rejection;
+- defensive ancestry checks;
+- parent subtree release;
+- resource release cascading through placement descendants without disposing descendant resources.
+
+### T132 — Public relative-placement API contract — complete
+
+Added the two final public methods and froze their semantics before protocol integration.
+
+The public API candidate became the final stable fingerprint:
 
 ```text
-TerminalRasterResource.CreateRelativePlacementAsync(...)
-TerminalRasterPlacement.UpdateRelativeAsync(...)
+c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-Update `TerminalRasterPlacement.UpdateAsync(...)` documentation/behavior so a relative placement retains parent/offset positioning while replacing common geometry.
+### T133 — Local validation and no-output rejection — complete
 
-No parent getter is required for 1.13. The relationship remains semantically established but opaque after creation unless later regret-gate evidence proves public introspection necessary.
+Qualified null/disposed/foreign/stale parent handling, stale child resources, depth-9 rejection, ordinary-placement rejection for `UpdateRelativeAsync(...)`, full signed offset boundaries, relative `UpdateAsync(...)` positioning preservation, and cancellation before commitment.
 
-Package/XML/API-baseline tests begin here.
+Every locally knowable rejection is no-output.
 
-## T133 — Local validation and no-output rejection
+### T134 — Kitty relative placement encoding and acknowledged transactions — complete
 
-**Goal:** reject graph/lifetime errors before terminal output.
+Integrated deterministic private parent/offset fields through the existing serialized acknowledged placement path while retaining child image/placement identity as response-correlation authority.
 
-Cover:
+Existing 1.11/1.12 current-cursor placement bytes remain unchanged when relative APIs are unused. Relative offset state commits only after successful acknowledgement.
 
-- null parent;
-- disposed parent handle;
-- parent from another `TerminalSession`;
-- stale parent generation;
-- stale child resource;
-- depth 9 creation;
-- ordinary placement passed to `UpdateRelativeAsync`;
-- relative placement common `UpdateAsync` preserving parent/offset state;
-- full signed offset boundaries;
-- cancellation before commitment.
+### T135 — Cascading lifetime and cleanup — complete
 
-No-output assertions are mandatory for every locally rejectable case.
+Parent disposal, resource disposal, and session teardown now process relative subtrees deepest-first / descendant-before-parent.
 
-## T134 — Kitty relative placement encoding and acknowledged transactions
+Cross-resource descendants use their own owning-resource image identities for terminal cleanup. Descendant raster resources remain independently owned. Stale cleanup remains local-only and repeated disposal remains harmless.
 
-**Goal:** integrate reviewed Kitty parent/offset fields through the existing serialized acknowledged placement path.
+### T136 — Terminal error and lifecycle hardening — complete
 
-Relative placement create/update adds deterministic private fields corresponding to:
-
-```text
-P  parent image id
-Q  parent placement id
-H  signed column offset
-V  signed row offset
-```
-
-The encoder must keep existing 1.11/1.12 bytes unchanged for current-cursor placements.
-
-A relative create/update must still retain:
-
-- private child image id;
-- private child placement id;
-- `C=1` no-cursor-movement behavior;
-- source crop/extents/z-order ordering;
-- existing response correlation on the child identity.
-
-Updates commit new local offsets only after successful acknowledgement.
-
-## T135 — Cascading lifetime and cleanup
-
-**Goal:** make local and terminal cleanup ordering truthful for placement subtrees.
-
-Rules:
-
-- explicit parent placement disposal releases descendants first locally and emits cleanup in descendant-before-parent order while identities are current;
-- resource disposal removes its own placements and every relative descendant placement they own, regardless of descendant resource;
-- child resources remain independently owned;
-- session teardown drains placements in deepest-first order before resources;
-- stale generation cleanup is local-only;
-- placement disposal remains idempotent;
-- repeated/cross-resource subtrees do not double-release identities.
-
-## T136 — Terminal error and lifecycle hardening
-
-**Goal:** classify parent-graph protocol failures without over-invalidating unrelated resources.
-
-Review and cover:
+Qualified graph-specific terminal error classification:
 
 ```text
 ENOPARENT
 ECYCLE
 ETOODEEP
 ENOENT
-malformed correlated response
-wrong child identity
-late response
-transport failure
 ```
 
-Expected direction:
+`ENOPARENT` invalidates the affected parent placement subtree without automatically declaring the parent raster resource missing. `ECYCLE`/`ETOODEEP` remain controlled failures because the supported local contract makes them unreachable under correct state. Relative `ENOENT` retains existing resource-certainty invalidation where it denotes missing resource identity.
 
-- `ENOPARENT` invalidates certainty for the parent placement subtree, not automatically the parent raster resource;
-- `ECYCLE` remains controlled failure because the local API should make it unreachable under correct state;
-- `ETOODEEP` remains controlled failure because local depth 8 should make it unreachable on conforming reviewed terminals;
-- `ENOENT` retains existing resource-certainty invalidation where it denotes missing image/resource identity.
+Established malformed-response, wrong-child-identity, late-response, and transport-failure transaction invariants remain unchanged.
 
-Any broader invalidation requires explicit evidence and documentation.
+### T137 — Adversarial graph and boundary matrix — complete
 
-## T137 — Adversarial graph and boundary matrix
+Added/qualified:
 
-**Goal:** prove bounded behavior under realistic graph stress.
-
-Include:
-
-- depth 0 through 8 chains;
-- attempted depth 9;
-- branching parent with many children;
-- descendants spanning several resources;
+- depth 0 through 8 and attempted depth 9;
+- signed offset extrema;
+- branching/cross-resource graph teardown;
 - resource disposal in the middle of a graph;
-- parent disposal followed by stale child disposal;
-- generation invalidation of a nontrivial graph;
-- placement capacity 4096 unchanged;
-- resource capacity 256 unchanged;
-- placement-id wrap/collision behavior unchanged;
-- concurrent create/update/dispose scheduling under existing output/query serialization;
-- repeated create/update/delete cycles with signed offset extrema and 1.12 crop/z-order geometry.
+- parent cascade followed by harmless stale child disposal;
+- generation invalidation of nontrivial graphs;
+- unchanged 256-resource / 4096-placement capacity ceilings;
+- nonzero wrap/collision-safe placement identity behavior;
+- concurrent registry reserve/release;
+- concurrent acknowledged public relative create/update/dispose scheduling;
+- repeated acknowledged create/update/delete cycles using signed offset extrema plus 1.12 crop/extents/z-order geometry.
 
-## T138 — Sample, package, XML, and downstream qualification
+### T138 — Sample, package, XML, and downstream qualification — complete
 
-**Goal:** prove the feature through public/package consumption without teaching protocol IDs.
-
-Update the persistent-raster sample to demonstrate:
+Updated the persistent-raster sample to demonstrate:
 
 - Resource A ordinary parent placement;
+- independently owned Resource B;
 - Resource B relative child placement;
-- signed cell offsets;
-- relative offset update;
-- deterministic parent/subtree cleanup.
+- signed cell offsets and relative offset update;
+- crop/extents/z-order on relative operations;
+- deterministic parent/subtree cleanup while Resource B remains independently owned.
 
-Package-only smoke must compile/run the new public methods on `net8.0`, `net9.0`, and `net10.0`.
+Fresh NuGet-only package consumption compiles/runs the new methods on `net8.0`, `net9.0`, and `net10.0`; generated XML documentation contains both new methods; the stable `Icod.DCurses` acceptance/hardening package shard requires no source change.
 
-Generated XML documentation must include the new public methods.
+T138 exact-head witness:
 
-Stable 1.x `Icod.DCurses` acceptance/hardening remains required. No DCurses source change is expected merely to consume 1.13.
+```text
+86bb11e7ff31dd03d5228fe1049f39c3d6cb7d28
+workflow #1702 / 34766762349
+```
 
-## T139 — Stable release closure
-
-**Goal:** synchronize permanent authorities and qualify the exact stable head.
-
-Required final gates:
+That workflow passed the complete PR matrix:
 
 ```text
 Runtime Windows
@@ -350,26 +248,33 @@ Package Stable 1.x release line
 Validated package artifact
 ```
 
-Release-facing docs must clearly state:
+### T139 — Stable release closure — in progress
 
-- parentage is immutable;
-- depth is bounded to 8;
-- resources and placement-parent lifetime are separate ownership axes;
-- relative placement does not imply Unicode placeholders, animation, absolute layout, or scene ownership;
-- 1.12 current-cursor placement remains source/wire compatible when relative APIs are unused.
+Release-facing authorities are synchronized around the frozen 1.13 contract:
+
+- root README;
+- changelog;
+- package release metadata;
+- permanent persistent-raster ownership authority;
+- 1.13 release notes;
+- final 1.13 public API baseline wording;
+- root and versioned development roadmaps;
+- stable package version.
+
+The final T139 gate is one exact-head stable `1.13.0` PR workflow containing the same nine required jobs above. Merge/tag/publish remain maintainer actions after that gate is green.
 
 ## Explicit 1.13 non-goals
 
 Version 1.13 does **not** add:
 
-- reparenting;
+- reparenting or mutable parentage;
 - Unicode placeholder / virtual placements;
 - animation or frame lifecycle;
 - absolute screen-coordinate placement;
 - pixel-within-cell offsets;
 - source-raster replay/re-upload caching;
 - image-file decoding/transcoding;
-- public Kitty image/placement ids;
+- public Kitty image/placement/parent ids;
 - caller-selected graphics backend;
 - generic raw Kitty dispatch;
 - Sixel persistent-resource emulation;
@@ -387,4 +292,4 @@ When relative-placement APIs are unused:
 - existing source cropping and signed z-order semantics remain unchanged;
 - resource/placement capacity ceilings remain 256 / 4096;
 - one authoritative query/input path remains the acknowledgement authority;
-- no new production dependency is introduced unless separately approved by a later tranche.
+- no new production dependency is introduced.
