@@ -22,7 +22,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Extends fresh NuGet-only package consumption and generated XML-documentation checks for the new relative methods on `net8.0`, `net9.0`, and `net10.0`.
 - Retains current `Icod.DCurses` downstream acceptance/hardening with no required downstream source change.
 - Finalizes the 1.13 public API fingerprint as `c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9` while retaining all historical baselines unchanged.
-- Preserves production dependencies at `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0`.
+- Updates the production dependency to `Icod.TermInfo 1.12.0` while retaining `Icod.Timing 1.0.0`.
 - Continues to exclude reparenting, public protocol/parent identities, Unicode placeholder placement, animation/frame lifecycle, absolute screen-coordinate layout, pixel-within-cell positioning, scene ownership, automatic replay, image decoding/transcoding, and PTY/ConPTY hosting.
 
 See `docs/releases/1.13.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.13.md`, and `Icod.Terminal-1.13.0-Development-Roadmap.md` for the complete 1.13 contract.
