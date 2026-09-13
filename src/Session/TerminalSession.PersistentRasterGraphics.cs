@@ -397,10 +397,15 @@ public sealed partial class TerminalSession {
 
 			List<Exception> failures = [];
 			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				uint placementImageId = placement.Resource.ImageId;
+				if ( 0u == placementImageId ) {
+					continue;
+				}
+
 				try {
 					await this.WritePersistentRasterControlFrameCoreAsync(
 						KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
-							imageId,
+							placementImageId,
 							placement.PlacementId
 						)
 					).ConfigureAwait( false );
@@ -456,21 +461,27 @@ public sealed partial class TerminalSession {
 		}
 
 		using ( outputLease ) {
-			if ( !this.persistentRasterRegistry.TryReleasePlacement( placementState ) ) {
+			if ( !this.persistentRasterRegistry.TryReleasePlacement(
+				placementState,
+				out TerminalPersistentRasterPlacementState[] releasedPlacements
+			) ) {
 				return;
 			}
 
-			uint imageId = placementState.Resource.ImageId;
-			if ( 0u == imageId ) {
-				return;
+			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				uint imageId = placement.Resource.ImageId;
+				if ( 0u == imageId ) {
+					continue;
+				}
+
+				await this.WritePersistentRasterControlFrameCoreAsync(
+					KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
+						imageId,
+						placement.PlacementId
+					)
+				).ConfigureAwait( false );
 			}
 
-			await this.WritePersistentRasterControlFrameCoreAsync(
-				KittyGraphicsPersistentEncoder.EncodeDeletePlacementPayload(
-					imageId,
-					placementState.PlacementId
-				)
-			).ConfigureAwait( false );
 			await this.Output.FlushAsync(
 				CancellationToken.None
 			).ConfigureAwait( false );
