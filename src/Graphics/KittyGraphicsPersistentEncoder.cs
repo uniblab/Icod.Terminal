@@ -51,46 +51,64 @@ internal static class KittyGraphicsPersistentEncoder {
 		uint placementId,
 		TerminalRasterPlacementOptions? options
 	) {
-		ValidateNonZeroIdentity(
+		ValidatePlacementIdentity(
 			imageId,
-			nameof( imageId ),
-			"A persistent Kitty Graphics image id must be non-zero."
-		);
-		ValidateNonZeroIdentity(
-			placementId,
-			nameof( placementId ),
-			"A persistent Kitty Graphics placement id must be non-zero."
+			placementId
 		);
 		options?.Validate();
 
-		StringBuilder value = new();
-		_ = value.Append( "Ga=p,i=" );
-		_ = value.Append( imageId.ToString( CultureInfo.InvariantCulture ) );
-		_ = value.Append( ",p=" );
-		_ = value.Append( placementId.ToString( CultureInfo.InvariantCulture ) );
-		_ = value.Append( ",C=1" );
-		if ( options?.SourceRectangle is TerminalRasterSourceRectangle rectangle ) {
-			_ = value.Append( ",x=" );
-			_ = value.Append( rectangle.X.ToString( CultureInfo.InvariantCulture ) );
-			_ = value.Append( ",y=" );
-			_ = value.Append( rectangle.Y.ToString( CultureInfo.InvariantCulture ) );
-			_ = value.Append( ",w=" );
-			_ = value.Append( rectangle.Width.ToString( CultureInfo.InvariantCulture ) );
-			_ = value.Append( ",h=" );
-			_ = value.Append( rectangle.Height.ToString( CultureInfo.InvariantCulture ) );
-		}
-		if ( options?.Columns is int columns ) {
-			_ = value.Append( ",c=" );
-			_ = value.Append( columns.ToString( CultureInfo.InvariantCulture ) );
-		}
-		if ( options?.Rows is int rows ) {
-			_ = value.Append( ",r=" );
-			_ = value.Append( rows.ToString( CultureInfo.InvariantCulture ) );
-		}
-		if ( options?.ZIndex is int zIndex ) {
-			_ = value.Append( ",z=" );
-			_ = value.Append( zIndex.ToString( CultureInfo.InvariantCulture ) );
-		}
+		StringBuilder value = CreatePlacementPrefix(
+			imageId,
+			placementId
+		);
+		AppendCommonPlacementOptions(
+			value,
+			options
+		);
+		return Encoding.ASCII.GetBytes( value.ToString() );
+	}
+
+	internal static ReadOnlyMemory<byte> EncodeRelativePlacementPayload(
+		uint imageId,
+		uint placementId,
+		uint parentImageId,
+		uint parentPlacementId,
+		int columnOffset,
+		int rowOffset,
+		TerminalRasterPlacementOptions? options
+	) {
+		ValidatePlacementIdentity(
+			imageId,
+			placementId
+		);
+		ValidateNonZeroIdentity(
+			parentImageId,
+			nameof( parentImageId ),
+			"A relative persistent Kitty Graphics parent image id must be non-zero."
+		);
+		ValidateNonZeroIdentity(
+			parentPlacementId,
+			nameof( parentPlacementId ),
+			"A relative persistent Kitty Graphics parent placement id must be non-zero."
+		);
+		options?.Validate();
+
+		StringBuilder value = CreatePlacementPrefix(
+			imageId,
+			placementId
+		);
+		_ = value.Append( ",P=" );
+		_ = value.Append( parentImageId.ToString( CultureInfo.InvariantCulture ) );
+		_ = value.Append( ",Q=" );
+		_ = value.Append( parentPlacementId.ToString( CultureInfo.InvariantCulture ) );
+		_ = value.Append( ",H=" );
+		_ = value.Append( columnOffset.ToString( CultureInfo.InvariantCulture ) );
+		_ = value.Append( ",V=" );
+		_ = value.Append( rowOffset.ToString( CultureInfo.InvariantCulture ) );
+		AppendCommonPlacementOptions(
+			value,
+			options
+		);
 		return Encoding.ASCII.GetBytes( value.ToString() );
 	}
 
@@ -147,6 +165,64 @@ internal static class KittyGraphicsPersistentEncoder {
 			"Ga=d,d=I,i="
 			+ imageId.ToString( CultureInfo.InvariantCulture )
 			+ ",q=2"
+		);
+	}
+
+	private static StringBuilder CreatePlacementPrefix(
+		uint imageId,
+		uint placementId
+	) {
+		StringBuilder value = new();
+		_ = value.Append( "Ga=p,i=" );
+		_ = value.Append( imageId.ToString( CultureInfo.InvariantCulture ) );
+		_ = value.Append( ",p=" );
+		_ = value.Append( placementId.ToString( CultureInfo.InvariantCulture ) );
+		_ = value.Append( ",C=1" );
+		return value;
+	}
+
+	private static void AppendCommonPlacementOptions(
+		StringBuilder value,
+		TerminalRasterPlacementOptions? options
+	) {
+		ArgumentNullException.ThrowIfNull( value );
+		if ( options?.SourceRectangle is TerminalRasterSourceRectangle rectangle ) {
+			_ = value.Append( ",x=" );
+			_ = value.Append( rectangle.X.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( ",y=" );
+			_ = value.Append( rectangle.Y.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( ",w=" );
+			_ = value.Append( rectangle.Width.ToString( CultureInfo.InvariantCulture ) );
+			_ = value.Append( ",h=" );
+			_ = value.Append( rectangle.Height.ToString( CultureInfo.InvariantCulture ) );
+		}
+		if ( options?.Columns is int columns ) {
+			_ = value.Append( ",c=" );
+			_ = value.Append( columns.ToString( CultureInfo.InvariantCulture ) );
+		}
+		if ( options?.Rows is int rows ) {
+			_ = value.Append( ",r=" );
+			_ = value.Append( rows.ToString( CultureInfo.InvariantCulture ) );
+		}
+		if ( options?.ZIndex is int zIndex ) {
+			_ = value.Append( ",z=" );
+			_ = value.Append( zIndex.ToString( CultureInfo.InvariantCulture ) );
+		}
+	}
+
+	private static void ValidatePlacementIdentity(
+		uint imageId,
+		uint placementId
+	) {
+		ValidateNonZeroIdentity(
+			imageId,
+			nameof( imageId ),
+			"A persistent Kitty Graphics image id must be non-zero."
+		);
+		ValidateNonZeroIdentity(
+			placementId,
+			nameof( placementId ),
+			"A persistent Kitty Graphics placement id must be non-zero."
 		);
 	}
 
