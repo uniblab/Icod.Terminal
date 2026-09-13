@@ -59,14 +59,14 @@ public sealed partial class TerminalSession {
 
 		uint imageId = resourceState.ImageId;
 		if ( 0u == imageId ) {
-			throw new InvalidOperationException(
-				"The persistent raster resource does not have a terminal-assigned image id."
+			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+				"Relative persistent raster placement transport requires a terminal-assigned child image identity."
 			);
 		}
 		uint parentImageId = parentState.Resource.ImageId;
 		if ( 0u == parentImageId ) {
 			return TerminalControlResult<TerminalRasterPlacement>.Unavailable(
-				"The parent persistent raster placement no longer has a usable terminal image identity."
+				"Relative persistent raster placement transport requires a terminal-assigned parent image identity."
 			);
 		}
 
