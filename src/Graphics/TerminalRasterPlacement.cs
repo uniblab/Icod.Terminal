@@ -24,9 +24,6 @@ namespace Icod.Terminal;
 /// Represents one opaque placement of a terminal-resident raster resource.
 /// </summary>
 public sealed class TerminalRasterPlacement : IAsyncDisposable {
-	private const string RelativeTransportUnavailableMessage =
-		"Relative persistent raster placement transport integration is not yet available in this development build.";
-
 	private TerminalSession? session;
 
 	internal TerminalRasterPlacement(
@@ -76,19 +73,20 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 			);
 		}
 
-		if ( this.State.Parent is not null ) {
-			return ValueTask.FromResult(
-				TerminalControlMutationResult.Unavailable(
-					RelativeTransportUnavailableMessage
-				)
-			);
-		}
-
-		return owner.UpdatePersistentRasterPlacementAsync(
-			this.State,
-			options,
-			cancellationToken
-		);
+		return this.State.Parent is null
+			? owner.UpdatePersistentRasterPlacementAsync(
+				this.State,
+				options,
+				cancellationToken
+			)
+			: owner.UpdateRelativePersistentRasterPlacementAsync(
+				this.State,
+				this.State.ColumnOffset,
+				this.State.RowOffset,
+				options,
+				cancellationToken
+			)
+		;
 	}
 
 	/// <summary>
@@ -129,13 +127,12 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 			);
 		}
 
-		_ = owner;
-		_ = columnOffset;
-		_ = rowOffset;
-		return ValueTask.FromResult(
-			TerminalControlMutationResult.Unavailable(
-				RelativeTransportUnavailableMessage
-			)
+		return owner.UpdateRelativePersistentRasterPlacementAsync(
+			this.State,
+			columnOffset,
+			rowOffset,
+			options,
+			cancellationToken
 		);
 	}
 

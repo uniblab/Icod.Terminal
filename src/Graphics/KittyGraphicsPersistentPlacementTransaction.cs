@@ -62,8 +62,53 @@ internal static class KittyGraphicsPersistentPlacementTransaction {
 			placementId,
 			options
 		);
-		byte[] frame = ApcWriter.EncodeFrame( payload.Span );
+		await WritePayloadCoreAsync(
+			session,
+			payload
+		).ConfigureAwait( false );
+	}
 
+	internal static async ValueTask WriteRelativeCoreAsync(
+		TerminalSession session,
+		uint imageId,
+		uint placementId,
+		uint parentImageId,
+		uint parentPlacementId,
+		int columnOffset,
+		int rowOffset,
+		TerminalRasterPlacementOptions? options
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		options?.Validate();
+
+		ReadOnlyMemory<byte> payload = KittyGraphicsPersistentEncoder.EncodeRelativePlacementPayload(
+			imageId,
+			placementId,
+			parentImageId,
+			parentPlacementId,
+			columnOffset,
+			rowOffset,
+			options
+		);
+		await WritePayloadCoreAsync(
+			session,
+			payload
+		).ConfigureAwait( false );
+	}
+
+	private static async ValueTask WritePayloadCoreAsync(
+		TerminalSession session,
+		ReadOnlyMemory<byte> payload
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent raster placement payload cannot be empty.",
+				nameof( payload )
+			);
+		}
+
+		byte[] frame = ApcWriter.EncodeFrame( payload.Span );
 		await session.Output.WriteAsync(
 			frame,
 			CancellationToken.None
