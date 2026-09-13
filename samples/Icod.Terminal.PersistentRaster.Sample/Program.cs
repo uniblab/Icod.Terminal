@@ -158,7 +158,36 @@ await using TerminalRasterPlacement childPlacement = childPlacementResult.Value;
 await session.WriteTextAsync(
 	"\r\nResource B now owns a placement positioned by signed cell offsets from Resource A's placement.\r\n"
 );
-TerminalControlMutationResult update = await childPlacement.UpdateRelativeAsync(
+
+TerminalControlMutationResult geometryUpdate = await childPlacement.UpdateAsync(
+	new TerminalRasterPlacementOptions {
+		SourceRectangle = new TerminalRasterSourceRectangle(
+			18,
+			0,
+			24,
+			24
+		),
+		Columns = 11,
+		Rows = 5,
+		ZIndex = 2
+	}
+);
+if ( !geometryUpdate.Succeeded ) {
+	await session.WriteTextAsync(
+		FormatFailure(
+			"Relative raster common-geometry update",
+			geometryUpdate.Status,
+			geometryUpdate.Message
+		)
+	);
+	return 1;
+}
+
+await session.WriteTextAsync(
+	"UpdateAsync changed the relative placement's common geometry while preserving its immutable parent and acknowledged offsets.\r\n"
+);
+
+TerminalControlMutationResult relativeUpdate = await childPlacement.UpdateRelativeAsync(
 	columnOffset: -3,
 	rowOffset: 2,
 	new TerminalRasterPlacementOptions {
@@ -170,26 +199,57 @@ TerminalControlMutationResult update = await childPlacement.UpdateRelativeAsync(
 		),
 		Columns = 10,
 		Rows = 5,
-		ZIndex = 2
+		ZIndex = 3
 	}
 );
-if ( !update.Succeeded ) {
+if ( !relativeUpdate.Succeeded ) {
 	await session.WriteTextAsync(
 		FormatFailure(
-			"Relative raster placement update",
-			update.Status,
-			update.Message
+			"Relative raster offset update",
+			relativeUpdate.Status,
+			relativeUpdate.Message
 		)
 	);
 	return 1;
 }
 
 await session.WriteTextAsync(
-	"\r\nThe relative offsets, crop, extents, and stacking order were updated without changing parentage.\r\n"
+	"UpdateRelativeAsync changed the signed offsets and common geometry without changing parentage.\r\n"
 );
 await parentPlacement.DisposeAsync();
 await session.WriteTextAsync(
-	"Disposing the parent placement cascaded placement cleanup; Resource B remains independently owned until its own disposal.\r\n"
+	"Disposing the parent placement cascaded descendant-placement cleanup; Resource B remains independently owned.\r\n"
+);
+
+TerminalControlResult<TerminalRasterPlacement> survivingPlacementResult =
+	await childResource.CreatePlacementAsync(
+		new TerminalRasterPlacementOptions {
+			SourceRectangle = new TerminalRasterSourceRectangle(
+				0,
+				0,
+				24,
+				24
+			),
+			Columns = 12,
+			Rows = 6,
+			ZIndex = 0
+		}
+	);
+if ( TerminalControlStatus.Available != survivingPlacementResult.Status
+	|| survivingPlacementResult.Value is null ) {
+	await session.WriteTextAsync(
+		FormatFailure(
+			"Independent child-resource placement creation after parent cascade",
+			survivingPlacementResult.Status,
+			survivingPlacementResult.Message
+		)
+	);
+	return 1;
+}
+await using TerminalRasterPlacement survivingPlacement = survivingPlacementResult.Value;
+
+await session.WriteTextAsync(
+	"Resource B created a fresh ordinary placement after the parent cascade, proving resource ownership is independent from relative-placement lifetime.\r\n"
 );
 return 0;
 
