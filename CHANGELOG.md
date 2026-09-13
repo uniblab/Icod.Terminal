@@ -2,6 +2,31 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.13.0
+
+### Relative persistent-raster placement ownership
+
+- Adds `TerminalRasterResource.CreateRelativePlacementAsync(...)` and `TerminalRasterPlacement.UpdateRelativeAsync(...)` as the only public API additions over 1.12.
+- Makes relative parentage immutable from successful creation through disposal; no public parent property or reparenting API is introduced.
+- Defines signed column/row offsets in terminal cells, retains the complete signed `int` domain, and bounds portable relative depth to 8 with depth-9 rejection before output.
+- Keeps `TerminalRasterPlacementOptions` as the common crop/extents/z-order contract. Ordinary `UpdateAsync(...)` preserves the placement's positioning mode; relative updates preserve parentage while replacing offsets and common geometry.
+- Keeps raster-resource ownership independent from parent-placement lifetime, allowing a child placement to use a different independently owned resource from its parent.
+
+### Lifecycle, hardening, and qualification
+
+- Cascades parent/resource cleanup through relative placement subtrees deepest-first while using each placement's own owning-resource identity; descendant raster resources remain independently owned.
+- Classifies correlated `ENOPARENT`, `ECYCLE`, `ETOODEEP`, and `ENOENT` without over-invalidating unrelated resources; malformed/wrong-identity/late/transport behavior retains the established bounded transaction-manager semantics.
+- Preserves the existing 256-resource / 4096-placement ceilings, nonzero collision-safe private identity rules, generation-scoped certainty, stale local-only cleanup, and no automatic raster replay.
+- Adds depth 0–8, depth-9, branching/cross-resource, middle-resource disposal, generation invalidation, capacity, wraparound, concurrent scheduling, and repeated signed-extrema/crop/z-order regression coverage.
+- Extends the backend-neutral persistent-raster sample with Resource A ordinary placement, Resource B relative placement, signed offset updates, immutable parentage, and deterministic subtree/resource cleanup.
+- Extends fresh NuGet-only package consumption and generated XML-documentation checks for the new relative methods on `net8.0`, `net9.0`, and `net10.0`.
+- Retains current `Icod.DCurses` downstream acceptance/hardening with no required downstream source change.
+- Finalizes the 1.13 public API fingerprint as `c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9` while retaining all historical baselines unchanged.
+- Preserves production dependencies at `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0`.
+- Continues to exclude reparenting, public protocol/parent identities, Unicode placeholder placement, animation/frame lifecycle, absolute screen-coordinate layout, pixel-within-cell positioning, scene ownership, automatic replay, image decoding/transcoding, and PTY/ConPTY hosting.
+
+See `docs/releases/1.13.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.13.md`, and `Icod.Terminal-1.13.0-Development-Roadmap.md` for the complete 1.13 contract.
+
 ## 1.12.0
 
 ### Advanced persistent-raster placement geometry
