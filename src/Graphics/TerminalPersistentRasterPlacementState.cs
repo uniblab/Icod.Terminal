@@ -24,12 +24,32 @@ namespace Icod.Terminal;
 /// Tracks local ownership state for one persistent raster placement.
 /// </summary>
 internal sealed class TerminalPersistentRasterPlacementState {
+	private long relativeOffsetBits;
 	private int closed;
 
 	internal TerminalPersistentRasterPlacementState(
 		TerminalPersistentRasterResourceState resource,
 		uint placementId,
 		long generation
+	) : this(
+		resource,
+		placementId,
+		generation,
+		parent: null,
+		relativeDepth: 0,
+		columnOffset: 0,
+		rowOffset: 0
+	) {
+	}
+
+	internal TerminalPersistentRasterPlacementState(
+		TerminalPersistentRasterResourceState resource,
+		uint placementId,
+		long generation,
+		TerminalPersistentRasterPlacementState? parent,
+		int relativeDepth,
+		int columnOffset,
+		int rowOffset
 	) {
 		ArgumentNullException.ThrowIfNull( resource );
 		if ( 0u == placementId ) {
@@ -38,10 +58,54 @@ internal sealed class TerminalPersistentRasterPlacementState {
 		if ( generation < 0 ) {
 			throw new ArgumentOutOfRangeException( nameof( generation ) );
 		}
+		if ( parent is null ) {
+			if ( 0 != relativeDepth ) {
+				throw new ArgumentOutOfRangeException(
+					nameof( relativeDepth ),
+					relativeDepth,
+					"A current-cursor persistent raster placement must have relative depth zero."
+				);
+			}
+			if ( 0 != columnOffset ) {
+				throw new ArgumentOutOfRangeException(
+					nameof( columnOffset ),
+					columnOffset,
+					"A current-cursor persistent raster placement cannot retain a relative column offset."
+				);
+			}
+			if ( 0 != rowOffset ) {
+				throw new ArgumentOutOfRangeException(
+					nameof( rowOffset ),
+					rowOffset,
+					"A current-cursor persistent raster placement cannot retain a relative row offset."
+				);
+			}
+		} else {
+			if ( generation != parent.Generation ) {
+				throw new ArgumentException(
+					"A relative persistent raster placement must use the same generation as its parent.",
+					nameof( parent )
+				);
+			}
+			int expectedDepth = checked( parent.RelativeDepth + 1 );
+			if ( expectedDepth != relativeDepth ) {
+				throw new ArgumentOutOfRangeException(
+					nameof( relativeDepth ),
+					relativeDepth,
+					"A relative persistent raster placement depth must be exactly one greater than its immutable parent."
+				);
+			}
+		}
 
 		this.Resource = resource;
 		this.PlacementId = placementId;
 		this.Generation = generation;
+		this.Parent = parent;
+		this.RelativeDepth = relativeDepth;
+		this.relativeOffsetBits = PackRelativeOffsets(
+			columnOffset,
+			rowOffset
+		);
 	}
 
 	internal TerminalPersistentRasterResourceState Resource {
@@ -56,10 +120,51 @@ internal sealed class TerminalPersistentRasterPlacementState {
 		get;
 	}
 
+	internal TerminalPersistentRasterPlacementState? Parent {
+		get;
+	}
+
+	internal int RelativeDepth {
+		get;
+	}
+
+	internal int ColumnOffset {
+		get {
+			long bits = Volatile.Read( ref this.relativeOffsetBits );
+			return unchecked( (int)(uint)bits );
+		}
+	}
+
+	internal int RowOffset {
+		get {
+			long bits = Volatile.Read( ref this.relativeOffsetBits );
+			return unchecked( (int)( bits >> 32 ) );
+		}
+	}
+
 	internal bool IsClosed {
 		get {
 			return 0 != Volatile.Read( ref this.closed );
 		}
+	}
+
+	internal void CommitRelativeOffsets(
+		int columnOffset,
+		int rowOffset
+	) {
+		if ( this.Parent is null ) {
+			throw new InvalidOperationException(
+				"A current-cursor persistent raster placement does not own relative offsets."
+			);
+		}
+
+		Interlocked.Exchange(
+			ref this.relativeOffsetBits,
+			PackRelativeOffsets(
+				columnOffset,
+				rowOffset
+			)
+		);
 	}
 
 	internal void Close() {
@@ -67,5 +172,14 @@ internal sealed class TerminalPersistentRasterPlacementState {
 			ref this.closed,
 			1
 		);
+	}
+
+	private static long PackRelativeOffsets(
+		int columnOffset,
+		int rowOffset
+	) {
+		ulong columnBits = unchecked( (uint)columnOffset );
+		ulong rowBits = unchecked( (uint)rowOffset );
+		return unchecked( (long)( columnBits | ( rowBits << 32 ) ) );
 	}
 }
