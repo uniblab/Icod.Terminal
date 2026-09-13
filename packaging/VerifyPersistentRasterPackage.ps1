@@ -50,9 +50,11 @@ $requiredMembers = @(
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.ZIndex',
 	'T:Icod.Terminal.TerminalRasterResource',
 	'M:Icod.Terminal.TerminalRasterResource.CreatePlacementAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalRasterResource.CreateRelativePlacementAsync(Icod.Terminal.TerminalRasterPlacement,System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterResource.DisposeAsync',
 	'T:Icod.Terminal.TerminalRasterPlacement',
 	'M:Icod.Terminal.TerminalRasterPlacement.UpdateAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalRasterPlacement.UpdateRelativeAsync(System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterPlacement.DisposeAsync',
 	'M:Icod.Terminal.TerminalSession.CreateRasterResourceAsync(Icod.Terminal.TerminalRasterImage,System.Threading.CancellationToken)'
 )
@@ -138,4 +140,4 @@ try {
 	}
 }
 
-Write-Host "1.12 advanced persistent-raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.13 relative persistent-raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

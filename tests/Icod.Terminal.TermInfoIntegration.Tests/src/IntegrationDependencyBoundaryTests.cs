@@ -56,6 +56,62 @@ public sealed class IntegrationDependencyBoundaryTests {
 		Assert.DoesNotContain( "Icod.TermInfo.Source", packageIds );
 	}
 
+	[Fact]
+	public void CurrentReleaseUsesTermInfo112AcrossProductionAndInspectionConsumers() {
+		string root = FindRepositoryRoot();
+
+		AssertPackageReferenceVersion(
+			Path.Combine( root, "Icod.Terminal.csproj" ),
+			"Icod.TermInfo",
+			"1.12.0"
+		);
+		AssertPackageReferenceVersion(
+			Path.Combine(
+				root,
+				"tests",
+				"Icod.Terminal.TermInfoIntegration.Tests",
+				"Icod.Terminal.TermInfoIntegration.Tests.csproj"
+			),
+			"Icod.TermInfo.Inspection",
+			"1.12.0"
+		);
+		AssertPackageReferenceVersion(
+			Path.Combine(
+				root,
+				"samples",
+				"Icod.Terminal.TermInfoPersistentRaster.Sample",
+				"Icod.Terminal.TermInfoPersistentRaster.Sample.csproj"
+			),
+			"Icod.TermInfo.Inspection",
+			"1.12.0"
+		);
+	}
+
+	private static void AssertPackageReferenceVersion(
+		string projectPath,
+		string packageId,
+		string expectedVersion
+	) {
+		ArgumentException.ThrowIfNullOrWhiteSpace( projectPath );
+		ArgumentException.ThrowIfNullOrWhiteSpace( packageId );
+		ArgumentException.ThrowIfNullOrWhiteSpace( expectedVersion );
+
+		XElement? packageReference = XDocument
+			.Load( projectPath )
+			.Descendants( "PackageReference" )
+			.SingleOrDefault(
+				element => packageId.Equals(
+					(string?)element.Attribute( "Include" ),
+					StringComparison.Ordinal
+				)
+			);
+		Assert.NotNull( packageReference );
+		Assert.Equal(
+			expectedVersion,
+			(string?)packageReference.Attribute( "Version" )
+		);
+	}
+
 	private static string FindRepositoryRoot() {
 		DirectoryInfo? directory = new( AppContext.BaseDirectory );
 		while ( directory is not null ) {

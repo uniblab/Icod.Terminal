@@ -14,8 +14,8 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
-| Create/update/dispose terminal-resident raster ownership with source crops and z-order | `Icod.Terminal.PersistentRaster.Sample` |
-| Plan persistent-raster lifecycle with TermInfo, optionally verify live support, then execute | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
+| Create/update/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | `Icod.Terminal.PersistentRaster.Sample` |
+| Combine TermInfo lifecycle and advanced-placement planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
 | Emit notifications and observe interactive semantic events | `Icod.Terminal.Notification.Sample` |
@@ -91,7 +91,7 @@ The normal evidence-driven router may use verified Kitty Graphics or verified Si
 
 ### `Icod.Terminal.PersistentRaster.Sample`
 
-Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and signed z-order.
+Demonstrates the persistent-raster ownership model using semantic APIs only, including 1.12 source-pixel cropping and signed z-order plus 1.13 immutable-parent relative placement ownership.
 
 ```text
 dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
@@ -100,13 +100,20 @@ dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal
 The sample:
 
 1. explicitly verifies `TerminalCapability.PersistentRasterGraphics`;
-2. creates a `TerminalRasterImage` in memory;
-3. creates an opaque `TerminalRasterResource`;
-4. creates a placement from a bounded source-pixel crop with a cell-column extent and nonzero z-order;
-5. updates the same placement at the current cursor with a different crop, extent, and z-order;
-6. uses `await using` so placement/resource cleanup is deterministic.
+2. creates a first opaque `TerminalRasterResource` and an ordinary current-cursor parent placement;
+3. creates a second independently owned raster resource;
+4. creates a relative child placement from the second resource using signed terminal-cell offsets from the first placement plus crop/extents/z-order geometry;
+5. calls ordinary `UpdateAsync(...)` on the relative child to replace common geometry while preserving its immutable parent and last acknowledged relative offsets;
+6. calls `UpdateRelativeAsync(...)` to replace signed offsets and common geometry without reparenting;
+7. explicitly disposes the parent placement, demonstrating descendant-placement cleanup while the child's raster resource remains independently owned;
+8. creates a fresh ordinary placement from that surviving child resource, proving resource ownership is independent from relative-placement lifetime;
+9. uses `await using` so all remaining placement/resource cleanup is deterministic and repeated disposal is harmless.
 
-`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses signed stacking order. Neither option turns `Icod.Terminal` into a scene-layout engine: 1.12 still does not own relative placement graphs, screen-coordinate layout, or automatic composition policy.
+`TerminalRasterSourceRectangle` coordinates are measured in source pixels and select which part of the owned raster resource participates in one placement. `ZIndex` expresses signed stacking order. Relative `columnOffset` / `rowOffset` values are measured in terminal cells, parentage is immutable, and the portable relative-depth ceiling is 8. Resource ownership and parent-placement lifetime are separate axes: deleting a parent removes its relative-placement subtree but does not by itself dispose descendant raster resources.
+
+`UpdateAsync(...)` preserves the placement's established positioning mode. On a relative placement it retains the immutable parent and acknowledged offsets while replacing common crop/extents/z-order geometry. `UpdateRelativeAsync(...)` changes the offsets as well as common geometry but never reparents the placement.
+
+These options do not turn `Icod.Terminal` into a scene-layout engine. Version 1.13 does not add reparenting, absolute screen-coordinate layout, Unicode placeholder placements, animation/frame ownership, or automatic composition policy.
 
 The sample does not mention Kitty, Sixel, image ids, image numbers, placement ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
 
@@ -116,13 +123,17 @@ See `docs/Persistent-Raster-Ownership.md` for the permanent ownership contract.
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
-Demonstrates the 1.11.1 loose-coupling path between static TermInfo lifecycle planning and live Terminal execution.
+The loose-coupling pattern introduced in 1.11.1 remains intact, but the current executable sample now consumes `Icod.TermInfo.Inspection 1.12.0` so it can demonstrate both persistent lifecycle planning and the additive 1.12 advanced-placement planner.
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0
 ```
 
-The sample inspects `session.Terminal` with `Icod.TermInfo.Inspection 1.11.0`, builds a semantic persistent-lifecycle plan, asks Terminal for live verification only when the static plan is indeterminate and the endpoint is available, converts a conclusive Terminal result into caller-owned `Verified` evidence, replans, and executes through opaque Terminal resource/placement APIs only when the final plan succeeds and the live route is usable.
+The sample first inspects `session.Terminal`, builds the semantic persistent-lifecycle plan, and asks Terminal for live verification only when that lifecycle plan is indeterminate and the endpoint is available. Only a conclusive Terminal live result becomes caller-owned `Verified` lifecycle evidence before reclassification and replanning.
+
+After lifecycle success, the sample requires both source-rectangle and signed-z-order semantics through `PersistentRasterPlacementRequest`. Static Inspection evidence is planned first. If those advanced semantics are merely unknown, the application adds explicit caller-owned `Declared` evidence for the Icod.Terminal 1.13 placement contract and replans before executing concrete crop/z-order values through Terminal.
+
+This distinction is intentional: `PersistentRasterGraphics` is the coarse live Terminal capability and is not misrepresented as a separate source-rectangle or z-order probe. TermInfo owns semantic evidence/classification/planning; Terminal and the application own concrete geometry values, acknowledgements, and execution. Icod.TermInfo 1.12 also does not plan the relative-parent graph added by Terminal 1.13; relative placement ownership remains a Terminal runtime concern.
 
 `Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency, and the sample does not expose raw graphics commands, terminal-brand branches, backend ids, or protocol-private numeric identities.
 
@@ -236,7 +247,7 @@ For graphics:
 Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.RasterGraphics.Sample             (ephemeral display)
     -> Icod.Terminal.PersistentRaster.Sample           (terminal-resident ownership)
-    -> Icod.Terminal.TermInfoPersistentRaster.Sample   (static lifecycle plan + live verification + execution)
+    -> Icod.Terminal.TermInfoPersistentRaster.Sample   (TermInfo lifecycle/placement planning + Terminal execution)
 ```
 
 Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, layout, or refresh policy directly.

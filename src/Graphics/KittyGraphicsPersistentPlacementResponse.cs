@@ -49,13 +49,29 @@ internal sealed class KittyGraphicsPersistentPlacementResponse {
 		get;
 	}
 
-	internal bool IsUnavailable {
+	internal bool IsMissingResource {
 		get {
 			return !this.IsSuccess
 				&& this.Message.StartsWith(
 					"ENOENT",
 					StringComparison.Ordinal
 				);
+		}
+	}
+
+	internal bool IsMissingParent {
+		get {
+			return !this.IsSuccess
+				&& this.Message.StartsWith(
+					"ENOPARENT",
+					StringComparison.Ordinal
+				);
+		}
+	}
+
+	internal bool IsUnavailable {
+		get {
+			return this.IsMissingResource || this.IsMissingParent;
 		}
 	}
 

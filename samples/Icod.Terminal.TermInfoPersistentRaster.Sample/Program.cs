@@ -24,6 +24,7 @@ using Icod.Terminal;
 const int width = 48;
 const int height = 24;
 const string liveEvidenceSource = "Icod.Terminal.live-capability-verification";
+const string placementEvidenceSource = "Icod.Terminal.1.13-placement-contract";
 
 PersistentRasterLifecycleRequest request = new(
 	uploadResource: true,
@@ -47,7 +48,7 @@ PersistentRasterLifecyclePlan plan =
 	PersistentRasterLifecyclePlanner.Plan( profile, request );
 
 await session.WriteTextAsync(
-	$"Static TermInfo persistent-raster plan: {plan.Status}.\r\n"
+	$"Static TermInfo persistent-raster lifecycle plan: {plan.Status}.\r\n"
 );
 
 if ( plan.RequiresRuntimeVerification ) {
@@ -59,9 +60,9 @@ if ( plan.RequiresRuntimeVerification ) {
 			!= beforeVerification.EndpointAvailability
 	) {
 		await session.WriteTextAsync(
-			"The static plan needs live verification, but the required interactive terminal endpoint is unavailable.\r\n"
+			"The static lifecycle plan needs live verification, but the required interactive terminal endpoint is unavailable.\r\n"
 		);
-		await WritePlanIssuesAsync( session, plan );
+		await WriteLifecyclePlanIssuesAsync( session, plan );
 		return 2;
 	}
 
@@ -75,7 +76,7 @@ if ( plan.RequiresRuntimeVerification ) {
 		);
 	if ( 0 == liveEvidence.Count ) {
 		await session.WriteTextAsync(
-			"Terminal verification did not produce conclusive persistent-raster support evidence.\r\n"
+			"Terminal verification did not produce conclusive persistent-raster lifecycle evidence.\r\n"
 		);
 		return 2;
 	}
@@ -87,7 +88,7 @@ if ( plan.RequiresRuntimeVerification ) {
 	plan = PersistentRasterLifecyclePlanner.Plan( profile, request );
 
 	await session.WriteTextAsync(
-		$"Plan after live Terminal verification: {plan.Status}.\r\n"
+		$"Lifecycle plan after live Terminal verification: {plan.Status}.\r\n"
 	);
 }
 
@@ -95,7 +96,7 @@ if ( PersistentRasterLifecyclePlanStatus.Success != plan.Status ) {
 	await session.WriteTextAsync(
 		$"Persistent-raster lifecycle execution is not admissible: {plan.Status}.\r\n"
 	);
-	await WritePlanIssuesAsync( session, plan );
+	await WriteLifecyclePlanIssuesAsync( session, plan );
 	return 2;
 }
 
@@ -104,8 +105,52 @@ TerminalCapabilityStatus executionCapability = session.InspectCapability(
 );
 if ( !executionCapability.IsUsable ) {
 	await session.WriteTextAsync(
-		"TermInfo planning permits the requested lifecycle, but Icod.Terminal does not currently have a usable live persistent-raster route for this endpoint.\r\n"
+		"TermInfo lifecycle planning permits the requested work, but Icod.Terminal does not currently have a usable live persistent-raster route for this endpoint.\r\n"
 	);
+	return 2;
+}
+
+PersistentRasterPlacementRequest placementRequest = new(
+	requireSourceRectangle: true,
+	requireSignedZOrder: true
+);
+PersistentRasterPlacementProfile placementProfile =
+	PersistentRasterPlacementInspector.Inspect( session.Terminal );
+PersistentRasterPlacementPlan placementPlan =
+	PersistentRasterPlacementPlanner.Plan(
+		plan,
+		placementProfile,
+		placementRequest
+	);
+
+await session.WriteTextAsync(
+	$"Static TermInfo advanced-placement plan: {placementPlan.Status}.\r\n"
+);
+
+if (
+	PersistentRasterPlacementPlanStatus.RequiresRuntimeVerification
+		== placementPlan.Status
+) {
+	placementProfile = PersistentRasterPlacementInspector.Inspect(
+		session.Terminal,
+		CreateTerminalPlacementEvidence()
+	);
+	placementPlan = PersistentRasterPlacementPlanner.Plan(
+		plan,
+		placementProfile,
+		placementRequest
+	);
+
+	await session.WriteTextAsync(
+		$"Advanced-placement plan after caller-owned Terminal contract evidence: {placementPlan.Status}.\r\n"
+	);
+}
+
+if ( PersistentRasterPlacementPlanStatus.Satisfied != placementPlan.Status ) {
+	await session.WriteTextAsync(
+		$"Source-rectangle and signed-z-order execution are not admissible: {placementPlan.Status}.\r\n"
+	);
+	await WritePlacementPlanIssuesAsync( session, placementPlan );
 	return 2;
 }
 
@@ -145,7 +190,14 @@ await using TerminalRasterResource resource = resourceResult.Value;
 TerminalControlResult<TerminalRasterPlacement> placementResult =
 	await resource.CreatePlacementAsync(
 		new TerminalRasterPlacementOptions {
-			Columns = 24
+			SourceRectangle = new TerminalRasterSourceRectangle(
+				0,
+				0,
+				36,
+				24
+			),
+			Columns = 24,
+			ZIndex = -1
 		}
 	);
 if ( TerminalControlStatus.Available != placementResult.Status
@@ -163,7 +215,14 @@ await using TerminalRasterPlacement placement = placementResult.Value;
 
 TerminalControlMutationResult update = await placement.UpdateAsync(
 	new TerminalRasterPlacementOptions {
-		Columns = 16
+		SourceRectangle = new TerminalRasterSourceRectangle(
+			12,
+			0,
+			24,
+			24
+		),
+		Columns = 16,
+		ZIndex = 2
 	}
 );
 if ( !update.Succeeded ) {
@@ -178,7 +237,7 @@ if ( !update.Succeeded ) {
 }
 
 await session.WriteTextAsync(
-	"Persistent-raster lifecycle execution succeeded; disposal now releases placement and resource ownership.\r\n"
+	"TermInfo lifecycle and advanced-placement planning succeeded; Icod.Terminal executed caller-owned crop and signed-z-order values. Disposal now releases placement and resource ownership.\r\n"
 );
 return 0;
 
@@ -230,6 +289,26 @@ static IReadOnlyList<PersistentRasterLifecycleEvidence> CreatePersistentRasterEv
 	return result;
 }
 
+static IReadOnlyList<PersistentRasterPlacementEvidence>
+	CreateTerminalPlacementEvidence() {
+	return [
+		new PersistentRasterPlacementEvidence(
+			PersistentRasterPlacementSubject.SourceRectangle,
+			true,
+			PersistentRasterPlacementEvidenceKind.Declared,
+			placementEvidenceSource,
+			0
+		),
+		new PersistentRasterPlacementEvidence(
+			PersistentRasterPlacementSubject.SignedZOrder,
+			true,
+			PersistentRasterPlacementEvidenceKind.Declared,
+			placementEvidenceSource,
+			1
+		)
+	];
+}
+
 static int GetNextSourceOrdinal(
 	IReadOnlyList<PersistentRasterLifecycleEvidence> evidence
 ) {
@@ -239,7 +318,7 @@ static int GetNextSourceOrdinal(
 		: checked( evidence.Max( item => item.SourceOrdinal ) + 1 );
 }
 
-static async ValueTask WritePlanIssuesAsync(
+static async ValueTask WriteLifecyclePlanIssuesAsync(
 	TerminalSession session,
 	PersistentRasterLifecyclePlan plan
 ) {
@@ -256,6 +335,28 @@ static async ValueTask WritePlanIssuesAsync(
 				issue.SupportStatus.ToString(),
 				issue.RequiresRuntimeVerification
 					? " (runtime verification may strengthen this)."
+					: ".",
+				"\r\n"
+			)
+		);
+	}
+}
+
+static async ValueTask WritePlacementPlanIssuesAsync(
+	TerminalSession session,
+	PersistentRasterPlacementPlan plan
+) {
+	ArgumentNullException.ThrowIfNull( session );
+	ArgumentNullException.ThrowIfNull( plan );
+	foreach ( PersistentRasterPlacementPlanIssue issue in plan.Issues ) {
+		await session.WriteTextAsync(
+			string.Concat(
+				"  ",
+				issue.Subject.ToString(),
+				" is ",
+				issue.SupportStatus.ToString(),
+				issue.RequiresRuntimeVerification
+					? " (caller-owned evidence may strengthen this)."
 					: ".",
 				"\r\n"
 			)
