@@ -24,6 +24,9 @@ namespace Icod.Terminal;
 /// Represents one opaque terminal-resident raster resource owned by a terminal session.
 /// </summary>
 public sealed class TerminalRasterResource : IAsyncDisposable {
+	private const string RelativeTransportUnavailableMessage =
+		"Relative persistent raster placement transport integration is not yet available in this development build.";
+
 	private TerminalSession? session;
 
 	internal TerminalRasterResource(
@@ -72,6 +75,76 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 			this.State,
 			options,
 			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Creates one opaque placement of this resource at a signed terminal-cell offset from an
+	/// existing placement. The selected parent is immutable for the child's complete lifetime.
+	/// </summary>
+	/// <param name="parent">
+	/// The current placement that establishes relative positioning and descendant lifetime.
+	/// </param>
+	/// <param name="columnOffset">The signed horizontal offset from the parent in terminal cells.</param>
+	/// <param name="rowOffset">The signed vertical offset from the parent in terminal cells.</param>
+	/// <param name="options">Optional persistent-raster placement geometry.</param>
+	/// <param name="cancellationToken">Cancellation observed before placement output commits.</param>
+	/// <returns>
+	/// An available opaque child placement, or a controlled unavailable result when the relative
+	/// placement cannot be established.
+	/// </returns>
+	/// <exception cref="ArgumentNullException"><paramref name="parent"/> is <see langword="null"/>.</exception>
+	/// <exception cref="ArgumentException">
+	/// <paramref name="parent"/> belongs to a different terminal session.
+	/// </exception>
+	/// <exception cref="ObjectDisposedException">
+	/// This resource or <paramref name="parent"/> has already been disposed.
+	/// </exception>
+	public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreateRelativePlacementAsync(
+		TerminalRasterPlacement parent,
+		int columnOffset,
+		int rowOffset,
+		TerminalRasterPlacementOptions? options = null,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( parent );
+		options?.Validate(
+			this.State.SourceWidth,
+			this.State.SourceHeight
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		TerminalSession? parentOwner = parent.Owner;
+		if ( parentOwner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterPlacement ),
+				"The parent persistent raster placement has already been disposed."
+			);
+		}
+		if ( !ReferenceEquals(
+			owner,
+			parentOwner
+		) ) {
+			throw new ArgumentException(
+				"The parent persistent raster placement must belong to the same terminal session as this resource.",
+				nameof( parent )
+			);
+		}
+
+		_ = columnOffset;
+		_ = rowOffset;
+		return ValueTask.FromResult(
+			TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+				RelativeTransportUnavailableMessage
+			)
 		);
 	}
 

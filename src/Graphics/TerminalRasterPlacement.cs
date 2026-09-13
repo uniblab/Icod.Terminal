@@ -24,6 +24,9 @@ namespace Icod.Terminal;
 /// Represents one opaque placement of a terminal-resident raster resource.
 /// </summary>
 public sealed class TerminalRasterPlacement : IAsyncDisposable {
+	private const string RelativeTransportUnavailableMessage =
+		"Relative persistent raster placement transport integration is not yet available in this development build.";
+
 	private TerminalSession? session;
 
 	internal TerminalRasterPlacement(
@@ -37,13 +40,20 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 		this.State = state;
 	}
 
+	internal TerminalSession? Owner {
+		get {
+			return Volatile.Read( ref this.session );
+		}
+	}
+
 	internal TerminalPersistentRasterPlacementState State {
 		get;
 	}
 
 	/// <summary>
-	/// Replaces this placement at the terminal's current cursor position while retaining its
-	/// private resource and placement identities.
+	/// Replaces this placement while retaining its established positioning mode and private
+	/// resource and placement identities. A relative placement retains its immutable parent and
+	/// current relative cell offsets while common placement geometry is replaced.
 	/// </summary>
 	/// <param name="options">Optional persistent-raster placement geometry.</param>
 	/// <param name="cancellationToken">Cancellation observed before replacement output commits.</param>
@@ -66,10 +76,66 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 			);
 		}
 
+		if ( this.State.Parent is not null ) {
+			return ValueTask.FromResult(
+				TerminalControlMutationResult.Unavailable(
+					RelativeTransportUnavailableMessage
+				)
+			);
+		}
+
 		return owner.UpdatePersistentRasterPlacementAsync(
 			this.State,
 			options,
 			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Replaces the signed terminal-cell offsets and common placement geometry of a relative
+	/// placement while retaining its immutable parent and private resource/placement identities.
+	/// </summary>
+	/// <param name="columnOffset">The signed horizontal offset from the parent in terminal cells.</param>
+	/// <param name="rowOffset">The signed vertical offset from the parent in terminal cells.</param>
+	/// <param name="options">Optional persistent-raster placement geometry.</param>
+	/// <param name="cancellationToken">Cancellation observed before replacement output commits.</param>
+	/// <returns>The controlled mutation result.</returns>
+	/// <exception cref="InvalidOperationException">
+	/// This placement was created as an ordinary current-cursor placement rather than a relative placement.
+	/// </exception>
+	/// <exception cref="ObjectDisposedException">This placement has already been disposed.</exception>
+	public ValueTask<TerminalControlMutationResult> UpdateRelativeAsync(
+		int columnOffset,
+		int rowOffset,
+		TerminalRasterPlacementOptions? options = null,
+		CancellationToken cancellationToken = default
+	) {
+		options?.Validate(
+			this.State.Resource.SourceWidth,
+			this.State.Resource.SourceHeight
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterPlacement ),
+				"The persistent raster placement has already been disposed."
+			);
+		}
+		if ( this.State.Parent is null ) {
+			throw new InvalidOperationException(
+				"Only a relative persistent raster placement can update relative offsets."
+			);
+		}
+
+		_ = owner;
+		_ = columnOffset;
+		_ = rowOffset;
+		return ValueTask.FromResult(
+			TerminalControlMutationResult.Unavailable(
+				RelativeTransportUnavailableMessage
+			)
 		);
 	}
 
