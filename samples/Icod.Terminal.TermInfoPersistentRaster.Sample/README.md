@@ -1,12 +1,14 @@
 # Icod.Terminal.TermInfoPersistentRaster.Sample
 
-This sample demonstrates the loose-coupling integration contract between `Icod.TermInfo.Inspection 1.11.0` and `Icod.Terminal` persistent-raster execution.
+This sample demonstrates the current loose-coupling integration contract between `Icod.TermInfo.Inspection 1.12.0` and `Icod.Terminal 1.13.0` persistent-raster execution.
 
-The sample keeps the responsibilities separate:
+The integration pattern was introduced in Icod.Terminal 1.11.1 for lifecycle planning. The current sample retains that boundary and additionally consumes the additive Icod.TermInfo 1.12 advanced-placement planner for source rectangles and signed z-order.
 
-- `Icod.TermInfo.Inspection` reads the static `TerminalDescription`, classifies persistent-raster lifecycle evidence, and produces a semantic lifecycle plan;
-- `Icod.Terminal` owns the live terminal session, endpoint availability, capability verification, routing, resource ownership, placement ownership, and cleanup;
-- the application owns the small bridge that converts a conclusive live `TerminalCapabilityStatus` into `Verified` lifecycle evidence before asking TermInfo to reclassify and replan.
+The responsibilities remain separate:
+
+- `Icod.TermInfo.Inspection` reads the static `TerminalDescription`, classifies persistent-raster lifecycle and advanced-placement evidence, and produces semantic plans;
+- `Icod.Terminal` owns the live terminal session, endpoint availability, capability verification, routing, resource ownership, placement ownership, concrete crop/z-order execution values, acknowledgements, and cleanup;
+- the application owns the evidence bridges used to strengthen an indeterminate plan before replanning.
 
 The executable flow is:
 
@@ -14,22 +16,29 @@ The executable flow is:
 open TerminalSession
     -> inspect session.Terminal through TermInfo Inspection
     -> create persistent lifecycle request
-    -> plan
+    -> lifecycle plan
     -> if Indeterminate and endpoint usable, VerifyCapabilityAsync(PersistentRasterGraphics)
-    -> convert the conclusive Terminal result to caller-owned Verified evidence
-    -> reclassify and replan
-    -> on Success, create TerminalRasterResource
-    -> create TerminalRasterPlacement
-    -> update placement
+    -> convert only a conclusive Terminal result to caller-owned Verified lifecycle evidence
+    -> reclassify / replan lifecycle
+    -> require source-rectangle + signed-z-order placement semantics
+    -> inspect static TermInfo placement evidence
+    -> advanced-placement plan
+    -> if static placement evidence is Unknown, add caller-owned Declared evidence for the Icod.Terminal 1.13 placement contract
+    -> reclassify / replan placement
+    -> on lifecycle Success and placement Satisfied, execute concrete crop/z-order values through Terminal
     -> dispose placement/resource
 ```
 
-Run it with, for example:
+The advanced-placement evidence step is intentionally different from live lifecycle verification. `PersistentRasterGraphics` remains the coarse live Terminal capability; the sample does not pretend that one live capability observation is a separate source-rectangle or z-order probe. When static placement evidence is merely absent/unknown, the application may explicitly contribute the semantics guaranteed by the Terminal execution contract and let TermInfo reclassify that caller-owned evidence.
+
+TermInfo never carries the concrete source rectangle or signed z-order value. Those execution values remain application/Terminal-owned. Likewise, Icod.TermInfo 1.12 does **not** plan the relative-placement parent graph added by Icod.Terminal 1.13; immutable parentage, signed relative cell offsets, and subtree lifetime remain Terminal runtime concerns.
+
+Run the sample with, for example:
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0
 ```
 
-The sample intentionally does **not** expose terminal-brand checks, backend selection, raw graphics commands, or protocol-private numeric identities. If static planning remains indeterminate or impossible, if the required interactive endpoint is unavailable, or if Terminal cannot establish a usable live persistent-raster route, the sample reports that semantic outcome and exits without pretending the operation succeeded.
+The sample intentionally does **not** expose terminal-brand checks, backend selection, raw graphics commands, or protocol-private numeric identities. If lifecycle planning remains indeterminate/impossible, if the required interactive endpoint is unavailable, if advanced placement is contradicted/unsupported, or if Terminal cannot establish a usable live persistent-raster route, the sample reports that semantic outcome and exits without pretending the operation succeeded.
 
-`Icod.TermInfo.Inspection` is a dependency of this sample only. It is not a production dependency of the `Icod.Terminal` package.
+`Icod.TermInfo.Inspection` remains a dependency of this sample only. It is not a production dependency of the `Icod.Terminal` package.
