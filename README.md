@@ -13,6 +13,15 @@
 
 The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative-placement ownership, 1.12 source cropping/signed z-order, and earlier current-cursor persistent placement behavior remain compatible. Version 1.14 adds no new production package, terminal-side existence probe, public protocol ids/backend selector, reparenting, scene graph, or automatic raster replay; direct dependencies are `Icod.TermInfo 1.13.0` and `Icod.Timing 1.0.0`.
 
+## Support the Project
+
+`Icod.Terminal` and its ecosystem packages (`Icod.TermInfo` and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save your team time and keep your production terminal interfaces running smoothly, please consider supporting development.
+
+[![GitHub Sponsors](https://shields.io)](https://github.com)
+[![Support on Ko-fi](https://shields.io)](https://ko-fi.com)
+[![Tidelift Subscription](https://shields.io)](https://tidelift.com)
+[![Paypal Me](https://shields.io)](https://paypal.me/uniblab)
+
 ## Installation
 
 ```text
