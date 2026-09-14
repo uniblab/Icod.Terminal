@@ -2,6 +2,34 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.14.0
+
+### Persistent-raster lifecycle observability
+
+- Adds `TerminalRasterOwnershipStatus` with `Current`, `Stale`, `Released`, and `Disposed` semantic states.
+- Adds `TerminalRasterOwnershipLossReason` with `None`, `SessionStateLost`, `ResourceMissing`, `ParentPlacementLost`, `AncestorReleased`, `ResourceReleased`, and `ExplicitDisposal` reasons.
+- Adds immutable `TerminalRasterOwnershipState` and synchronous read-only `OwnershipState` properties on `TerminalRasterResource` and `TerminalRasterPlacement`.
+- Defines `Current` as Icod.Terminal's local ownership certainty rather than terminal-authenticated remote existence; no passive `ExistsAsync()` / `VerifyExistsAsync()` fiction is introduced.
+- Returns status and reason atomically from one packed monotonic lifecycle state so readers cannot observe torn combinations and stale/released ownership never resurrects.
+- Keeps explicit wrapper disposal separate from underlying resource/placement ownership state: disposed wrappers report `Disposed / ExplicitDisposal` while descendant placement release and independent resource lifetime remain separately observable.
+
+### Lifecycle mapping, hardening, and qualification
+
+- Maps explicit/session lifecycle invalidation to `Stale / SessionStateLost` without replay or stale protocol output.
+- Maps correlated missing-resource `ENOENT` evidence to `Stale / ResourceMissing` for the affected resource and dependent placements while preserving unrelated ownership.
+- Maps correlated `ENOPARENT` to `Stale / ParentPlacementLost` for the affected placement subtree without falsely declaring its raster resources missing.
+- Maps parent-placement cleanup to descendant `Released / AncestorReleased` and owning-resource cleanup to direct-placement `Released / ResourceReleased`, preserving independent descendant-resource ownership.
+- Keeps `ECYCLE`, `ETOODEEP`, malformed responses, wrong identities, timeouts, and transport failures from manufacturing lifecycle-loss state unless an existing narrow path independently invalidates ownership.
+- Adds transition-table, live-session, protocol-observation, graph-propagation, zero-output, and concurrent-reader/writer coverage; observation performs no terminal write/query/output-gate/cleanup/replay work.
+- Extends `Icod.Terminal.PersistentRaster.Sample` to show `Current`, parent `Disposed`, child `Released`, surviving resource `Current`, and fresh-placement reuse through the public API.
+- Extends fresh NuGet-only package consumption and generated XML-documentation checks for the complete 1.14 lifecycle vocabulary on `net8.0`, `net9.0`, and `net10.0`.
+- Retains the Stable 1.x `Icod.DCurses` downstream package acceptance path with no required downstream source adoption.
+- Finalizes the 1.14 public API fingerprint as `2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696` while retaining all historical baselines unchanged.
+- Preserves production dependencies at `Icod.TermInfo 1.12.0` and `Icod.Timing 1.0.0`.
+- Continues to exclude passive terminal-side existence probes, public protocol/generation identities, reparenting, Unicode placeholder placement, animation/frame lifecycle, absolute or pixel-within-cell placement, scene ownership, automatic replay, image decoding/transcoding, and PTY/ConPTY hosting.
+
+See `docs/releases/1.14.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.14.md`, and `Icod.Terminal-1.14.0-Development-Roadmap.md` for the complete 1.14 contract.
+
 ## 1.13.0
 
 ### Relative persistent-raster placement ownership
@@ -142,7 +170,7 @@ See `docs/releases/1.10.0.md`, `docs/Capability-Inspection-and-Planning.md`, `do
 - Adds protocol-neutral `TerminalSemanticEvent` and typed `TerminalNotificationEvent` payloads for activation, one-based button activation, close, and close-tracking-unavailable observations.
 - Delivers semantic events through the existing `TerminalSession.ReadEventAsync(...)` path; no second raw/semantic reader, callback stream, or arbitrary vendor-event dictionary is introduced.
 - Freezes authoritative framed-input ownership as active query response -> recognized unsolicited semantic event -> ordinary application input.
-- Keeps query responses and semantic events mutually exclusive: one frame is never double-delivered, and an OSC 99 notification report cannot satisfy an unrelated support/alive query merely because both share OSC 99.
+- Keeps query responses and semantic events mutually exclusive: one frame is never intentionally double-delivered, and an OSC 99 notification report cannot satisfy an unrelated support/alive query merely because both share OSC 99.
 
 ### Interactive Kitty OSC 99 notifications
 
