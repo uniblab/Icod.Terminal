@@ -257,6 +257,7 @@ public sealed class TerminalRasterPlaceholderObservationTests {
 						static item => item.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
