@@ -155,8 +155,31 @@ if ( TerminalControlStatus.Available != childPlacementResult.Status
 }
 await using TerminalRasterPlacement childPlacement = childPlacementResult.Value;
 
+if ( !HasOwnershipState(
+	parentResource.OwnershipState,
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+) || !HasOwnershipState(
+	parentPlacement.OwnershipState,
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+) || !HasOwnershipState(
+	childResource.OwnershipState,
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+) || !HasOwnershipState(
+	childPlacement.OwnershipState,
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+) ) {
+	await session.WriteTextAsync(
+		"New persistent raster handles did not begin with Current / None ownership certainty.\r\n"
+	);
+	return 1;
+}
+
 await session.WriteTextAsync(
-	"\r\nResource B now owns a placement positioned by signed cell offsets from Resource A's placement.\r\n"
+	"\r\nResource B now owns a Current placement positioned by signed cell offsets from Resource A's Current placement.\r\n"
 );
 
 TerminalControlMutationResult geometryUpdate = await childPlacement.UpdateAsync(
@@ -217,9 +240,41 @@ await session.WriteTextAsync(
 	"UpdateRelativeAsync changed the signed offsets and common geometry without changing parentage.\r\n"
 );
 await parentPlacement.DisposeAsync();
+
+if ( !HasOwnershipState(
+	parentPlacement.OwnershipState,
+	TerminalRasterOwnershipStatus.Disposed,
+	TerminalRasterOwnershipLossReason.ExplicitDisposal
+) || !HasOwnershipState(
+	childPlacement.OwnershipState,
+	TerminalRasterOwnershipStatus.Released,
+	TerminalRasterOwnershipLossReason.AncestorReleased
+) || !HasOwnershipState(
+	childResource.OwnershipState,
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+) ) {
+	await session.WriteTextAsync(
+		"The parent cascade did not preserve the expected Disposed / Released / Current ownership split.\r\n"
+	);
+	return 1;
+}
+
 await session.WriteTextAsync(
-	"Disposing the parent placement cascaded descendant-placement cleanup; Resource B remains independently owned.\r\n"
+	"Disposing the parent made its wrapper Disposed, made the relative child Released / AncestorReleased, and left Resource B Current.\r\n"
 );
+
+await childPlacement.DisposeAsync();
+if ( !HasOwnershipState(
+	childPlacement.OwnershipState,
+	TerminalRasterOwnershipStatus.Disposed,
+	TerminalRasterOwnershipLossReason.ExplicitDisposal
+) ) {
+	await session.WriteTextAsync(
+		"Explicit disposal did not make the released child wrapper Disposed / ExplicitDisposal.\r\n"
+	);
+	return 1;
+}
 
 TerminalControlResult<TerminalRasterPlacement> survivingPlacementResult =
 	await childResource.CreatePlacementAsync(
@@ -248,10 +303,33 @@ if ( TerminalControlStatus.Available != survivingPlacementResult.Status
 }
 await using TerminalRasterPlacement survivingPlacement = survivingPlacementResult.Value;
 
+if ( !HasOwnershipState(
+	survivingPlacement.OwnershipState,
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+) ) {
+	await session.WriteTextAsync(
+		"The fresh placement from Resource B did not begin Current / None.\r\n"
+	);
+	return 1;
+}
+
 await session.WriteTextAsync(
-	"Resource B created a fresh ordinary placement after the parent cascade, proving resource ownership is independent from relative-placement lifetime.\r\n"
+	"Resource B created a fresh Current ordinary placement after the parent cascade, proving resource ownership is independent from relative-placement lifetime.\r\n"
+);
+await session.WriteTextAsync(
+	"OwnershipState is a side-effect-free snapshot of Icod.Terminal's local certainty; Current is not remote existence authentication.\r\n"
 );
 return 0;
+
+static bool HasOwnershipState(
+	TerminalRasterOwnershipState state,
+	TerminalRasterOwnershipStatus status,
+	TerminalRasterOwnershipLossReason reason
+) {
+	return status == state.Status
+		&& reason == state.LossReason;
+}
 
 static string FormatFailure(
 	string operation,
