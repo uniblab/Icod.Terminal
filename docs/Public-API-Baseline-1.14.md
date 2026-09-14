@@ -1,6 +1,6 @@
 # Icod.Terminal 1.14 Public API Baseline
 
-This document records the additive public API selected for the `Icod.Terminal 1.14.0` persistent-raster lifecycle-observability release.
+This document records the final additive public API for the `Icod.Terminal 1.14.0` persistent-raster lifecycle-observability release.
 
 The stable compatibility floor remains `1.0.0`. The complete 1.13 public surface remains available and unchanged. The predecessor 1.13 public API fingerprint is:
 
@@ -8,7 +8,13 @@ The stable compatibility floor remains `1.0.0`. The complete 1.13 public surface
 c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-The final 1.14 machine-readable fingerprint is produced by the package/public-API freeze after implementation is complete and is stored separately in `docs/Public-API-Baseline-1.14.sha256` during release qualification.
+The deterministic 1.14 public API snapshot is identical across `net8.0`, `net9.0`, and `net10.0`. After LF normalization, its SHA-256 fingerprint is:
+
+```text
+2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
+```
+
+The machine-readable fingerprint is stored in `docs/Public-API-Baseline-1.14.sha256` and is verified by `packaging/VerifyPublicApiBaseline.ps1`.
 
 ## Public additions over 1.13
 
