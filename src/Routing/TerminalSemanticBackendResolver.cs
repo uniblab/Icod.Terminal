@@ -583,6 +583,7 @@ internal static class TerminalSemanticBackendResolver {
 						$"Semantic operation '{operation}' routing policy omits backend '{candidate.Backend}'."
 					);
 				}
+			}
 		}
 	}
 
