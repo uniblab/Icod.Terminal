@@ -294,7 +294,7 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		);
 		return owner is null
 			? ValueTask.CompletedTask
-			: owner.ReleasePersistentRasterResourceAsync( this.State )
+			: owner.ReleasePersistentRasterResourceWithVirtualDescendantsAsync( this.State )
 		;
 	}
 }
