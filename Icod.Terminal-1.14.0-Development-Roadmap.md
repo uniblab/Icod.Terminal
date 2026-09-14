@@ -333,7 +333,7 @@ Existing consumers that never read `OwnershipState` retain existing:
 
 No new `TerminalCapability` is introduced solely for local lifecycle inspection.
 
-No new production package dependency is introduced. Production dependencies remain `Icod.TermInfo 1.12.0` and `Icod.Timing 1.0.0`.
+The production dependency remains the existing `Icod.TermInfo` package, now at `1.13.0`, plus `Icod.Timing 1.0.0`; no new production package is introduced.
 
 ## Explicit 1.14 non-goals
 
