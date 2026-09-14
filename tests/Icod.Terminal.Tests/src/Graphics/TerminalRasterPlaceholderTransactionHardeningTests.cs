@@ -287,6 +287,7 @@ public sealed class TerminalRasterPlaceholderTransactionHardeningTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
