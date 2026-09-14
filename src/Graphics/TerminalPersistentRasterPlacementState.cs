@@ -25,6 +25,7 @@ namespace Icod.Terminal;
 /// </summary>
 internal sealed class TerminalPersistentRasterPlacementState {
 	private readonly TerminalPersistentRasterLifecycleState lifecycle = new();
+	private TerminalPersistentRasterPlaceholderState? virtualParent;
 	private long relativeOffsetBits;
 	private int closed;
 
@@ -125,6 +126,18 @@ internal sealed class TerminalPersistentRasterPlacementState {
 		get;
 	}
 
+	internal TerminalPersistentRasterPlaceholderState? VirtualParent {
+		get {
+			return Volatile.Read( ref this.virtualParent );
+		}
+	}
+
+	internal bool HasRelativeParent {
+		get {
+			return this.Parent is not null || this.VirtualParent is not null;
+		}
+	}
+
 	internal int RelativeDepth {
 		get;
 	}
@@ -165,11 +178,47 @@ internal sealed class TerminalPersistentRasterPlacementState {
 		return this.lifecycle.TryMarkReleased( reason );
 	}
 
+	internal void BindVirtualParent(
+		TerminalPersistentRasterPlaceholderState parent,
+		int columnOffset,
+		int rowOffset
+	) {
+		ArgumentNullException.ThrowIfNull( parent );
+		if ( this.Parent is not null ) {
+			throw new InvalidOperationException(
+				"A physical-parent relative placement cannot also use a virtual parent."
+			);
+		}
+		if ( this.Generation != parent.Generation ) {
+			throw new ArgumentException(
+				"A virtual-parent persistent raster placement must use the same generation as its parent.",
+				nameof( parent )
+			);
+		}
+		if ( Interlocked.CompareExchange(
+			ref this.virtualParent,
+			parent,
+			null
+		) is not null ) {
+			throw new InvalidOperationException(
+				"The persistent raster placement already has an immutable virtual parent."
+			);
+		}
+
+		Interlocked.Exchange(
+			ref this.relativeOffsetBits,
+			PackRelativeOffsets(
+				columnOffset,
+				rowOffset
+			)
+		);
+	}
+
 	internal void CommitRelativeOffsets(
 		int columnOffset,
 		int rowOffset
 	) {
-		if ( this.Parent is null ) {
+		if ( !this.HasRelativeParent ) {
 			throw new InvalidOperationException(
 				"A current-cursor persistent raster placement does not own relative offsets."
 			);
