@@ -9,14 +9,14 @@
 
 ## Status
 
-`1.13.0` is the current stable line. It adds bounded relative persistent-raster placement ownership with immutable parentage, signed terminal-cell offsets, a portable depth ceiling of 8, descendant-first graph cleanup, and separate raster-resource versus parent-placement lifetime ownership.
+`1.14.0` is the current stable line. It adds side-effect-free persistent-raster lifecycle observability through one atomic, backend-neutral ownership snapshot with `Current`, `Stale`, `Released`, and `Disposed` states plus semantic loss/release reasons.
 
-The stable `1.0.0` compatibility floor remains unchanged. Existing 1.12 current-cursor persistent placement, source cropping, and signed z-order remain compatible when the relative APIs are unused. Version 1.13 adds no new production package, public protocol ids/backend selector, reparenting, scene graph, or automatic raster replay; the direct `Icod.TermInfo` dependency advances from 1.11.0 to 1.12.0.
+The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative-placement ownership, 1.12 source cropping/signed z-order, and earlier current-cursor persistent placement behavior remain compatible. Version 1.14 adds no new production package, terminal-side existence probe, public protocol ids/backend selector, reparenting, scene graph, or automatic raster replay; direct dependencies remain `Icod.TermInfo 1.12.0` and `Icod.Timing 1.0.0`.
 
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.13.0
+dotnet add package Icod.Terminal --version 1.14.0
 ```
 
 The package targets:
@@ -27,7 +27,7 @@ net9.0
 net10.0
 ```
 
-The direct production dependency graph for 1.13 is:
+The direct production dependency graph for 1.14 is:
 
 ```text
 Icod.TermInfo 1.12.0
@@ -52,7 +52,7 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and terminfo expansion.
-- `Icod.Terminal` owns the live terminal conversation: endpoint observation, modes, input decoding, lifecycle, active queries, unsolicited semantic events, semantic capability evidence/planning, semantic output, raster output, persistent raster resource/placement ownership, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation: endpoint observation, modes, input decoding, lifecycle, active queries, unsolicited semantic events, semantic capability evidence/planning, semantic output, raster output, persistent raster resource/placement ownership and lifecycle certainty, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns higher-level cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -112,7 +112,7 @@ Version 1.11 added:
 TerminalCapability.PersistentRasterGraphics = 9
 ```
 
-This remains the persistent ownership capability in 1.13. It is distinct from ordinary `RasterGraphics`: verified Sixel may satisfy ephemeral raster display, while persistent resource ownership requires the reviewed persistent-capable Kitty Graphics path.
+This remains the persistent ownership capability in 1.14. It is distinct from ordinary `RasterGraphics`: verified Sixel may satisfy ephemeral raster display, while persistent resource ownership requires the reviewed persistent-capable Kitty Graphics path.
 
 See [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md).
 
@@ -139,7 +139,7 @@ Supported public storage forms are `Rgb24`, `Rgba32`, and `Indexed8` with an RGB
 
 ### Persistent resources and placements
 
-Version 1.11 established opaque persistent resource/placement ownership. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 adds relative placement while keeping resource ownership independent from parent-placement lifetime.
+Version 1.11 established opaque persistent resource/placement ownership. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added relative placement while keeping resource ownership independent from parent-placement lifetime. Version 1.14 makes Terminal's current ownership certainty observable without exposing private identities or inventing a passive terminal-side existence query.
 
 An ordinary placement still uses the terminal's current cursor location:
 
@@ -207,7 +207,43 @@ Parentage is immutable. Relative offsets are signed terminal-cell offsets, and t
 
 Resource ownership and parent-placement lifetime are separate axes. Disposing a parent placement removes its relative descendant placements deepest-first, but a raster resource used by one of those descendants remains independently owned until separately disposed or invalidated. The persistent-raster sample demonstrates this concretely by creating a new ordinary placement from the surviving child resource after the parent cascade.
 
-Resource and placement identity remains opaque. The public API does not expose Kitty image ids, image numbers, placement ids, parent numeric identities, raw APC commands, or backend selection. There is no public reparent API.
+### Persistent ownership observation — 1.14
+
+Both opaque handle types expose one synchronous immutable snapshot:
+
+```csharp
+TerminalRasterOwnershipState resourceState = childResource.OwnershipState;
+TerminalRasterOwnershipState placementState = child.OwnershipState;
+```
+
+The status vocabulary is:
+
+```text
+Current
+Stale
+Released
+Disposed
+```
+
+and the semantic reason vocabulary is:
+
+```text
+None
+SessionStateLost
+ResourceMissing
+ParentPlacementLost
+AncestorReleased
+ResourceReleased
+ExplicitDisposal
+```
+
+`Current` means Icod.Terminal still owns current local certainty for that handle. It is deliberately **not** terminal-authenticated proof that the remote object still exists at the instant of observation. A correlated missing-resource response can move a resource and affected placements to `Stale / ResourceMissing`; correlated parent-loss evidence can move an affected placement subtree to `Stale / ParentPlacementLost` without falsely declaring its raster resources missing.
+
+`Released` is distinct from `Stale`. If a relative placement dies because its parent was explicitly disposed, that child wrapper reports `Released / AncestorReleased` while an independently owned raster resource behind the child can remain `Current / None` and create another placement. Explicitly disposing the wrapper itself then reports `Disposed / ExplicitDisposal`.
+
+Reading `OwnershipState` emits no terminal bytes, registers no query, acquires no output ownership, triggers no cleanup, and performs no replay/re-upload. State/reason are observed atomically and lifecycle transitions do not resurrect stale, released, or disposed ownership.
+
+Resource and placement identity remains opaque. The public API does not expose Kitty image ids, image numbers, placement ids, parent numeric identities, session generation ids, raw APC commands, or backend selection. There is no public reparent API.
 
 `Columns` and `Rows` remain independently optional in `1..16384`. `SourceRectangle` is measured in source-image pixels and must fit completely within the resource. `ZIndex` accepts the full signed 32-bit range. Relative offsets do not create absolute screen-coordinate layout, pixel-within-cell positioning, or scene ownership.
 
@@ -235,7 +271,7 @@ session.Terminal
 
 The lifecycle evidence bridge promotes only conclusive live observations. `Unknown`, `Advertised`, unrelated capabilities, and endpoint unavailability remain distinct and are not converted into verified support or non-support. The advanced-placement bridge is deliberately separate: the coarse `PersistentRasterGraphics` observation is not mislabeled as a source-rectangle or z-order probe.
 
-TermInfo owns semantic evidence, classification, and planning; the application and Terminal own concrete rectangle coordinates, signed z-order values, acknowledgements, and execution. Icod.TermInfo 1.12 deliberately does not plan the relative-parent graph added by Terminal 1.13, so immutable parentage and relative-placement lifetime remain Terminal runtime concerns.
+TermInfo owns semantic evidence, classification, and planning; the application and Terminal own concrete rectangle coordinates, signed z-order values, acknowledgements, and execution. Icod.TermInfo 1.12 deliberately does not plan the relative-parent graph added by Terminal 1.13, so immutable parentage, relative-placement lifetime, and 1.14 local ownership observation remain Terminal runtime concerns.
 
 See [`samples/Icod.Terminal.TermInfoPersistentRaster.Sample`](samples/Icod.Terminal.TermInfoPersistentRaster.Sample/README.md) for current executable documentation and [`docs/releases/1.11.1.md`](docs/releases/1.11.1.md) for the historical integration-patch contract.
 
@@ -249,7 +285,7 @@ Application input, semantic events, lifecycle traffic, terminal query responses,
 
 Active query responses have first refusal on matching framed traffic. Recognized unsolicited semantic reports are classified next, followed by ordinary application input. A frame is never intentionally double-delivered.
 
-Relative persistent placement adds a bounded local lifetime graph but does not add another terminal reader or transaction manager. Current subtree cleanup is descendant-before-parent and uses each placement's own owning-resource identity.
+Relative persistent placement adds a bounded local lifetime graph but does not add another terminal reader or transaction manager. Current subtree cleanup is descendant-before-parent and uses each placement's own owning-resource identity. Lifecycle observation reads already-owned local state only and introduces no additional protocol path.
 
 ### Truthful capability evidence
 
@@ -257,13 +293,13 @@ Static description evidence and generation-scoped live observations remain disti
 
 ### Bounded protocol and graphics state
 
-Terminal-controlled input is untrusted. Control-frame parsing, query state, semantic-event buffering, raster dimensions/storage, protocol payloads, persistent resource registries, placement registries, and relative placement depth have explicit ceilings.
+Terminal-controlled input is untrusted. Control-frame parsing, query state, semantic-event buffering, raster dimensions/storage, protocol payloads, persistent resource registries, placement registries, relative placement depth, and lifecycle observation state have explicit bounds.
 
 ### Reversible and generation-scoped ownership
 
 Scoped reversible terminal state uses leases where overlapping ownership matters. `TerminalSession.DisposeAsync()` remains final cleanup/restoration authority.
 
-Persistent raster resources are different from exactly restorable state: they are terminal-resident, generation-scoped objects. The session cleans them while identity is current, invalidates them when terminal certainty is lost, and does not silently retain/replay source images.
+Persistent raster resources are different from exactly restorable state: they are terminal-resident, generation-scoped objects. The session cleans them while identity is current, invalidates them when terminal certainty is lost, and does not silently retain/replay source images. Version 1.14 exposes that local certainty without pretending it is remote authentication.
 
 ### Committed output integrity
 
@@ -280,7 +316,7 @@ The stable 1.x surface includes:
 - bounded device/status/cursor/style/color/clipboard/notification queries;
 - titles, current location, hyperlinks, clipboard operations, cursor style, synchronized output, progress, pointer shape, notifications, prompt/shell metadata, and terminal colors;
 - backend-neutral ephemeral raster display through verified Sixel and Kitty Graphics;
-- backend-neutral persistent raster resources and placements with generation-scoped ownership, source-pixel cropping, signed z-order, and bounded immutable-parent relative placement;
+- backend-neutral persistent raster resources and placements with generation-scoped ownership, source-pixel cropping, signed z-order, bounded immutable-parent relative placement, and side-effect-free lifecycle certainty observation;
 - optional consumer-owned TermInfo lifecycle and advanced-placement planning integration without adding Inspection to the production package graph.
 
 The library deliberately does not expose generic raw vendor dispatch as the ordinary extension model.
@@ -294,7 +330,7 @@ The [`samples`](samples/README.md) directory contains focused examples. Recommen
 - `Icod.Terminal.CapabilityPlanning.Sample` — inspect-first semantic planning plus optional explicit verification;
 - `Icod.Terminal.Query.Sample` — bounded terminal queries;
 - `Icod.Terminal.RasterGraphics.Sample` — backend-neutral ephemeral raster display;
-- [`Icod.Terminal.PersistentRaster.Sample`](samples/Icod.Terminal.PersistentRaster.Sample/README.md) — ordinary and relative persistent placement, both relative update modes, signed offsets, crop/z-order, immutable parentage, parent-cascade cleanup, and independent descendant-resource reuse without protocol ids/backend branching;
+- [`Icod.Terminal.PersistentRaster.Sample`](samples/Icod.Terminal.PersistentRaster.Sample/README.md) — ordinary and relative persistent placement, both relative update modes, signed offsets, crop/z-order, immutable parentage, observable parent-cascade release, and independent descendant-resource reuse without protocol ids/backend branching;
 - `Icod.Terminal.TermInfoPersistentRaster.Sample` — Inspection 1.12 lifecycle plus advanced-placement planning, optional live Terminal verification, caller-owned evidence/replanning, and concrete persistent execution;
 - focused state, color, notification, prompt, and shell-integration samples described in the sample catalog.
 
@@ -306,9 +342,9 @@ Terminal protocol traffic is external input/output. `Icod.Terminal` validates an
 
 `InspectCapability(...)` emits no terminal traffic. `VerifyCapabilityAsync(...)` is explicit precisely because it may send bounded queries whose responses can reveal terminal/environment characteristics. `Verified` is support evidence, not authentication.
 
-Persistent raster acknowledgement correlation establishes transaction ownership, not trust. A terminal may independently evict stored image data; correlated missing-resource responses invalidate only the affected certainty rather than triggering hidden replay. Relative parent-loss classification invalidates the affected placement subtree without automatically declaring the parent raster resource missing.
+Persistent raster acknowledgement correlation establishes transaction ownership, not trust. A terminal may independently evict stored image data; correlated missing-resource responses invalidate only the affected certainty rather than triggering hidden replay. Relative parent-loss classification invalidates the affected placement subtree without automatically declaring the parent raster resource missing. `OwnershipState` reports those local semantic conclusions without issuing another probe or claiming terminal authentication.
 
-Kitty direct transfer remains the reviewed persistent transport. Version 1.13 does not silently use file, temporary-file, or shared-memory transport and does not retain arbitrary source images after successful creation. Source rectangles select already-owned source pixels; relative placement adds no filesystem or external-memory transport.
+Kitty direct transfer remains the reviewed persistent transport. Version 1.14 does not silently use file, temporary-file, or shared-memory transport and does not retain arbitrary source images after successful creation. Source rectangles select already-owned source pixels; relative placement and lifecycle observation add no filesystem or external-memory transport.
 
 Several APIs intentionally publish caller-supplied metadata such as filesystem locations, hyperlinks, clipboard contents, notifications, shell metadata, command lines, and raster pixels. Applications decide what is appropriate to disclose.
 
@@ -316,12 +352,12 @@ See [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md).
 
 ## Compatibility
 
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 added opaque persistent raster resource/placement ownership; 1.11.1 qualified the optional TermInfo persistent-raster lifecycle integration boundary; 1.12 added bounded source-pixel cropping and signed z-order; and 1.13 adds bounded immutable-parent relative placement ownership while preserving ordinary current-cursor placement when the new APIs are unused.
+Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 added opaque persistent raster resource/placement ownership; 1.11.1 qualified the optional TermInfo persistent-raster lifecycle integration boundary; 1.12 added bounded source-pixel cropping and signed z-order; 1.13 added bounded immutable-parent relative placement ownership; and 1.14 adds side-effect-free lifecycle certainty observation while preserving all existing resource/placement operations when `OwnershipState` is not read.
 
-The final 1.13 public API fingerprint is:
+The final 1.14 public API fingerprint is:
 
 ```text
-c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
+2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 ```
 
 See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).
@@ -330,10 +366,11 @@ See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.m
 
 Start with:
 
-- [1.13.0 release notes](docs/releases/1.13.0.md)
+- [1.14.0 release notes](docs/releases/1.14.0.md)
 - [Persistent Raster Ownership](docs/Persistent-Raster-Ownership.md)
 - [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md)
-- [1.13.0 development roadmap](Icod.Terminal-1.13.0-Development-Roadmap.md)
+- [1.14.0 public API baseline](docs/Public-API-Baseline-1.14.md)
+- [1.14.0 development roadmap](Icod.Terminal-1.14.0-Development-Roadmap.md)
 - [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
 - [Architecture](docs/Architecture.md)
 - [Input and Events](docs/Input-and-Events.md)
