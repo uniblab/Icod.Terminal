@@ -194,12 +194,12 @@ public sealed class KittyGraphicsPlaceholderCellEncoderTests {
 
 		Assert.NotEqual( firstBytes, secondBytes );
 		Assert.Contains(
-			Encoding.ASCII.GetBytes( "\u001b[58;2;0;0;1m" ),
-			firstBytes
+			"\u001b[58;2;0;0;1m",
+			Encoding.UTF8.GetString( firstBytes )
 		);
 		Assert.Contains(
-			Encoding.ASCII.GetBytes( "\u001b[58;2;0;0;2m" ),
-			secondBytes
+			"\u001b[58;2;0;0;2m",
+			Encoding.UTF8.GetString( secondBytes )
 		);
 	}
 
