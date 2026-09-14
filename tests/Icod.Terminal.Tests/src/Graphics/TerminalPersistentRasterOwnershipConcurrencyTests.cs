@@ -28,12 +28,8 @@ using Xunit;
 /// Verifies atomic and monotonic persistent-raster ownership observation under concurrent access.
 /// </summary>
 public sealed class TerminalPersistentRasterOwnershipConcurrencyTests {
-	[Theory]
-	[InlineData( true )]
-	[InlineData( false )]
-	public async Task ConcurrentReadersNeverObserveTornStatusReasonPairs(
-		bool staleWins
-	) {
+	[Fact]
+	public async Task ConcurrentReadersNeverObserveTornStatusReasonPairs() {
 		TerminalPersistentRasterLifecycleState state = new();
 		ConcurrentBag<TerminalRasterOwnershipState> observations = [];
 		using CancellationTokenSource stop = new();
@@ -87,8 +83,6 @@ public sealed class TerminalPersistentRasterOwnershipConcurrencyTests {
 				) || observation == final
 			);
 		}
-
-		_ = staleWins;
 	}
 
 	[Fact]
