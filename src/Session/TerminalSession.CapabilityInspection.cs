@@ -75,9 +75,10 @@ public sealed partial class TerminalSession {
 	/// <remarks>
 	/// Verification is intentionally narrower than inspection. Live support verification is
 	/// available for modern keyboard reporting, raster graphics, and persistent raster graphics.
-	/// Other semantic capabilities return their current inspection status unchanged rather than
-	/// emitting invented or behavior-changing probe traffic. Existing decisive live evidence and
-	/// unavailable endpoints are also returned without probing.
+	/// Unicode raster placeholders and other semantic capabilities without a truthful reviewed
+	/// passive probe return their current inspection status unchanged rather than emitting invented
+	/// or behavior-changing probe traffic. Existing decisive live evidence and unavailable endpoints
+	/// are also returned without probing.
 	/// </remarks>
 	/// <param name="capability">The semantic capability to verify when a reviewed probe exists.</param>
 	/// <param name="cancellationToken">Cancellation for any live verification attempt.</param>
@@ -150,6 +151,7 @@ public sealed partial class TerminalSession {
 			TerminalCapability.BracketedPaste => TerminalSemanticOperation.BracketedPaste,
 			TerminalCapability.RasterGraphics => TerminalSemanticOperation.RasterGraphics,
 			TerminalCapability.PersistentRasterGraphics => TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapability.UnicodeRasterPlaceholders => TerminalSemanticOperation.UnicodeRasterPlaceholders,
 			_ => throw new ArgumentOutOfRangeException(
 				nameof( capability ),
 				capability,
