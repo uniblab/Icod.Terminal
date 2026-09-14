@@ -112,6 +112,51 @@ Require(
 	"PersistentRasterGraphics must retain the reviewed additive enum value 9."
 );
 
+TerminalRasterOwnershipState ownershipState = new(
+	TerminalRasterOwnershipStatus.Current,
+	TerminalRasterOwnershipLossReason.None
+);
+Require(
+	TerminalRasterOwnershipStatus.Current == ownershipState.Status
+		&& TerminalRasterOwnershipLossReason.None == ownershipState.LossReason,
+	"TerminalRasterOwnershipState did not preserve the caller-supplied semantic snapshot."
+);
+Require(
+	typeof( TerminalRasterResource ).GetProperty(
+		nameof( TerminalRasterResource.OwnershipState ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( TerminalRasterOwnershipState ),
+	"TerminalRasterResource must expose the 1.14 OwnershipState snapshot."
+);
+Require(
+	typeof( TerminalRasterPlacement ).GetProperty(
+		nameof( TerminalRasterPlacement.OwnershipState ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( TerminalRasterOwnershipState ),
+	"TerminalRasterPlacement must expose the 1.14 OwnershipState snapshot."
+);
+Require(
+	[
+		nameof( TerminalRasterOwnershipStatus.Current ),
+		nameof( TerminalRasterOwnershipStatus.Stale ),
+		nameof( TerminalRasterOwnershipStatus.Released ),
+		nameof( TerminalRasterOwnershipStatus.Disposed )
+	].SequenceEqual( Enum.GetNames<TerminalRasterOwnershipStatus>() ),
+	"TerminalRasterOwnershipStatus does not match the frozen 1.14 semantic states."
+);
+Require(
+	[
+		nameof( TerminalRasterOwnershipLossReason.None ),
+		nameof( TerminalRasterOwnershipLossReason.SessionStateLost ),
+		nameof( TerminalRasterOwnershipLossReason.ResourceMissing ),
+		nameof( TerminalRasterOwnershipLossReason.ParentPlacementLost ),
+		nameof( TerminalRasterOwnershipLossReason.AncestorReleased ),
+		nameof( TerminalRasterOwnershipLossReason.ResourceReleased ),
+		nameof( TerminalRasterOwnershipLossReason.ExplicitDisposal )
+	].SequenceEqual( Enum.GetNames<TerminalRasterOwnershipLossReason>() ),
+	"TerminalRasterOwnershipLossReason does not match the frozen 1.14 semantic reasons."
+);
+
 TerminalRasterSourceRectangle rectangle = new(
 	0,
 	0,
@@ -149,6 +194,7 @@ Require(
 	"TerminalRasterPlacement must remain asynchronously disposable."
 );
 
+AssertOpaquePublicSurface( typeof( TerminalRasterOwnershipState ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterResource ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
 Require(
@@ -167,6 +213,8 @@ static void AssertOpaquePublicSurface(
 		"ImageId",
 		"ImageNumber",
 		"PlacementId",
+		"ParentId",
+		"Generation",
 		"Backend",
 		"Kitty"
 	];
