@@ -51,11 +51,10 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 			rows: 256
 		);
 
-		Task[] readers = Enumerable.Range(
-			0,
-			ReaderCount
-		).Select(
-			worker => Task.Run(
+		Task[] readers = new Task[ ReaderCount ];
+		for ( int worker = 0; worker < ReaderCount; ++worker ) {
+			int workerIndex = worker;
+			readers[ worker ] = Task.Run(
 				() => {
 					for ( int iteration = 0; iteration < ReaderIterationCount; ++iteration ) {
 						TerminalRasterOwnershipState ownership = placeholder.OwnershipState;
@@ -68,8 +67,8 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 							ownership.LossReason
 						);
 
-						int row = ( worker + iteration ) & 0xFF;
-						int column = ( ( worker * 31 ) + iteration ) & 0xFF;
+						int row = ( workerIndex + iteration ) & 0xFF;
+						int column = ( ( workerIndex * 31 ) + iteration ) & 0xFF;
 						TerminalRasterPlaceholderCell cell = placeholder.GetCell(
 							row,
 							column
@@ -78,8 +77,8 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 						Assert.Equal( column, cell.Column );
 					}
 				}
-			)
-		).ToArray();
+			);
+		}
 
 		await Task.WhenAll( readers );
 
@@ -116,12 +115,10 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 		).ToArray();
 		int baselineWrites = transport.Writes.Count;
 
-		Task[] outputs = Enumerable.Range(
-			0,
-			OutputCount
-		).Select(
-			_ => session.WriteRasterPlaceholderCellAsync( cell ).AsTask()
-		).ToArray();
+		Task[] outputs = new Task[ OutputCount ];
+		for ( int index = 0; index < OutputCount; ++index ) {
+			outputs[ index ] = session.WriteRasterPlaceholderCellAsync( cell ).AsTask();
+		}
 		await Task.WhenAll( outputs );
 
 		Assert.Equal( baselineWrites + OutputCount, transport.Writes.Count );
@@ -150,29 +147,27 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 			TaskCreationOptions.RunContinuationsAsynchronously
 		);
 
-		Task[] readers = Enumerable.Range(
-			0,
-			ReaderCount
-		).Select(
-			_ => Task.Run(
+		Task[] work = new Task[ ReaderCount + 1 ];
+		for ( int worker = 0; worker < ReaderCount; ++worker ) {
+			work[ worker ] = Task.Run(
 				async () => {
 					await start.Task;
 					for ( int iteration = 0; iteration < ReaderIterationCount; ++iteration ) {
 						TerminalRasterOwnershipState ownership = placeholder.OwnershipState;
-						Assert.True(
-							ownership == new TerminalRasterOwnershipState(
-								TerminalRasterOwnershipStatus.Current,
-								TerminalRasterOwnershipLossReason.None
-							) || ownership == new TerminalRasterOwnershipState(
-								TerminalRasterOwnershipStatus.Disposed,
-								TerminalRasterOwnershipLossReason.ExplicitDisposal
-							)
+						bool isCurrent = ownership == new TerminalRasterOwnershipState(
+							TerminalRasterOwnershipStatus.Current,
+							TerminalRasterOwnershipLossReason.None
 						);
+						bool isDisposed = ownership == new TerminalRasterOwnershipState(
+							TerminalRasterOwnershipStatus.Disposed,
+							TerminalRasterOwnershipLossReason.ExplicitDisposal
+						);
+						Assert.True( isCurrent || isDisposed );
 					}
 				}
-			)
-		).ToArray();
-		Task disposal = Task.Run(
+			);
+		}
+		work[ ReaderCount ] = Task.Run(
 			async () => {
 				await start.Task;
 				await placeholder.DisposeAsync();
@@ -180,7 +175,7 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 		);
 
 		start.SetResult();
-		await Task.WhenAll( readers.Append( disposal ) );
+		await Task.WhenAll( work );
 
 		Assert.Equal(
 			new TerminalRasterOwnershipState(
@@ -346,6 +341,7 @@ public sealed class TerminalRasterPlaceholderConcurrencyHardeningTests {
 					if ( expected <= this.writes.Count ) {
 						return;
 					}
+				}
 				await this.writeSignal.WaitAsync(
 					timeout.Token
 				).ConfigureAwait( false );
