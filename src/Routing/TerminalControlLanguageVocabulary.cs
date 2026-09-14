@@ -45,7 +45,8 @@ internal enum TerminalSemanticOperation {
 	FocusReporting,
 	BracketedPaste,
 	RasterGraphics,
-	PersistentRasterGraphics
+	PersistentRasterGraphics,
+	UnicodeRasterPlaceholders
 }
 
 /// <summary>
@@ -85,7 +86,8 @@ internal enum TerminalProtocolBackend {
 	DcsDecrqss,
 	DcsXtgetTcap,
 	DcsSixel,
-	ApcKittyGraphics
+	ApcKittyGraphics,
+	ApcKittyUnicodeRasterPlaceholders
 }
 
 /// <summary>
@@ -182,7 +184,8 @@ internal static class TerminalControlLanguageVocabulary {
 					=> TerminalControlFamily.Dcs,
 
 			TerminalProtocolBackend.ApcKittyGraphics
-				=> TerminalControlFamily.Apc,
+				or TerminalProtocolBackend.ApcKittyUnicodeRasterPlaceholders
+					=> TerminalControlFamily.Apc,
 
 			_ => throw new InvalidOperationException(
 				"The terminal protocol backend does not have an N150 control-family classification."
