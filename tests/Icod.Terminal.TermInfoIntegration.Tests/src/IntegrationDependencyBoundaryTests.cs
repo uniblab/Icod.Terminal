@@ -57,13 +57,13 @@ public sealed class IntegrationDependencyBoundaryTests {
 	}
 
 	[Fact]
-	public void CurrentReleaseUsesTermInfo112AcrossProductionAndInspectionConsumers() {
+	public void CurrentReleaseUsesTermInfo113WithInspection112Consumers() {
 		string root = FindRepositoryRoot();
 
 		AssertPackageReferenceVersion(
 			Path.Combine( root, "Icod.Terminal.csproj" ),
 			"Icod.TermInfo",
-			"1.12.0"
+			"1.13.0"
 		);
 		AssertPackageReferenceVersion(
 			Path.Combine(
