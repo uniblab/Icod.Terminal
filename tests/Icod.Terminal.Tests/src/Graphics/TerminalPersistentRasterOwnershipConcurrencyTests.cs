@@ -20,7 +20,6 @@
 */
 namespace Icod.Terminal.Tests.Graphics;
 
-using System.Collections.Concurrent;
 using Icod.Terminal;
 using Xunit;
 
@@ -28,61 +27,75 @@ using Xunit;
 /// Verifies atomic and monotonic persistent-raster ownership observation under concurrent access.
 /// </summary>
 public sealed class TerminalPersistentRasterOwnershipConcurrencyTests {
+	private const int ReaderCount = 8;
+	private const int ObservationsPerReader = 50_000;
+
 	[Fact]
 	public async Task ConcurrentReadersNeverObserveTornStatusReasonPairs() {
 		TerminalPersistentRasterLifecycleState state = new();
-		ConcurrentBag<TerminalRasterOwnershipState> observations = [];
-		using CancellationTokenSource stop = new();
+		TerminalRasterOwnershipState current = new(
+			TerminalRasterOwnershipStatus.Current,
+			TerminalRasterOwnershipLossReason.None
+		);
+		TerminalRasterOwnershipState staleState = new(
+			TerminalRasterOwnershipStatus.Stale,
+			TerminalRasterOwnershipLossReason.SessionStateLost
+		);
+		TerminalRasterOwnershipState releasedState = new(
+			TerminalRasterOwnershipStatus.Released,
+			TerminalRasterOwnershipLossReason.AncestorReleased
+		);
+		TaskCompletionSource start = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
 		Task[] readers = Enumerable.Range(
 			0,
-			8
+			ReaderCount
 		).Select(
 			_ => Task.Run(
-				() => {
-					while ( !stop.IsCancellationRequested ) {
-						observations.Add( state.Observe() );
+				async () => {
+					await start.Task.ConfigureAwait( false );
+					for ( int index = 0; index < ObservationsPerReader; ++index ) {
+						TerminalRasterOwnershipState observation = state.Observe();
+						Assert.True(
+							observation == current
+								|| observation == staleState
+								|| observation == releasedState
+						);
 					}
 				}
 			)
 		).ToArray();
-
 		Task<bool> stale = Task.Run(
-			() => state.TryMarkStale(
-				TerminalRasterOwnershipLossReason.SessionStateLost
-			)
+			async () => {
+				await start.Task.ConfigureAwait( false );
+				return state.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
+			}
 		);
 		Task<bool> released = Task.Run(
-			() => state.TryMarkReleased(
-				TerminalRasterOwnershipLossReason.AncestorReleased
-			)
+			async () => {
+				await start.Task.ConfigureAwait( false );
+				return state.TryMarkReleased(
+					TerminalRasterOwnershipLossReason.AncestorReleased
+				);
+			}
 		);
+
+		start.SetResult();
 		bool[] transitionResults = await Task.WhenAll(
 			stale,
 			released
 		);
-		await Task.Delay( 25 );
-		stop.Cancel();
 		await Task.WhenAll( readers );
 
 		Assert.NotEqual( transitionResults[ 0 ], transitionResults[ 1 ] );
 		TerminalRasterOwnershipState final = state.Observe();
 		Assert.True(
-			final == new TerminalRasterOwnershipState(
-				TerminalRasterOwnershipStatus.Stale,
-				TerminalRasterOwnershipLossReason.SessionStateLost
-			) || final == new TerminalRasterOwnershipState(
-				TerminalRasterOwnershipStatus.Released,
-				TerminalRasterOwnershipLossReason.AncestorReleased
-			)
+			final == staleState
+				|| final == releasedState
 		);
-		foreach ( TerminalRasterOwnershipState observation in observations ) {
-			Assert.True(
-				observation == new TerminalRasterOwnershipState(
-					TerminalRasterOwnershipStatus.Current,
-					TerminalRasterOwnershipLossReason.None
-				) || observation == final
-			);
-		}
 	}
 
 	[Fact]
@@ -102,46 +115,52 @@ public sealed class TerminalPersistentRasterOwnershipConcurrencyTests {
 		);
 		Assert.NotNull( placement );
 
-		ConcurrentBag<TerminalRasterOwnershipState> resourceObservations = [];
-		ConcurrentBag<TerminalRasterOwnershipState> placementObservations = [];
-		using CancellationTokenSource stop = new();
-		Task reader = Task.Run(
-			() => {
-				while ( !stop.IsCancellationRequested ) {
-					resourceObservations.Add( resource.ObserveOwnershipState() );
-					placementObservations.Add( placement.ObserveOwnershipState() );
-				}
-			}
+		TerminalRasterOwnershipState current = new(
+			TerminalRasterOwnershipStatus.Current,
+			TerminalRasterOwnershipLossReason.None
 		);
-
-		await Task.Run( registry.Invalidate );
-		await Task.Delay( 25 );
-		stop.Cancel();
-		await reader;
-
-		TerminalRasterOwnershipState expected = new(
+		TerminalRasterOwnershipState staleState = new(
 			TerminalRasterOwnershipStatus.Stale,
 			TerminalRasterOwnershipLossReason.SessionStateLost
 		);
-		Assert.Equal( expected, resource.ObserveOwnershipState() );
-		Assert.Equal( expected, placement.ObserveOwnershipState() );
-		Assert.All(
-			resourceObservations,
-			observation => Assert.True(
-				observation == new TerminalRasterOwnershipState(
-					TerminalRasterOwnershipStatus.Current,
-					TerminalRasterOwnershipLossReason.None
-				) || observation == expected
-			)
+		TaskCompletionSource start = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
 		);
-		Assert.All(
-			placementObservations,
-			observation => Assert.True(
-				observation == new TerminalRasterOwnershipState(
-					TerminalRasterOwnershipStatus.Current,
-					TerminalRasterOwnershipLossReason.None
-				) || observation == expected
+		Task[] readers = Enumerable.Range(
+			0,
+			ReaderCount
+		).Select(
+			_ => Task.Run(
+				async () => {
+					await start.Task.ConfigureAwait( false );
+					for ( int index = 0; index < ObservationsPerReader; ++index ) {
+						TerminalRasterOwnershipState resourceObservation =
+							resource.ObserveOwnershipState();
+						TerminalRasterOwnershipState placementObservation =
+							placement.ObserveOwnershipState();
+						Assert.True(
+							resourceObservation == current
+								|| resourceObservation == staleState
+						);
+						Assert.True(
+							placementObservation == current
+								|| placementObservation == staleState
+						);
+					}
+				}
 			)
+		).ToArray();
+		Task invalidation = Task.Run(
+			async () => {
+				await start.Task.ConfigureAwait( false );
+				registry.Invalidate();
+			}
 		);
+
+		start.SetResult();
+		await Task.WhenAll( readers.Append( invalidation ) );
+
+		Assert.Equal( staleState, resource.ObserveOwnershipState() );
+		Assert.Equal( staleState, placement.ObserveOwnershipState() );
 	}
 }
