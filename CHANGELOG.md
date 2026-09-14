@@ -25,7 +25,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Extends fresh NuGet-only package consumption and generated XML-documentation checks for the complete 1.14 lifecycle vocabulary on `net8.0`, `net9.0`, and `net10.0`.
 - Retains the Stable 1.x `Icod.DCurses` downstream package acceptance path with no required downstream source adoption.
 - Finalizes the 1.14 public API fingerprint as `2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696` while retaining all historical baselines unchanged.
-- Preserves production dependencies at `Icod.TermInfo 1.12.0` and `Icod.Timing 1.0.0`.
+- Uses production dependencies `Icod.TermInfo 1.13.0` and `Icod.Timing 1.0.0`.
 - Continues to exclude passive terminal-side existence probes, public protocol/generation identities, reparenting, Unicode placeholder placement, animation/frame lifecycle, absolute or pixel-within-cell placement, scene ownership, automatic replay, image decoding/transcoding, and PTY/ConPTY hosting.
 
 See `docs/releases/1.14.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.14.md`, and `Icod.Terminal-1.14.0-Development-Roadmap.md` for the complete 1.14 contract.
