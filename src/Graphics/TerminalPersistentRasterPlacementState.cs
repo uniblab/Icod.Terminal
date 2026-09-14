@@ -24,6 +24,7 @@ namespace Icod.Terminal;
 /// Tracks local ownership state for one persistent raster placement.
 /// </summary>
 internal sealed class TerminalPersistentRasterPlacementState {
+	private readonly TerminalPersistentRasterLifecycleState lifecycle = new();
 	private long relativeOffsetBits;
 	private int closed;
 
@@ -146,6 +147,22 @@ internal sealed class TerminalPersistentRasterPlacementState {
 		get {
 			return 0 != Volatile.Read( ref this.closed );
 		}
+	}
+
+	internal TerminalRasterOwnershipState ObserveOwnershipState() {
+		return this.lifecycle.Observe();
+	}
+
+	internal bool TryMarkStale(
+		TerminalRasterOwnershipLossReason reason
+	) {
+		return this.lifecycle.TryMarkStale( reason );
+	}
+
+	internal bool TryMarkReleased(
+		TerminalRasterOwnershipLossReason reason
+	) {
+		return this.lifecycle.TryMarkReleased( reason );
 	}
 
 	internal void CommitRelativeOffsets(
