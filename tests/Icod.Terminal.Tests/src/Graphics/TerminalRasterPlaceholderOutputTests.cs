@@ -187,12 +187,10 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 			rows: 1,
 			expectedPlacementId: 1u
 		);
-		TerminalRasterResource resource = stale.State.Resource is null
-			? throw new InvalidOperationException()
-			: new TerminalRasterResource(
-				session,
-				stale.State.Resource
-			);
+		TerminalRasterResource resource = new(
+			session,
+			stale.State.Resource
+		);
 		TerminalRasterPlaceholder released = await CreatePlaceholderOnResourceAsync(
 			resource,
 			transport,
@@ -375,6 +373,7 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 						static item => item.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		internal IReadOnlyList<bool> WriteCancellationCanBeCanceled {
@@ -382,6 +381,7 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 				lock ( this.synchronization ) {
 					return this.writeCancellationCanBeCanceled.ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
