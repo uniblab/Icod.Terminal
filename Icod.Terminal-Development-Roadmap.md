@@ -4,8 +4,8 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable release:** `1.13.0` — relative persistent-raster placement ownership
-- **Current release candidate:** `1.14.0` — persistent-raster lifecycle observability
+- **Current stable release:** `1.14.0` — persistent-raster lifecycle observability
+- **Current development line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -32,11 +32,11 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and expansion.
-- `Icod.Terminal` owns the live terminal conversation, native modes, input decoding, semantic events, lifecycle, query routing, semantic capability evidence/planning, terminal output, ephemeral raster routing, persistent raster resource/placement ownership and lifecycle certainty, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation, native modes, input decoding, semantic events, lifecycle, query routing, semantic capability evidence/planning, terminal output, ephemeral raster routing, persistent raster resource/placement ownership, lifecycle certainty, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-## Published release sequence through 1.13.0
+## Published release sequence through 1.14.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -50,65 +50,16 @@ terminal applications
 1.11.1  TermInfo persistent-raster lifecycle integration contract
 1.12.0  bounded source-pixel cropping and signed z-order
 1.13.0  bounded immutable-parent relative placement ownership
+1.14.0  side-effect-free persistent-raster lifecycle observability
 ```
 
-The final 1.13 public API fingerprint is:
+The final 1.14 public API fingerprint is:
 
 ```text
-c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
+2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 ```
 
-Version `1.13.0` added exactly two public methods over 1.12:
-
-```csharp
-TerminalRasterResource.CreateRelativePlacementAsync(
-    TerminalRasterPlacement parent,
-    int columnOffset,
-    int rowOffset,
-    TerminalRasterPlacementOptions? options = null,
-    CancellationToken cancellationToken = default
-)
-
-TerminalRasterPlacement.UpdateRelativeAsync(
-    int columnOffset,
-    int rowOffset,
-    TerminalRasterPlacementOptions? options = null,
-    CancellationToken cancellationToken = default
-)
-```
-
-## 1.13 stable architecture
-
-Relative placement is deliberately a bounded ownership/positioning feature rather than a scene graph.
-
-The permanent decisions are:
-
-- parentage is immutable from successful creation through disposal;
-- relative parent/child lifetime is orthogonal to raster-resource ownership;
-- a child placement may use a different raster resource from its parent;
-- deleting a parent placement removes its relative placement subtree but does not automatically dispose descendant raster resources;
-- the portable maximum relative depth is 8;
-- public construction cannot form cycles; internal ancestry validation fails closed defensively;
-- relative offsets are signed terminal-cell offsets, not source pixels or absolute screen coordinates;
-- `TerminalRasterPlacementOptions` remains the common crop/extents/z-order contract;
-- ordinary `UpdateAsync(...)` preserves the established positioning mode;
-- `UpdateRelativeAsync(...)` changes offsets/common geometry but never parentage;
-- current cleanup is deepest-first / descendant-before-parent and uses each placement's own owning-resource identity;
-- resource and placement capacity ceilings remain 256 and 4096;
-- generation-scoped certainty, one authoritative query/input path, committed-output integrity, and no hidden replay remain unchanged;
-- no public terminal image/placement/parent numeric identity or backend selector is introduced.
-
-Permanent authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
-
-Release notes: [`docs/releases/1.13.0.md`](docs/releases/1.13.0.md).
-
-Versioned development evidence: [`Icod.Terminal-1.13.0-Development-Roadmap.md`](Icod.Terminal-1.13.0-Development-Roadmap.md).
-
-## 1.14 release candidate — Persistent Raster Lifecycle Observability
-
-Version `1.14.0` exposes Terminal's current local persistent-raster ownership certainty without pretending to observe terminal state that the protocol cannot non-destructively prove.
-
-The public additions are:
+Version 1.14 added one backend-neutral ownership vocabulary:
 
 ```text
 TerminalRasterOwnershipStatus
@@ -118,79 +69,98 @@ TerminalRasterResource.OwnershipState
 TerminalRasterPlacement.OwnershipState
 ```
 
-The four semantic states are:
+The permanent 1.14 rule remains:
 
-```text
-Current
-Stale
-Released
-Disposed
-```
+> Expose Terminal's current ownership certainty; do not claim to observe terminal state that the protocol cannot non-destructively prove.
 
-The semantic reasons are:
+`Current`, `Stale`, `Released`, and `Disposed` remain atomic semantic states paired with semantic loss/release reasons. Observation is synchronous, bounded, and side-effect free.
 
-```text
-None
-SessionStateLost
-ResourceMissing
-ParentPlacementLost
-AncestorReleased
-ResourceReleased
-ExplicitDisposal
-```
-
-Status and reason are observed atomically in one immutable snapshot. Reading `OwnershipState` is synchronous, bounded, and side-effect free: it writes no terminal bytes, allocates no query, acquires no output gate, triggers no cleanup, and performs no replay/re-upload.
-
-`Current` is local certainty rather than terminal authentication. A correlated `ENOENT` can publish `Stale / ResourceMissing`; a correlated `ENOPARENT` can publish `Stale / ParentPlacementLost` for the affected placement subtree without falsely declaring its resources missing. Parent/resource cleanup publishes `Released` for still-reachable descendant placement wrappers while independent raster resources retain their own lifetime.
-
-The canonical two-axis witness is:
-
-```text
-Resource A      Current / None
-  Placement A1 Current / None
-Resource B      Current / None
-  Placement B1 Current / None, relative to A1
-
-Dispose A1
-  Placement A1 Disposed / ExplicitDisposal
-  Placement B1 Released / AncestorReleased
-  Resource B    Current / None
-```
-
-Resource B remains usable for a fresh ordinary placement.
-
-The final 1.14 public API fingerprint is:
-
-```text
-2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
-```
-
-The implementation follows T140–T149:
-
-```text
-T140  architecture/API-regret gate and public snapshot freeze
-T141  internal lifecycle-state normalization
-T142  resource ownership observability
-T143  placement ownership observability
-T144  loss/release reason classification
-T145  relative-graph propagation hardening
-T146  concurrency and memory-model qualification
-T147  sample and downstream consumer qualification
-T148  package/API/XML/documentation qualification
-T149  stable 1.14 release closure
-```
-
-Implementation and release-facing documentation are complete on the development branch. The final T149 exact-head workflow is intentionally required after the release-closure commit; the roadmap does not self-certify the commit that contains this statement.
-
-Design authority: [`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md).
-
-Implementation plan: [`docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md`](docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md).
-
-Versioned roadmap: [`Icod.Terminal-1.14.0-Development-Roadmap.md`](Icod.Terminal-1.14.0-Development-Roadmap.md).
+Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
 
 Release notes: [`docs/releases/1.14.0.md`](docs/releases/1.14.0.md).
 
-Public API baseline: [`docs/Public-API-Baseline-1.14.md`](docs/Public-API-Baseline-1.14.md).
+Versioned evidence: [`Icod.Terminal-1.14.0-Development-Roadmap.md`](Icod.Terminal-1.14.0-Development-Roadmap.md).
+
+## 1.15 selected development track — Unicode Placeholder and Virtual Raster Placement
+
+Version `1.15.0` adds a backend-neutral semantic abstraction for Unicode-placeholder raster presentation.
+
+The governing principle is:
+
+> Terminal owns protocol identity and encoding; higher-level renderers own cells, cursor position, clipping, scrolling, damage, and layout.
+
+The selected public-model direction adds a new opaque virtual-placement handle and semantic text-grid cell token:
+
+```text
+TerminalRasterResource
+    |
+    +-- TerminalRasterPlacement
+    |       ordinary or relative physical placement
+    |
+    +-- TerminalRasterPlaceholder
+            acknowledged virtual placement
+            |
+            +-- TerminalRasterPlaceholderCell
+                    semantic row/column token
+```
+
+The placeholder handle owns virtual-placement lifetime, dimensions, private identity, session/generation association, and lifecycle state. It does **not** own a screen position, window, DCurses cell, clipping region, scrolling policy, damage map, or layout.
+
+The cell token exposes semantic row/column coordinates only. Kitty image ids, placement ids, `U+10EEEE`, combining-mark tables, SGR identity packing, `U=1`, raw APC commands, backend selection, and session generation ids remain private.
+
+The approved portable placeholder bounds are:
+
+```text
+Columns  1..256
+Rows     1..256
+```
+
+Virtual placements share the existing 4096 combined placement ceiling. Resources remain bounded to 256 and relative depth remains 8.
+
+Virtual-placement private ids are restricted to the nonzero 24-bit range `1..0x00FFFFFF`, matching the complete placement identity representable in Unicode-placeholder underline color while remaining far above the local 4096-placement ceiling.
+
+Every placeholder cell must be independently renderable. Icod.Terminal will not rely on left-neighbor shorthand for repeated identity or coordinates. This preserves correctness for clipping, sparse redraw, scrolling, overlapping images, arbitrary cell order, and future DCurses virtual-screen diffing.
+
+Placeholder-cell emission is typed current-cursor text output. Terminal serializes and encodes the token but does not choose its screen position. Private foreground/underline identity state is terminated with selective reset so it does not leak into following application text.
+
+Version 1.15 should add one semantic capability, with exact spelling frozen in T150:
+
+```text
+TerminalCapability.UnicodeRasterPlaceholders = 10
+```
+
+The new capability remains distinct from `PersistentRasterGraphics`; support is not invented from terminal brand or from a generic graphics result without reviewed evidence.
+
+A physical `TerminalRasterPlacement` may use a `TerminalRasterPlaceholder` as immutable relative parent, while the virtual placeholder itself cannot be relative. Existing 1.13 graph/lifetime guarantees remain authoritative.
+
+The selected tranche sequence is:
+
+```text
+T150  architecture/API-regret gate and public contract freeze
+T151  semantic capability and protocol-support evidence model
+T152  virtual-placement ownership and lifecycle integration
+T153  self-contained placeholder-cell token and encoder
+T154  typed current-cursor placeholder emission
+T155  virtual-parent relative-placement integration
+T156  error/lifecycle/capacity/concurrency hardening
+T157  samples and downstream integration qualification
+T158  package/API/XML/security/documentation qualification
+T159  stable 1.15.0 release closure
+```
+
+Design authority:
+
+[`docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md`](docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md)
+
+Implementation plan:
+
+[`docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md`](docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md)
+
+Versioned roadmap:
+
+[`Icod.Terminal-1.15.0-Development-Roadmap.md`](Icod.Terminal-1.15.0-Development-Roadmap.md)
+
+The 1.15 architecture is approved. The implementation plan is complete. T150 is the next execution tranche; no production 1.15 implementation has begun on this planning checkpoint.
 
 ## Stable architecture guardrails
 
@@ -198,20 +168,20 @@ The 1.x line continues to preserve:
 
 - one authoritative input/query/event path per live session;
 - semantic capability planning rather than terminal-brand guessing;
-- bounded parsers, queries, semantic events, raster work, persistent registries, and relative graph depth;
+- bounded parsers, queries, semantic events, raster work, persistent registries, placeholder dimensions, and relative graph depth;
 - backend-neutral public raster semantics;
-- opaque persistent resource/placement identities;
+- opaque persistent resource/physical-placement/virtual-placement identities;
 - generation-scoped persistent ownership with no automatic replay;
 - deterministic cleanup and committed-output integrity;
-- side-effect-free local ownership observation without invented remote-existence guarantees;
+- side-effect-free local lifecycle observation without invented remote-existence guarantees;
+- placeholder text rendering without transferring layout ownership into Terminal;
 - production package dependencies declared centrally by `Icod.Terminal.csproj`;
 - cells/windows/layout/damage ownership in `Icod.DCurses`, not `Icod.Terminal`.
 
-## Deferred tracks after 1.14
+## Deferred tracks after 1.15 selection
 
-Future design candidates remain independent questions, including:
+Future independent design candidates include:
 
-- Unicode placeholder / virtual placements;
 - animation and frame lifecycle;
 - absolute screen-coordinate placement;
 - pixel-within-cell positioning;
@@ -221,4 +191,4 @@ Future design candidates remain independent questions, including:
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside `Icod.Terminal`.
 
-These remain outside 1.14 and require a future independent API-regret/design review.
+These remain outside 1.15 unless the versioned roadmap is explicitly reopened through another API-regret review.
