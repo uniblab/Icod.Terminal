@@ -37,6 +37,23 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
 
 $requiredMembers = @(
 	'F:Icod.Terminal.TerminalCapability.PersistentRasterGraphics',
+	'T:Icod.Terminal.TerminalRasterOwnershipStatus',
+	'F:Icod.Terminal.TerminalRasterOwnershipStatus.Current',
+	'F:Icod.Terminal.TerminalRasterOwnershipStatus.Stale',
+	'F:Icod.Terminal.TerminalRasterOwnershipStatus.Released',
+	'F:Icod.Terminal.TerminalRasterOwnershipStatus.Disposed',
+	'T:Icod.Terminal.TerminalRasterOwnershipLossReason',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.None',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.SessionStateLost',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.ResourceMissing',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.ParentPlacementLost',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.AncestorReleased',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.ResourceReleased',
+	'F:Icod.Terminal.TerminalRasterOwnershipLossReason.ExplicitDisposal',
+	'T:Icod.Terminal.TerminalRasterOwnershipState',
+	'M:Icod.Terminal.TerminalRasterOwnershipState.#ctor(Icod.Terminal.TerminalRasterOwnershipStatus,Icod.Terminal.TerminalRasterOwnershipLossReason)',
+	'P:Icod.Terminal.TerminalRasterOwnershipState.Status',
+	'P:Icod.Terminal.TerminalRasterOwnershipState.LossReason',
 	'T:Icod.Terminal.TerminalRasterSourceRectangle',
 	'M:Icod.Terminal.TerminalRasterSourceRectangle.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)',
 	'P:Icod.Terminal.TerminalRasterSourceRectangle.X',
@@ -49,10 +66,12 @@ $requiredMembers = @(
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.Rows',
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.ZIndex',
 	'T:Icod.Terminal.TerminalRasterResource',
+	'P:Icod.Terminal.TerminalRasterResource.OwnershipState',
 	'M:Icod.Terminal.TerminalRasterResource.CreatePlacementAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterResource.CreateRelativePlacementAsync(Icod.Terminal.TerminalRasterPlacement,System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterResource.DisposeAsync',
 	'T:Icod.Terminal.TerminalRasterPlacement',
+	'P:Icod.Terminal.TerminalRasterPlacement.OwnershipState',
 	'M:Icod.Terminal.TerminalRasterPlacement.UpdateAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterPlacement.UpdateRelativeAsync(System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterPlacement.DisposeAsync',
@@ -140,4 +159,4 @@ try {
 	}
 }
 
-Write-Host "1.13 relative persistent-raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.14 persistent-raster lifecycle-observation package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
