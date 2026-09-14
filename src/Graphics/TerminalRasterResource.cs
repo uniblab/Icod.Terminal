@@ -54,10 +54,7 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 					TerminalRasterOwnershipStatus.Disposed,
 					TerminalRasterOwnershipLossReason.ExplicitDisposal
 				)
-				: new TerminalRasterOwnershipState(
-					TerminalRasterOwnershipStatus.Current,
-					TerminalRasterOwnershipLossReason.None
-				)
+				: this.State.ObserveOwnershipState()
 			;
 		}
 	}
