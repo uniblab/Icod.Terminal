@@ -29,42 +29,35 @@ public sealed class TerminalRasterPlaceholder : IAsyncDisposable {
 
 	internal TerminalRasterPlaceholder(
 		TerminalSession session,
-		int columns,
-		int rows
+		TerminalPersistentRasterPlaceholderState state
 	) {
 		ArgumentNullException.ThrowIfNull( session );
-		if ( columns is < 1 or > TerminalRasterPlaceholderOptions.MaximumExtent ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( columns ),
-				columns,
-				$"A raster placeholder extent must be between 1 and {TerminalRasterPlaceholderOptions.MaximumExtent}."
-			);
-		}
-		if ( rows is < 1 or > TerminalRasterPlaceholderOptions.MaximumExtent ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( rows ),
-				rows,
-				$"A raster placeholder extent must be between 1 and {TerminalRasterPlaceholderOptions.MaximumExtent}."
-			);
-		}
+		ArgumentNullException.ThrowIfNull( state );
 
 		this.session = session;
-		this.Columns = columns;
-		this.Rows = rows;
+		this.State = state;
+	}
+
+	internal TerminalPersistentRasterPlaceholderState State {
+		get;
 	}
 
 	/// <summary>
 	/// Gets the virtual placeholder width in terminal cells.
 	/// </summary>
 	public int Columns {
-		get;
+		get {
+			return this.State.Columns;
+		}
 	}
 
 	/// <summary>
 	/// Gets the virtual placeholder height in terminal cells.
 	/// </summary>
 	public int Rows {
-		get;
+		get {
+			return this.State.Rows;
+		}
 	}
 
 	/// <summary>
@@ -82,10 +75,7 @@ public sealed class TerminalRasterPlaceholder : IAsyncDisposable {
 					TerminalRasterOwnershipStatus.Disposed,
 					TerminalRasterOwnershipLossReason.ExplicitDisposal
 				)
-				: new TerminalRasterOwnershipState(
-					TerminalRasterOwnershipStatus.Current,
-					TerminalRasterOwnershipLossReason.None
-				)
+				: this.State.ObserveOwnershipState()
 			;
 		}
 	}
@@ -135,14 +125,17 @@ public sealed class TerminalRasterPlaceholder : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Releases this wrapper's local ownership. Terminal-side virtual-placement cleanup is added by
-	/// the virtual-placement implementation tranche.
+	/// Releases this placeholder's local ownership and, while its terminal identity remains current,
+	/// attempts one targeted terminal-side virtual-placement deletion.
 	/// </summary>
 	public ValueTask DisposeAsync() {
-		_ = Interlocked.Exchange(
+		TerminalSession? owner = Interlocked.Exchange(
 			ref this.session,
 			null
 		);
-		return ValueTask.CompletedTask;
+		return owner is null
+			? ValueTask.CompletedTask
+			: owner.ReleasePersistentRasterPlaceholderAsync( this.State )
+		;
 	}
 }
