@@ -77,11 +77,11 @@ public ValueTask<TerminalControlResult<TerminalRasterPlaceholder>>
 
 ### Placeholder as relative-placement parent
 
-`TerminalRasterResource` adds one overload:
+`TerminalRasterResource` adds a distinctly named virtual-parent operation:
 
 ```csharp
 public ValueTask<TerminalControlResult<TerminalRasterPlacement>>
-	CreateRelativePlacementAsync(
+	CreateRelativePlacementFromPlaceholderAsync(
 		TerminalRasterPlaceholder parent,
 		int columnOffset,
 		int rowOffset,
@@ -90,7 +90,9 @@ public ValueTask<TerminalControlResult<TerminalRasterPlacement>>
 	);
 ```
 
-The virtual placeholder itself is not relative. This overload allows an ordinary physical raster placement to use a current virtual placeholder as its immutable relative parent.
+The virtual placeholder itself is not relative. This method allows an ordinary physical raster placement to use a current virtual placeholder as its immutable relative parent.
+
+The existing `CreateRelativePlacementAsync(TerminalRasterPlacement, ...)` method is deliberately **not overloaded** with another reference-type parent. This preserves source compatibility for existing calls such as `CreateRelativePlacementAsync(null!, ...)`, which would otherwise become ambiguous at compile time.
 
 ### Typed current-cursor cell emission
 
