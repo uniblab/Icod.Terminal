@@ -94,6 +94,37 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	}
 
 	/// <summary>
+	/// Creates one opaque virtual placement of this resource for Unicode-placeholder rendering.
+	/// </summary>
+	/// <param name="options">Required virtual-placeholder terminal-cell dimensions.</param>
+	/// <param name="cancellationToken">Cancellation observed before placeholder output commits.</param>
+	/// <returns>
+	/// A controlled unavailable result until the acknowledged virtual-placement transaction is
+	/// enabled by the 1.15 virtual-placement implementation tranche.
+	/// </returns>
+	public ValueTask<TerminalControlResult<TerminalRasterPlaceholder>> CreatePlaceholderAsync(
+		TerminalRasterPlaceholderOptions options,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( options );
+		options.Validate();
+		cancellationToken.ThrowIfCancellationRequested();
+
+		if ( Volatile.Read( ref this.session ) is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return ValueTask.FromResult(
+			TerminalControlResult<TerminalRasterPlaceholder>.Unavailable(
+				"Unicode raster placeholder creation is not yet enabled by the current implementation tranche."
+			)
+		);
+	}
+
+	/// <summary>
 	/// Creates one opaque placement of this resource at a signed terminal-cell offset from an
 	/// existing placement. The selected parent is immutable for the child's complete lifetime.
 	/// </summary>
@@ -173,6 +204,66 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 			rowOffset,
 			options,
 			cancellationToken
+		);
+	}
+
+	/// <summary>
+	/// Creates one opaque physical placement of this resource at a signed terminal-cell offset from
+	/// an existing virtual raster placeholder. The selected virtual parent is immutable for the
+	/// child's complete lifetime.
+	/// </summary>
+	/// <param name="parent">The current virtual placeholder that establishes relative positioning.</param>
+	/// <param name="columnOffset">The signed horizontal offset from the parent in terminal cells.</param>
+	/// <param name="rowOffset">The signed vertical offset from the parent in terminal cells.</param>
+	/// <param name="options">Optional persistent-raster placement geometry.</param>
+	/// <param name="cancellationToken">Cancellation observed before placement output commits.</param>
+	/// <returns>
+	/// A controlled unavailable result until virtual-parent relative placement is enabled by the
+	/// 1.15 implementation tranche.
+	/// </returns>
+	public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreateRelativePlacementAsync(
+		TerminalRasterPlaceholder parent,
+		int columnOffset,
+		int rowOffset,
+		TerminalRasterPlacementOptions? options = null,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( parent );
+		options?.Validate(
+			this.State.SourceWidth,
+			this.State.SourceHeight
+		);
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		TerminalSession? parentOwner = parent.Owner;
+		if ( parentOwner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterPlaceholder ),
+				"The parent raster placeholder has already been disposed."
+			);
+		}
+		if ( !ReferenceEquals(
+			owner,
+			parentOwner
+		) ) {
+			throw new ArgumentException(
+				"The parent raster placeholder must belong to the same terminal session as this resource.",
+				nameof( parent )
+			);
+		}
+
+		return ValueTask.FromResult(
+			TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+				"Virtual-parent relative placement is not yet enabled by the current implementation tranche."
+			)
 		);
 	}
 
