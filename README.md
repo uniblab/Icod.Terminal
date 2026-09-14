@@ -11,7 +11,7 @@
 
 `1.14.0` is the current stable line. It adds side-effect-free persistent-raster lifecycle observability through one atomic, backend-neutral ownership snapshot with `Current`, `Stale`, `Released`, and `Disposed` states plus semantic loss/release reasons.
 
-The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative-placement ownership, 1.12 source cropping/signed z-order, and earlier current-cursor persistent placement behavior remain compatible. Version 1.14 adds no new production package, terminal-side existence probe, public protocol ids/backend selector, reparenting, scene graph, or automatic raster replay; direct dependencies remain `Icod.TermInfo 1.12.0` and `Icod.Timing 1.0.0`.
+The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative-placement ownership, 1.12 source cropping/signed z-order, and earlier current-cursor persistent placement behavior remain compatible. Version 1.14 adds no new production package, terminal-side existence probe, public protocol ids/backend selector, reparenting, scene graph, or automatic raster replay; direct dependencies are `Icod.TermInfo 1.13.0` and `Icod.Timing 1.0.0`.
 
 ## Installation
 
@@ -30,7 +30,7 @@ net10.0
 The direct production dependency graph for 1.14 is:
 
 ```text
-Icod.TermInfo 1.12.0
+Icod.TermInfo 1.13.0
 Icod.Timing   1.0.0
 ```
 
