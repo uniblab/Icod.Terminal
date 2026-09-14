@@ -148,7 +148,9 @@ public sealed partial class TerminalSession {
 
 		if ( !response.IsSuccess ) {
 			if ( response.IsMissingResource ) {
-				_ = this.persistentRasterRegistry.InvalidateResource( resourceState );
+				_ = this.InvalidatePersistentRasterResourceWithVirtualDescendants(
+					resourceState
+				);
 				return TerminalControlResult<TerminalRasterPlaceholder>.Unavailable(
 					response.Message
 				);
