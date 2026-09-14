@@ -58,7 +58,7 @@ The final 1.13 public API fingerprint is:
 c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-Version `1.13.0` added exactly two public methods over 1.12:
+Version `1.13.0` adds exactly two public methods over 1.12:
 
 ```csharp
 TerminalRasterResource.CreateRelativePlacementAsync(
@@ -95,7 +95,7 @@ The permanent decisions are:
 - `UpdateRelativeAsync(...)` changes offsets/common geometry but never parentage;
 - current cleanup is deepest-first / descendant-before-parent and uses each placement's own owning-resource identity;
 - resource and placement capacity ceilings remain 256 and 4096;
-- generation-scoped certainty, one authoritative input/query path, committed-output integrity, and no hidden replay remain unchanged;
+- generation-scoped certainty, one authoritative query/input path, committed-output integrity, and no hidden replay remain unchanged;
 - no public terminal image/placement/parent numeric identity or backend selector is introduced.
 
 Permanent authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
@@ -104,19 +104,17 @@ Release notes: [`docs/releases/1.13.0.md`](docs/releases/1.13.0.md).
 
 Versioned development evidence: [`Icod.Terminal-1.13.0-Development-Roadmap.md`](Icod.Terminal-1.13.0-Development-Roadmap.md).
 
-## Current development line — 1.14.0
+## 1.14 selected development track
 
-The selected 1.14 theme is **Persistent Raster Lifecycle Observability**.
+Version `1.14.0` is **Persistent Raster Lifecycle Observability**.
 
-The release will expose the ownership certainty that `Icod.Terminal` already maintains for opaque persistent raster resources and placements. It will not pretend that the terminal protocol provides a passive authoritative existence query for arbitrary terminal-resident images or placements.
-
-The governing rule is:
+The governing principle is:
 
 > Expose Terminal's current ownership certainty; do not claim to observe terminal state that the protocol cannot non-destructively prove.
 
-The 1.14 design therefore centers on a side-effect-free immutable ownership-state snapshot for `TerminalRasterResource` and `TerminalRasterPlacement`. The snapshot must distinguish current usable ownership from certainty loss, lifetime release, and public-wrapper disposal while carrying the reason atomically.
+The approved design adds side-effect-free lifecycle observation for opaque persistent raster resource/placement handles while preserving backend neutrality, generation-scoped certainty, independent resource versus placement lifetime, and the no-replay/no-private-identity boundaries established through 1.13.
 
-Candidate semantic states for the T140 API-regret gate are:
+The public model is planned around four semantic states:
 
 ```text
 Current
@@ -125,38 +123,9 @@ Released
 Disposed
 ```
 
-Candidate reason classes are:
+with one immutable state/reason snapshot. T140 owns the final public spelling/API freeze before production implementation proceeds.
 
-```text
-None
-SessionStateLost
-ResourceMissing
-ParentPlacementLost
-AncestorReleased
-ResourceReleased
-ExplicitDisposal
-```
-
-Exact public type/property names remain subject to T140 API freeze. The architectural requirements are already fixed:
-
-- inspection is synchronous and emits zero terminal traffic;
-- state/reason is observed atomically rather than as independently mutable public properties;
-- observations report library-owned certainty, not terminal authentication;
-- lifecycle transitions are monotonic and never resurrect stale/released/disposed ownership;
-- parent-cascade release must remain distinguishable from descendant-resource lifetime;
-- resource and placement identities remain opaque;
-- no generation number, image id, placement id, parent protocol identity, or backend selector becomes public;
-- no source-raster cache or automatic replay is introduced.
-
-Versioned roadmap:
-
-[`Icod.Terminal-1.14.0-Development-Roadmap.md`](Icod.Terminal-1.14.0-Development-Roadmap.md)
-
-Design authority:
-
-[`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md)
-
-### Planned 1.14 tranche sequence
+The selected tranche sequence is:
 
 ```text
 T140  architecture/API-regret gate and public snapshot freeze
@@ -171,7 +140,13 @@ T148  package/API/XML/documentation qualification
 T149  stable 1.14 release closure
 ```
 
-No production implementation begins until the 1.14 design authority is reviewed and the T140 public semantics are frozen.
+Design authority: [`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md).
+
+Implementation plan: [`docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md`](docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md).
+
+Versioned roadmap: [`Icod.Terminal-1.14.0-Development-Roadmap.md`](Icod.Terminal-1.14.0-Development-Roadmap.md).
+
+The 1.14 architectural design has been approved. The implementation plan is complete; T140 is the next execution tranche.
 
 ## Stable architecture guardrails
 
@@ -187,21 +162,21 @@ The 1.x line continues to preserve:
 - production package dependencies declared centrally by `Icod.Terminal.csproj`;
 - cells/windows/layout/damage ownership in `Icod.DCurses`, not `Icod.Terminal`.
 
-## Deferred tracks after 1.14
+## Deferred tracks after 1.14 selection
 
-Lifecycle observability is now selected for 1.14. The following remain independent future design questions rather than implicit 1.14 scope:
+Future design candidates remain independent questions, including:
 
 - Unicode placeholder / virtual placements;
 - animation and frame lifecycle;
 - absolute screen-coordinate placement;
 - pixel-within-cell positioning;
-- terminal-mutating existence probes or reconciliation operations;
+- richer terminal-side reconciliation only if a truthful non-destructive protocol primitive exists and downstream need justifies it;
 - scene/window/cell ownership (still expected to remain above `Icod.Terminal`);
-- hidden source-raster replay caches (still excluded);
+- hidden source-raster replay caches (currently excluded);
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside `Icod.Terminal`.
 
-Unicode placeholder support is a plausible later graphics track, but it requires a separate design for higher-level cell integration without leaking protocol-private image/placement identities.
+These remain outside 1.14 unless the versioned roadmap is explicitly reopened through another API-regret review.
 
 ## Release discipline
 
