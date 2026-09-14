@@ -219,8 +219,8 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	/// <param name="options">Optional persistent-raster placement geometry.</param>
 	/// <param name="cancellationToken">Cancellation observed before placement output commits.</param>
 	/// <returns>
-	/// A controlled unavailable result until virtual-parent relative placement is enabled by the
-	/// 1.15 implementation tranche.
+	/// An available opaque child placement, or a controlled unavailable result when the relative
+	/// placement cannot be established.
 	/// </returns>
 	public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreateRelativePlacementFromPlaceholderAsync(
 		TerminalRasterPlaceholder parent,
@@ -261,10 +261,25 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 			);
 		}
 
-		return ValueTask.FromResult(
-			TerminalControlResult<TerminalRasterPlacement>.Unavailable(
-				"Virtual-parent relative placement is not yet enabled by the current implementation tranche."
-			)
+		string? unavailableMessage = owner.GetRelativePersistentRasterPlacementCreationUnavailableMessage(
+			this.State,
+			parent.State
+		);
+		if ( unavailableMessage is not null ) {
+			return ValueTask.FromResult(
+				TerminalControlResult<TerminalRasterPlacement>.Unavailable(
+					unavailableMessage
+				)
+			);
+		}
+
+		return owner.CreateRelativePersistentRasterPlacementFromPlaceholderAsync(
+			this.State,
+			parent.State,
+			columnOffset,
+			rowOffset,
+			options,
+			cancellationToken
 		);
 	}
 
