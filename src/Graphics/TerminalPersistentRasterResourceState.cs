@@ -24,6 +24,7 @@ namespace Icod.Terminal;
 /// Tracks local ownership state for one persistent raster resource.
 /// </summary>
 internal sealed class TerminalPersistentRasterResourceState {
+	private readonly TerminalPersistentRasterLifecycleState lifecycle = new();
 	private int imageIdBits;
 	private int closed;
 
@@ -91,6 +92,16 @@ internal sealed class TerminalPersistentRasterResourceState {
 		get {
 			return 0 != Volatile.Read( ref this.closed );
 		}
+	}
+
+	internal TerminalRasterOwnershipState ObserveOwnershipState() {
+		return this.lifecycle.Observe();
+	}
+
+	internal bool TryMarkStale(
+		TerminalRasterOwnershipLossReason reason
+	) {
+		return this.lifecycle.TryMarkStale( reason );
 	}
 
 	internal void BindImageId(

@@ -48,6 +48,24 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 	}
 
 	/// <summary>
+	/// Gets one side-effect-free snapshot of Icod.Terminal's current local ownership certainty for this placement.
+	/// </summary>
+	/// <remarks>
+	/// A current result is local certainty only; it is not authenticated proof that terminal-side placement still exists.
+	/// </remarks>
+	public TerminalRasterOwnershipState OwnershipState {
+		get {
+			return Volatile.Read( ref this.session ) is null
+				? new TerminalRasterOwnershipState(
+					TerminalRasterOwnershipStatus.Disposed,
+					TerminalRasterOwnershipLossReason.ExplicitDisposal
+				)
+				: this.State.ObserveOwnershipState()
+			;
+		}
+	}
+
+	/// <summary>
 	/// Replaces this placement while retaining its established positioning mode and private
 	/// resource and placement identities. A relative placement retains its immutable parent and
 	/// current relative cell offsets while common placement geometry is replaced.
