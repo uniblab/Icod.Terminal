@@ -91,20 +91,30 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 			);
 		}
 
-		return this.State.Parent is null
-			? owner.UpdatePersistentRasterPlacementAsync(
-				this.State,
-				options,
-				cancellationToken
-			)
-			: owner.UpdateRelativePersistentRasterPlacementAsync(
+		if ( this.State.Parent is not null ) {
+			return owner.UpdateRelativePersistentRasterPlacementAsync(
 				this.State,
 				this.State.ColumnOffset,
 				this.State.RowOffset,
 				options,
 				cancellationToken
-			)
-		;
+			);
+		}
+		if ( this.State.VirtualParent is not null ) {
+			return owner.UpdateVirtualParentPersistentRasterPlacementAsync(
+				this.State,
+				this.State.ColumnOffset,
+				this.State.RowOffset,
+				options,
+				cancellationToken
+			);
+		}
+
+		return owner.UpdatePersistentRasterPlacementAsync(
+			this.State,
+			options,
+			cancellationToken
+		);
 	}
 
 	/// <summary>
@@ -139,18 +149,27 @@ public sealed class TerminalRasterPlacement : IAsyncDisposable {
 				"The persistent raster placement has already been disposed."
 			);
 		}
-		if ( this.State.Parent is null ) {
-			throw new InvalidOperationException(
-				"Only a relative persistent raster placement can update relative offsets."
+		if ( this.State.Parent is not null ) {
+			return owner.UpdateRelativePersistentRasterPlacementAsync(
+				this.State,
+				columnOffset,
+				rowOffset,
+				options,
+				cancellationToken
+			);
+		}
+		if ( this.State.VirtualParent is not null ) {
+			return owner.UpdateVirtualParentPersistentRasterPlacementAsync(
+				this.State,
+				columnOffset,
+				rowOffset,
+				options,
+				cancellationToken
 			);
 		}
 
-		return owner.UpdateRelativePersistentRasterPlacementAsync(
-			this.State,
-			columnOffset,
-			rowOffset,
-			options,
-			cancellationToken
+		throw new InvalidOperationException(
+			"Only a relative persistent raster placement can update relative offsets."
 		);
 	}
 
