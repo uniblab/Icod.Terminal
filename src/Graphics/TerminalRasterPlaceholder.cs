@@ -125,8 +125,8 @@ public sealed class TerminalRasterPlaceholder : IAsyncDisposable {
 	}
 
 	/// <summary>
-	/// Releases this placeholder's local ownership and, while its terminal identity remains current,
-	/// attempts one targeted terminal-side virtual-placement deletion.
+	/// Releases this placeholder's local ownership, releases physical descendants, and, while its
+	/// terminal identity remains current, attempts targeted terminal-side placement deletion.
 	/// </summary>
 	public ValueTask DisposeAsync() {
 		TerminalSession? owner = Interlocked.Exchange(
@@ -135,7 +135,7 @@ public sealed class TerminalRasterPlaceholder : IAsyncDisposable {
 		);
 		return owner is null
 			? ValueTask.CompletedTask
-			: owner.ReleasePersistentRasterPlaceholderAsync( this.State )
+			: owner.ReleasePersistentRasterPlaceholderWithDescendantsAsync( this.State )
 		;
 	}
 }
