@@ -5,7 +5,7 @@
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current stable release:** `1.13.0` — relative persistent-raster placement ownership
-- **Current development line:** not yet selected
+- **Current development line:** `1.14.0` — persistent-raster lifecycle observability
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -58,7 +58,7 @@ The final 1.13 public API fingerprint is:
 c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-Version `1.13.0` adds exactly two public methods over 1.12:
+Version `1.13.0` added exactly two public methods over 1.12:
 
 ```csharp
 TerminalRasterResource.CreateRelativePlacementAsync(
@@ -104,29 +104,74 @@ Release notes: [`docs/releases/1.13.0.md`](docs/releases/1.13.0.md).
 
 Versioned development evidence: [`Icod.Terminal-1.13.0-Development-Roadmap.md`](Icod.Terminal-1.13.0-Development-Roadmap.md).
 
-## 1.13 qualification
+## Current development line — 1.14.0
 
-T130–T138 are complete. The last prerelease qualification before stable closure was:
+The selected 1.14 theme is **Persistent Raster Lifecycle Observability**.
+
+The release will expose the ownership certainty that `Icod.Terminal` already maintains for opaque persistent raster resources and placements. It will not pretend that the terminal protocol provides a passive authoritative existence query for arbitrary terminal-resident images or placements.
+
+The governing rule is:
+
+> Expose Terminal's current ownership certainty; do not claim to observe terminal state that the protocol cannot non-destructively prove.
+
+The 1.14 design therefore centers on a side-effect-free immutable ownership-state snapshot for `TerminalRasterResource` and `TerminalRasterPlacement`. The snapshot must distinguish current usable ownership from certainty loss, lifetime release, and public-wrapper disposal while carrying the reason atomically.
+
+Candidate semantic states for the T140 API-regret gate are:
 
 ```text
-86bb11e7ff31dd03d5228fe1049f39c3d6cb7d28  #1702 / 34766762349
+Current
+Stale
+Released
+Disposed
 ```
 
-That exact `1.13.0-alpha.5` head passed:
+Candidate reason classes are:
 
 ```text
-Runtime Windows
-Runtime Linux
-Runtime macOS
-Package candidate / public API freeze
-Package Foundation
-Package Presentation
-Package Semantic and hardening
-Package Stable 1.x release line
-Validated package artifact
+None
+SessionStateLost
+ResourceMissing
+ParentPlacementLost
+AncestorReleased
+ResourceReleased
+ExplicitDisposal
 ```
 
-The stable T139 exact-head witness is recorded in the versioned 1.13 roadmap after release-candidate qualification.
+Exact public type/property names remain subject to T140 API freeze. The architectural requirements are already fixed:
+
+- inspection is synchronous and emits zero terminal traffic;
+- state/reason is observed atomically rather than as independently mutable public properties;
+- observations report library-owned certainty, not terminal authentication;
+- lifecycle transitions are monotonic and never resurrect stale/released/disposed ownership;
+- parent-cascade release must remain distinguishable from descendant-resource lifetime;
+- resource and placement identities remain opaque;
+- no generation number, image id, placement id, parent protocol identity, or backend selector becomes public;
+- no source-raster cache or automatic replay is introduced.
+
+Versioned roadmap:
+
+[`Icod.Terminal-1.14.0-Development-Roadmap.md`](Icod.Terminal-1.14.0-Development-Roadmap.md)
+
+Design authority:
+
+[`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md)
+
+### Planned 1.14 tranche sequence
+
+```text
+T140  architecture/API-regret gate and public snapshot freeze
+T141  internal lifecycle-state normalization
+T142  resource ownership observability
+T143  placement ownership observability
+T144  loss/release reason classification
+T145  relative-graph propagation hardening
+T146  concurrency and memory-model qualification
+T147  sample and downstream consumer qualification
+T148  package/API/XML/documentation qualification
+T149  stable 1.14 release closure
+```
+
+No production implementation begins until the 1.14 design authority is reviewed and the T140 public semantics are frozen.
 
 ## Stable architecture guardrails
 
@@ -142,21 +187,21 @@ The 1.x line continues to preserve:
 - production package dependencies declared centrally by `Icod.Terminal.csproj`;
 - cells/windows/layout/damage ownership in `Icod.DCurses`, not `Icod.Terminal`.
 
-## Deferred tracks after 1.13
+## Deferred tracks after 1.14
 
-The next release line is intentionally not selected by this closure. Future design candidates remain independent questions, including:
+Lifecycle observability is now selected for 1.14. The following remain independent future design questions rather than implicit 1.14 scope:
 
 - Unicode placeholder / virtual placements;
 - animation and frame lifecycle;
 - absolute screen-coordinate placement;
 - pixel-within-cell positioning;
-- richer persistent-raster observation or planning only if downstream need justifies it;
+- terminal-mutating existence probes or reconciliation operations;
 - scene/window/cell ownership (still expected to remain above `Icod.Terminal`);
-- hidden source-raster replay caches (currently excluded);
+- hidden source-raster replay caches (still excluded);
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside `Icod.Terminal`.
 
-Any future track should begin with a separate API-regret/ownership review rather than treating 1.13 relative placement as permission for general scene-layout expansion.
+Unicode placeholder support is a plausible later graphics track, but it requires a separate design for higher-level cell integration without leaking protocol-private image/placement identities.
 
 ## Release discipline
 
