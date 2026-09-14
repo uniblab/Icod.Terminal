@@ -42,6 +42,27 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	}
 
 	/// <summary>
+	/// Gets one side-effect-free snapshot of Icod.Terminal's current local ownership certainty for this resource.
+	/// </summary>
+	/// <remarks>
+	/// A current result is local certainty only; it is not authenticated proof that terminal-side storage still exists.
+	/// </remarks>
+	public TerminalRasterOwnershipState OwnershipState {
+		get {
+			return Volatile.Read( ref this.session ) is null
+				? new TerminalRasterOwnershipState(
+					TerminalRasterOwnershipStatus.Disposed,
+					TerminalRasterOwnershipLossReason.ExplicitDisposal
+				)
+				: new TerminalRasterOwnershipState(
+					TerminalRasterOwnershipStatus.Current,
+					TerminalRasterOwnershipLossReason.None
+				)
+			;
+		}
+	}
+
+	/// <summary>
 	/// Creates one opaque placement of this resource at the terminal's current cursor position.
 	/// </summary>
 	/// <param name="options">Optional persistent-raster placement geometry.</param>
