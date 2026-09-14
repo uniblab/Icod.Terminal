@@ -83,6 +83,43 @@ public sealed class TerminalRasterPlaceholderObservationTests {
 			),
 			placeholder.OwnershipState
 		);
+
+		TerminalCapabilityStatus capability = session.InspectCapability(
+			TerminalCapability.UnicodeRasterPlaceholders
+		);
+		Assert.Equal( TerminalCapabilitySupport.Verified, capability.Support );
+		Assert.Equal(
+			TerminalCapabilityEvidenceKind.LiveObservation,
+			capability.EvidenceKind
+		);
+		Assert.True( capability.IsUsable );
+
+		int deleteWriteIndex = transport.Writes.Count;
+		await placeholder.DisposeAsync();
+		Assert.Equal(
+			new TerminalRasterOwnershipState(
+				TerminalRasterOwnershipStatus.Disposed,
+				TerminalRasterOwnershipLossReason.ExplicitDisposal
+			),
+			placeholder.OwnershipState
+		);
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b_Ga=d,d=i,i=77,p=1,q=2\u001b\\"
+			),
+			transport.Writes[ deleteWriteIndex ]
+		);
+		Assert.Equal(
+			new TerminalRasterOwnershipState(
+				TerminalRasterOwnershipStatus.Current,
+				TerminalRasterOwnershipLossReason.None
+			),
+			resource.OwnershipState
+		);
+
+		int writeCountAfterDisposal = transport.Writes.Count;
+		await placeholder.DisposeAsync();
+		Assert.Equal( writeCountAfterDisposal, transport.Writes.Count );
 	}
 
 	[Fact]
