@@ -37,7 +37,7 @@ public sealed partial class TerminalSession {
 		if ( !this.persistentRasterRegistry.IsPlacementCurrent( parentState ) ) {
 			return "The parent persistent raster placement is no longer current for this session generation.";
 		}
-		if ( TerminalPersistentRasterRegistry.MaximumRelativeDepth <= parentState.RelativeDepth ) {
+		if ( TerminalPersistentRasterRegistry.MaximumRelativeDepth <= this.GetEffectivePersistentRasterRelativeDepth( parentState ) ) {
 			return $"A relative persistent raster placement cannot exceed the portable maximum relative depth {TerminalPersistentRasterRegistry.MaximumRelativeDepth}.";
 		}
 
