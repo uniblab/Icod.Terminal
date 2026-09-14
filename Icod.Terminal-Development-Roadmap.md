@@ -5,7 +5,7 @@
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current stable release:** `1.13.0` — relative persistent-raster placement ownership
-- **Current development line:** `1.14.0` — persistent-raster lifecycle observability
+- **Current release candidate:** `1.14.0` — persistent-raster lifecycle observability
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -32,7 +32,7 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and expansion.
-- `Icod.Terminal` owns the live terminal conversation, native modes, input decoding, semantic events, lifecycle, query routing, semantic capability evidence/planning, terminal output, ephemeral raster routing, persistent raster resource/placement ownership, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation, native modes, input decoding, semantic events, lifecycle, query routing, semantic capability evidence/planning, terminal output, ephemeral raster routing, persistent raster resource/placement ownership and lifecycle certainty, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and higher-level curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -58,7 +58,7 @@ The final 1.13 public API fingerprint is:
 c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-Version `1.13.0` adds exactly two public methods over 1.12:
+Version `1.13.0` added exactly two public methods over 1.12:
 
 ```csharp
 TerminalRasterResource.CreateRelativePlacementAsync(
@@ -104,17 +104,21 @@ Release notes: [`docs/releases/1.13.0.md`](docs/releases/1.13.0.md).
 
 Versioned development evidence: [`Icod.Terminal-1.13.0-Development-Roadmap.md`](Icod.Terminal-1.13.0-Development-Roadmap.md).
 
-## 1.14 selected development track
+## 1.14 release candidate — Persistent Raster Lifecycle Observability
 
-Version `1.14.0` is **Persistent Raster Lifecycle Observability**.
+Version `1.14.0` exposes Terminal's current local persistent-raster ownership certainty without pretending to observe terminal state that the protocol cannot non-destructively prove.
 
-The governing principle is:
+The public additions are:
 
-> Expose Terminal's current ownership certainty; do not claim to observe terminal state that the protocol cannot non-destructively prove.
+```text
+TerminalRasterOwnershipStatus
+TerminalRasterOwnershipLossReason
+TerminalRasterOwnershipState
+TerminalRasterResource.OwnershipState
+TerminalRasterPlacement.OwnershipState
+```
 
-The approved design adds side-effect-free lifecycle observation for opaque persistent raster resource/placement handles while preserving backend neutrality, generation-scoped certainty, independent resource versus placement lifetime, and the no-replay/no-private-identity boundaries established through 1.13.
-
-The public model is planned around four semantic states:
+The four semantic states are:
 
 ```text
 Current
@@ -123,9 +127,45 @@ Released
 Disposed
 ```
 
-with one immutable state/reason snapshot. T140 owns the final public spelling/API freeze before production implementation proceeds.
+The semantic reasons are:
 
-The selected tranche sequence is:
+```text
+None
+SessionStateLost
+ResourceMissing
+ParentPlacementLost
+AncestorReleased
+ResourceReleased
+ExplicitDisposal
+```
+
+Status and reason are observed atomically in one immutable snapshot. Reading `OwnershipState` is synchronous, bounded, and side-effect free: it writes no terminal bytes, allocates no query, acquires no output gate, triggers no cleanup, and performs no replay/re-upload.
+
+`Current` is local certainty rather than terminal authentication. A correlated `ENOENT` can publish `Stale / ResourceMissing`; a correlated `ENOPARENT` can publish `Stale / ParentPlacementLost` for the affected placement subtree without falsely declaring its resources missing. Parent/resource cleanup publishes `Released` for still-reachable descendant placement wrappers while independent raster resources retain their own lifetime.
+
+The canonical two-axis witness is:
+
+```text
+Resource A      Current / None
+  Placement A1 Current / None
+Resource B      Current / None
+  Placement B1 Current / None, relative to A1
+
+Dispose A1
+  Placement A1 Disposed / ExplicitDisposal
+  Placement B1 Released / AncestorReleased
+  Resource B    Current / None
+```
+
+Resource B remains usable for a fresh ordinary placement.
+
+The final 1.14 public API fingerprint is:
+
+```text
+2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
+```
+
+The implementation follows T140–T149:
 
 ```text
 T140  architecture/API-regret gate and public snapshot freeze
@@ -140,13 +180,17 @@ T148  package/API/XML/documentation qualification
 T149  stable 1.14 release closure
 ```
 
+Implementation and release-facing documentation are complete on the development branch. The final T149 exact-head workflow is intentionally required after the release-closure commit; the roadmap does not self-certify the commit that contains this statement.
+
 Design authority: [`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md).
 
 Implementation plan: [`docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md`](docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md).
 
 Versioned roadmap: [`Icod.Terminal-1.14.0-Development-Roadmap.md`](Icod.Terminal-1.14.0-Development-Roadmap.md).
 
-The 1.14 architectural design has been approved. The implementation plan is complete; T140 is the next execution tranche.
+Release notes: [`docs/releases/1.14.0.md`](docs/releases/1.14.0.md).
+
+Public API baseline: [`docs/Public-API-Baseline-1.14.md`](docs/Public-API-Baseline-1.14.md).
 
 ## Stable architecture guardrails
 
@@ -159,10 +203,11 @@ The 1.x line continues to preserve:
 - opaque persistent resource/placement identities;
 - generation-scoped persistent ownership with no automatic replay;
 - deterministic cleanup and committed-output integrity;
+- side-effect-free local ownership observation without invented remote-existence guarantees;
 - production package dependencies declared centrally by `Icod.Terminal.csproj`;
 - cells/windows/layout/damage ownership in `Icod.DCurses`, not `Icod.Terminal`.
 
-## Deferred tracks after 1.14 selection
+## Deferred tracks after 1.14
 
 Future design candidates remain independent questions, including:
 
@@ -176,8 +221,4 @@ Future design candidates remain independent questions, including:
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside `Icod.Terminal`.
 
-These remain outside 1.14 unless the versioned roadmap is explicitly reopened through another API-regret review.
-
-## Release discipline
-
-Stable releases require exact-head Windows/Linux/macOS runtime validation, public API/package freeze, package contract shards, downstream Stable 1.x acceptance, and a validated package artifact before maintainer merge/tag/publish actions.
+These remain outside 1.14 and require a future independent API-regret/design review.
