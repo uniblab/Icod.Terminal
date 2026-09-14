@@ -2,7 +2,7 @@
 
 **Release:** `1.14.0`  
 **Theme:** persistent-raster lifecycle observability  
-**Status:** approved design; implementation plan complete; T140 ready  
+**Status:** implementation and release closure complete; final exact-head qualification required  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** stable `1.13.0`
 
@@ -24,13 +24,13 @@ Implementation plan:
 
 [`docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md`](docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md)
 
-Permanent ownership authority to be updated during qualification:
+Permanent ownership authority:
 
 [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
 
 ## Why this release follows 1.13
 
-The persistent-raster progression is now:
+The persistent-raster progression is:
 
 ```text
 1.11  opaque persistent resources and placements
@@ -41,7 +41,7 @@ The persistent-raster progression is now:
 
 Version 1.13 made placement lifetime and raster-resource lifetime intentionally independent. A relative child placement can die with its parent while the raster resource used by that child remains independently owned and usable. Version 1.14 makes that distinction visible without exposing private protocol identities or moving layout/scene ownership into Terminal.
 
-## Frozen architectural direction
+## Frozen public contract
 
 ### Local certainty, not remote existence
 
@@ -49,51 +49,7 @@ The observation API reports `Icod.Terminal`'s current local certainty. It does n
 
 The release therefore does not add `ExistsAsync()`, `VerifyExistsAsync()`, or any similar API that would imply a passive remote object-existence query the reviewed backend cannot truthfully provide.
 
-### Four semantic states
-
-The approved model distinguishes:
-
-```text
-Current
-Stale
-Released
-Disposed
-```
-
-- `Current` means the handle belongs to the current local ownership model and no evidence has invalidated the identity required by that handle.
-- `Stale` means terminal-resident certainty has been lost and cannot be resurrected.
-- `Released` means a reachable placement wrapper represents local ownership that ended because another owner released its lifetime relationship.
-- `Disposed` means the caller disposed that public wrapper.
-
-### Semantic reasons
-
-The approved reason model distinguishes:
-
-```text
-None
-SessionStateLost
-ResourceMissing
-ParentPlacementLost
-AncestorReleased
-ResourceReleased
-ExplicitDisposal
-```
-
-Reasons are backend-neutral semantics. Raw Kitty error strings, private image/placement ids, and generation numbers remain private.
-
-### Atomic snapshot
-
-Status and reason are observed as one immutable public snapshot rather than as independently read properties.
-
-A caller must not observe torn combinations such as:
-
-```text
-Current + ResourceMissing
-Released + None
-Disposed + ParentPlacementLost
-```
-
-T140 freezes the exact public spelling. The approved candidate surface is:
+### Public states
 
 ```csharp
 public enum TerminalRasterOwnershipStatus {
@@ -102,7 +58,16 @@ public enum TerminalRasterOwnershipStatus {
 	Released,
 	Disposed
 }
+```
 
+- `Current` — the handle remains current under Terminal's local ownership model.
+- `Stale` — terminal-resident certainty has been lost and cannot be resurrected.
+- `Released` — a reachable placement wrapper represents local placement lifetime ended by another owner.
+- `Disposed` — the caller explicitly disposed that public wrapper.
+
+### Public reasons
+
+```csharp
 public enum TerminalRasterOwnershipLossReason {
 	None,
 	SessionStateLost,
@@ -112,57 +77,60 @@ public enum TerminalRasterOwnershipLossReason {
 	ResourceReleased,
 	ExplicitDisposal
 }
+```
 
+Reasons are backend-neutral semantics. Raw Kitty errors, private image/placement ids, and generation numbers remain private.
+
+### Atomic snapshot
+
+```csharp
 public readonly record struct TerminalRasterOwnershipState(
 	TerminalRasterOwnershipStatus Status,
 	TerminalRasterOwnershipLossReason LossReason
 );
 ```
 
-and one synchronous property on both opaque handle types:
+Both opaque handle types expose:
 
 ```csharp
 public TerminalRasterOwnershipState OwnershipState { get; }
 ```
 
-### Monotonic state
+Status and reason are observed atomically. Callers cannot observe torn pairs such as `Current / ResourceMissing`, `Released / None`, or `Disposed / ParentPlacementLost`.
 
-High-level lifecycle transitions are monotonic:
+### Monotonic lifecycle
+
+Underlying ownership transitions are monotonic:
 
 ```text
-Current  -> Stale
-Current  -> Released
-Current  -> Disposed
-Stale    -> Disposed
-Released -> Disposed
+Current -> Stale
+Current -> Released
 ```
 
-No stale/released/disposed handle becomes current again. Late acknowledgements do not resurrect certainty.
+A stale/released underlying ownership state never becomes current again. Wrapper disposal overrides observation for that wrapper as `Disposed / ExplicitDisposal` without resurrecting underlying ownership.
 
 ### Side-effect-free observation
 
-Reading lifecycle state must never:
+Reading `OwnershipState` never:
 
-- write terminal bytes;
-- register or allocate a terminal query;
-- acquire the output gate;
-- verify a capability;
-- mutate registry ownership;
-- trigger cleanup;
-- replay/re-upload raster content;
-- select or expose a graphics backend.
+- writes terminal bytes;
+- registers or allocates a terminal query;
+- acquires the output gate;
+- verifies a capability;
+- mutates registry ownership;
+- triggers cleanup;
+- replays/re-uploads raster content;
+- selects or exposes a graphics backend.
 
 Observation is synchronous and bounded.
 
 ## Required two-axis ownership example
 
-The 1.13 resource/lifetime separation remains visible:
-
 ```text
-Resource A     Current
-  Placement A1 Current
-Resource B     Current
-  Placement B1 Current, relative to A1
+Resource A      Current / None
+  Placement A1 Current / None
+Resource B      Current / None
+  Placement B1 Current / None, relative to A1
 
 Dispose A1
   Placement A1 Disposed / ExplicitDisposal
@@ -170,161 +138,150 @@ Dispose A1
   Resource B    Current / None
 ```
 
-Resource B must remain usable for a fresh ordinary placement if no independent evidence invalidated it.
+Resource B remains usable for a fresh ordinary placement if no independent evidence invalidated it.
 
-## Tranche roadmap
+## Tranche completion
 
 ### T140 — Architecture/API-regret gate and public snapshot freeze
 
-**Objective:** freeze the minimum additive public surface before internal lifecycle implementation expands.
+**Status: complete.**
 
-Deliverables:
+The exact public spelling above is frozen. The RED contract commit `05022ae3f611ca24c0ce25e3a81cbf9d1a889b51` was independently re-run and failed across `net8.0`, `net9.0`, and `net10.0` because the lifecycle types and `OwnershipState` members did not yet exist. The subsequent implementation satisfied that contract without exposing protocol/session identity.
 
-- RED compile-time/public-shape tests for the exact lifecycle enums, immutable snapshot, and resource/placement properties;
-- no numeric protocol/session identity in the public surface;
-- public XML wording that defines `Current` as local certainty, not remote existence/authentication;
-- final T140 spelling frozen in `docs/Public-API-Baseline-1.14.md`;
-- GREEN public-shape tests on `net8.0`, `net9.0`, and `net10.0`.
-
-The final `.sha256` fingerprint is generated later from the qualified built surface; T140 does not invent one manually.
+`docs/Public-API-Baseline-1.14.md` is the human-readable surface authority.
 
 ### T141 — Internal lifecycle-state normalization
 
-**Objective:** represent status and reason with one packed monotonic internal value.
+**Status: complete.**
 
-Deliverables:
+A packed internal lifecycle value uses atomic observation and compare/exchange transitions. Resource and placement states each own one lifecycle state. Only current state can transition to stale/released; late work cannot resurrect certainty. Explicit wrapper disposal remains wrapper-local.
 
-- one internal lifecycle state object attached to every resource and placement state;
-- atomic `Observe()`;
-- `TryMarkStale(...)` and placement `TryMarkReleased(...)` operations;
-- only `Current` may transition to stale/released;
-- wrapper disposal remains wrapper-local and overrides the underlying state with `Disposed / ExplicitDisposal`;
-- direct transition-table tests proving impossible combinations and no resurrection.
+Direct transition tests cover valid reasons, impossible state/reason pairings, first-writer monotonicity, and no resurrection.
 
 ### T142 — Resource ownership observability
 
-**Objective:** make existing resource certainty loss visible without changing resource operations.
+**Status: complete.**
 
-Required witnesses:
+Required witnesses are implemented:
 
 ```text
 new acknowledged resource          Current / None
-InvalidateState/lifecycle loss      Stale / SessionStateLost
-correlated missing resource         Stale / ResourceMissing
-explicit wrapper disposal           Disposed / ExplicitDisposal
+session/lifecycle certainty loss   Stale / SessionStateLost
+correlated missing resource        Stale / ResourceMissing
+explicit wrapper disposal          Disposed / ExplicitDisposal
 ```
 
-Repeated state reads must emit no bytes, register no query, and trigger no cleanup.
+Repeated observation emits no terminal output and performs no cleanup/query work.
 
 ### T143 — Placement ownership observability
 
-**Objective:** expose placement lifetime separately from resource lifetime.
+**Status: complete.**
 
-Required witnesses include:
+Required witnesses are implemented:
 
 ```text
-new acknowledged placement          Current / None
-session certainty loss              Stale / SessionStateLost
-parent-loss evidence                Stale / ParentPlacementLost
-resource-missing evidence           Stale / ResourceMissing
-ancestor placement disposal         Released / AncestorReleased
-owning-resource disposal            Released / ResourceReleased
-explicit wrapper disposal           Disposed / ExplicitDisposal
+new acknowledged placement         Current / None
+session certainty loss             Stale / SessionStateLost
+parent-loss evidence               Stale / ParentPlacementLost
+resource-missing evidence          Stale / ResourceMissing
+ancestor placement disposal        Released / AncestorReleased
+owning-resource disposal           Released / ResourceReleased
+explicit wrapper disposal          Disposed / ExplicitDisposal
 ```
 
-The Resource A / Resource B cross-resource parent example is a release gate.
+The Resource A / Resource B cross-resource example is covered both at registry level and with live public handles.
 
 ### T144 — Loss/release reason classification
 
-**Objective:** connect the new semantic reasons to the existing narrow protocol error decisions without adding another response classifier.
+**Status: complete.**
 
-Required semantics:
+The new observation layer reuses the existing narrow response classification; it does not add a second protocol classifier.
 
-- `ENOPARENT` -> affected placement subtree `Stale / ParentPlacementLost` without automatically staling the parent raster resource;
-- `ENOENT` denoting missing resource identity -> affected resource `Stale / ResourceMissing` and dependent placement certainty according to existing narrow rules;
+- correlated `ENOPARENT` publishes `Stale / ParentPlacementLost` for the affected placement subtree without automatically staling its raster resources;
+- correlated `ENOENT` denoting missing resource identity publishes `Stale / ResourceMissing` for the affected resource and dependent placements;
 - `ECYCLE`, `ETOODEEP`, malformed responses, wrong identities, timeout, and transport failure do not manufacture lifecycle loss unless the established path independently invalidates state.
+
+Dedicated public-handle protocol-observation tests assert these state/reason results directly.
 
 ### T145 — Relative-graph propagation hardening
 
-**Objective:** prove truthful lifecycle propagation through the complete bounded 1.13 graph.
+**Status: complete.**
 
-Matrix:
+Coverage retains the complete bounded 1.13 graph behavior and adds lifecycle-state assertions for:
 
 - depth 0 through 8 and attempted depth 9;
-- branching graphs;
-- cross-resource A -> B -> C chains;
-- middle-parent disposal;
-- middle-resource disposal;
+- branching/cross-resource ownership;
+- middle-parent release;
+- middle-resource release;
 - complete session invalidation;
-- parent-loss evidence on a subtree;
-- missing-resource evidence for one resource;
+- parent-loss evidence;
+- missing-resource evidence;
 - unchanged 256-resource / 4096-placement ceilings;
-- unchanged collision-safe private identity behavior.
+- unchanged private identity/collision behavior.
 
 Cleanup remains descendant-before-parent. Descendant raster resources remain independent unless separately invalidated/disposed.
 
 ### T146 — Concurrency and memory-model qualification
 
-**Objective:** prove observation is safe while asynchronous ownership work changes state.
+**Status: complete.**
 
-Required tests:
+Concurrency tests prove:
 
-- concurrent read vs wrapper disposal;
-- concurrent read vs session invalidation;
-- concurrent read vs ancestor/resource release;
-- no torn status/reason pair;
-- no resurrection from late acknowledgements;
-- repeated observation while the output gate is held completes without waiting for output ownership;
-- no unbounded allocation or synchronization path for reads.
+- concurrent observation versus lifecycle transition does not tear status/reason;
+- competing stale/released transitions have exactly one winner;
+- readers can see only `Current / None` or the winning terminal pair;
+- generation invalidation never resurrects current state;
+- observation uses atomic local reads rather than the terminal output/query path.
 
-The intended implementation is one packed `int` using `Volatile.Read` / `Interlocked.CompareExchange`; locks are introduced only if a failing test proves that design insufficient.
+No lifecycle observation lock or output-gate dependency was introduced.
 
 ### T147 — Sample and downstream consumer qualification
 
-**Objective:** make the ownership distinction executable and prove downstream compatibility.
+**Status: complete.**
 
-The persistent-raster sample will demonstrate:
+`Icod.Terminal.PersistentRaster.Sample` now demonstrates:
 
-1. resources/placements begin `Current`;
+1. resources/placements begin `Current / None`;
 2. Resource B placement is relative to Resource A placement;
-3. parent disposal makes the relative child `Released / AncestorReleased`;
-4. Resource B remains `Current`;
-5. Resource B can create a fresh ordinary placement;
-6. explicitly disposing the released child wrapper makes that wrapper `Disposed / ExplicitDisposal`.
+3. parent disposal makes the parent wrapper `Disposed / ExplicitDisposal`;
+4. the relative child becomes `Released / AncestorReleased`;
+5. Resource B remains `Current / None`;
+6. Resource B creates a fresh ordinary current placement;
+7. explicit disposal of the released child wrapper produces `Disposed / ExplicitDisposal`.
 
-Sample source remains backend-neutral and free of private IDs.
-
-The current stable `Icod.DCurses` package acceptance/hardening witness must pass. No DCurses source adoption is required for 1.14 success.
+The sample remains backend-neutral and contains no public/private protocol ids. Stable `Icod.DCurses` package acceptance remains part of the release-line package shard and requires no downstream source adoption.
 
 ### T148 — Package/API/XML/documentation qualification
 
-**Objective:** prove the additive public contract works through the packed NuGet and permanent documentation.
+**Status: complete.**
 
-Required work:
+The fresh NuGet-only persistent-raster consumer uses the new lifecycle vocabulary on `net8.0`, `net9.0`, and `net10.0`. Generated XML verification requires all new lifecycle types/properties. The package/public-API gate generated identical framework snapshots and froze the final fingerprint:
 
-- fresh package-only consumer uses the lifecycle types/properties on all three TFMs;
-- generated XML contains every lifecycle type/member;
-- package verifier freezes the exact API surface;
-- `docs/Public-API-Baseline-1.14.sha256` is generated by the existing fingerprint process;
-- `docs/Persistent-Raster-Ownership.md`, root README, sample docs, and versioned roadmap are synchronized;
-- historical 1.13 and earlier release documents remain unchanged.
+```text
+2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
+```
+
+The machine fingerprint is stored in `docs/Public-API-Baseline-1.14.sha256`. Historical 1.13 and earlier fingerprints remain unchanged.
+
+The permanent ownership authority, root README, sample README/catalog, package metadata, and public API baseline are synchronized for 1.14.
 
 ### T149 — Stable 1.14.0 release closure
 
-**Objective:** produce one exact stable release candidate and qualify the complete matrix.
+**Status: release-closure content complete; final exact-head qualification required.**
 
-Required authorities:
+The repository version authority is `1.14.0`. Release closure includes:
 
-- final package version `1.14.0`;
 - `CHANGELOG.md`;
 - `docs/releases/1.14.0.md`;
 - root README;
 - final public API baseline/fingerprint;
 - permanent ownership authority;
 - main and versioned roadmaps;
+- package metadata;
+- sample documentation;
 - stable downstream package witness.
 
-Required exact-head jobs:
+The final release-closure commit must pass all nine PR jobs:
 
 ```text
 Runtime Windows
@@ -338,7 +295,7 @@ Package Stable 1.x release line
 Validated package artifact
 ```
 
-The roadmap must not self-certify its own untested final commit. Merge, tag, and publication remain maintainer actions after exact-head validation.
+This roadmap deliberately does not self-certify the commit that contains its final release-closure status. Exact-head qualification is recorded in PR #58 after CI completes. Merge, tag, and publication remain maintainer actions.
 
 ## Testing strategy
 
@@ -356,13 +313,13 @@ Testing proceeds from the semantic state machine outward:
 10. downstream Stable 1.x acceptance;
 11. complete Windows/Linux/macOS release matrix.
 
-Every public lifecycle state and reason requires a direct witness.
+Every public lifecycle state and reason has a direct witness.
 
 ## Compatibility requirements
 
 1.14 is additive over the stable `1.0.0` floor and published 1.13 surface.
 
-Existing consumers that never read `OwnershipState` must retain existing:
+Existing consumers that never read `OwnershipState` retain existing:
 
 - resource/placement creation behavior;
 - current-cursor and relative placement wire encoding;
@@ -376,7 +333,7 @@ Existing consumers that never read `OwnershipState` must retain existing:
 
 No new `TerminalCapability` is introduced solely for local lifecycle inspection.
 
-No new production package dependency is introduced.
+No new production package dependency is introduced. Production dependencies remain `Icod.TermInfo 1.12.0` and `Icod.Timing 1.0.0`.
 
 ## Explicit 1.14 non-goals
 
