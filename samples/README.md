@@ -14,7 +14,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
-| Create/update/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | `Icod.Terminal.PersistentRaster.Sample` |
+| Create/update/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
 | Combine TermInfo lifecycle and advanced-placement planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |

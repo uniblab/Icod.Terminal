@@ -294,7 +294,7 @@ The [`samples`](samples/README.md) directory contains focused examples. Recommen
 - `Icod.Terminal.CapabilityPlanning.Sample` — inspect-first semantic planning plus optional explicit verification;
 - `Icod.Terminal.Query.Sample` — bounded terminal queries;
 - `Icod.Terminal.RasterGraphics.Sample` — backend-neutral ephemeral raster display;
-- `Icod.Terminal.PersistentRaster.Sample` — ordinary and relative persistent placement, both relative update modes, signed offsets, crop/z-order, immutable parentage, parent-cascade cleanup, and independent descendant-resource reuse without protocol ids/backend branching;
+- [`Icod.Terminal.PersistentRaster.Sample`](samples/Icod.Terminal.PersistentRaster.Sample/README.md) — ordinary and relative persistent placement, both relative update modes, signed offsets, crop/z-order, immutable parentage, parent-cascade cleanup, and independent descendant-resource reuse without protocol ids/backend branching;
 - `Icod.Terminal.TermInfoPersistentRaster.Sample` — Inspection 1.12 lifecycle plus advanced-placement planning, optional live Terminal verification, caller-owned evidence/replanning, and concrete persistent execution;
 - focused state, color, notification, prompt, and shell-integration samples described in the sample catalog.
 
