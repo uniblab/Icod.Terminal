@@ -99,8 +99,8 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	/// <param name="options">Required virtual-placeholder terminal-cell dimensions.</param>
 	/// <param name="cancellationToken">Cancellation observed before placeholder output commits.</param>
 	/// <returns>
-	/// A controlled unavailable result until the acknowledged virtual-placement transaction is
-	/// enabled by the 1.15 virtual-placement implementation tranche.
+	/// An available opaque placeholder after correlated acknowledgement, or a controlled unavailable,
+	/// unsupported, or failed result when the virtual placement cannot be established.
 	/// </returns>
 	public ValueTask<TerminalControlResult<TerminalRasterPlaceholder>> CreatePlaceholderAsync(
 		TerminalRasterPlaceholderOptions options,
@@ -110,17 +110,18 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		options.Validate();
 		cancellationToken.ThrowIfCancellationRequested();
 
-		if ( Volatile.Read( ref this.session ) is null ) {
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
 			throw new ObjectDisposedException(
 				nameof( TerminalRasterResource ),
 				"The persistent raster resource has already been disposed."
 			);
 		}
 
-		return ValueTask.FromResult(
-			TerminalControlResult<TerminalRasterPlaceholder>.Unavailable(
-				"Unicode raster placeholder creation is not yet enabled by the current implementation tranche."
-			)
+		return owner.CreatePersistentRasterPlaceholderAsync(
+			this.State,
+			options,
+			cancellationToken
 		);
 	}
 
