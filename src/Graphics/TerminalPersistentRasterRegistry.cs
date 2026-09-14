@@ -229,6 +229,17 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 	internal void Invalidate() {
 		lock ( this.synchronization ) {
+			foreach ( TerminalPersistentRasterPlacementState placement in this.placements ) {
+				_ = placement.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
+			}
+			foreach ( TerminalPersistentRasterResourceState resource in this.resources.Keys ) {
+				_ = resource.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
+			}
+
 			this.generation = AdvanceGeneration( this.generation );
 			this.resources.Clear();
 			this.placements.Clear();
@@ -251,9 +262,15 @@ internal sealed class TerminalPersistentRasterRegistry {
 				return false;
 			}
 
+			_ = resource.TryMarkStale(
+				TerminalRasterOwnershipLossReason.ResourceMissing
+			);
 			TerminalPersistentRasterPlacementState[] affectedPlacements =
 				this.CollectResourcePlacementSubtreesUnsafe( resourcePlacements );
 			foreach ( TerminalPersistentRasterPlacementState placement in affectedPlacements ) {
+				_ = placement.TryMarkStale(
+					TerminalRasterOwnershipLossReason.ResourceMissing
+				);
 				this.RemovePlacementUnsafe(
 					placement,
 					close: false
@@ -279,6 +296,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 			TerminalPersistentRasterPlacementState[] affectedPlacements =
 				this.CollectPlacementSubtreeUnsafe( placement );
 			foreach ( TerminalPersistentRasterPlacementState affectedPlacement in affectedPlacements ) {
+				_ = affectedPlacement.TryMarkStale(
+					TerminalRasterOwnershipLossReason.ParentPlacementLost
+				);
 				this.RemovePlacementUnsafe(
 					affectedPlacement,
 					close: false
@@ -306,9 +326,15 @@ internal sealed class TerminalPersistentRasterRegistry {
 			);
 
 			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				_ = placement.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
 				placement.Close();
 			}
 			foreach ( TerminalPersistentRasterResourceState resource in releasedResources ) {
+				_ = resource.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
 				resource.Close();
 			}
 
@@ -348,6 +374,14 @@ internal sealed class TerminalPersistentRasterRegistry {
 				resourcePlacements
 			);
 			foreach ( TerminalPersistentRasterPlacementState placement in releasedPlacements ) {
+				_ = placement.TryMarkReleased(
+					ReferenceEquals(
+						placement.Resource,
+						resource
+					)
+						? TerminalRasterOwnershipLossReason.ResourceReleased
+						: TerminalRasterOwnershipLossReason.AncestorReleased
+				);
 				this.RemovePlacementUnsafe(
 					placement,
 					close: true
@@ -384,6 +418,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 			releasedPlacements = this.CollectPlacementSubtreeUnsafe( placement );
 			foreach ( TerminalPersistentRasterPlacementState released in releasedPlacements ) {
+				_ = released.TryMarkReleased(
+					TerminalRasterOwnershipLossReason.AncestorReleased
+				);
 				this.RemovePlacementUnsafe(
 					released,
 					close: true
