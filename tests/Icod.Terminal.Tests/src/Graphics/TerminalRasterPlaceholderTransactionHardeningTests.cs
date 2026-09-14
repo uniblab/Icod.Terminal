@@ -123,8 +123,10 @@ public sealed class TerminalRasterPlaceholderTransactionHardeningTests {
 			),
 			resource.OwnershipState
 		);
-		Assert.Equal( 1, transport.Writes.Count );
+		Assert.Single( transport.Writes );
 
+		clock.Advance( TimeSpan.FromSeconds( 2 ) );
+		await YieldSeveralTimesAsync();
 		Task<TerminalControlResult<TerminalRasterPlaceholder>> retry =
 			resource.CreatePlaceholderAsync(
 				new TerminalRasterPlaceholderOptions {
@@ -183,6 +185,8 @@ public sealed class TerminalRasterPlaceholderTransactionHardeningTests {
 			resource.OwnershipState
 		);
 
+		clock.Advance( TimeSpan.FromSeconds( 2 ) );
+		await YieldSeveralTimesAsync();
 		Task<TerminalControlResult<TerminalRasterPlaceholder>> retry =
 			resource.CreatePlaceholderAsync(
 				new TerminalRasterPlaceholderOptions {
