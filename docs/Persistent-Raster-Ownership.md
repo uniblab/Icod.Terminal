@@ -2,7 +2,7 @@
 
 This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources and placements.
 
-Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 adds bounded relative placement ownership with immutable parentage while preserving resource ownership as a separate lifetime axis.
+Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added bounded relative placement ownership with immutable parentage while preserving resource ownership as a separate lifetime axis. Version 1.14 adds side-effect-free observation of Terminal's local ownership certainty and semantic loss/release reason.
 
 Historical tranche and versioned-roadmap documents explain how the design was developed and qualified. This document defines the supported semantic contract consumers should rely on.
 
@@ -19,6 +19,7 @@ CreateRasterResourceAsync(...)
         -> ordinary current-cursor placement ownership
         -> relative placement ownership
         -> acknowledged placement update
+        -> side-effect-free ownership observation
         -> deterministic disposal
 ```
 
@@ -36,7 +37,7 @@ It is intentionally distinct from ordinary `RasterGraphics`. A terminal may supp
 
 `InspectCapability(...)` remains side-effect free. `VerifyCapabilityAsync(...)` is explicit and may issue only the reviewed bounded support probe for this semantic capability.
 
-Version 1.13 does not add a second capability enum for relative placement. The reviewed persistent-capable backend and the local 1.13 ownership contract remain the authority for relative operations.
+Versions 1.13 and 1.14 do not add another capability enum for relative placement or lifecycle observation. Relative placement and ownership-state observation are local contracts layered on the reviewed persistent ownership capability.
 
 ## 3. Public ownership surface
 
@@ -101,9 +102,16 @@ TerminalControlMutationResult result = await childPlacement.UpdateRelativeAsync(
 );
 ```
 
-The public types do not expose Kitty image ids, image numbers, placement ids, parent numeric identities, raw APC command dictionaries, or a backend selector. There is no public reparenting operation and no mutable public parent property.
+Version 1.14 adds the same synchronous ownership snapshot property to resource and placement handles:
 
-## 4. Two independent ownership axes — 1.13
+```csharp
+TerminalRasterOwnershipState resourceState = resource.OwnershipState;
+TerminalRasterOwnershipState placementState = placement.OwnershipState;
+```
+
+The public types do not expose Kitty image ids, image numbers, placement ids, parent numeric identities, session generation ids, raw APC command dictionaries, or a backend selector. There is no public reparenting operation and no mutable public parent property.
+
+## 4. Two independent ownership axes — 1.13+
 
 Persistent relative placement has two simultaneous relationships:
 
@@ -124,6 +132,8 @@ These axes are intentionally independent:
 - a child raster resource may remain current and be used for another placement after one relative placement dies with its parent;
 - disposing a raster resource removes that resource's placements and every relative descendant placement whose lifetime depends on those placements, even when a descendant placement belongs to another still-live resource;
 - descendant raster resources remain independently owned unless separately disposed or invalidated.
+
+Version 1.14 makes this separation directly observable. A descendant placement released by parent disposal can report `Released / AncestorReleased` while its independently owned raster resource remains `Current / None`.
 
 ## 5. Placement positioning and depth
 
@@ -311,35 +321,35 @@ The following invalidate current terminal-resident certainty:
 
 After invalidation:
 
-- existing resource and placement handles are stale;
+- existing resource and placement handles observe `Stale / SessionStateLost` until their wrappers are disposed;
 - the complete local relative graph is stale;
 - placement update returns controlled `Unavailable` before output;
 - new placement creation from a stale resource or stale parent returns controlled `Unavailable` before output;
-- disposal releases local ownership without emitting stale numeric identifiers;
+- disposal releases local ownership without emitting stale numeric identifiers and changes that public wrapper to `Disposed / ExplicitDisposal`;
 - no automatic re-upload or rebind occurs;
 - no hidden source-image cache is consulted.
 
-## 17. Terminal-negative responses — 1.13
+## 17. Terminal-negative responses — 1.13+
 
 Terminal-resident graphics storage is external state. Correlated negative responses are classified narrowly enough to avoid inventing certainty or invalidating unrelated ownership.
 
 ### `ENOPARENT`
 
-A correlated `ENOPARENT` means the terminal no longer recognizes the referenced parent placement relationship. Local certainty for that parent placement subtree is invalidated. The parent raster resource is not automatically declared missing merely because a parent placement is lost.
+A correlated `ENOPARENT` means the terminal no longer recognizes the referenced parent placement relationship. Local certainty for that parent placement subtree is invalidated and affected reachable wrappers observe `Stale / ParentPlacementLost`. The raster resources behind that subtree are not automatically declared missing merely because a parent placement is lost.
 
 ### `ECYCLE`
 
-The supported public API cannot construct a cycle because parentage is immutable and selected only at creation from an existing current placement. A correlated `ECYCLE` is therefore treated as a controlled failure; it does not justify broad unrelated resource invalidation.
+The supported public API cannot construct a cycle because parentage is immutable and selected only at creation from an existing current placement. A correlated `ECYCLE` is therefore treated as a controlled failure; it does not justify broad unrelated resource invalidation and does not manufacture a lifecycle loss reason.
 
 ### `ETOODEEP`
 
-The portable local depth limit is 8 and deeper creation is rejected before output. A correlated `ETOODEEP` from an otherwise reviewed operation remains a controlled failure rather than evidence that unrelated resources are missing.
+The portable local depth limit is 8 and deeper creation is rejected before output. A correlated `ETOODEEP` from an otherwise reviewed operation remains a controlled failure rather than evidence that unrelated resources are missing and does not manufacture a lifecycle loss reason.
 
 ### `ENOENT`
 
-A well-formed correlated `ENOENT` retains the established missing-resource/identity certainty behavior where it denotes a missing image/resource identity. The affected resource/placement certainty is invalidated; unrelated resources are not invalidated merely by association through a relative graph.
+A well-formed correlated `ENOENT` retains the established missing-resource/identity certainty behavior where it denotes a missing image/resource identity. The affected resource and dependent placement certainty observe `Stale / ResourceMissing`; unrelated resources are not invalidated merely by association through a relative graph.
 
-Malformed correlated responses, wrong child identities, late responses, and transport failures retain the established bounded transaction-manager semantics.
+Malformed correlated responses, wrong child identities, late responses, timeout, and transport failures retain the established bounded transaction-manager semantics and do not by themselves manufacture lifecycle-loss state.
 
 Correlation establishes transaction ownership, not terminal authenticity.
 
@@ -347,18 +357,19 @@ Correlation establishes transaction ownership, not terminal authenticity.
 
 Placement disposal is locally idempotent.
 
-For a current ordinary placement with no relative descendants, the first disposal performs the established targeted placement cleanup.
+For a current ordinary placement with no relative descendants, the first disposal performs the established targeted placement cleanup and the disposed public wrapper observes `Disposed / ExplicitDisposal`.
 
 For a current parent with relative descendants, disposal:
 
 1. prevents new mutation through the disposed handle;
 2. releases the complete local descendant subtree exactly once;
-3. emits terminal placement deletes deepest-first / descendant-before-parent while identities remain current;
-4. uses each placement's own owning raster-resource image identity, including across resources;
-5. surfaces/aggregates cleanup transport failures according to the existing restoration model;
-6. never restores local ownership merely so a later disposal can retry uncertain cleanup.
+3. publishes descendant placement state as `Released / AncestorReleased` while their wrappers remain reachable;
+4. emits terminal placement deletes deepest-first / descendant-before-parent while identities remain current;
+5. uses each placement's own owning raster-resource image identity, including across resources;
+6. surfaces/aggregates cleanup transport failures according to the existing restoration model;
+7. never restores local ownership merely so a later disposal can retry uncertain cleanup.
 
-A later disposal of a child handle already closed by parent cascading is harmless and does not double-release protocol identity.
+A later disposal of a child handle already released by parent cascading is harmless, does not double-release protocol identity, and changes that child wrapper to `Disposed / ExplicitDisposal`.
 
 A stale placement/subtree performs local cleanup only.
 
@@ -370,15 +381,16 @@ For a current resource, disposal:
 
 1. prevents new placements from that resource;
 2. closes/releases the resource's direct placements;
-3. cascades through every relative descendant placement whose lifetime depends on those placements, even when a descendant placement belongs to another resource;
-4. emits placement cleanup deepest-first, using each placement's own owning-resource image identity;
-5. attempts terminal deletion of the disposed resource data after dependent placement cleanup;
-6. releases local ownership even when cleanup transport fails;
-7. aggregates multiple cleanup failures where necessary.
+3. publishes those direct placements as `Released / ResourceReleased` while still-reachable wrappers remain undisposed;
+4. cascades through every relative descendant placement whose lifetime depends on those placements, publishing other-resource descendants as `Released / AncestorReleased`;
+5. emits placement cleanup deepest-first, using each placement's own owning-resource image identity;
+6. attempts terminal deletion of the disposed resource data after dependent placement cleanup;
+7. releases local ownership even when cleanup transport fails;
+8. aggregates multiple cleanup failures where necessary.
 
 Other raster resources referenced by descendant placements remain independently owned unless separately disposed or invalidated.
 
-An already-stale resource emits no stale terminal identifiers.
+An already-stale resource emits no stale terminal identifiers. Its public wrapper becomes `Disposed / ExplicitDisposal` when explicitly disposed.
 
 ## 20. Session teardown
 
@@ -395,7 +407,7 @@ Persistent raster traffic is external terminal I/O.
 Stable guarantees include:
 
 - no caller-supplied raw Kitty image/placement identifiers;
-- no public parent numeric identity or generic public persistent Kitty command builder;
+- no public parent numeric identity, session generation id, or generic public persistent Kitty command builder;
 - bounded image dimensions/storage inherited from `TerminalRasterImage`;
 - bounded resource/placement registries and relative depth;
 - bounded correlated response parsing;
@@ -404,24 +416,28 @@ Stable guarantees include:
 - no file, temporary-file, or shared-memory transport chosen silently;
 - no retained arbitrary source-image cache after creation;
 - no hidden replay after lifecycle uncertainty or partial commitment;
+- observation reads local lifecycle state only and emits no terminal traffic;
 - correlation establishes routing ownership, not terminal authenticity.
 
 A successful acknowledgement proves only that a well-formed correlated response was received under the protocol contract. It does not authenticate the terminal, multiplexer, remote endpoint, host, desktop session, or user.
 
 ## 22. Backend neutrality
 
-The public surface speaks in resource, source rectangle, cell extent, z-order, immutable parent placement, and signed relative-cell-offset semantics rather than Kitty protocol vocabulary.
+The public surface speaks in resource, source rectangle, cell extent, z-order, immutable parent placement, signed relative-cell-offset, and semantic lifecycle-certainty terms rather than Kitty protocol vocabulary.
 
 Persistent ownership is not emulated through Sixel. Such emulation would require retaining/redrawing image data and would materially change lifecycle ownership.
 
-The implementation may use Kitty Graphics internally, but callers plan against `PersistentRasterGraphics`, not terminal brand, `TERM`, APC framing, or numeric image identities.
+The implementation may use Kitty Graphics internally, but callers plan against `PersistentRasterGraphics`, not terminal brand, `TERM`, APC framing, or numeric image identities. Reading `OwnershipState` does not select or probe a backend.
 
-## 23. Explicit exclusions after 1.13
+## 23. Explicit exclusions after 1.14
 
 The persistent ownership contract does not include:
 
+- passive remote `ExistsAsync()` / `VerifyExistsAsync()` semantics;
+- terminal-authenticated object existence;
+- mutating reconciliation probes presented as inspection;
 - public backend ids or Kitty numeric identities;
-- public parent numeric identities;
+- public parent numeric identities or session generation ids;
 - caller-selected graphics backend;
 - Sixel persistent-resource emulation;
 - automatic replay/re-upload/rebind;
@@ -436,17 +452,85 @@ The persistent ownership contract does not include:
 - Kitty file/temp-file/shared-memory transfer;
 - PTY/ConPTY hosting.
 
-Relative placement is supported as of 1.13, but deliberately remains a bounded placement-lifetime/positioning relationship rather than an entry point to the excluded scene-layout features.
+Relative placement is supported as of 1.13 and lifecycle observation as of 1.14, but both deliberately remain bounded ownership contracts rather than entry points to the excluded scene-layout or reconciliation features.
 
-## 24. Compatibility
+## 24. Lifecycle observation — 1.14
 
-Version 1.13 is additive over the stable `1.0.0` compatibility floor and the published 1.12 surface.
+Every public persistent resource and placement wrapper exposes:
 
-When relative-placement APIs are unused:
+```csharp
+public TerminalRasterOwnershipState OwnershipState { get; }
+```
+
+The immutable snapshot contains:
+
+```text
+Status: Current | Stale | Released | Disposed
+Reason: None | SessionStateLost | ResourceMissing | ParentPlacementLost |
+        AncestorReleased | ResourceReleased | ExplicitDisposal
+```
+
+The state/reason pair is one atomic local observation. Callers do not observe torn combinations such as `Current / ResourceMissing` or `Released / None`.
+
+The valid semantic combinations are:
+
+```text
+Current  / None
+Stale    / SessionStateLost
+Stale    / ResourceMissing
+Stale    / ParentPlacementLost
+Released / AncestorReleased
+Released / ResourceReleased
+Disposed / ExplicitDisposal
+```
+
+`Current` means Terminal's present local ownership model still regards the handle as current. It does **not** authenticate the terminal and does not prove that a subsequent remote operation must succeed. The reviewed backend provides no truthful passive arbitrary-object existence query, so 1.14 does not manufacture one.
+
+Observation is synchronous and bounded. Reading it does not:
+
+- write terminal bytes;
+- register or allocate a terminal query;
+- acquire the output gate;
+- verify a capability;
+- mutate registry ownership;
+- trigger cleanup;
+- replay/re-upload raster data;
+- select or expose a graphics backend.
+
+Underlying lifecycle transitions are monotonic. A stale or released internal ownership state never becomes current again, including after late acknowledgements. Explicit wrapper disposal takes precedence for that wrapper and reports `Disposed / ExplicitDisposal` without resurrecting the underlying ownership.
+
+The canonical two-axis example is:
+
+```text
+Resource A      Current / None
+  Placement A1 Current / None
+Resource B      Current / None
+  Placement B1 Current / None, relative to A1
+
+Dispose A1
+  Placement A1 Disposed / ExplicitDisposal
+  Placement B1 Released / AncestorReleased
+  Resource B    Current / None
+```
+
+Resource B can then create a fresh ordinary current placement if no independent evidence invalidated it.
+
+## 25. Compatibility
+
+Version 1.14 is additive over the stable `1.0.0` compatibility floor and the published 1.13 surface.
+
+When lifecycle observation is not read:
 
 - existing public signatures and enum numeric values remain unchanged;
-- ordinary current-cursor placement behavior and wire bytes remain unchanged;
+- ordinary and relative persistent placement behavior and wire bytes remain unchanged;
 - 1.12 source cropping and signed z-order semantics remain unchanged;
+- 1.13 immutable parentage, signed relative offsets, and depth-8 graph behavior remain unchanged;
 - resource/placement capacity ceilings remain 256 / 4096;
 - one authoritative query/input path remains the acknowledgement authority;
 - no new production dependency is introduced.
+
+The final 1.14 public API fingerprint is:
+
+```text
+2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
+```
