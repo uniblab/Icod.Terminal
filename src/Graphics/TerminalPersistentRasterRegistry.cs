@@ -29,13 +29,19 @@ internal sealed class TerminalPersistentRasterRegistry {
 	internal const int MaximumResources = 256;
 	internal const int MaximumPlacements = 4096;
 	internal const int MaximumRelativeDepth = 8;
+	internal const uint MaximumPlaceholderPlacementId = 0x00FFFFFFu;
 
 	private readonly object synchronization = new();
 	private readonly Dictionary<
 		TerminalPersistentRasterResourceState,
 		HashSet<TerminalPersistentRasterPlacementState>
 	> resources = [];
+	private readonly Dictionary<
+		TerminalPersistentRasterResourceState,
+		HashSet<TerminalPersistentRasterPlaceholderState>
+	> resourcePlaceholders = [];
 	private readonly HashSet<TerminalPersistentRasterPlacementState> placements = [];
+	private readonly HashSet<TerminalPersistentRasterPlaceholderState> placeholders = [];
 	private readonly Dictionary<
 		TerminalPersistentRasterPlacementState,
 		HashSet<TerminalPersistentRasterPlacementState>
@@ -44,12 +50,14 @@ internal sealed class TerminalPersistentRasterRegistry {
 	private readonly HashSet<uint> placementIds = [];
 	private uint nextImageNumber;
 	private uint nextPlacementId;
+	private uint nextPlaceholderPlacementId;
 	private long generation;
 
 	internal TerminalPersistentRasterRegistry(
 		uint initialImageNumber = 1,
 		uint initialPlacementId = 1,
-		long initialGeneration = 1
+		long initialGeneration = 1,
+		uint initialPlaceholderPlacementId = 1
 	) {
 		if ( initialGeneration < 0 ) {
 			throw new ArgumentOutOfRangeException( nameof( initialGeneration ) );
@@ -57,6 +65,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 		this.nextImageNumber = NormalizeIdentity( initialImageNumber );
 		this.nextPlacementId = NormalizeIdentity( initialPlacementId );
+		this.nextPlaceholderPlacementId = NormalizePlaceholderIdentity(
+			initialPlaceholderPlacementId
+		);
 		this.generation = initialGeneration;
 	}
 
@@ -79,7 +90,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 	internal int LivePlacementCount {
 		get {
 			lock ( this.synchronization ) {
-				return this.placements.Count;
+				return this.GetLivePlacementCountUnsafe();
 			}
 		}
 	}
@@ -127,6 +138,10 @@ internal sealed class TerminalPersistentRasterRegistry {
 				resource,
 				[]
 			);
+			this.resourcePlaceholders.Add(
+				resource,
+				[]
+			);
 			return true;
 		}
 	}
@@ -141,7 +156,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 			if ( !this.TryGetCurrentResourcePlacementsUnsafe(
 				resource,
 				out HashSet<TerminalPersistentRasterPlacementState>? resourcePlacements
-			) || MaximumPlacements <= this.placements.Count ) {
+			) || MaximumPlacements <= this.GetLivePlacementCountUnsafe() ) {
 				placement = null;
 				return false;
 			}
@@ -164,6 +179,48 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	internal bool TryReservePlaceholder(
+		TerminalPersistentRasterResourceState resource,
+		int columns,
+		int rows,
+		out TerminalPersistentRasterPlaceholderState? placeholder
+	) {
+		ArgumentNullException.ThrowIfNull( resource );
+		if ( columns is < 1 or > TerminalRasterPlaceholderOptions.MaximumExtent ) {
+			throw new ArgumentOutOfRangeException( nameof( columns ) );
+		}
+		if ( rows is < 1 or > TerminalRasterPlaceholderOptions.MaximumExtent ) {
+			throw new ArgumentOutOfRangeException( nameof( rows ) );
+		}
+
+		lock ( this.synchronization ) {
+			if ( !this.IsResourceCurrentUnsafe( resource )
+				|| !this.resourcePlaceholders.TryGetValue(
+					resource,
+					out HashSet<TerminalPersistentRasterPlaceholderState>? resourceVirtualPlacements
+				) || MaximumPlacements <= this.GetLivePlacementCountUnsafe() ) {
+				placeholder = null;
+				return false;
+			}
+
+			uint placementId = AllocatePlaceholderIdentity(
+				this.placementIds,
+				ref this.nextPlaceholderPlacementId
+			);
+			placeholder = new TerminalPersistentRasterPlaceholderState(
+				resource,
+				placementId,
+				this.generation,
+				columns,
+				rows
+			);
+			this.placementIds.Add( placementId );
+			this.placeholders.Add( placeholder );
+			resourceVirtualPlacements.Add( placeholder );
+			return true;
+		}
+	}
+
 	internal bool TryReserveRelativePlacement(
 		TerminalPersistentRasterResourceState resource,
 		TerminalPersistentRasterPlacementState parent,
@@ -180,7 +237,7 @@ internal sealed class TerminalPersistentRasterRegistry {
 				out HashSet<TerminalPersistentRasterPlacementState>? resourcePlacements
 			) || !this.IsPlacementCurrentUnsafe( parent )
 				|| MaximumRelativeDepth <= parent.RelativeDepth
-				|| MaximumPlacements <= this.placements.Count ) {
+				|| MaximumPlacements <= this.GetLivePlacementCountUnsafe() ) {
 				placement = null;
 				return false;
 			}
@@ -227,10 +284,25 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	internal bool IsPlaceholderCurrent(
+		TerminalPersistentRasterPlaceholderState placeholder
+	) {
+		ArgumentNullException.ThrowIfNull( placeholder );
+
+		lock ( this.synchronization ) {
+			return this.IsPlaceholderCurrentUnsafe( placeholder );
+		}
+	}
+
 	internal void Invalidate() {
 		lock ( this.synchronization ) {
 			foreach ( TerminalPersistentRasterPlacementState placement in this.placements ) {
 				_ = placement.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
+			}
+			foreach ( TerminalPersistentRasterPlaceholderState placeholder in this.placeholders ) {
+				_ = placeholder.TryMarkStale(
 					TerminalRasterOwnershipLossReason.SessionStateLost
 				);
 			}
@@ -242,7 +314,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 
 			this.generation = AdvanceGeneration( this.generation );
 			this.resources.Clear();
+			this.resourcePlaceholders.Clear();
 			this.placements.Clear();
+			this.placeholders.Clear();
 			this.relativeChildren.Clear();
 			this.imageNumbers.Clear();
 			this.placementIds.Clear();
@@ -258,6 +332,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 			if ( !this.resources.TryGetValue(
 				resource,
 				out HashSet<TerminalPersistentRasterPlacementState>? resourcePlacements
+			) || !this.resourcePlaceholders.TryGetValue(
+				resource,
+				out HashSet<TerminalPersistentRasterPlaceholderState>? resourceVirtualPlacements
 			) ) {
 				return false;
 			}
@@ -276,8 +353,19 @@ internal sealed class TerminalPersistentRasterRegistry {
 					close: false
 				);
 			}
+			foreach ( TerminalPersistentRasterPlaceholderState placeholder in
+				resourceVirtualPlacements.ToArray() ) {
+				_ = placeholder.TryMarkStale(
+					TerminalRasterOwnershipLossReason.ResourceMissing
+				);
+				this.RemovePlaceholderUnsafe(
+					placeholder,
+					close: false
+				);
+			}
 
 			this.resources.Remove( resource );
+			this.resourcePlaceholders.Remove( resource );
 			this.imageNumbers.Remove( resource.ImageNumber );
 			return true;
 		}
@@ -331,6 +419,12 @@ internal sealed class TerminalPersistentRasterRegistry {
 				);
 				placement.Close();
 			}
+			foreach ( TerminalPersistentRasterPlaceholderState placeholder in this.placeholders ) {
+				_ = placeholder.TryMarkStale(
+					TerminalRasterOwnershipLossReason.SessionStateLost
+				);
+				placeholder.Close();
+			}
 			foreach ( TerminalPersistentRasterResourceState resource in releasedResources ) {
 				_ = resource.TryMarkStale(
 					TerminalRasterOwnershipLossReason.SessionStateLost
@@ -339,7 +433,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 			}
 
 			this.resources.Clear();
+			this.resourcePlaceholders.Clear();
 			this.placements.Clear();
+			this.placeholders.Clear();
 			this.relativeChildren.Clear();
 			this.imageNumbers.Clear();
 			this.placementIds.Clear();
@@ -365,6 +461,9 @@ internal sealed class TerminalPersistentRasterRegistry {
 			if ( !this.resources.TryGetValue(
 				resource,
 				out HashSet<TerminalPersistentRasterPlacementState>? resourcePlacements
+			) || !this.resourcePlaceholders.TryGetValue(
+				resource,
+				out HashSet<TerminalPersistentRasterPlaceholderState>? resourceVirtualPlacements
 			) ) {
 				releasedPlacements = [];
 				return false;
@@ -387,8 +486,19 @@ internal sealed class TerminalPersistentRasterRegistry {
 					close: true
 				);
 			}
+			foreach ( TerminalPersistentRasterPlaceholderState placeholder in
+				resourceVirtualPlacements.ToArray() ) {
+				_ = placeholder.TryMarkReleased(
+					TerminalRasterOwnershipLossReason.ResourceReleased
+				);
+				this.RemovePlaceholderUnsafe(
+					placeholder,
+					close: true
+				);
+			}
 
 			this.resources.Remove( resource );
+			this.resourcePlaceholders.Remove( resource );
 			this.imageNumbers.Remove( resource.ImageNumber );
 			resource.Close();
 			return true;
@@ -426,6 +536,24 @@ internal sealed class TerminalPersistentRasterRegistry {
 					close: true
 				);
 			}
+			return true;
+		}
+	}
+
+	internal bool TryReleasePlaceholder(
+		TerminalPersistentRasterPlaceholderState placeholder
+	) {
+		ArgumentNullException.ThrowIfNull( placeholder );
+
+		lock ( this.synchronization ) {
+			if ( !this.placeholders.Contains( placeholder ) ) {
+				return false;
+			}
+
+			this.RemovePlaceholderUnsafe(
+				placeholder,
+				close: true
+			);
 			return true;
 		}
 	}
@@ -494,6 +622,19 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 
 		return false;
+	}
+
+	private bool IsPlaceholderCurrentUnsafe(
+		TerminalPersistentRasterPlaceholderState placeholder
+	) {
+		return !placeholder.IsClosed
+			&& placeholder.Generation == this.generation
+			&& this.IsResourceCurrentUnsafe( placeholder.Resource )
+			&& this.placeholders.Contains( placeholder )
+			&& this.resourcePlaceholders.TryGetValue(
+				placeholder.Resource,
+				out HashSet<TerminalPersistentRasterPlaceholderState>? resourceVirtualPlacements
+			) && resourceVirtualPlacements.Contains( placeholder );
 	}
 
 	private void RegisterPlacementUnsafe(
@@ -606,6 +747,31 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	private void RemovePlaceholderUnsafe(
+		TerminalPersistentRasterPlaceholderState placeholder,
+		bool close
+	) {
+		ArgumentNullException.ThrowIfNull( placeholder );
+		if ( !this.placeholders.Remove( placeholder ) ) {
+			return;
+		}
+
+		if ( this.resourcePlaceholders.TryGetValue(
+			placeholder.Resource,
+			out HashSet<TerminalPersistentRasterPlaceholderState>? resourceVirtualPlacements
+		) ) {
+			resourceVirtualPlacements.Remove( placeholder );
+		}
+		this.placementIds.Remove( placeholder.PlacementId );
+		if ( close ) {
+			placeholder.Close();
+		}
+	}
+
+	private int GetLivePlacementCountUnsafe() {
+		return checked( this.placements.Count + this.placeholders.Count );
+	}
+
 	private static int ComparePlacementsForRelease(
 		TerminalPersistentRasterPlacementState left,
 		TerminalPersistentRasterPlacementState right
@@ -644,6 +810,26 @@ internal sealed class TerminalPersistentRasterRegistry {
 		);
 	}
 
+	private static uint AllocatePlaceholderIdentity(
+		HashSet<uint> liveIdentities,
+		ref uint nextIdentity
+	) {
+		ArgumentNullException.ThrowIfNull( liveIdentities );
+
+		uint candidate = NormalizePlaceholderIdentity( nextIdentity );
+		for ( int attempt = 0; attempt <= liveIdentities.Count; ++attempt ) {
+			if ( !liveIdentities.Contains( candidate ) ) {
+				nextIdentity = AdvancePlaceholderIdentity( candidate );
+				return candidate;
+			}
+			candidate = AdvancePlaceholderIdentity( candidate );
+		}
+
+		throw new InvalidOperationException(
+			"A free persistent raster placeholder identity could not be allocated."
+		);
+	}
+
 	private static uint NormalizeIdentity(
 		uint identity
 	) {
@@ -657,6 +843,24 @@ internal sealed class TerminalPersistentRasterRegistry {
 		uint identity
 	) {
 		return ( uint.MaxValue == identity )
+			? 1u
+			: identity + 1u
+		;
+	}
+
+	private static uint NormalizePlaceholderIdentity(
+		uint identity
+	) {
+		return identity is 0u or > MaximumPlaceholderPlacementId
+			? 1u
+			: identity
+		;
+	}
+
+	private static uint AdvancePlaceholderIdentity(
+		uint identity
+	) {
+		return MaximumPlaceholderPlacementId == identity
 			? 1u
 			: identity + 1u
 		;
