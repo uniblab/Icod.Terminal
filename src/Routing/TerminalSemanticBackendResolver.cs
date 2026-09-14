@@ -342,6 +342,7 @@ internal static class TerminalSemanticBackendResolver {
 			if ( backend == policies[ index ].Backend ) {
 				return policies[ index ];
 			}
+		}
 
 		throw new InvalidOperationException(
 			$"Protocol backend '{backend}' does not have an N157 routing policy entry."
