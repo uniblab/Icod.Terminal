@@ -221,7 +221,7 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 	/// A controlled unavailable result until virtual-parent relative placement is enabled by the
 	/// 1.15 implementation tranche.
 	/// </returns>
-	public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreateRelativePlacementAsync(
+	public ValueTask<TerminalControlResult<TerminalRasterPlacement>> CreateRelativePlacementFromPlaceholderAsync(
 		TerminalRasterPlaceholder parent,
 		int columnOffset,
 		int rowOffset,
