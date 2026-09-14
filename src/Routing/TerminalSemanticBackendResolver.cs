@@ -342,7 +342,6 @@ internal static class TerminalSemanticBackendResolver {
 			if ( backend == policies[ index ].Backend ) {
 				return policies[ index ];
 			}
-		}
 
 		throw new InvalidOperationException(
 			$"Protocol backend '{backend}' does not have an N157 routing policy entry."
@@ -498,6 +497,11 @@ internal static class TerminalSemanticBackendResolver {
 			TerminalSemanticOperation.PersistentRasterGraphics,
 			( TerminalProtocolBackend.ApcKittyGraphics, false )
 		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.UnicodeRasterPlaceholders,
+			( TerminalProtocolBackend.ApcKittyUnicodeRasterPlaceholders, false )
+		);
 
 		ValidatePolicies( policies );
 		return new ReadOnlyDictionary<
@@ -579,7 +583,6 @@ internal static class TerminalSemanticBackendResolver {
 						$"Semantic operation '{operation}' routing policy omits backend '{candidate.Backend}'."
 					);
 				}
-			}
 		}
 	}
 
