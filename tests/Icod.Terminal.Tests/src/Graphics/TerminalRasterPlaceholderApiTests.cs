@@ -104,7 +104,7 @@ public sealed class TerminalRasterPlaceholderApiTests {
 
 		MethodInfo createRelative = Assert.IsAssignableFrom<MethodInfo>(
 			typeof( TerminalRasterResource ).GetMethod(
-				nameof( TerminalRasterResource.CreateRelativePlacementAsync ),
+				"CreateRelativePlacementFromPlaceholderAsync",
 				[
 					typeof( TerminalRasterPlaceholder ),
 					typeof( int ),
@@ -117,6 +117,18 @@ public sealed class TerminalRasterPlaceholderApiTests {
 		Assert.Equal(
 			typeof( ValueTask<TerminalControlResult<TerminalRasterPlacement>> ),
 			createRelative.ReturnType
+		);
+
+		MethodInfo[] legacyRelativeMethods = typeof( TerminalRasterResource )
+			.GetMethods( BindingFlags.Public | BindingFlags.Instance )
+			.Where(
+				method => nameof( TerminalRasterResource.CreateRelativePlacementAsync ) == method.Name
+			)
+			.ToArray();
+		Assert.Single( legacyRelativeMethods );
+		Assert.Equal(
+			typeof( TerminalRasterPlacement ),
+			legacyRelativeMethods[ 0 ].GetParameters()[ 0 ].ParameterType
 		);
 
 		MethodInfo writeCell = Assert.IsAssignableFrom<MethodInfo>(
