@@ -15,12 +15,11 @@ The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative
 
 ## Support the Project
 
-`Icod.Terminal` and its ecosystem packages (`Icod.TermInfo` and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save your team time and keep your production terminal interfaces running smoothly, please consider supporting development.
+`Icod.Terminal` and its ecosystem packages (`Icod.TermInfo` and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save you or your team time, please consider supporting their continued development and maintenance.
 
-[![GitHub Sponsors](https://shields.io)](https://github.com)
-[![Support on Ko-fi](https://shields.io)](https://ko-fi.com)
-[![Tidelift Subscription](https://shields.io)](https://tidelift.com)
-[![Paypal Me](https://shields.io)](https://paypal.me/uniblab)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor?logo=githubsponsors)](https://github.com/sponsors/uniblab)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support?logo=kofi)](https://ko-fi.com/TimothyBruce)
+[![PayPal](https://img.shields.io/badge/PayPal-Support?logo=paypal)](https://paypal.me/uniblab)
 
 ## Installation
 
