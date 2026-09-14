@@ -59,10 +59,10 @@ public sealed class TerminalRasterOwnershipApiTests {
 			Enum.GetNames<TerminalRasterOwnershipLossReason>()
 		);
 
-		PropertyInfo resourceProperty = Assert.IsType<PropertyInfo>(
+		PropertyInfo resourceProperty = Assert.IsAssignableFrom<PropertyInfo>(
 			typeof( TerminalRasterResource ).GetProperty( nameof( TerminalRasterResource.OwnershipState ) )
 		);
-		PropertyInfo placementProperty = Assert.IsType<PropertyInfo>(
+		PropertyInfo placementProperty = Assert.IsAssignableFrom<PropertyInfo>(
 			typeof( TerminalRasterPlacement ).GetProperty( nameof( TerminalRasterPlacement.OwnershipState ) )
 		);
 		Assert.Equal( typeof( TerminalRasterOwnershipState ), resourceProperty.PropertyType );
