@@ -8,7 +8,13 @@ The stable compatibility floor remains `1.0.0`. The complete 1.14 public surface
 2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 ```
 
-The final 1.15 machine-readable fingerprint will be generated from the qualified built package surface and stored separately in `docs/Public-API-Baseline-1.15.sha256` during T158/T159. This document freezes the human-readable API contract only.
+T150 generated identical public API snapshots on `net8.0`, `net9.0`, and `net10.0`. The frozen 1.15 fingerprint is:
+
+```text
+eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
+```
+
+The machine-readable fingerprint is stored separately in `docs/Public-API-Baseline-1.15.sha256` and is enforced by the package/public-API gate for the remainder of 1.15 development.
 
 ## Public additions over 1.14
 
