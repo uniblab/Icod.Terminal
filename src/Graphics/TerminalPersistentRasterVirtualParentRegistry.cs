@@ -110,20 +110,35 @@ internal sealed class TerminalPersistentRasterVirtualParentRegistry {
 				return [];
 			}
 
-			TerminalPersistentRasterPlacementState[] result = values.ToArray();
-			Array.Sort(
-				result,
-				static ( left, right ) => {
-					int resourceOrder = left.Resource.ImageNumber.CompareTo(
-						right.Resource.ImageNumber
-					);
-					return 0 != resourceOrder
-						? resourceOrder
-						: left.PlacementId.CompareTo( right.PlacementId )
-					;
+			return ToOrderedArray( values );
+		}
+	}
+
+	internal TerminalPersistentRasterPlacementState[] TakeChildrenForResource(
+		TerminalPersistentRasterResourceState resource
+	) {
+		ArgumentNullException.ThrowIfNull( resource );
+
+		lock ( this.synchronization ) {
+			HashSet<TerminalPersistentRasterPlacementState> values = [];
+			TerminalPersistentRasterPlaceholderState[] parents = this.children.Keys
+				.Where(
+					parent => ReferenceEquals(
+						parent.Resource,
+						resource
+					)
+				)
+				.ToArray();
+			foreach ( TerminalPersistentRasterPlaceholderState parent in parents ) {
+				if ( this.children.Remove(
+					parent,
+					out HashSet<TerminalPersistentRasterPlacementState>? children
+				) ) {
+					values.UnionWith( children );
 				}
-			);
-			return result;
+			}
+
+			return ToOrderedArray( values );
 		}
 	}
 
@@ -131,5 +146,25 @@ internal sealed class TerminalPersistentRasterVirtualParentRegistry {
 		lock ( this.synchronization ) {
 			this.children.Clear();
 		}
+	}
+
+	private static TerminalPersistentRasterPlacementState[] ToOrderedArray(
+		IEnumerable<TerminalPersistentRasterPlacementState> values
+	) {
+		ArgumentNullException.ThrowIfNull( values );
+		TerminalPersistentRasterPlacementState[] result = values.ToArray();
+		Array.Sort(
+			result,
+			static ( left, right ) => {
+				int resourceOrder = left.Resource.ImageNumber.CompareTo(
+					right.Resource.ImageNumber
+				);
+				return 0 != resourceOrder
+					? resourceOrder
+					: left.PlacementId.CompareTo( right.PlacementId )
+				;
+			}
+		);
+		return result;
 	}
 }
