@@ -15,12 +15,11 @@ The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative
 
 ## Support the Project
 
-`Icod.Terminal` and its ecosystem packages (`Icod.TermInfo` and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save your team time and keep your production terminal interfaces running smoothly, please consider supporting development.
+`Icod.Terminal` and its ecosystem packages (`Icod.TermInfo` and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save you or your team time, please consider supporting their continued development and maintenance.
 
-[![GitHub Sponsors](https://shields.io)](https://github.com)
-[![Support on Ko-fi](https://shields.io)](https://ko-fi.com)
-[![Tidelift Subscription](https://shields.io)](https://tidelift.com)
-[![Paypal Me](https://shields.io)](https://paypal.me/uniblab)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsor?logo=githubsponsors)](https://github.com/sponsors/uniblab)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support?logo=kofi)](https://ko-fi.com/TimothyBruce)
+[![PayPal](https://img.shields.io/badge/PayPal-Support?logo=paypal)](https://paypal.me/uniblab)
 
 ## Installation
 
@@ -325,83 +324,4 @@ The stable 1.x surface includes:
 - bounded device/status/cursor/style/color/clipboard/notification queries;
 - titles, current location, hyperlinks, clipboard operations, cursor style, synchronized output, progress, pointer shape, notifications, prompt/shell metadata, and terminal colors;
 - backend-neutral ephemeral raster display through verified Sixel and Kitty Graphics;
-- backend-neutral persistent raster resources and placements with generation-scoped ownership, source-pixel cropping, signed z-order, bounded immutable-parent relative placement, and side-effect-free lifecycle certainty observation;
-- optional consumer-owned TermInfo lifecycle and advanced-placement planning integration without adding Inspection to the production package graph.
-
-The library deliberately does not expose generic raw vendor dispatch as the ordinary extension model.
-
-## Samples
-
-The [`samples`](samples/README.md) directory contains focused examples. Recommended starting points include:
-
-- `Icod.Terminal.Sample` — session construction and event reading;
-- `Icod.Terminal.RichInput.Sample` — text, keys, paste, focus, mouse, lifecycle, and semantic events;
-- `Icod.Terminal.CapabilityPlanning.Sample` — inspect-first semantic planning plus optional explicit verification;
-- `Icod.Terminal.Query.Sample` — bounded terminal queries;
-- `Icod.Terminal.RasterGraphics.Sample` — backend-neutral ephemeral raster display;
-- [`Icod.Terminal.PersistentRaster.Sample`](samples/Icod.Terminal.PersistentRaster.Sample/README.md) — ordinary and relative persistent placement, both relative update modes, signed offsets, crop/z-order, immutable parentage, observable parent-cascade release, and independent descendant-resource reuse without protocol ids/backend branching;
-- `Icod.Terminal.TermInfoPersistentRaster.Sample` — Inspection 1.12 lifecycle plus advanced-placement planning, optional live Terminal verification, caller-owned evidence/replanning, and concrete persistent execution;
-- focused state, color, notification, prompt, and shell-integration samples described in the sample catalog.
-
-Focused sample verifiers build newer semantic/raster examples on every supported target framework during repository validation.
-
-## Security and privacy
-
-Terminal protocol traffic is external input/output. `Icod.Terminal` validates and bounds semantic protocol data and avoids generic raw vendor-command/event APIs as the normal extension mechanism.
-
-`InspectCapability(...)` emits no terminal traffic. `VerifyCapabilityAsync(...)` is explicit precisely because it may send bounded queries whose responses can reveal terminal/environment characteristics. `Verified` is support evidence, not authentication.
-
-Persistent raster acknowledgement correlation establishes transaction ownership, not trust. A terminal may independently evict stored image data; correlated missing-resource responses invalidate only the affected certainty rather than triggering hidden replay. Relative parent-loss classification invalidates the affected placement subtree without automatically declaring the parent raster resource missing. `OwnershipState` reports those local semantic conclusions without issuing another probe or claiming terminal authentication.
-
-Kitty direct transfer remains the reviewed persistent transport. Version 1.14 does not silently use file, temporary-file, or shared-memory transport and does not retain arbitrary source images after successful creation. Source rectangles select already-owned source pixels; relative placement and lifecycle observation add no filesystem or external-memory transport.
-
-Several APIs intentionally publish caller-supplied metadata such as filesystem locations, hyperlinks, clipboard contents, notifications, shell metadata, command lines, and raster pixels. Applications decide what is appropriate to disclose.
-
-See [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md).
-
-## Compatibility
-
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 added opaque persistent raster resource/placement ownership; 1.11.1 qualified the optional TermInfo persistent-raster lifecycle integration boundary; 1.12 added bounded source-pixel cropping and signed z-order; 1.13 added bounded immutable-parent relative placement ownership; and 1.14 adds side-effect-free lifecycle certainty observation while preserving all existing resource/placement operations when `OwnershipState` is not read.
-
-The final 1.14 public API fingerprint is:
-
-```text
-2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
-```
-
-See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).
-
-## Documentation
-
-Start with:
-
-- [1.14.0 release notes](docs/releases/1.14.0.md)
-- [Persistent Raster Ownership](docs/Persistent-Raster-Ownership.md)
-- [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md)
-- [1.14.0 public API baseline](docs/Public-API-Baseline-1.14.md)
-- [1.14.0 development roadmap](Icod.Terminal-1.14.0-Development-Roadmap.md)
-- [Current development roadmap](Icod.Terminal-Development-Roadmap.md)
-- [Architecture](docs/Architecture.md)
-- [Input and Events](docs/Input-and-Events.md)
-- [Queries and Responses](docs/Queries-and-Responses.md)
-- [Security and Privacy](docs/Security-and-Privacy.md)
-- [Compatibility and Versioning](docs/Compatibility-and-Versioning.md)
-- [Migration to 1.0](docs/Migration-to-1.0.md)
-- [Samples](samples/README.md)
-- [Changelog](CHANGELOG.md)
-
-Historical release and tranche records remain in the repository for design evidence, while this README and the current roadmap are maintained as consumer/contributor entry points.
-
-## Authors
-
-Inspired by original work from Bill Joy, author of the original `termcap`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and `ncurses`.
-
-Managed .NET implementation by Timothy J. Bruce <uniblab@hotmail.com>.
-
-## Copyright
-
-Copyright (c) 2026 Timothy J. Bruce
-
-## License
-
-`Icod.Terminal` is licensed under the GNU Lesser General Public License, version 3 or later. Sample applications are licensed under the GNU General Public License, version 3 or later, as stated in their source headers.
+- backend-neutral persistent raster resources and placements with generation-scoped ownership, source-pixel cropping, signed z
