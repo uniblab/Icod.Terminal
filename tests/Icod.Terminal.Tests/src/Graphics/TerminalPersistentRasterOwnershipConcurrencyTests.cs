@@ -56,7 +56,7 @@ public sealed class TerminalPersistentRasterOwnershipConcurrencyTests {
 				TerminalRasterOwnershipLossReason.AncestorReleased
 			)
 		);
-		await Task.WhenAll(
+		bool[] transitionResults = await Task.WhenAll(
 			stale,
 			released
 		);
@@ -64,7 +64,7 @@ public sealed class TerminalPersistentRasterOwnershipConcurrencyTests {
 		stop.Cancel();
 		await Task.WhenAll( readers );
 
-		Assert.NotEqual( stale.Result, released.Result );
+		Assert.NotEqual( transitionResults[ 0 ], transitionResults[ 1 ] );
 		TerminalRasterOwnershipState final = state.Observe();
 		Assert.True(
 			final == new TerminalRasterOwnershipState(
