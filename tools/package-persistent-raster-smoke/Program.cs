@@ -135,25 +135,31 @@ Require(
 	)?.PropertyType == typeof( TerminalRasterOwnershipState ),
 	"TerminalRasterPlacement must expose the 1.14 OwnershipState snapshot."
 );
+string[] expectedOwnershipStatuses = [
+	nameof( TerminalRasterOwnershipStatus.Current ),
+	nameof( TerminalRasterOwnershipStatus.Stale ),
+	nameof( TerminalRasterOwnershipStatus.Released ),
+	nameof( TerminalRasterOwnershipStatus.Disposed )
+];
 Require(
-	[
-		nameof( TerminalRasterOwnershipStatus.Current ),
-		nameof( TerminalRasterOwnershipStatus.Stale ),
-		nameof( TerminalRasterOwnershipStatus.Released ),
-		nameof( TerminalRasterOwnershipStatus.Disposed )
-	].SequenceEqual( Enum.GetNames<TerminalRasterOwnershipStatus>() ),
+	expectedOwnershipStatuses.SequenceEqual(
+		Enum.GetNames<TerminalRasterOwnershipStatus>()
+	),
 	"TerminalRasterOwnershipStatus does not match the frozen 1.14 semantic states."
 );
+string[] expectedOwnershipLossReasons = [
+	nameof( TerminalRasterOwnershipLossReason.None ),
+	nameof( TerminalRasterOwnershipLossReason.SessionStateLost ),
+	nameof( TerminalRasterOwnershipLossReason.ResourceMissing ),
+	nameof( TerminalRasterOwnershipLossReason.ParentPlacementLost ),
+	nameof( TerminalRasterOwnershipLossReason.AncestorReleased ),
+	nameof( TerminalRasterOwnershipLossReason.ResourceReleased ),
+	nameof( TerminalRasterOwnershipLossReason.ExplicitDisposal )
+];
 Require(
-	[
-		nameof( TerminalRasterOwnershipLossReason.None ),
-		nameof( TerminalRasterOwnershipLossReason.SessionStateLost ),
-		nameof( TerminalRasterOwnershipLossReason.ResourceMissing ),
-		nameof( TerminalRasterOwnershipLossReason.ParentPlacementLost ),
-		nameof( TerminalRasterOwnershipLossReason.AncestorReleased ),
-		nameof( TerminalRasterOwnershipLossReason.ResourceReleased ),
-		nameof( TerminalRasterOwnershipLossReason.ExplicitDisposal )
-	].SequenceEqual( Enum.GetNames<TerminalRasterOwnershipLossReason>() ),
+	expectedOwnershipLossReasons.SequenceEqual(
+		Enum.GetNames<TerminalRasterOwnershipLossReason>()
+	),
 	"TerminalRasterOwnershipLossReason does not match the frozen 1.14 semantic reasons."
 );
 
