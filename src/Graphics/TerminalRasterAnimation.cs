@@ -29,9 +29,10 @@ namespace Icod.Terminal;
 /// </remarks>
 public sealed class TerminalRasterAnimation {
 	private const string NotImplementedMessage =
-		"Persistent-raster animation transport is not implemented by this development checkpoint.";
+		"Persistent-raster animation control is not implemented by this development checkpoint.";
 
 	private readonly TerminalRasterResource resource;
+	private TerminalPersistentRasterAnimationState? animationState;
 
 	internal TerminalRasterAnimation(
 		TerminalRasterResource resource
@@ -55,12 +56,20 @@ public sealed class TerminalRasterAnimation {
 	public TerminalRasterAnimationState State {
 		get {
 			TerminalRasterOwnershipState ownership = this.resource.OwnershipState;
-			return ownership.Status switch {
-				TerminalRasterOwnershipStatus.Current =>
-					new TerminalRasterAnimationState(
+			if ( TerminalRasterOwnershipStatus.Current == ownership.Status ) {
+				TerminalPersistentRasterAnimationState? state = Volatile.Read(
+					ref this.animationState
+				);
+				return state is null
+					? new TerminalRasterAnimationState(
 						TerminalRasterAnimationStatus.Current,
 						TerminalRasterAnimationLossReason.None
-					),
+					)
+					: state.ObserveState()
+				;
+			}
+
+			return ownership.Status switch {
 				TerminalRasterOwnershipStatus.Stale =>
 					new TerminalRasterAnimationState(
 						TerminalRasterAnimationStatus.Stale,
@@ -86,10 +95,6 @@ public sealed class TerminalRasterAnimation {
 	/// <summary>
 	/// Appends one full-size frame to this resource's terminal-resident animation sequence.
 	/// </summary>
-	/// <param name="image">The full-size immutable raster snapshot to append.</param>
-	/// <param name="duration">The positive, exact whole-millisecond visible duration.</param>
-	/// <param name="cancellationToken">Cancellation observed before animation output commits.</param>
-	/// <returns>An opaque frame token after a successful acknowledged append.</returns>
 	public ValueTask<TerminalControlResult<TerminalRasterAnimationFrame>> AddFrameAsync(
 		TerminalRasterImage image,
 		TimeSpan duration,
@@ -106,20 +111,17 @@ public sealed class TerminalRasterAnimation {
 			);
 		}
 
-		return ValueTask.FromResult(
-			TerminalControlResult<TerminalRasterAnimationFrame>.Unsupported(
-				NotImplementedMessage
-			)
+		int gapMilliseconds = checked(
+			(int)( duration.Ticks / TimeSpan.TicksPerMillisecond )
+		);
+		return this.resource.AddAnimationFrameAsync(
+			this,
+			image,
+			gapMilliseconds,
+			cancellationToken
 		);
 	}
 
-	/// <summary>
-	/// Changes the visible duration of one known frame in this animation.
-	/// </summary>
-	/// <param name="frame">A frame owned by this animation.</param>
-	/// <param name="duration">The positive, exact whole-millisecond visible duration.</param>
-	/// <param name="cancellationToken">Cancellation observed before animation control output commits.</param>
-	/// <returns>The controlled mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> SetFrameDurationAsync(
 		TerminalRasterAnimationFrame frame,
 		TimeSpan duration,
@@ -133,12 +135,6 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
-	/// <summary>
-	/// Selects one known frame as the animation's current frame.
-	/// </summary>
-	/// <param name="frame">A frame owned by this animation.</param>
-	/// <param name="cancellationToken">Cancellation observed before animation control output commits.</param>
-	/// <returns>The controlled mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> SelectFrameAsync(
 		TerminalRasterAnimationFrame frame,
 		CancellationToken cancellationToken = default
@@ -150,11 +146,6 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
-	/// <summary>
-	/// Stops terminal-driven playback of this animation.
-	/// </summary>
-	/// <param name="cancellationToken">Cancellation observed before animation control output commits.</param>
-	/// <returns>The controlled mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> StopAsync(
 		CancellationToken cancellationToken = default
 	) {
@@ -164,11 +155,6 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
-	/// <summary>
-	/// Runs terminal-driven playback in loading mode while new frames may still be appended.
-	/// </summary>
-	/// <param name="cancellationToken">Cancellation observed before animation control output commits.</param>
-	/// <returns>The controlled mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> RunLoadingAsync(
 		CancellationToken cancellationToken = default
 	) {
@@ -178,12 +164,6 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
-	/// <summary>
-	/// Runs normal terminal-driven animation playback.
-	/// </summary>
-	/// <param name="options">Optional finite additional-repeat policy; <see langword="null"/> means indefinite looping.</param>
-	/// <param name="cancellationToken">Cancellation observed before animation control output commits.</param>
-	/// <returns>The controlled mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> RunAsync(
 		TerminalRasterAnimationPlaybackOptions? options = null,
 		CancellationToken cancellationToken = default
@@ -193,6 +173,29 @@ public sealed class TerminalRasterAnimation {
 		return ValueTask.FromResult(
 			TerminalControlMutationResult.Unsupported( NotImplementedMessage )
 		);
+	}
+
+	internal void BindState(
+		TerminalPersistentRasterAnimationState state
+	) {
+		ArgumentNullException.ThrowIfNull( state );
+		if ( !ReferenceEquals( this.resource.State, state.Resource ) ) {
+			throw new ArgumentException(
+				"The animation state must belong to the controller's persistent raster resource.",
+				nameof( state )
+			);
+		}
+
+		TerminalPersistentRasterAnimationState? prior = Interlocked.CompareExchange(
+			ref this.animationState,
+			state,
+			null
+		);
+		if ( prior is not null && !ReferenceEquals( prior, state ) ) {
+			throw new InvalidOperationException(
+				"The persistent-raster animation controller is already bound to different internal state."
+			);
+		}
 	}
 
 	private void ValidateFrame(
@@ -241,16 +244,11 @@ public sealed class TerminalRasterAnimation {
 		TerminalRasterOwnershipLossReason reason
 	) {
 		return reason switch {
-			TerminalRasterOwnershipLossReason.None =>
-				TerminalRasterAnimationLossReason.None,
-			TerminalRasterOwnershipLossReason.SessionStateLost =>
-				TerminalRasterAnimationLossReason.SessionStateLost,
-			TerminalRasterOwnershipLossReason.ResourceMissing =>
-				TerminalRasterAnimationLossReason.ResourceMissing,
-			TerminalRasterOwnershipLossReason.ResourceReleased =>
-				TerminalRasterAnimationLossReason.ResourceReleased,
-			TerminalRasterOwnershipLossReason.ExplicitDisposal =>
-				TerminalRasterAnimationLossReason.ExplicitResourceDisposal,
+			TerminalRasterOwnershipLossReason.None => TerminalRasterAnimationLossReason.None,
+			TerminalRasterOwnershipLossReason.SessionStateLost => TerminalRasterAnimationLossReason.SessionStateLost,
+			TerminalRasterOwnershipLossReason.ResourceMissing => TerminalRasterAnimationLossReason.ResourceMissing,
+			TerminalRasterOwnershipLossReason.ResourceReleased => TerminalRasterAnimationLossReason.ResourceReleased,
+			TerminalRasterOwnershipLossReason.ExplicitDisposal => TerminalRasterAnimationLossReason.ExplicitResourceDisposal,
 			_ => throw new InvalidOperationException(
 				"A raster resource reported a placement-only ownership loss reason."
 			)
