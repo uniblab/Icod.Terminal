@@ -4,10 +4,9 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable release:** `1.14.0` — persistent-raster lifecycle observability
-- **Current development line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
-- **Current tranche:** T158 — package/API/XML/security/documentation qualification
+- **Current stable candidate:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
 - **Stable compatibility floor:** `1.0.0`
+- **Next development track:** not yet selected
 
 ## Purpose
 
@@ -35,7 +34,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, and damage.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The active 1.15 production dependency graph is:
+The 1.15 production dependency graph is:
 
 ```text
 Icod.TermInfo 1.14.0
@@ -44,7 +43,7 @@ Icod.Timing   1.0.0
 
 Optional integration tests/samples use `Icod.TermInfo.Inspection 1.14.0`; Inspection and Source remain outside the production package graph.
 
-## Published release sequence through 1.14.0
+## Published/stable release sequence through 1.15.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -59,25 +58,28 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.14.0`; Inspec
 1.12.0  bounded source-pixel cropping and signed z-order
 1.13.0  bounded immutable-parent relative placement ownership
 1.14.0  side-effect-free persistent-raster lifecycle observability
+1.15.0  Unicode placeholder and virtual raster placement
 ```
 
-The final 1.14 public API fingerprint is:
+The final 1.15 public API fingerprint is:
 
 ```text
-2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
+eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 ```
 
 Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
 
-## 1.15 development track — Unicode Placeholder and Virtual Raster Placement
+Release notes: [`docs/releases/1.15.0.md`](docs/releases/1.15.0.md).
 
-Version 1.15 adds a backend-neutral semantic abstraction for Unicode-placeholder raster presentation.
+Versioned evidence: [`Icod.Terminal-1.15.0-Development-Roadmap.md`](Icod.Terminal-1.15.0-Development-Roadmap.md).
+
+## 1.15 final architecture — Unicode Placeholder and Virtual Raster Placement
 
 The governing principle is:
 
 > Terminal owns protocol identity and encoding; higher-level renderers own cells, cursor position, clipping, scrolling, damage, and layout.
 
-The frozen public model is:
+The final public model is:
 
 ```text
 TerminalRasterResource
@@ -103,17 +105,11 @@ placeholder columns                           1..256
 private virtual-placement id          1..0x00FFFFFF
 ```
 
-`TerminalCapability.UnicodeRasterPlaceholders = 10` is distinct from both ordinary raster display and persistent physical-placement ownership. Generic Kitty or persistent-raster support does not silently become placeholder verification.
+`TerminalCapability.UnicodeRasterPlaceholders = 10` is distinct from both ordinary raster display and persistent physical-placement ownership. Generic raster or persistent support does not silently become placeholder verification.
 
-Every placeholder cell is independently renderable and current-cursor based. Protocol-private image identity, virtual-placement identity, reserved codepoint, diacritic tables, and SGR packing remain private. Physical placements may use a current virtual placeholder as immutable relative parent through the compatibility-safe `CreateRelativePlacementFromPlaceholderAsync(...)` API.
+Every placeholder cell is independently renderable and current-cursor based. Protocol-private image identity, virtual-placement identity, reserved codepoint, diacritic tables, and SGR packing remain private. Physical placements may use a current virtual placeholder as immutable relative parent through `CreateRelativePlacementFromPlaceholderAsync(...)`.
 
-The frozen cross-TFM 1.15 public API fingerprint is:
-
-```text
-eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
-```
-
-## Tranche status
+## 1.15 tranche closure
 
 ```text
 T150  architecture/API-regret gate and public contract freeze        COMPLETE
@@ -124,11 +120,11 @@ T154  typed current-cursor placeholder emission                     COMPLETE
 T155  virtual-parent relative-placement integration                 COMPLETE
 T156  error/lifecycle/capacity/concurrency hardening                COMPLETE
 T157  samples and downstream integration qualification              COMPLETE
-T158  package/API/XML/security/documentation qualification          IN PROGRESS
-T159  stable 1.15.0 release closure                                 PENDING
+T158  package/API/XML/security/documentation qualification          COMPLETE
+T159  stable 1.15.0 release closure                                 COMPLETE
 ```
 
-Accepted checkpoints include:
+Accepted checkpoints:
 
 ```text
 T152  b319051b7830ea2bb6ca7d0a1344e7e4fc67e068  #1820 / 34894849866
@@ -137,27 +133,17 @@ T154  6b3d8e5393f04fe679de44d6d96851a5700976a1  #1826 / 34897742454
 T155  4bee4bb76371a1cec2a9e2676c12e1f349e7abda  #1834 / 34899992381
 T156  cd219f4661f1f170497514f7c868c2105a93e609  #1850 / 34913940016
 T157  4cdb8d432f55d8d9d7e8b9581fb73f8dd31ae32a  #1858 / 34914701316
-T158 package/API checkpoint
-      9bc2fdf8cdb61364adb6c21e54cd55d516f75f72  #1860 / 34915126464
+T158  72cd6401e473189934391456999deca7ae511fa1  #1877 / 34994616788
+T159  1a3c4af503f1256eeff077268bb50e45abac568d  #1882 / 34997043791
 ```
 
-All listed workflows passed the full nine-job PR matrix at their exact heads.
+Each listed acceptance workflow passed the complete nine-job PR matrix at the exact recorded head.
 
-## T158 current work
+T159's accepted candidate contains the stable `1.15.0` version authority, curated release notes, changelog, package release metadata, packed README, `Icod.TermInfo 1.14.0` production dependency, optional `Icod.TermInfo.Inspection 1.14.0` integration, and the final API fingerprint. This later roadmap bookkeeping commit records that already-qualified candidate; it is not the candidate's self-certification.
 
-T158 now includes:
+## TermInfo 1.14 integration boundary
 
-- packed XML documentation verification for every new 1.15 public member;
-- fresh NuGet-only placeholder API consumption on net8/net9/net10;
-- frozen public-API fingerprint and public identity-exclusion checks;
-- backend-neutral raster-placeholder sample plus source-policy verifier;
-- stable Icod.DCurses downstream acceptance/hardening;
-- permanent ownership/architecture/security/compatibility documentation synchronization;
-- direct production dependency alignment to `Icod.TermInfo 1.14.0`;
-- optional integration test/sample alignment to `Icod.TermInfo.Inspection 1.14.0`;
-- qualification of the TermInfo 1.14 advisory Sixel/Kitty backend planner at the consumer boundary.
-
-The TermInfo 1.14 adoption preserves a strict layering rule:
+TermInfo 1.14 advisory raster-backend planning is qualified only at the optional consumer boundary:
 
 ```text
 Icod.Terminal production router
@@ -168,19 +154,6 @@ Icod.TermInfo.Inspection RasterBackendPlanner
 ```
 
 A conclusive live `PersistentRasterGraphics` observation may be caller-mapped to Kitty availability because Terminal's reviewed persistent route is Kitty-based. Ordinary `RasterGraphics` does not identify Kitty versus Sixel, and `UnicodeRasterPlaceholders` is not fed into TermInfo 1.14's frozen lifecycle/placement planners. Separate backend contexts prevent evidence from silently crossing backend boundaries.
-
-T158 is complete only after the final documentation/integration head passes the full exact-head nine-job matrix.
-
-## Authorities
-
-- [`Icod.Terminal-1.15.0-Development-Roadmap.md`](Icod.Terminal-1.15.0-Development-Roadmap.md)
-- [`docs/Public-API-Baseline-1.15.md`](docs/Public-API-Baseline-1.15.md)
-- [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
-- [`docs/Architecture.md`](docs/Architecture.md)
-- [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
-- [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
-- [`docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md`](docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md)
-- [`docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md`](docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md)
 
 ## Stable architecture guardrails
 
@@ -199,8 +172,10 @@ The 1.x line continues to preserve:
 - production package dependencies declared centrally by `Icod.Terminal.csproj`;
 - cells/windows/layout/damage ownership in `Icod.DCurses`, not `Icod.Terminal`.
 
-## Deferred tracks after 1.15
+## Future development
 
-Future independent design candidates include animation/frame lifecycle, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
+No post-1.15 track is selected by this release closure. Independent candidates still include animation/frame lifecycle, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the current Terminal contract.
+
+Merge, tag `v1.15.0`, GitHub Release creation, and package publication remain explicit maintainer/release-workflow actions after PR qualification.
