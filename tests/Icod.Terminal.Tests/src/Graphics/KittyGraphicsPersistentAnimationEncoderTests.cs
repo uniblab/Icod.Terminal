@@ -25,7 +25,7 @@ using Icod.Terminal;
 using Xunit;
 
 /// <summary>
-/// Freezes the T163 full-frame persistent Kitty animation transfer contract.
+/// Freezes the T163/T164 persistent Kitty animation wire contract.
 /// </summary>
 public sealed class KittyGraphicsPersistentAnimationEncoderTests {
 	[Fact]
@@ -202,6 +202,84 @@ public sealed class KittyGraphicsPersistentAnimationEncoderTests {
 				raster,
 				imageId,
 				gapMilliseconds
+			)
+		);
+	}
+
+	[Fact]
+	public void RootFrameDurationUsesAnimationControlFrameSelectorAndPositiveGap() {
+		ReadOnlyMemory<byte> payload =
+			KittyGraphicsPersistentAnimationEncoder.EncodeFrameDurationPayload(
+				imageId: 99,
+				frameNumber: 1,
+				gapMilliseconds: 48
+			);
+
+		Assert.Equal(
+			"Ga=a,i=99,r=1,z=48",
+			Encoding.ASCII.GetString( payload.Span )
+		);
+	}
+
+	[Fact]
+	public void AppendedFrameDurationSupportsMaximumPositiveMillisecondValue() {
+		ReadOnlyMemory<byte> payload =
+			KittyGraphicsPersistentAnimationEncoder.EncodeFrameDurationPayload(
+				imageId: uint.MaxValue,
+				frameNumber: uint.MaxValue,
+				gapMilliseconds: int.MaxValue
+			);
+
+		Assert.Equal(
+			"Ga=a,i=4294967295,r=4294967295,z=2147483647",
+			Encoding.ASCII.GetString( payload.Span )
+		);
+	}
+
+	[Fact]
+	public void CurrentFrameSelectionUsesAnimationControlCurrentFrameSelector() {
+		ReadOnlyMemory<byte> payload =
+			KittyGraphicsPersistentAnimationEncoder.EncodeCurrentFramePayload(
+				imageId: 99,
+				frameNumber: 7
+			);
+
+		Assert.Equal(
+			"Ga=a,i=99,c=7",
+			Encoding.ASCII.GetString( payload.Span )
+		);
+	}
+
+	[Theory]
+	[InlineData( 0u, 1u, 48 )]
+	[InlineData( 99u, 0u, 48 )]
+	[InlineData( 99u, 1u, 0 )]
+	[InlineData( 99u, 1u, -1 )]
+	public void FrameDurationRejectsInvalidIdentityFrameOrGap(
+		uint imageId,
+		uint frameNumber,
+		int gapMilliseconds
+	) {
+		Assert.Throws<ArgumentOutOfRangeException>(
+			() => KittyGraphicsPersistentAnimationEncoder.EncodeFrameDurationPayload(
+				imageId,
+				frameNumber,
+				gapMilliseconds
+			)
+		);
+	}
+
+	[Theory]
+	[InlineData( 0u, 1u )]
+	[InlineData( 99u, 0u )]
+	public void CurrentFrameSelectionRejectsInvalidIdentityOrFrame(
+		uint imageId,
+		uint frameNumber
+	) {
+		Assert.Throws<ArgumentOutOfRangeException>(
+			() => KittyGraphicsPersistentAnimationEncoder.EncodeCurrentFramePayload(
+				imageId,
+				frameNumber
 			)
 		);
 	}
