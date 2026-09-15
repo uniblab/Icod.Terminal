@@ -498,6 +498,11 @@ internal static class TerminalSemanticBackendResolver {
 			TerminalSemanticOperation.PersistentRasterGraphics,
 			( TerminalProtocolBackend.ApcKittyGraphics, false )
 		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.UnicodeRasterPlaceholders,
+			( TerminalProtocolBackend.ApcKittyUnicodeRasterPlaceholders, false )
+		);
 
 		ValidatePolicies( policies );
 		return new ReadOnlyDictionary<

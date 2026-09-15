@@ -41,6 +41,7 @@ try {
         'VerifyVsCodeShellIntegrationSample.ps1',
         'VerifyRasterGraphicsSample.ps1',
         'VerifyPersistentRasterSample.ps1',
+        'VerifyRasterPlaceholderSample.ps1',
         'VerifyCapabilityPlanningSample.ps1',
         'VerifyDCursesSynchronizedOutput.ps1',
         'VerifyDCursesProgress.ps1',

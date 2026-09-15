@@ -25,6 +25,8 @@ const int width = 48;
 const int height = 24;
 const string liveEvidenceSource = "Icod.Terminal.live-capability-verification";
 const string placementEvidenceSource = "Icod.Terminal.1.13-placement-contract";
+const string backendEvidenceSource =
+	"Icod.Terminal.PersistentRasterGraphics -> KittyGraphics caller mapping";
 
 PersistentRasterLifecycleRequest request = new(
 	uploadResource: true,
@@ -42,8 +44,9 @@ await using TerminalSession session = await TerminalSession.OpenAsync(
 	}
 );
 
-PersistentRasterLifecycleProfile profile =
+PersistentRasterLifecycleProfile staticLifecycleProfile =
 	PersistentRasterLifecycleInspector.Inspect( session.Terminal );
+PersistentRasterLifecycleProfile profile = staticLifecycleProfile;
 PersistentRasterLifecyclePlan plan =
 	PersistentRasterLifecyclePlanner.Plan( profile, request );
 
@@ -100,22 +103,13 @@ if ( PersistentRasterLifecyclePlanStatus.Success != plan.Status ) {
 	return 2;
 }
 
-TerminalCapabilityStatus executionCapability = session.InspectCapability(
-	TerminalCapability.PersistentRasterGraphics
-);
-if ( !executionCapability.IsUsable ) {
-	await session.WriteTextAsync(
-		"TermInfo lifecycle planning permits the requested work, but Icod.Terminal does not currently have a usable live persistent-raster route for this endpoint.\r\n"
-	);
-	return 2;
-}
-
 PersistentRasterPlacementRequest placementRequest = new(
 	requireSourceRectangle: true,
 	requireSignedZOrder: true
 );
-PersistentRasterPlacementProfile placementProfile =
+PersistentRasterPlacementProfile staticPlacementProfile =
 	PersistentRasterPlacementInspector.Inspect( session.Terminal );
+PersistentRasterPlacementProfile placementProfile = staticPlacementProfile;
 PersistentRasterPlacementPlan placementPlan =
 	PersistentRasterPlacementPlanner.Plan(
 		plan,
@@ -151,6 +145,82 @@ if ( PersistentRasterPlacementPlanStatus.Satisfied != placementPlan.Status ) {
 		$"Source-rectangle and signed-z-order execution are not admissible: {placementPlan.Status}.\r\n"
 	);
 	await WritePlacementPlanIssuesAsync( session, placementPlan );
+	return 2;
+}
+
+TerminalCapabilityStatus executionCapability = session.InspectCapability(
+	TerminalCapability.PersistentRasterGraphics
+);
+if ( TerminalCapabilityEvidenceKind.LiveObservation != executionCapability.EvidenceKind ) {
+	if (
+		TerminalCapabilityEndpointAvailability.Available
+			!= executionCapability.EndpointAvailability
+	) {
+		await session.WriteTextAsync(
+			"TermInfo backend planning needs caller-owned live Kitty availability evidence, but the persistent-raster endpoint is unavailable.\r\n"
+		);
+		return 2;
+	}
+	executionCapability = await session.VerifyCapabilityAsync(
+		TerminalCapability.PersistentRasterGraphics
+	);
+}
+if ( !executionCapability.IsUsable ) {
+	await session.WriteTextAsync(
+		"TermInfo planning permits the requested semantics, but Icod.Terminal does not currently have a usable live persistent-raster route for this endpoint.\r\n"
+	);
+	return 2;
+}
+
+RasterBackendProfile sixelBackendProfile = RasterBackendInspector.Inspect(
+	session.Terminal,
+	RasterBackendKind.Sixel
+);
+RasterBackendProfile kittyBackendProfile = CreateKittyBackendProfile(
+	executionCapability
+);
+RasterBackendCandidate[] backendCandidates = [
+	new RasterBackendCandidate(
+		sixelBackendProfile,
+		staticLifecycleProfile,
+		staticPlacementProfile
+	),
+	new RasterBackendCandidate(
+		kittyBackendProfile,
+		profile,
+		placementProfile
+	)
+];
+RasterBackendSelectionRequest backendRequest = new(
+	request,
+	placementRequest
+);
+RasterBackendSelectionPlan unrankedBackendPlan = RasterBackendPlanner.Plan(
+	backendCandidates,
+	backendRequest
+);
+RasterBackendSelectionPlan preferredBackendPlan = RasterBackendPlanner.Plan(
+	backendCandidates,
+	backendRequest,
+	new RasterBackendSelectionOptions(
+		[
+			RasterBackendKind.KittyGraphics,
+			RasterBackendKind.Sixel
+		]
+	)
+);
+
+await session.WriteTextAsync(
+	$"TermInfo 1.14 backend plan without caller ranking: {unrankedBackendPlan.Status}.\r\n"
+);
+await session.WriteTextAsync(
+	$"TermInfo 1.14 Kitty-first backend plan: {preferredBackendPlan.Status}; selected backend: {preferredBackendPlan.SelectedBackend?.ToString() ?? "none"}.\r\n"
+);
+if ( RasterBackendSelectionStatus.Selected != preferredBackendPlan.Status
+	|| RasterBackendKind.KittyGraphics != preferredBackendPlan.SelectedBackend ) {
+	await session.WriteTextAsync(
+		"The caller-owned TermInfo 1.14 backend policy did not select the reviewed Kitty persistent-raster route.\r\n"
+	);
 	return 2;
 }
 
@@ -237,9 +307,51 @@ if ( !update.Succeeded ) {
 }
 
 await session.WriteTextAsync(
-	"TermInfo lifecycle and advanced-placement planning succeeded; Icod.Terminal executed caller-owned crop and signed-z-order values. Disposal now releases placement and resource ownership.\r\n"
+	"TermInfo lifecycle, placement, and explicit backend planning succeeded; Icod.Terminal executed the selected reviewed persistent-raster route with caller-owned crop and signed-z-order values. Disposal now releases placement and resource ownership.\r\n"
 );
 return 0;
+
+static RasterBackendProfile CreateKittyBackendProfile(
+	TerminalCapabilityStatus status
+) {
+	if ( TerminalCapability.PersistentRasterGraphics != status.Capability ) {
+		throw new ArgumentException(
+			"Kitty backend evidence must come from PersistentRasterGraphics.",
+			nameof( status )
+		);
+	}
+	if ( TerminalCapabilityEvidenceKind.LiveObservation != status.EvidenceKind ) {
+		return RasterBackendClassifier.Classify(
+			RasterBackendKind.KittyGraphics,
+			Array.Empty<RasterBackendEvidence>()
+		);
+	}
+
+	bool? isPositive = status.Support switch {
+		TerminalCapabilitySupport.Verified => true,
+		TerminalCapabilitySupport.Unsupported => false,
+		_ => null
+	};
+	if ( !isPositive.HasValue ) {
+		return RasterBackendClassifier.Classify(
+			RasterBackendKind.KittyGraphics,
+			Array.Empty<RasterBackendEvidence>()
+		);
+	}
+
+	return RasterBackendClassifier.Classify(
+		RasterBackendKind.KittyGraphics,
+		[
+			new RasterBackendEvidence(
+				RasterBackendKind.KittyGraphics,
+				isPositive.Value,
+				RasterBackendEvidenceKind.Verified,
+				backendEvidenceSource,
+				0
+			)
+		]
+	);
+}
 
 static IReadOnlyList<PersistentRasterLifecycleEvidence> CreatePersistentRasterEvidence(
 	TerminalCapabilityStatus status,

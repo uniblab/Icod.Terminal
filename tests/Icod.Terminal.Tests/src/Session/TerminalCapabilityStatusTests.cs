@@ -23,7 +23,7 @@ namespace Icod.Terminal.Tests.Session;
 using Xunit;
 
 /// <summary>
-/// Defines the C102 public capability-inspection value contract before implementation.
+/// Defines the public capability-inspection value contract.
 /// </summary>
 public sealed class TerminalCapabilityStatusTests {
 	[Fact]
@@ -39,7 +39,8 @@ public sealed class TerminalCapabilityStatusTests {
 				TerminalCapability.FocusReporting,
 				TerminalCapability.BracketedPaste,
 				TerminalCapability.RasterGraphics,
-				TerminalCapability.PersistentRasterGraphics
+				TerminalCapability.PersistentRasterGraphics,
+				TerminalCapability.UnicodeRasterPlaceholders
 			],
 			Enum.GetValues<TerminalCapability>()
 		);

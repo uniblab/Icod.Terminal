@@ -534,3 +534,112 @@ The final 1.14 public API fingerprint is:
 ```text
 2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 ```
+
+## 26. Unicode raster placeholders — 1.15
+
+Version 1.15 extends the same persistent ownership domain with an opaque virtual-placement handle:
+
+```text
+TerminalRasterResource
+    +-- TerminalRasterPlacement
+    +-- TerminalRasterPlaceholder
+            +-- TerminalRasterPlaceholderCell
+```
+
+`TerminalRasterPlaceholder` represents acknowledged terminal-side virtual placement state. It does not represent a window, an absolute screen position, a DCurses cell, clipping state, damage state, scrolling policy, or layout. A placeholder owns only its bounded virtual-placement lifetime and semantic row/column extent.
+
+Creation is resource-scoped:
+
+```csharp
+TerminalControlResult<TerminalRasterPlaceholder> result =
+	await resource.CreatePlaceholderAsync(
+		new TerminalRasterPlaceholderOptions {
+			Columns = 24,
+			Rows = 8
+		}
+	);
+
+await using TerminalRasterPlaceholder placeholder = result.GetRequiredValue();
+```
+
+Both dimensions are required and bounded to `1..256`.
+
+The semantic capability is distinct from ordinary persistent resource ownership:
+
+```text
+TerminalCapability.UnicodeRasterPlaceholders = 10
+```
+
+`InspectCapability(...)` remains side-effect free. Version 1.15 does not fabricate a placeholder-specific live probe. A successful correlated placeholder-creation acknowledgement supplies live evidence for that semantic operation.
+
+## 27. Semantic placeholder cells and current-cursor output
+
+`GetCell(row, column)` returns an immutable semantic token associated privately with one placeholder:
+
+```csharp
+TerminalRasterPlaceholderCell cell = placeholder.GetCell( row, column );
+```
+
+The public token exposes only zero-based semantic `Row` and `Column`. It has no public constructor and exposes no image id, placement id, generation id, backend id, APC dictionary, placeholder codepoint, combining-mark table, or SGR packing helper.
+
+Every token is independently renderable. No cell depends on the previously emitted left neighbor or on raster-order emission. This permits callers to clip, sparsely redraw, reorder, or horizontally scroll cells without reconstructing private protocol identity.
+
+Typed output is current-cursor text output:
+
+```csharp
+await session.WriteRasterPlaceholderCellAsync( cell );
+await session.WriteRasterPlaceholderCellsAsync( cells );
+```
+
+Bulk output preserves caller ordering. Terminal does not move the cursor or choose absolute screen coordinates. The caller owns cursor movement, clipping, scrolling, layout, damage, and redraw order.
+
+Internally each cell carries complete private image identity, complete virtual-placement identity, explicit row, explicit column, and the image high byte. Private foreground and underline color channels used for identity are terminated for each independently encoded cell with selective foreground/underline resets equivalent to SGR 39 and SGR 59. Background color and unrelated rendition attributes are not reset solely for placeholder identity.
+
+Before output, Terminal validates that the token belongs to the current session/generation and that its owning placeholder remains current. Stale, released, disposed, cross-session, and unregistered-generation tokens fail before private identity is emitted.
+
+## 28. Virtual placeholder as immutable relative parent
+
+A current virtual placeholder may act as the immutable parent of an ordinary physical placement:
+
+```csharp
+TerminalControlResult<TerminalRasterPlacement> childResult =
+	await childResource.CreateRelativePlacementFromPlaceholderAsync(
+		placeholder,
+		columnOffset: 2,
+		rowOffset: -1,
+		options
+	);
+```
+
+The placeholder itself cannot be relative. The physical child retains the existing common placement geometry contract, including crop/extents/z-order, and the existing signed offset/depth rules.
+
+A virtual root counts against the portable relative depth limit. Therefore the first physical child under a placeholder is effective depth 1 and the complete graph still stops at depth 8.
+
+Placeholder lifetime and raster-resource lifetime remain separate axes. Explicitly disposing/releasing a current placeholder releases dependent physical descendants; those placements observe established ancestor-release semantics while their independently owned raster resources remain current unless separately released or invalidated. Correlated loss of the placeholder's owning resource stales dependent cross-resource physical descendants as `ParentPlacementLost` without falsely declaring their child resources missing.
+
+## 29. 1.15 bounds, failures, and security boundary
+
+Version 1.15 keeps one bounded ownership domain:
+
+```text
+maximum live persistent resources                    256
+maximum live physical + virtual placements          4096
+maximum relative placement depth                       8
+placeholder columns                                 1..256
+placeholder rows                                    1..256
+private virtual-placement identity            1..0x00FFFFFF
+```
+
+Virtual placement identities are private, nonzero, live-collision-safe, monotonic where practical, and wrap-safe. They share the existing 4096 placement capacity rather than creating a second registry.
+
+Placeholder creation reuses the authoritative bounded query/input transaction manager. Wrong acknowledgement identities, malformed responses, timeout, late responses, and transport failure do not manufacture `ResourceMissing`, `ParentPlacementLost`, or other unsupported lifecycle truth. A correlated missing-resource response follows the established narrow resource-loss semantics. After committed transport failure there is no blind retry, hidden backend switch, or raster replay/re-upload.
+
+Failure while writing visible placeholder text remains ordinary committed text-output failure and does not by itself prove that the virtual placement ceased to exist.
+
+The 1.15 public API remains backend-neutral. Protocol-private image ids, virtual-placement ids, placeholder encoding details, raw APC graphics construction, and backend selection stay internal. Higher-level renderers such as `Icod.DCurses` continue to own cells, windows, screen coordinates, clipping, scrolling, damage, layout, and refresh policy.
+
+The frozen cross-TFM 1.15 public API fingerprint is:
+
+```text
+eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
+```

@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.14.0 adds side-effect-free persistent-raster lifecycle observability through atomic Current/Stale/Released/Disposed ownership snapshots and semantic loss/release reasons, preserving opaque protocol identities, independent resource/placement lifetime, and no-replay semantics. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.14.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.15.0 adds opaque Unicode-placeholder virtual raster placements, self-contained semantic placeholder-cell output, and physical placement relative to a virtual parent while preserving caller-owned screen layout and private protocol identity. It also advances the production Icod.TermInfo dependency to 1.14.0 and qualifies the optional TermInfo 1.14 advisory raster-backend planning boundary without changing Terminal's production router. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.15.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
@@ -50,7 +50,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<Deterministic>true</Deterministic>
-		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;osc9-notification;notification;desktop-notification;osc777;osc777-notification;titled-notification;urxvt;osc99;kitty-notification;notification-update;notification-query;notification-icon;notification-event;semantic-event;interactive-notification;osc9-9;current-directory;windows-current-directory;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;contour;conemu;iterm2;wezterm;osc133;semantic-prompt;shell-integration;prompt;command-region;cmdline-url;prompt-click;osc633;vscode;vscode-shell-integration;osc1337;iterm2-shell-integration;semantic-history;remote-host;user-variable;shell-integration-version;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;color-ownership;scoped-color;lifecycle;restoration;tui;control-language;csi;dcs;apc;sixel;raster;raster-graphics;rgb24;rgba32;indexed8;kitty-graphics;semantic-routing;capability-routing;csi-grammar;csi-parameters;pixel-geometry;capability-planning;capability-inspection;persistent-raster;persistent-graphics;raster-resource;raster-placement;relative-placement;lifecycle-observation;ownership-state</PackageTags>
+		<PackageTags>terminal;tty;console;termios;windows-terminal;ansi;vt100;xterm;terminfo;terminal-input;terminal-control;interactive;cross-platform;dotnet;csharp;icod;clipboard;osc52;cursor;decscusr;decrqss;synchronized-output;dec-private-mode;mode-2026;osc9;osc9-4;osc9-notification;notification;desktop-notification;osc777;osc777-notification;titled-notification;urxvt;osc99;kitty-notification;notification-update;notification-query;notification-icon;notification-event;semantic-event;interactive-notification;osc9-9;current-directory;windows-current-directory;terminal-progress;progress;osc22;pointer-shape;mouse-pointer;kitty;contour;conemu;iterm2;wezterm;osc133;semantic-prompt;shell-integration;prompt;command-region;cmdline-url;prompt-click;osc633;vscode;vscode-shell-integration;osc1337;iterm2-shell-integration;semantic-history;remote-host;user-variable;shell-integration-version;osc4;osc104;terminal-color;palette;color-query;dynamic-color;osc10;osc11;osc12;osc13;osc14;osc17;osc19;color-ownership;scoped-color;lifecycle;restoration;tui;control-language;csi;dcs;apc;sixel;raster;raster-graphics;rgb24;rgba32;indexed8;kitty-graphics;semantic-routing;capability-routing;csi-grammar;csi-parameters;pixel-geometry;capability-planning;capability-inspection;persistent-raster;persistent-graphics;raster-resource;raster-placement;relative-placement;lifecycle-observation;ownership-state;unicode-placeholder;virtual-placement;raster-placeholder</PackageTags>
 		<RepositoryUrl>https://github.com/uniblab/Icod.Terminal</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
@@ -111,7 +111,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo" Version="1.13.0" />
+		<PackageReference Include="Icod.TermInfo" Version="1.14.0" />
 		<PackageReference Include="Icod.Timing" Version="1.0.0" />
 	</ItemGroup>
 </Project>

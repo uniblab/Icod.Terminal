@@ -24,7 +24,7 @@ A stable release must qualify the public package/runtime graph on all supported 
 
 ## 3. Public API baselines
 
-Every API-bearing stable minor release records a deterministic reflection snapshot and SHA256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
+Every API-bearing stable minor release records a deterministic reflection snapshot and SHA-256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
 
 Relevant fingerprints include:
 
@@ -33,68 +33,92 @@ Relevant fingerprints include:
 1.10  ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 1.11  9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2
 1.12  eed5fc18e5cdd1cdadf340ba37c3664a01fb9338c2080b709168606d51d934a8
+1.13  c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
+1.14  2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
+1.15  eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 ```
 
 Version 1.11.1 intentionally retained the 1.11 fingerprint because it added no production public API.
 
-## 4. 1.12 additive public API
+The 1.15 fingerprint is frozen during development and is enforced across `net8.0`, `net9.0`, and `net10.0` before stable release closure.
 
-The only intended additions relative to 1.11 are:
+## 4. Additive persistent-raster progression
+
+The stable/additive progression is:
 
 ```text
-TerminalRasterSourceRectangle
-TerminalRasterSourceRectangle..ctor(int,int,int,int)
-TerminalRasterSourceRectangle.X
-TerminalRasterSourceRectangle.Y
-TerminalRasterSourceRectangle.Width
-TerminalRasterSourceRectangle.Height
-TerminalRasterPlacementOptions.SourceRectangle
-TerminalRasterPlacementOptions.ZIndex
+1.11  opaque persistent resources and physical placements
+1.12  bounded source-pixel cropping and signed z-order
+1.13  bounded immutable-parent relative placement ownership
+1.14  side-effect-free ownership-state observation
+1.15  opaque virtual placements and typed Unicode-placeholder cells
 ```
 
-All existing public signatures and enum numeric values are preserved.
+Each release preserves earlier behavior when its new APIs are unused.
 
-No new `TerminalCapability` numeric value is introduced by 1.12.
+### 4.1 1.12 optional geometry
 
-## 5. Persistent-raster compatibility
+`TerminalRasterSourceRectangle` and `TerminalRasterPlacementOptions.ZIndex` remain optional. Existing 1.11 placement calls retain their established semantics when those values are absent.
 
-Version 1.11 established opaque persistent raster resources/placements and is the behavioral base for 1.12.
+### 4.2 1.13 relative placement
+
+`CreateRelativePlacementAsync(TerminalRasterPlacement, ...)` and `UpdateRelativeAsync(...)` add immutable parentage and signed cell offsets without changing ordinary current-cursor placement behavior.
+
+Resource ownership and placement-parent lifetime remain independent. The portable relative-depth ceiling is 8. There is no public reparenting operation.
+
+### 4.3 1.14 lifecycle observation
+
+`TerminalRasterOwnershipState` and `OwnershipState` properties expose Terminal's local ownership certainty without terminal I/O or a fabricated passive existence query.
+
+Reading the snapshot does not alter existing resource/placement behavior.
+
+### 4.4 1.15 virtual placeholders
+
+Version 1.15 adds:
+
+```text
+TerminalCapability.UnicodeRasterPlaceholders = 10
+TerminalRasterPlaceholderOptions
+TerminalRasterPlaceholder
+TerminalRasterPlaceholderCell
+TerminalRasterResource.CreatePlaceholderAsync(...)
+TerminalRasterResource.CreateRelativePlacementFromPlaceholderAsync(...)
+TerminalSession.WriteRasterPlaceholderCellAsync(...)
+TerminalSession.WriteRasterPlaceholderCellsAsync(...)
+```
+
+The new relative-parent operation deliberately uses a distinct name rather than adding a second reference-type overload of `CreateRelativePlacementAsync(...)`; this avoids creating source ambiguity for existing calls that pass `null` to the physical-parent overload.
+
+Virtual and physical placements share the existing combined 4096 live-placement ceiling. Placeholder dimensions are independently bounded to `1..256`; virtual-placement protocol identity remains private.
+
+The virtual placeholder itself is not relative. A physical placement may use a current placeholder as immutable relative parent, preserving the existing depth and descendant-lifetime model.
+
+Typed placeholder-cell output is current-cursor output. It does not transfer screen-coordinate/layout/clipping/damage ownership into Terminal.
+
+## 5. Persistent-raster compatibility guarantees
 
 The following remain compatible guarantees:
 
-- public resource/placement protocol identities stay opaque;
-- placement position stays the terminal's current cursor location;
-- `Columns`/`Rows` remain independently optional and bounded to `1..16384`;
-- create/update remain acknowledged operations through the authoritative query path;
+- public resource/physical-placement/virtual-placement protocol identities stay opaque;
+- ordinary physical placement uses the terminal's current cursor location;
+- typed placeholder-cell output uses the caller's current cursor location;
+- physical placement `Columns`/`Rows` remain independently optional and bounded to `1..16384`;
+- placeholder `Columns`/`Rows` are required and bounded to `1..256`;
+- create/update operations that require acknowledgement reuse the authoritative query path;
 - persistent ownership remains generation scoped;
-- stale mutation returns controlled `Unavailable` before output;
+- stale mutation/output returns controlled failure before stale identity is emitted;
 - stale disposal remains local-only;
-- live resource/placement ceilings remain `256` / `4096` per session;
+- live resource ceiling remains 256 and combined physical/virtual placement ceiling remains 4096 per session;
+- relative depth remains bounded to 8;
 - no hidden source-image cache or automatic replay is introduced;
 - persistent transport remains direct Kitty transfer internally;
-- current cleanup remains child placement before resource data.
-
-### 5.1 1.12 optional placement geometry
-
-`SourceRectangle` and `ZIndex` are optional. When both are absent, the existing 1.11 persistent placement byte/semantic contract is preserved.
-
-A caller upgrading from 1.11 does not need to change existing placement code.
-
-When `SourceRectangle` is supplied:
-
-- it selects a source-image pixel region;
-- its intrinsic scalar contract is revalidated even when the value came from `default(TerminalRasterSourceRectangle)` rather than the public constructor;
-- it must fit completely inside the owning resource;
-- invalid rectangles are rejected before new placement output;
-- source dimensions are retained as metadata only, not as a replay pixel cache.
-
-When `ZIndex` is supplied, its complete signed `int` value is preserved as signed stacking order. This does not create a general scene-layout contract or relative-placement graph.
+- cleanup remains descendant-before-parent and placement/placeholder before resource data.
 
 ## 6. Query/input compatibility
 
 Stable 1.x preserves one authoritative terminal input conversation.
 
-Application input, lifecycle observations, query responses, semantic events, raster capability probes, and persistent-raster acknowledgements remain coordinated by the same reader/router model.
+Application input, lifecycle observations, query responses, semantic events, raster capability probes, persistent-raster acknowledgements, and placeholder acknowledgements remain coordinated by the same reader/router model.
 
 Compatibility includes:
 
@@ -106,34 +130,48 @@ Compatibility includes:
 
 ## 7. Capability-planning compatibility
 
-Public capability planning remains semantic and dependency-neutral.
+Public Terminal capability planning remains semantic and dependency-neutral.
 
 `InspectCapability(...)` is side-effect free. `VerifyCapabilityAsync(...)` is explicit and uses only reviewed bounded live probes.
 
 Endpoint availability remains separate from support knowledge. Static advertisement, live verification, unknown state, and unsupported state are not collapsed merely to make routing simpler.
 
-The internal table-driven TermInfo evidence cleanup completed for 1.12 is behavior preserving and does not alter public evidence states or package dependencies.
+`RasterGraphics`, `PersistentRasterGraphics`, and `UnicodeRasterPlaceholders` remain distinct semantic capabilities. Generic raster or persistent support must not silently manufacture placeholder support.
 
-## 8. Committed-output compatibility
+## 8. TermInfo 1.14 optional integration compatibility
 
-Committed graphics operations do not intentionally truncate after commitment merely because ordinary caller cancellation arrives.
-
-Partial transport failure is surfaced without blind replay or automatic backend switching. This applies to ephemeral raster output and persistent upload/placement transactions according to their existing logical transaction boundaries.
-
-## 9. Package dependency compatibility
-
-`Icod.Terminal.csproj` remains the direct production dependency authority.
-
-Version 1.12 keeps:
+The active 1.15 direct production dependency advances to:
 
 ```text
-Icod.TermInfo 1.11.0
+Icod.TermInfo 1.14.0
 Icod.Timing   1.0.0
 ```
 
-Tests, samples, and package-only consumers may reference extra tooling/inspection packages without making those dependencies part of the production package graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.14.0`; Inspection and Source remain outside the production graph.
 
-Stable package qualification verifies restore/build and executable NuGet-only consumption rather than turning one incidental transitive-resolution outcome into a public behavioral promise.
+Inspection 1.14 adds advisory raster-backend evidence/candidate/selection planning. Icod.Terminal qualifies that API at the consumer boundary but does **not** use `RasterBackendPlanner` in its production router.
+
+The compatibility rule is:
+
+```text
+Terminal semantic capability/routing state
+    remains Terminal-owned
+
+TermInfo backend planning
+    remains caller-owned advisory policy
+```
+
+A caller may map conclusive live `PersistentRasterGraphics` evidence to Kitty Graphics availability because Terminal's reviewed persistent implementation is Kitty-based. That does not make ordinary `RasterGraphics` a concrete-backend identity, and it does not make `UnicodeRasterPlaceholders` an input to TermInfo 1.14's frozen lifecycle/placement planners.
+
+Separate backend contexts prevent evidence for one candidate from silently strengthening another. Multiple viable candidates without explicit preference remain an application decision rather than hidden ranking.
+
+Historical release documents retain the TermInfo/Inspection versions actually shipped by those releases and are not rewritten by this dependency advance.
+
+## 9. Committed-output compatibility
+
+Committed graphics operations do not intentionally truncate after commitment merely because ordinary caller cancellation arrives.
+
+Partial transport failure is surfaced without blind replay or automatic backend switching. This applies to ephemeral raster output, persistent upload/placement/placeholder transactions, and typed placeholder-cell output according to their existing logical transaction boundaries.
 
 ## 10. Backend-neutral public contracts
 
@@ -141,35 +179,37 @@ Stable public APIs describe terminal semantics rather than internal protocol cho
 
 The following remain implementation details rather than compatibility promises:
 
-- Kitty/Sixel backend routing scores;
+- Terminal's internal Kitty/Sixel routing scores/registry order;
 - raw APC/DCS control dictionaries;
-- private image numbers/image ids/placement ids;
-- internal registry ordering;
-- table representation used for TermInfo semantic evidence;
-- concrete parser/helper class names not exposed publicly.
+- private image numbers/image ids/physical/virtual placement ids;
+- session generation ids;
+- Unicode placeholder reserved codepoint and combining-mark tables;
+- SGR identity packing;
+- internal parser/helper class names not exposed publicly.
 
-A public semantic operation may be implemented by one reviewed backend today without exposing that backend as caller-controlled policy.
+The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises
+## 11. Deliberate non-promises after 1.15
 
 Stable 1.x does not promise:
 
 - generic raw vendor command/event dispatch;
 - terminal-brand-based support truth;
 - automatic graphics replay/re-upload after lifecycle invalidation;
-- Sixel emulation of persistent resource ownership;
-- caller-selected persistent raster backend;
+- Sixel emulation of persistent resource or placeholder ownership;
+- public/caller-selected Terminal production raster backend;
 - public Kitty protocol identities;
 - retained persistent source-image cache;
-- relative placement graphs or parent placement identities;
+- mutable/reparentable placement graphs;
 - absolute screen-coordinate layout owned by `Icod.Terminal`;
-- Unicode placeholder/virtual placements;
+- pixel-within-cell positioning;
+- automatic placeholder redraw or emitted-screen-position tracking;
 - animation/frame lifecycle;
 - scene-graph/cells/windows/damage/layout ownership;
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside this package.
 
-Version 1.12 source rectangles and z-order are deliberately narrow additions and must not be interpreted as promises for these excluded features.
+Relative placement, lifecycle observation, and virtual placeholders are deliberately bounded additions and must not be interpreted as promises for these excluded features.
 
 ## 12. Release qualification
 
@@ -187,7 +227,7 @@ Package Stable 1.x release line
 Validated package artifact
 ```
 
-The Stable 1.x package shard includes fresh package-only consumption and downstream acceptance/hardening where defined by the repository release contract.
+The package/public-API gates verify the frozen API fingerprint, generated XML documentation, fresh package-only consumption, dependency boundaries, and downstream acceptance/hardening defined by the repository release contract.
 
 Any post-closure pre-merge code or documentation change requires the same exact-head matrix again before the PR is considered merge-ready.
 
@@ -195,9 +235,9 @@ Any post-closure pre-merge code or documentation change requires the same exact-
 
 PR qualification does not itself merge, tag, create a GitHub Release, or publish NuGet packages.
 
-For 1.12, the maintainer/release workflow remains responsible for:
+For 1.15, the maintainer/release workflow remains responsible for:
 
-1. merging the qualified PR;
+1. merging the fully qualified PR;
 2. validating the mainline Release workflow;
-3. creating/pushing `v1.12.0` only after mainline validation succeeds;
+3. creating/pushing `v1.15.0` only after mainline validation succeeds;
 4. creating the GitHub Release and publishing NuGet through the established release workflow.
