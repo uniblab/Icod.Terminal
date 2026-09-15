@@ -26,6 +26,9 @@ using Xunit;
 /// Defines the T152 bounded virtual-placement ownership and lifecycle contract.
 /// </summary>
 public sealed class TerminalPersistentRasterPlaceholderRegistryTests {
+	private const int PlaceholderChurnCount = 512;
+	private const int ManyPlaceholderCount = 128;
+
 	[Fact]
 	public void PlaceholderPlacementIdsAreBoundedWrapAndAvoidPhysicalCollision() {
 		TerminalPersistentRasterRegistry registry = new(
@@ -128,6 +131,97 @@ public sealed class TerminalPersistentRasterPlaceholderRegistryTests {
 			)
 		);
 		Assert.Null( unavailablePlaceholder );
+	}
+
+	[Fact]
+	public void ManyPlaceholdersCanShareOneResourceWithinCombinedCapacity() {
+		TerminalPersistentRasterRegistry registry = new();
+		TerminalPersistentRasterResourceState resource = ReserveResource( registry );
+		TerminalPersistentRasterPlaceholderState[] placeholders =
+			new TerminalPersistentRasterPlaceholderState[ ManyPlaceholderCount ];
+
+		for ( int index = 0; index < placeholders.Length; ++index ) {
+			placeholders[ index ] = ReservePlaceholder(
+				registry,
+				resource
+			);
+			Assert.Equal( index + 1, registry.LivePlacementCount );
+		}
+
+		foreach ( TerminalPersistentRasterPlaceholderState placeholder in placeholders ) {
+			Assert.True( registry.IsPlaceholderCurrent( placeholder ) );
+		}
+
+		for ( int index = placeholders.Length - 1; 0 <= index; --index ) {
+			Assert.True( registry.TryReleasePlaceholder( placeholders[ index ] ) );
+		}
+
+		Assert.Equal( 0, registry.LivePlacementCount );
+		Assert.Equal( 1, registry.LiveResourceCount );
+	}
+
+	[Fact]
+	public void PlaceholderRegistryChurnReleasesEveryReservationAndAvoidsLiveIdentityReuse() {
+		TerminalPersistentRasterRegistry registry = new();
+		TerminalPersistentRasterResourceState resource = ReserveResource( registry );
+		HashSet<uint> identities = [];
+
+		for ( int iteration = 0; iteration < PlaceholderChurnCount; ++iteration ) {
+			TerminalPersistentRasterPlaceholderState placeholder = ReservePlaceholder(
+				registry,
+				resource
+			);
+			Assert.True( identities.Add( placeholder.PlacementId ) );
+			Assert.Equal( 1, registry.LivePlacementCount );
+			Assert.True( registry.TryReleasePlaceholder( placeholder ) );
+			Assert.Equal( 0, registry.LivePlacementCount );
+		}
+
+		Assert.Equal( PlaceholderChurnCount, identities.Count );
+		Assert.True( registry.TryReleaseResource( resource ) );
+		Assert.Equal( 0, registry.LiveResourceCount );
+		Assert.Equal( 0, registry.LivePlacementCount );
+	}
+
+	[Fact]
+	public void MixedOrdinaryRelativeAndVirtualPlacementsShareAccounting() {
+		TerminalPersistentRasterRegistry registry = new();
+		TerminalPersistentRasterResourceState firstResource = ReserveResource( registry );
+		TerminalPersistentRasterResourceState secondResource = ReserveResource( registry );
+
+		Assert.True(
+			registry.TryReservePlacement(
+				firstResource,
+				out TerminalPersistentRasterPlacementState? ordinary
+			)
+		);
+		ordinary = Assert.IsType<TerminalPersistentRasterPlacementState>( ordinary );
+		Assert.True(
+			registry.TryReserveRelativePlacement(
+				secondResource,
+				ordinary,
+				columnOffset: -2,
+				rowOffset: 3,
+				out TerminalPersistentRasterPlacementState? relative
+			)
+		);
+		relative = Assert.IsType<TerminalPersistentRasterPlacementState>( relative );
+		TerminalPersistentRasterPlaceholderState placeholder = ReservePlaceholder(
+			registry,
+			firstResource
+		);
+
+		Assert.Equal( 3, registry.LivePlacementCount );
+		Assert.True( registry.IsPlacementCurrent( ordinary ) );
+		Assert.True( registry.IsPlacementCurrent( relative ) );
+		Assert.True( registry.IsPlaceholderCurrent( placeholder ) );
+
+		Assert.True( registry.TryReleasePlaceholder( placeholder ) );
+		Assert.Equal( 2, registry.LivePlacementCount );
+		Assert.True( registry.TryReleasePlacement( relative ) );
+		Assert.Equal( 1, registry.LivePlacementCount );
+		Assert.True( registry.TryReleasePlacement( ordinary ) );
+		Assert.Equal( 0, registry.LivePlacementCount );
 	}
 
 	[Fact]
