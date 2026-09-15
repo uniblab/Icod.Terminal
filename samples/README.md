@@ -145,7 +145,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
-The loose-coupling pattern introduced in 1.11.1 remains intact, but the current executable sample consumes `Icod.TermInfo.Inspection 1.12.0` so it can demonstrate both persistent lifecycle planning and the additive 1.12 advanced-placement planner.
+The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.14.0` while continuing to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12.
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0
@@ -155,7 +155,7 @@ The sample first inspects `session.Terminal`, builds the semantic persistent-lif
 
 After lifecycle success, the sample requires both source-rectangle and signed-z-order semantics through `PersistentRasterPlacementRequest`. Static Inspection evidence is planned first. If those advanced semantics are merely unknown, the application adds explicit caller-owned `Declared` evidence for the Icod.Terminal placement contract and replans before executing concrete crop/z-order values through Terminal.
 
-This distinction is intentional: `PersistentRasterGraphics` is the coarse live Terminal capability and is not misrepresented as a separate source-rectangle or z-order probe. TermInfo owns semantic evidence/classification/planning; Terminal and the application own concrete geometry values, acknowledgements, execution, relative-parent lifetime, and 1.14 ownership-state observation. Icod.TermInfo 1.12 does not plan Terminal's relative-placement graph.
+This distinction is intentional: `PersistentRasterGraphics` is the coarse live Terminal capability and is not misrepresented as a separate source-rectangle or z-order probe. TermInfo owns semantic evidence/classification/planning; Terminal and the application own concrete geometry values, acknowledgements, execution, relative-parent lifetime, 1.14 ownership-state observation, and 1.15 Unicode-placeholder ownership. The current TermInfo 1.14 integration does not plan Terminal's relative-placement or virtual-placeholder graphs.
 
 `Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency, and the sample does not expose raw graphics commands, terminal-brand branches, backend ids, or protocol-private numeric identities.
 
