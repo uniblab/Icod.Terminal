@@ -291,6 +291,33 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		);
 	}
 
+	internal ValueTask<TerminalControlResult<TerminalRasterAnimationFrame>> AddAnimationFrameAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterImage image,
+		int gapMilliseconds,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( image );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.AddPersistentRasterAnimationFrameAsync(
+			this.State,
+			animation,
+			image,
+			gapMilliseconds,
+			cancellationToken
+		);
+	}
+
 	/// <summary>
 	/// Releases this resource's local ownership, deletes its current placements, and then attempts
 	/// one terminal-side resource-data deletion while its terminal identity remains current.
