@@ -15,6 +15,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
+| Render semantic virtual-raster cells with caller-owned cursor/layout control | [`Icod.Terminal.RasterPlaceholder.Sample`](Icod.Terminal.RasterPlaceholder.Sample/README.md) |
 | Combine TermInfo lifecycle and advanced-placement planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
@@ -32,6 +33,7 @@ The examples follow the permanent 1.x contracts:
 - exact restoration is claimed only when the library first observed or captured a truthful baseline;
 - persistent raster identities are opaque and generation-scoped rather than exactly restorable state;
 - persistent `OwnershipState` snapshots report Terminal's local certainty and do not pretend to authenticate remote terminal existence;
+- placeholder samples keep cursor position, clipping, redraw order, and screen layout in caller ownership;
 - persistent samples do not branch on Kitty/Sixel/backend ids and do not teach hidden replay;
 - metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, hyperlinks, and raster content may disclose information outside the application;
 - event-loop samples remain nonfatal when a later compatible 1.x release introduces an unfamiliar outer event kind.
@@ -124,6 +126,22 @@ The sample does not mention Kitty, Sixel, image ids, image numbers, placement id
 `packaging/VerifyPersistentRasterSample.ps1` enforces those backend-neutral source rules and builds the sample on every supported TFM.
 
 See `docs/Persistent-Raster-Ownership.md` for the permanent ownership contract.
+
+### `Icod.Terminal.RasterPlaceholder.Sample`
+
+Demonstrates the 1.15 virtual-placement and semantic placeholder-cell abstraction while keeping screen layout in caller ownership.
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterPlaceholder.Sample/Icod.Terminal.RasterPlaceholder.Sample.csproj -f net10.0
+```
+
+The sample verifies persistent raster ownership, inspects `UnicodeRasterPlaceholders` without inventing a probe, creates an opaque resource and placeholder, then uses `GetCell(...)`, typed single/bulk placeholder output, and ordinary TermInfo `CursorAddress` expansion to render a complete 4x2 grid. It then performs a sparse one-cell redraw, emits a deliberately reordered cell sequence, and creates a physical placement relative to the virtual placeholder.
+
+The distinction is intentional: placeholder row/column coordinates identify cells inside the virtual raster, while terminal screen coordinates, cursor movement, clipping, redraw ordering, and layout remain application responsibilities. Successful placeholder creation publishes live semantic evidence for that transaction; the sample does not fabricate stronger support knowledge beforehand.
+
+`packaging/VerifyRasterPlaceholderSample.ps1` rejects protocol-private identity/backend/raw-control literals and builds the sample on every supported TFM.
+
+See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPlaceholder.Sample/README.md) for the full responsibility boundary.
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
@@ -251,6 +269,7 @@ For graphics:
 Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.RasterGraphics.Sample             (ephemeral display)
     -> Icod.Terminal.PersistentRaster.Sample           (terminal-resident ownership + lifecycle observation)
+    -> Icod.Terminal.RasterPlaceholder.Sample          (virtual placement + caller-owned text-grid rendering)
     -> Icod.Terminal.TermInfoPersistentRaster.Sample   (TermInfo lifecycle/placement planning + Terminal execution)
 ```
 
