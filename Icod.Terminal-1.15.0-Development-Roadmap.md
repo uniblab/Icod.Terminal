@@ -2,7 +2,7 @@
 
 **Release:** `1.15.0`  
 **Theme:** Unicode Placeholder and Virtual Raster Placement  
-**Status:** T150–T157 complete; T158 package/API/XML/security/documentation qualification in progress  
+**Status:** T150–T159 complete; stable release candidate qualified  
 **Stable compatibility floor:** `1.0.0`  
 **Prior release:** stable `1.14.0`
 
@@ -28,9 +28,11 @@ Permanent ownership authority:
 
 [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
 
-## Why this release follows 1.14
+Curated release notes:
 
-The persistent-raster progression is:
+[`docs/releases/1.15.0.md`](docs/releases/1.15.0.md)
+
+## Persistent-raster progression
 
 ```text
 1.11  opaque persistent resources and placements
@@ -59,17 +61,11 @@ TerminalRasterResource
                     semantic text-grid token
 ```
 
-### Placeholder ownership
-
-`TerminalRasterPlaceholder` owns virtual-placement lifetime, rows/columns, private virtual-placement identity, session/generation association, and lifecycle state.
-
-It does not own an absolute screen position, window, DCurses cell, damage state, scrolling policy, layout, or animation.
+`TerminalRasterPlaceholder` owns virtual-placement lifetime, rows/columns, private virtual-placement identity, session/generation association, and lifecycle state. It does not own an absolute screen position, window, DCurses cell, damage state, scrolling policy, layout, or animation.
 
 `TerminalRasterPlaceholderCell` is an immutable semantic token for one placeholder row/column coordinate. Its association with one specific placeholder/session remains private and it is not independently disposable.
 
 ## Frozen public API
-
-The T150 public API freeze selected:
 
 ```csharp
 public sealed class TerminalRasterPlaceholderOptions {
@@ -131,7 +127,7 @@ public ValueTask WriteRasterPlaceholderCellsAsync(
 
 The distinct `CreateRelativePlacementFromPlaceholderAsync(...)` name is intentional. Adding a second reference-type `CreateRelativePlacementAsync(...)` overload would make existing source such as `CreateRelativePlacementAsync(null!, ...)` ambiguous.
 
-The frozen cross-TFM public API fingerprint is:
+The final cross-TFM public API fingerprint is:
 
 ```text
 eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
@@ -139,7 +135,7 @@ eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 
 ## Public identity boundary
 
-The 1.15 public surface does not expose:
+The 1.15 public surface exposes no:
 
 ```text
 Kitty image id
@@ -161,65 +157,47 @@ The token type has no public constructor that accepts protocol identity.
 ## Placeholder dimensions and capacities
 
 ```text
-Columns  1..256
-Rows     1..256
-```
-
-Placeholder dimensions are required. Version 1.15 does not add source crop or z-order to placeholder options.
-
-Existing capacity ceilings remain one combined bounded ownership system:
-
-```text
 maximum live persistent resources                          256
 maximum live physical + virtual placements               4096
 maximum relative-placement depth                            8
-maximum placeholder rows                                  256
-maximum placeholder columns                               256
+placeholder Columns                                     1..256
+placeholder Rows                                        1..256
+private virtual-placement id                   1..0x00FFFFFF
 ```
 
-Virtual placements count against the existing 4096-placement ceiling.
-
-Private virtual-placement ids use the nonzero 24-bit range:
-
-```text
-1..0x00FFFFFF
-```
-
-Allocation remains nonzero, collision-safe, monotonic where practical, and wrap-safe.
+Virtual placements count against the existing combined placement ceiling. Private virtual-placement allocation remains nonzero, collision-safe, monotonic where practical, and wrap-safe.
 
 ## Self-contained cell contract
 
 Every generated placeholder cell is independently renderable. Its internal encoding carries complete image identity, complete virtual-placement identity, explicit row, and explicit column.
 
-The implementation does not use left-neighbor shorthand. This preserves correctness for clipping, sparse redraw, scrolling, overlapping rasters, damage-based rendering, arbitrary cell ordering, and future DCurses virtual-screen diffing.
+The implementation does not use left-neighbor shorthand. This preserves correctness for clipping, sparse redraw, scrolling, overlapping rasters, damage-based rendering, arbitrary cell ordering, and DCurses virtual-screen diffing.
 
 `GetCell(row, column)` is synchronous and side-effect free. It performs no terminal write, query registration, output-gate acquisition, capability verification, lifecycle mutation, cleanup, replay, or backend selection.
 
-Rows/columns outside the declared dimensions are rejected locally.
+Placeholder-cell output is current-cursor text output. Terminal does not choose screen coordinates or move to a semantic window location. The caller owns cursor movement, clipping, scrolling, layout, and redraw order. Bulk output preserves caller ordering exactly and remains bounded.
 
-## Current-cursor emission contract
+Placeholder encoding temporarily uses foreground and underline colors as protocol identity channels. Every independently emitted cell terminates private identity state with selective resets equivalent to SGR 39 and SGR 59 without resetting unrelated rendition or background state solely for raster identity.
 
-Placeholder cells are ordinary text-grid output. Single-cell and bulk methods emit at the caller's current text cursor position.
-
-Terminal does not choose screen coordinates or move to a semantic window location. The caller owns cursor movement, clipping, scrolling, layout, and redraw order. Bulk output preserves caller ordering exactly and does not build an unbounded aggregate output buffer.
-
-Placeholder encoding temporarily uses foreground and underline colors as protocol identity channels. Each independently emitted cell terminates private identity state with selective resets equivalent to SGR 39 and SGR 59. Background and unrelated rendition attributes are not reset merely for raster identity.
-
-## Lifecycle model
+## Lifecycle and transaction model
 
 `TerminalRasterPlaceholder` reuses the 1.14 ownership vocabulary:
 
 ```text
-new acknowledged placeholder          Current / None
-session generation invalidation       Stale / SessionStateLost
-correlated missing resource            Stale / ResourceMissing
-owning resource intentional disposal   Released / ResourceReleased
-explicit placeholder wrapper disposal  Disposed / ExplicitDisposal
+acknowledged placeholder             Current / None
+session generation invalidation      Stale / SessionStateLost
+correlated missing resource          Stale / ResourceMissing
+owning resource intentional release  Released / ResourceReleased
+explicit wrapper disposal            Disposed / ExplicitDisposal
 ```
 
-A stale/released/disposed placeholder never becomes current again.
+A stale/released/disposed placeholder never becomes current again. Placeholder-cell output validates the owning placeholder/session before emitting private identity. Stale, released, disposed, cross-session, or invalid-generation tokens are rejected before output.
 
-Placeholder-cell output validates the owning placeholder/session before emitting private identity. Stale, released, disposed, cross-session, or invalid-generation tokens are rejected before output.
+`CreatePlaceholderAsync(...)` reuses the authoritative query/input transaction manager. A public handle is returned only after a successful correlated acknowledgement.
+
+Locally knowable invalid operations are rejected before output. Correlated `ENOENT` follows established missing-resource invalidation semantics. Malformed responses, wrong identities, timeout, late responses, and generic transport failure do not manufacture missing-resource truth.
+
+Post-commit transport failure surfaces without blind retry, automatic backend switch, raster replay/re-upload, or invented support/ownership certainty.
 
 ## Semantic capability model
 
@@ -229,7 +207,7 @@ Version 1.15 adds:
 TerminalCapability.UnicodeRasterPlaceholders = 10
 ```
 
-The semantic distinction is:
+The semantic distinction remains:
 
 ```text
 RasterGraphics
@@ -244,23 +222,13 @@ UnicodeRasterPlaceholders
 
 Placeholder support uses persistent resources but is not inferred solely from `PersistentRasterGraphics`.
 
-`InspectCapability(...)` remains side-effect free. No terminal-brand heuristic or fictional placeholder-specific live query is introduced. Successful placeholder creation acknowledgement is authoritative for that creation transaction and may strengthen live placeholder evidence.
-
-## Placeholder creation and acknowledgement
-
-`CreatePlaceholderAsync(...)` reuses the authoritative query/input transaction manager. The public handle is returned only after a successful correlated acknowledgement.
-
-Locally knowable invalid operations are rejected before output. Correlated `ENOENT` follows the established missing-resource invalidation model. Malformed responses, wrong identities, timeout, late responses, and generic transport failure do not manufacture missing-resource truth.
-
-If transport fails after placeholder creation commits, no public placeholder is published, no blind retry/backend switch occurs, no raster replay/re-upload occurs, and no unsupported certainty is invented.
-
-Failure while writing visible placeholder text remains ordinary committed output failure and does not automatically stale the virtual placement.
+`InspectCapability(...)` remains side-effect free. No terminal-brand heuristic or fictional placeholder-specific live query is introduced. Successful placeholder creation acknowledgement is authoritative for that creation transaction and may strengthen current live placeholder evidence.
 
 ## Virtual placeholder as relative parent
 
 A physical `TerminalRasterPlacement` may use a current `TerminalRasterPlaceholder` as immutable parent. The virtual placeholder itself cannot be relative.
 
-Existing relative-placement guarantees remain:
+Existing relative-placement guarantees remain authoritative:
 
 - immutable parentage;
 - signed cell offsets;
@@ -270,26 +238,26 @@ Existing relative-placement guarantees remain:
 - no reparenting;
 - `ENOPARENT`, `ECYCLE`, `ETOODEEP`, and `ENOENT` hardening.
 
-Disposing/releasing the virtual parent releases dependent physical placements while child raster resources remain independently owned unless separately released or invalidated.
+Disposing/releasing a virtual parent releases dependent physical placements while child raster resources remain independently owned unless separately released or invalidated.
 
 ## DCurses boundary
 
 `Icod.DCurses` owns cells, windows, screen coordinates, clipping, damage, scrolling, layout, refresh ordering, and virtual-screen diffing.
 
-`Icod.Terminal` owns virtual placement lifetime, placeholder token generation, protocol-private identity, placeholder encoding, acknowledgement correlation, lifecycle certainty, and serialized output.
+`Icod.Terminal` owns virtual-placement lifetime, placeholder token generation, protocol-private identity, placeholder encoding, acknowledgement correlation, lifecycle certainty, and serialized terminal output.
 
-No DCurses source change is required for 1.15 success. Stable downstream package acceptance remains mandatory.
+The 1.15 token model is suitable for higher-level renderer adoption without importing Kitty protocol concepts. Stable downstream package acceptance required no DCurses source change.
 
 ## Icod.TermInfo 1.14 integration boundary
 
-The active 1.15 direct production dependency is:
+The final 1.15 production dependency graph is:
 
 ```text
 Icod.TermInfo 1.14.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests and `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.14.0`.
+Optional integration tests and `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.14.0`; Inspection and Source remain outside the production package graph.
 
 TermInfo 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. This is consumed only at the optional integration/application boundary. `RasterBackendPlanner` is **not** used by Icod.Terminal's production router.
 
@@ -303,13 +271,11 @@ Qualified rules are:
 - separate backend contexts prevent Kitty evidence from silently strengthening Sixel;
 - production Terminal routing, protocol commitment, opaque identity, lifecycle, and cleanup remain authoritative.
 
-Inspection and Source remain outside the production package graph.
-
 ## Explicit non-goals
 
 Version 1.15 does not add animation/frame lifecycle, absolute screen-coordinate raster placement, pixel-within-cell positioning, general scene graphs, window/cell ownership inside Terminal, reparenting, automatic placeholder redraw, emitted-position tracking, terminal-authenticated existence, hidden source-image replay, caller-visible protocol ids, public raw placeholder encoding helpers, raw Kitty dispatch, Sixel placeholder emulation, image decoding/transcoding, or PTY/ConPTY hosting.
 
-# Tranche roadmap and status
+# Tranche closure
 
 ## T150 — Architecture/API-regret gate and public contract freeze — COMPLETE
 
@@ -323,8 +289,6 @@ Qualified side-effect-free inspection, distinct placeholder semantics, evidence 
 
 Implemented bounded 24-bit virtual identity, shared placement capacity, acknowledged creation, lifecycle integration, idempotent cleanup, `ENOENT` invalidation, and resource/session teardown.
 
-Acceptance head:
-
 ```text
 b319051b7830ea2bb6ca7d0a1344e7e4fc67e068
 workflow #1820 / 34894849866
@@ -332,9 +296,7 @@ workflow #1820 / 34894849866
 
 ## T153 — Self-contained placeholder-cell token and encoder — COMPLETE
 
-Implemented exact self-contained Unicode/SGR encoding, full row/column/image identity on every cell, no shorthand, portable 0..255 coordinate tables, and selective identity reset.
-
-Acceptance head:
+Implemented exact self-contained Unicode/SGR encoding, full row/column/image identity on every cell, no shorthand, portable coordinate tables, and selective identity reset.
 
 ```text
 5666d74f9b91c708869006d3188cb54012bef976
@@ -345,8 +307,6 @@ workflow #1823 / 34896470148
 
 Qualified single/bulk output, exact caller order, output-gate serialization, cancellation/commitment behavior, token validation, and no unintended query/lifecycle side effects.
 
-Acceptance head:
-
 ```text
 6b3d8e5393f04fe679de44d6d96851a5700976a1
 workflow #1826 / 34897742454
@@ -356,8 +316,6 @@ workflow #1826 / 34897742454
 
 Implemented physical placement relative to a virtual placeholder with signed offsets, shared geometry, immutable parentage, cross-resource ownership, depth accounting, descendant-first cleanup, and negative-response classification.
 
-Acceptance head:
-
 ```text
 4bee4bb76371a1cec2a9e2676c12e1f349e7abda
 workflow #1834 / 34899992381
@@ -365,9 +323,7 @@ workflow #1834 / 34899992381
 
 ## T156 — Error, lifecycle, capacity, and concurrency hardening — COMPLETE
 
-Qualified the 256-resource / 4096-combined-placement bounds, 24-bit wrap/collision handling, placeholder churn, mixed registries, depth boundary, concurrent observation/token generation/output, acknowledgement adversaries, timeout/late response, transport failures, stale/cross-session tokens, and maximum coordinate generation with fixed bounded work.
-
-Acceptance head:
+Qualified capacity, private-id wrap/collision handling, placeholder churn, mixed registries, depth boundary, concurrent observation/token generation/output, acknowledgement adversaries, timeout/late response, transport failures, stale/cross-session tokens, and maximum coordinate generation with fixed bounded work.
 
 ```text
 cd219f4661f1f170497514f7c868c2105a93e609
@@ -378,84 +334,59 @@ workflow #1850 / 34913940016
 
 Added `samples/Icod.Terminal.RasterPlaceholder.Sample`, backend-neutral source-policy verification, all-TFM sample builds, sparse/out-of-order/current-cursor examples, virtual-parent child placement, and stable Icod.DCurses downstream qualification.
 
-Acceptance head:
-
 ```text
 4cdb8d432f55d8d9d7e8b9581fb73f8dd31ae32a
 workflow #1858 / 34914701316
 ```
 
-## T158 — Package/API/XML/security/documentation qualification — IN PROGRESS
+## T158 — Package/API/XML/security/documentation qualification — COMPLETE
 
-Completed/implemented work includes:
+Qualified fresh package-only placeholder consumption on all three TFMs, packed generated XML checks, API fingerprint/identity exclusions, package/sample verification, permanent ownership/architecture/security/compatibility documentation, `Icod.TermInfo 1.14.0` production alignment, optional Inspection 1.14 integration, and advisory raster-backend planning at the consumer boundary.
 
-- fresh package-only placeholder consumer on `net8.0`, `net9.0`, `net10.0`;
-- packed generated XML checks for every new public type/member;
-- frozen public API fingerprint and identity-exclusion checks;
-- package/sample verifier integration;
-- stable downstream package acceptance;
-- permanent ownership/architecture/security/compatibility documentation synchronization;
-- root README and sample-catalog synchronization;
-- direct `Icod.TermInfo 1.14.0` dependency alignment;
-- optional `Icod.TermInfo.Inspection 1.14.0` integration alignment;
-- TermInfo 1.14 raster-backend planner qualification and executable sample adoption without changing the production Terminal router.
-
-Package/API checkpoint:
+Package/API intermediate checkpoint:
 
 ```text
 9bc2fdf8cdb61364adb6c21e54cd55d516f75f72
 workflow #1860 / 34915126464
 ```
 
-The final T158 exact head must pass the full nine-job matrix after all documentation/integration synchronization before this tranche is closed.
-
-## T159 — Stable 1.15.0 release closure — PENDING
-
-T159 will synchronize stable package version/release metadata, changelog, `docs/releases/1.15.0.md`, final README/release links, final API authority, and exact release-candidate bookkeeping.
-
-The release-candidate head must pass:
+Final T158 acceptance:
 
 ```text
-Runtime Windows
-Runtime Linux
-Runtime macOS
-Package candidate / public API freeze
-Package Foundation
-Package Presentation
-Package Semantic and hardening
-Package Stable 1.x release line
-Validated package artifact
+72cd6401e473189934391456999deca7ae511fa1
+workflow #1877 / 34994616788
 ```
 
-The roadmap must not self-certify the commit that contains its own release-closure status.
+Both workflows passed their complete nine-job matrices at the recorded heads.
 
-Merge, tag, GitHub Release creation, and NuGet publication remain explicit maintainer actions.
+## T159 — Stable 1.15.0 release closure — COMPLETE
 
-## Testing strategy
+The stable candidate synchronizes:
 
-Testing proceeds from the semantic contract outward:
+```text
+VersionPrefix / PackageVersion = 1.15.0
+CHANGELOG.md
+docs/releases/1.15.0.md
+PackageReleaseNotes
+root README
+final 1.15 API baseline and fingerprint
+permanent ownership/architecture/security/compatibility authorities
+production Icod.TermInfo 1.14.0 dependency
+optional Icod.TermInfo.Inspection 1.14.0 integration
+```
 
-1. public API freeze;
-2. capability evidence contract;
-3. virtual-placement ownership and acknowledgement;
-4. placeholder-cell token generation and exact encoding;
-5. typed current-cursor output;
-6. virtual-parent relative-placement bridge;
-7. lifecycle/error/capacity/concurrency hardening;
-8. sample and downstream acceptance;
-9. fresh package/XML/API qualification;
-10. optional TermInfo 1.14 integration qualification;
-11. complete Windows/Linux/macOS release matrix.
+Accepted stable release candidate:
 
-Every public lifecycle/capability state used by the feature has a direct executable witness. Exact byte tests cover protocol encoding; state-machine tests cover ownership; package-only tests cover the shipped surface.
+```text
+1a3c4af503f1256eeff077268bb50e45abac568d
+workflow #1882 / 34997043791
+```
 
-## Compatibility requirements
+Workflow #1882 passed the complete nine-job PR matrix: Windows/Linux/macOS Runtime, Package Candidate/public-API freeze, Foundation, Presentation, Semantic/hardening, Stable 1.x release line, and Validated package artifact.
 
-Version 1.15 is additive over the stable `1.0.0` compatibility floor and complete 1.14 public surface.
+This roadmap update records that already-qualified candidate; it does not self-certify the commit containing its own closure status. The bookkeeping head must itself pass the complete PR matrix before PR #59 is declared merge-ready.
 
-Existing consumers that never call placeholder APIs retain existing resource/placement behavior, current-cursor and relative placement behavior, source crop and signed z-order, lifecycle observation, generation-scoped invalidation, 256-resource / 4096-placement ceilings, depth-8 graph bound, deterministic cleanup, no hidden replay, and opaque protocol identity.
-
-No existing public enum numeric value changes.
+Merge, tag `v1.15.0`, GitHub Release creation, NuGet publication, and GitHub Packages publication remain explicit maintainer/release-workflow actions after merge qualification.
 
 ## Release success definition
 
