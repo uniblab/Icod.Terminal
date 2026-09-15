@@ -35,9 +35,17 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 
 		this.session = session;
 		this.State = state;
+		this.Animation = new TerminalRasterAnimation( this );
 	}
 
 	internal TerminalPersistentRasterResourceState State {
+		get;
+	}
+
+	/// <summary>
+	/// Gets the resource-owned persistent-raster animation controller without performing terminal I/O.
+	/// </summary>
+	public TerminalRasterAnimation Animation {
 		get;
 	}
 
