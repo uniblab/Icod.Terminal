@@ -466,6 +466,7 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
