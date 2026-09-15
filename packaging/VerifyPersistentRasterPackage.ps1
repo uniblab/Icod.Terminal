@@ -37,6 +37,7 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
 
 $requiredMembers = @(
 	'F:Icod.Terminal.TerminalCapability.PersistentRasterGraphics',
+	'F:Icod.Terminal.TerminalCapability.UnicodeRasterPlaceholders',
 	'T:Icod.Terminal.TerminalRasterOwnershipStatus',
 	'F:Icod.Terminal.TerminalRasterOwnershipStatus.Current',
 	'F:Icod.Terminal.TerminalRasterOwnershipStatus.Stale',
@@ -65,17 +66,33 @@ $requiredMembers = @(
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.Columns',
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.Rows',
 	'P:Icod.Terminal.TerminalRasterPlacementOptions.ZIndex',
+	'T:Icod.Terminal.TerminalRasterPlaceholderOptions',
+	'P:Icod.Terminal.TerminalRasterPlaceholderOptions.Columns',
+	'P:Icod.Terminal.TerminalRasterPlaceholderOptions.Rows',
+	'T:Icod.Terminal.TerminalRasterPlaceholderCell',
+	'P:Icod.Terminal.TerminalRasterPlaceholderCell.Row',
+	'P:Icod.Terminal.TerminalRasterPlaceholderCell.Column',
+	'T:Icod.Terminal.TerminalRasterPlaceholder',
+	'P:Icod.Terminal.TerminalRasterPlaceholder.Columns',
+	'P:Icod.Terminal.TerminalRasterPlaceholder.Rows',
+	'P:Icod.Terminal.TerminalRasterPlaceholder.OwnershipState',
+	'M:Icod.Terminal.TerminalRasterPlaceholder.GetCell(System.Int32,System.Int32)',
+	'M:Icod.Terminal.TerminalRasterPlaceholder.DisposeAsync',
 	'T:Icod.Terminal.TerminalRasterResource',
 	'P:Icod.Terminal.TerminalRasterResource.OwnershipState',
 	'M:Icod.Terminal.TerminalRasterResource.CreatePlacementAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterResource.CreateRelativePlacementAsync(Icod.Terminal.TerminalRasterPlacement,System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalRasterResource.CreatePlaceholderAsync(Icod.Terminal.TerminalRasterPlaceholderOptions,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalRasterResource.CreateRelativePlacementFromPlaceholderAsync(Icod.Terminal.TerminalRasterPlaceholder,System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterResource.DisposeAsync',
 	'T:Icod.Terminal.TerminalRasterPlacement',
 	'P:Icod.Terminal.TerminalRasterPlacement.OwnershipState',
 	'M:Icod.Terminal.TerminalRasterPlacement.UpdateAsync(Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterPlacement.UpdateRelativeAsync(System.Int32,System.Int32,Icod.Terminal.TerminalRasterPlacementOptions,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterPlacement.DisposeAsync',
-	'M:Icod.Terminal.TerminalSession.CreateRasterResourceAsync(Icod.Terminal.TerminalRasterImage,System.Threading.CancellationToken)'
+	'M:Icod.Terminal.TerminalSession.CreateRasterResourceAsync(Icod.Terminal.TerminalRasterImage,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalSession.WriteRasterPlaceholderCellAsync(Icod.Terminal.TerminalRasterPlaceholderCell,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalSession.WriteRasterPlaceholderCellsAsync(System.ReadOnlyMemory{Icod.Terminal.TerminalRasterPlaceholderCell},System.Threading.CancellationToken)'
 )
 
 $archive = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
@@ -159,4 +176,4 @@ try {
 	}
 }
 
-Write-Host "1.14 persistent-raster lifecycle-observation package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.15 persistent-raster and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
