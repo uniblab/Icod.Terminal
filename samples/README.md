@@ -16,7 +16,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
 | Render semantic virtual-raster cells with caller-owned cursor/layout control | [`Icod.Terminal.RasterPlaceholder.Sample`](Icod.Terminal.RasterPlaceholder.Sample/README.md) |
-| Combine TermInfo lifecycle and advanced-placement planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
+| Combine TermInfo lifecycle, advanced-placement, and explicit raster-backend planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
 | Emit notifications and observe interactive semantic events | `Icod.Terminal.Notification.Sample` |
@@ -34,7 +34,7 @@ The examples follow the permanent 1.x contracts:
 - persistent raster identities are opaque and generation-scoped rather than exactly restorable state;
 - persistent `OwnershipState` snapshots report Terminal's local certainty and do not pretend to authenticate remote terminal existence;
 - placeholder samples keep cursor position, clipping, redraw order, and screen layout in caller ownership;
-- persistent samples do not branch on Kitty/Sixel/backend ids and do not teach hidden replay;
+- ordinary Terminal raster samples do not branch on Kitty/Sixel/backend ids and do not teach hidden replay; the optional TermInfo integration sample may use Inspection's semantic backend identities only for explicit caller-owned planning, never raw protocol dispatch;
 - metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, hyperlinks, and raster content may disclose information outside the application;
 - event-loop samples remain nonfatal when a later compatible 1.x release introduces an unfamiliar outer event kind.
 
@@ -145,7 +145,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
-The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.14.0` while continuing to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12.
+The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.14.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and now exercises the 1.14 advisory raster-backend planner.
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0
@@ -153,11 +153,13 @@ dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.
 
 The sample first inspects `session.Terminal`, builds the semantic persistent-lifecycle plan, and asks Terminal for live verification only when that lifecycle plan is indeterminate and the endpoint is available. Only a conclusive Terminal live result becomes caller-owned `Verified` lifecycle evidence before reclassification and replanning.
 
-After lifecycle success, the sample requires both source-rectangle and signed-z-order semantics through `PersistentRasterPlacementRequest`. Static Inspection evidence is planned first. If those advanced semantics are merely unknown, the application adds explicit caller-owned `Declared` evidence for the Icod.Terminal placement contract and replans before executing concrete crop/z-order values through Terminal.
+After lifecycle success, the sample requires both source-rectangle and signed-z-order semantics through `PersistentRasterPlacementRequest`. Static Inspection evidence is planned first. If those advanced semantics are merely unknown, the application adds explicit caller-owned `Declared` evidence for the Icod.Terminal placement contract and replans before execution.
 
-This distinction is intentional: `PersistentRasterGraphics` is the coarse live Terminal capability and is not misrepresented as a separate source-rectangle or z-order probe. TermInfo owns semantic evidence/classification/planning; Terminal and the application own concrete geometry values, acknowledgements, execution, relative-parent lifetime, 1.14 ownership-state observation, and 1.15 Unicode-placeholder ownership. The current TermInfo 1.14 integration does not plan Terminal's relative-placement or virtual-placeholder graphs.
+The 1.14 step then keeps separate backend contexts. Sixel retains its own static availability plus the original unstrengthened lifecycle/placement profiles. A conclusive live `PersistentRasterGraphics` result is caller-mapped to Kitty Graphics availability because Icod.Terminal's reviewed persistent-raster route is Kitty-based, and only the Kitty candidate receives the strengthened lifecycle/placement evidence. The sample plans first without ranking and then supplies explicit Kitty-first caller preference. TermInfo remains advisory; Icod.Terminal still owns actual routing and protocol commitment.
 
-`Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency, and the sample does not expose raw graphics commands, terminal-brand branches, backend ids, or protocol-private numeric identities.
+This distinction is intentional: ordinary `RasterGraphics` does not identify Kitty versus Sixel, `PersistentRasterGraphics` is not misrepresented as a source-rectangle or z-order probe, and `UnicodeRasterPlaceholders` is not fed into TermInfo 1.14 as persistent lifecycle/placement evidence. The current TermInfo 1.14 integration does not plan Terminal's relative-placement or virtual-placeholder graphs.
+
+`Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency. The sample uses Inspection's semantic Sixel/Kitty backend identities only for explicit application planning and never exposes raw graphics commands, terminal-brand heuristics, caller-supplied protocol-private numeric identities, or direct protocol dispatch.
 
 See `Icod.Terminal.TermInfoPersistentRaster.Sample/README.md` for the complete responsibility boundary and failure behavior.
 
@@ -270,7 +272,7 @@ Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.RasterGraphics.Sample             (ephemeral display)
     -> Icod.Terminal.PersistentRaster.Sample           (terminal-resident ownership + lifecycle observation)
     -> Icod.Terminal.RasterPlaceholder.Sample          (virtual placement + caller-owned text-grid rendering)
-    -> Icod.Terminal.TermInfoPersistentRaster.Sample   (TermInfo lifecycle/placement planning + Terminal execution)
+    -> Icod.Terminal.TermInfoPersistentRaster.Sample   (TermInfo lifecycle/placement/backend planning + Terminal execution)
 ```
 
 Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, layout, or refresh policy directly.
