@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.RasterPlaceholder.Sample
-	Sample application demonstrating Icod.Terminal raster-placeholder features.
+	Sample application demonstrating Icod.Terminal RasterPlaceholder features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
