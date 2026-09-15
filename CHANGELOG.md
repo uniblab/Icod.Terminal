@@ -2,6 +2,35 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.15.0
+
+### Unicode placeholder and virtual raster placement
+
+- Adds `TerminalCapability.UnicodeRasterPlaceholders = 10` while preserving every previously released capability value.
+- Adds opaque `TerminalRasterPlaceholder` ownership with required `Columns` / `Rows` in `1..256` and the existing 1.14 ownership-state vocabulary.
+- Adds immutable semantic `TerminalRasterPlaceholderCell` row/column tokens through `TerminalRasterPlaceholder.GetCell(...)`.
+- Adds typed current-cursor single and bulk placeholder-cell output through `TerminalSession.WriteRasterPlaceholderCellAsync(...)` and `WriteRasterPlaceholderCellsAsync(...)`.
+- Adds acknowledged `TerminalRasterResource.CreatePlaceholderAsync(...)` virtual-placement creation.
+- Adds `TerminalRasterResource.CreateRelativePlacementFromPlaceholderAsync(...)` so a physical placement can use a current virtual placeholder as immutable relative parent without exposing protocol identity.
+- Makes every placeholder cell self-contained rather than relying on left-neighbor shorthand, preserving clipping, sparse redraw, scrolling, arbitrary cell order, overlapping rasters, and higher-level virtual-screen diffing.
+- Keeps cursor position, clipping, scrolling, damage, windows, cells, and layout caller-owned; Terminal does not become a scene or screen-layout engine.
+
+### Lifecycle, hardening, integration, and qualification
+
+- Reuses `Current`, `Stale`, `Released`, and `Disposed` ownership semantics for virtual placeholders, including `SessionStateLost`, `ResourceMissing`, `ResourceReleased`, and `ExplicitDisposal` reasons.
+- Rejects stale, released, disposed, cross-session, and invalid-generation placeholder tokens before private identity is emitted.
+- Preserves the 256-resource / 4096-combined-placement ceilings and depth-8 relative graph bound; virtual placement ids use a private nonzero collision-safe 24-bit domain.
+- Qualifies wrong/malformed acknowledgements, correlated `ENOENT`, timeout/late isolation, pre/post-commit transport failures, bounded churn, many-placeholders-on-one-resource, mixed physical/relative/virtual registry accounting, concurrent reads/output, output-gate contention, and maximum 256x256 coordinate generation.
+- Adds `Icod.Terminal.RasterPlaceholder.Sample` for semantic virtual-raster rendering with caller-controlled cursor/layout, sparse and out-of-order redraw, and physical placement relative to a virtual parent.
+- Extends fresh NuGet-only package consumption and generated XML-documentation validation across `net8.0`, `net9.0`, and `net10.0`, retaining stable `Icod.DCurses` downstream qualification.
+- Advances the direct production dependency to `Icod.TermInfo 1.14.0` while retaining `Icod.Timing 1.0.0`.
+- Advances optional integration tests/samples to `Icod.TermInfo.Inspection 1.14.0` and exercises its advisory Sixel/Kitty backend planner at the consumer boundary without adding Inspection to the production graph or changing Terminal's production router.
+- Keeps backend contexts independent: only conclusive live `PersistentRasterGraphics` evidence is caller-mapped to Kitty availability; ordinary `RasterGraphics` does not identify a concrete backend, and `UnicodeRasterPlaceholders` is not treated as TermInfo 1.14 lifecycle/placement evidence.
+- Finalizes the 1.15 public API fingerprint as `eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d` while retaining all historical baselines unchanged.
+- Continues to exclude animation/frame ownership, absolute screen-coordinate layout, pixel-within-cell positioning, Terminal-owned scene/window/cell/damage policy, public protocol identities, generic raw Kitty dispatch, hidden replay caches, image decoding/transcoding, and PTY/ConPTY hosting.
+
+See `docs/releases/1.15.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.15.md`, and `Icod.Terminal-1.15.0-Development-Roadmap.md` for the complete 1.15 contract.
+
 ## 1.14.0
 
 ### Persistent-raster lifecycle observability
