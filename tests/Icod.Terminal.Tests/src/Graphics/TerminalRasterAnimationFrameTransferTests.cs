@@ -354,7 +354,7 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 		await YieldSeveralTimesAsync();
 	}
 
-	private static async Task<TerminalControlResult<TerminalRasterAnimationFrame>> StartAppendAsync(
+	private static async Task<Task<TerminalControlResult<TerminalRasterAnimationFrame>>> StartAppendAsync(
 		TerminalRasterResource resource,
 		ScriptedTransport transport,
 		int expectedWriteCount
@@ -370,7 +370,7 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 			"An animation append must remain pending until its correlated terminal acknowledgement arrives."
 		);
 		await transport.WaitForWriteCountAsync( expectedWriteCount );
-		return await Task.FromResult( append );
+		return append;
 	}
 
 	private static TerminalRasterImage CreateFrameImage() {
@@ -466,7 +466,6 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
-			}
 		}
 
 		public async ValueTask<int> ReadAsync(
