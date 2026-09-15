@@ -9,11 +9,9 @@
 
 ## Status
 
-`1.14.0` is the current stable line. It adds side-effect-free persistent-raster lifecycle observability through one atomic, backend-neutral ownership snapshot with `Current`, `Stale`, `Released`, and `Disposed` states plus semantic loss/release reasons.
+`1.15.0` is the current stable line. It adds opaque Unicode-placeholder virtual raster placement, self-contained semantic placeholder-cell output, and physical placement relative to a virtual parent while preserving caller ownership of cursor position, clipping, scrolling, damage, and layout.
 
-The stable `1.0.0` compatibility floor remains unchanged. Existing 1.13 relative-placement ownership, 1.12 source cropping/signed z-order, and earlier current-cursor persistent placement behavior remain compatible. The published 1.14 package uses `Icod.TermInfo 1.13.0` and `Icod.Timing 1.0.0`.
-
-The active `1.15.0` development line adds Unicode placeholder / virtual raster placement support and advances the direct development dependency to `Icod.TermInfo 1.14.0`. Optional TermInfo integration tests and samples use `Icod.TermInfo.Inspection 1.14.0`; Inspection remains outside the production package graph.
+The stable `1.0.0` compatibility floor remains unchanged. Existing 1.14 lifecycle observation, 1.13 relative-placement ownership, 1.12 source cropping/signed z-order, and earlier current-cursor persistent placement behavior remain compatible. The 1.15 production graph uses `Icod.TermInfo 1.14.0` and `Icod.Timing 1.0.0`; optional TermInfo integration tests and samples use `Icod.TermInfo.Inspection 1.14.0`, which remains outside the production package graph.
 
 ## Support the Project
 
@@ -26,7 +24,7 @@ The active `1.15.0` development line adds Unicode placeholder / virtual raster p
 ## Installation
 
 ```text
-dotnet add package Icod.Terminal --version 1.14.0
+dotnet add package Icod.Terminal --version 1.15.0
 ```
 
 The package targets:
@@ -37,14 +35,7 @@ net9.0
 net10.0
 ```
 
-The published 1.14 production dependency graph is:
-
-```text
-Icod.TermInfo 1.13.0
-Icod.Timing   1.0.0
-```
-
-The active 1.15 development graph is:
+The direct production dependency graph for 1.15 is:
 
 ```text
 Icod.TermInfo 1.14.0
@@ -69,7 +60,7 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and terminfo expansion.
-- `Icod.Terminal` owns the live terminal conversation: endpoint observation, modes, input decoding, lifecycle, active queries, unsolicited semantic events, semantic capability evidence/planning, semantic output, raster output, persistent raster resource/placement ownership and lifecycle certainty, protocol framing/routing, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation: endpoint observation, modes, input decoding, lifecycle, active queries, unsolicited semantic events, semantic capability evidence/planning, semantic output, raster output, persistent raster resource/placement/placeholder ownership and lifecycle certainty, protocol framing/routing, and reversible/scoped terminal state.
 - `Icod.DCurses` owns higher-level cells, windows, virtual-screen state, layout, refresh/diff policy, damage, and curses presentation abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -131,7 +122,7 @@ TerminalCapability.PersistentRasterGraphics = 9
 
 This remains the persistent ownership capability. It is distinct from ordinary `RasterGraphics`: verified Sixel may satisfy ephemeral raster display, while persistent resource ownership requires the reviewed persistent-capable Kitty Graphics path.
 
-The 1.15 development line additionally defines:
+Version 1.15 adds:
 
 ```text
 TerminalCapability.UnicodeRasterPlaceholders = 10
@@ -164,7 +155,7 @@ Supported public storage forms are `Rgb24`, `Rgba32`, and `Indexed8` with an RGB
 
 ### Persistent resources and placements
 
-Version 1.11 established opaque persistent resource/placement ownership. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added relative placement while keeping resource ownership independent from parent-placement lifetime. Version 1.14 makes Terminal's current ownership certainty observable without exposing private identities or inventing a passive terminal-side existence query.
+Version 1.11 established opaque persistent resource/placement ownership. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added relative placement while keeping resource ownership independent from parent-placement lifetime. Version 1.14 made Terminal's current ownership certainty observable without exposing private identities or inventing a passive terminal-side existence query.
 
 An ordinary placement still uses the terminal's current cursor location:
 
@@ -278,17 +269,37 @@ Live ownership remains bounded to 256 persistent resources and 4096 placements p
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
 
-### Unicode raster placeholders — 1.15 development
+### Unicode raster placeholders — 1.15
 
-The 1.15 development line adds opaque virtual placements and semantic current-cursor placeholder cells while keeping protocol identity and encoding private. `TerminalRasterPlaceholder` reuses the persistent ownership vocabulary; `TerminalRasterPlaceholderCell` exposes semantic row/column coordinates only. Applications and higher-level renderers own screen cursor position, clipping, scrolling, damage, and redraw order.
+Version 1.15 adds opaque virtual placements and semantic current-cursor placeholder cells while keeping protocol identity and encoding private. `TerminalRasterPlaceholder` reuses the persistent ownership vocabulary; `TerminalRasterPlaceholderCell` exposes semantic row/column coordinates only. Applications and higher-level renderers own screen cursor position, clipping, scrolling, damage, and redraw order.
 
-A physical placement may use a current virtual placeholder as immutable relative parent through `CreateRelativePlacementFromPlaceholderAsync(...)`, while the virtual placeholder itself is not relative. Virtual and physical placements share the same bounded 4096-placement ownership budget.
+A placeholder is created only after acknowledged virtual-placement creation succeeds:
 
-See [`samples/Icod.Terminal.RasterPlaceholder.Sample`](samples/Icod.Terminal.RasterPlaceholder.Sample/README.md) and [`docs/Public-API-Baseline-1.15.md`](docs/Public-API-Baseline-1.15.md).
+```csharp
+TerminalControlResult<TerminalRasterPlaceholder> placeholderResult =
+	await parentResource.CreatePlaceholderAsync(
+		new TerminalRasterPlaceholderOptions {
+			Columns = 4,
+			Rows = 2
+		}
+	);
+
+await using TerminalRasterPlaceholder placeholder =
+	placeholderResult.GetRequiredValue();
+
+TerminalRasterPlaceholderCell cell = placeholder.GetCell( row: 0, column: 0 );
+await session.WriteRasterPlaceholderCellAsync( cell );
+```
+
+Every cell is independently renderable; no left-neighbor shorthand is required. Placeholder dimensions are bounded to `1..256`, and virtual placements share the existing 4096-placement budget with ordinary/relative physical placements.
+
+A physical placement may use a current virtual placeholder as immutable relative parent through `CreateRelativePlacementFromPlaceholderAsync(...)`, while the virtual placeholder itself is not relative.
+
+See [`samples/Icod.Terminal.RasterPlaceholder.Sample`](samples/Icod.Terminal.RasterPlaceholder.Sample/README.md), [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md), and [`docs/Public-API-Baseline-1.15.md`](docs/Public-API-Baseline-1.15.md).
 
 ### TermInfo persistent-raster lifecycle, placement, and backend integration
 
-Version 1.11.1 introduced the loose-coupling pattern between TermInfo lifecycle planning and Terminal-owned live verification/execution. The current executable integration sample uses `Icod.TermInfo.Inspection 1.14.0`. It retains the lifecycle boundary, continues to use the advanced-placement planner introduced in TermInfo 1.12, and now exercises TermInfo 1.14's advisory raster-backend evidence and selection layer without making Inspection a production dependency:
+Version 1.11.1 introduced the loose-coupling pattern between TermInfo lifecycle planning and Terminal-owned live verification/execution. The current executable integration sample uses `Icod.TermInfo.Inspection 1.14.0`. It retains the lifecycle boundary, continues to use the advanced-placement planner introduced in TermInfo 1.12, and exercises TermInfo 1.14's advisory raster-backend evidence and selection layer without making Inspection a production dependency:
 
 ```text
 session.Terminal
@@ -347,7 +358,7 @@ Committed multi-frame graphics operations do not intentionally truncate after co
 
 ## Feature highlights
 
-The stable 1.x surface plus the current additive 1.15 development work includes:
+The stable 1.x surface includes:
 
 - protocol-neutral semantic capability inspection and explicit bounded verification;
 - application text and resolved terminfo capability output;
@@ -396,15 +407,9 @@ See [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md).
 
 ## Compatibility
 
-Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 added opaque persistent raster resource/placement ownership; 1.11.1 qualified the optional TermInfo persistent-raster lifecycle integration boundary; 1.12 added bounded source-pixel cropping and signed z-order; 1.13 added bounded immutable-parent relative placement ownership; 1.14 added side-effect-free lifecycle certainty observation; and the current 1.15 development line adds opaque Unicode-placeholder virtual placement while retaining the stable compatibility floor.
+Stable `1.0.0` remains the compatibility floor. Versions 1.1–1.4 added compatible semantic protocol surfaces; 1.5 and 1.6 normalized internal control/query infrastructure; 1.7 introduced backend-neutral raster display; 1.8 added Kitty Graphics beneath that surface; 1.9 added protocol-neutral semantic events; 1.10 added semantic capability planning; 1.11 added opaque persistent raster resource/placement ownership; 1.11.1 qualified the optional TermInfo persistent-raster lifecycle integration boundary; 1.12 added bounded source-pixel cropping and signed z-order; 1.13 added bounded immutable-parent relative placement ownership; 1.14 added side-effect-free lifecycle certainty observation; and 1.15 adds opaque Unicode-placeholder virtual placement and typed placeholder-cell rendering while retaining the stable compatibility floor.
 
-The final 1.14 public API fingerprint is:
-
-```text
-2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
-```
-
-The frozen 1.15 development API fingerprint is:
+The final 1.15 public API fingerprint is:
 
 ```text
 eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
@@ -416,7 +421,7 @@ See [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.m
 
 Start with:
 
-- [1.14.0 release notes](docs/releases/1.14.0.md)
+- [1.15.0 release notes](docs/releases/1.15.0.md)
 - [Persistent Raster Ownership](docs/Persistent-Raster-Ownership.md)
 - [Capability Inspection and Planning](docs/Capability-Inspection-and-Planning.md)
 - [1.15.0 public API baseline](docs/Public-API-Baseline-1.15.md)
