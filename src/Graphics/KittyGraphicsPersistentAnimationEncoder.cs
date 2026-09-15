@@ -26,7 +26,7 @@ using System.Globalization;
 using System.Text;
 
 /// <summary>
-/// Encodes bounded full-frame Kitty Graphics animation transfers for an existing
+/// Encodes bounded full-frame Kitty Graphics animation transfers and controls for an existing
 /// persistent raster resource.
 /// </summary>
 internal static class KittyGraphicsPersistentAnimationEncoder {
@@ -36,25 +36,47 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 		int gapMilliseconds
 	) {
 		ArgumentNullException.ThrowIfNull( raster );
-		if ( 0u == imageId ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( imageId ),
-				imageId,
-				"A persistent Kitty Graphics animation image id must be non-zero."
-			);
-		}
-		if ( gapMilliseconds <= 0 ) {
-			throw new ArgumentOutOfRangeException(
-				nameof( gapMilliseconds ),
-				gapMilliseconds,
-				"A persistent Kitty Graphics animation frame gap must be positive."
-			);
-		}
+		ValidateImageId( imageId );
+		ValidateGapMilliseconds( gapMilliseconds );
 
 		return EncodeFramePayloadsCore(
 			raster,
 			imageId,
 			gapMilliseconds
+		);
+	}
+
+	internal static ReadOnlyMemory<byte> EncodeFrameDurationPayload(
+		uint imageId,
+		uint frameNumber,
+		int gapMilliseconds
+	) {
+		ValidateImageId( imageId );
+		ValidateFrameNumber( frameNumber );
+		ValidateGapMilliseconds( gapMilliseconds );
+
+		return Encoding.ASCII.GetBytes(
+			"Ga=a,i="
+			+ imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",r="
+			+ frameNumber.ToString( CultureInfo.InvariantCulture )
+			+ ",z="
+			+ gapMilliseconds.ToString( CultureInfo.InvariantCulture )
+		);
+	}
+
+	internal static ReadOnlyMemory<byte> EncodeCurrentFramePayload(
+		uint imageId,
+		uint frameNumber
+	) {
+		ValidateImageId( imageId );
+		ValidateFrameNumber( frameNumber );
+
+		return Encoding.ASCII.GetBytes(
+			"Ga=a,i="
+			+ imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",c="
+			+ frameNumber.ToString( CultureInfo.InvariantCulture )
 		);
 	}
 
@@ -149,5 +171,41 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			? "Ga=f,m=0;"
 			: "Ga=f,m=1;"
 		;
+	}
+
+	private static void ValidateImageId(
+		uint imageId
+	) {
+		if ( 0u == imageId ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( imageId ),
+				imageId,
+				"A persistent Kitty Graphics animation image id must be non-zero."
+			);
+		}
+	}
+
+	private static void ValidateFrameNumber(
+		uint frameNumber
+	) {
+		if ( 0u == frameNumber ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( frameNumber ),
+				frameNumber,
+				"A persistent Kitty Graphics animation frame number must be non-zero."
+			);
+		}
+	}
+
+	private static void ValidateGapMilliseconds(
+		int gapMilliseconds
+	) {
+		if ( gapMilliseconds <= 0 ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( gapMilliseconds ),
+				gapMilliseconds,
+				"A persistent Kitty Graphics animation frame gap must be positive."
+			);
+		}
 	}
 }
