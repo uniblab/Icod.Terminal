@@ -1,6 +1,6 @@
 # Icod.Terminal 1.15 Public API Baseline
 
-This document records the additive public API selected for the `Icod.Terminal 1.15.0` Unicode Placeholder and Virtual Raster Placement release.
+This document records the additive public API released for `Icod.Terminal 1.15.0` Unicode Placeholder and Virtual Raster Placement.
 
 The stable compatibility floor remains `1.0.0`. The complete 1.14 public surface remains available and unchanged. The predecessor 1.14 public API fingerprint is:
 
@@ -8,13 +8,13 @@ The stable compatibility floor remains `1.0.0`. The complete 1.14 public surface
 2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 ```
 
-T150 generated identical public API snapshots on `net8.0`, `net9.0`, and `net10.0`. The frozen 1.15 fingerprint is:
+Identical public API snapshots are required on `net8.0`, `net9.0`, and `net10.0`. The final 1.15 fingerprint is:
 
 ```text
 eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 ```
 
-The machine-readable fingerprint is stored separately in `docs/Public-API-Baseline-1.15.sha256` and is enforced by the package/public-API gate for the remainder of 1.15 development.
+The machine-readable fingerprint is stored separately in `docs/Public-API-Baseline-1.15.sha256` and is enforced by the package/public-API gate for the stable 1.15 release line.
 
 ## Public additions over 1.14
 
@@ -122,7 +122,7 @@ These methods render semantic placeholder tokens at the caller-controlled curren
 
 Placeholder dimensions are bounded to `1..256` in each axis.
 
-Every `TerminalRasterPlaceholderCell` is independently renderable. The implementation may not require identity or row/column inheritance from a previously emitted cell.
+Every `TerminalRasterPlaceholderCell` is independently renderable. The implementation does not require identity or row/column inheritance from a previously emitted cell.
 
 Placeholder ownership reuses `TerminalRasterOwnershipState`; no second lifecycle enum family is introduced.
 
