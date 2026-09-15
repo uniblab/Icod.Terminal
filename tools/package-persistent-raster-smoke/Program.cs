@@ -70,6 +70,41 @@ Func<
 	cancellationToken
 );
 Func<
+	TerminalRasterResource,
+	TerminalRasterPlaceholderOptions,
+	CancellationToken,
+	ValueTask<TerminalControlResult<TerminalRasterPlaceholder>>
+> createPlaceholder = static (
+	TerminalRasterResource resource,
+	TerminalRasterPlaceholderOptions options,
+	CancellationToken cancellationToken
+) => resource.CreatePlaceholderAsync(
+	options,
+	cancellationToken
+);
+Func<
+	TerminalRasterResource,
+	TerminalRasterPlaceholder,
+	int,
+	int,
+	TerminalRasterPlacementOptions?,
+	CancellationToken,
+	ValueTask<TerminalControlResult<TerminalRasterPlacement>>
+> createRelativePlacementFromPlaceholder = static (
+	TerminalRasterResource resource,
+	TerminalRasterPlaceholder parent,
+	int columnOffset,
+	int rowOffset,
+	TerminalRasterPlacementOptions? options,
+	CancellationToken cancellationToken
+) => resource.CreateRelativePlacementFromPlaceholderAsync(
+	parent,
+	columnOffset,
+	rowOffset,
+	options,
+	cancellationToken
+);
+Func<
 	TerminalRasterPlacement,
 	TerminalRasterPlacementOptions?,
 	CancellationToken,
@@ -101,15 +136,63 @@ Func<
 	options,
 	cancellationToken
 );
+Func<
+	TerminalRasterPlaceholder,
+	int,
+	int,
+	TerminalRasterPlaceholderCell
+> getPlaceholderCell = static (
+	TerminalRasterPlaceholder placeholder,
+	int row,
+	int column
+) => placeholder.GetCell(
+	row,
+	column
+);
+Func<
+	TerminalSession,
+	TerminalRasterPlaceholderCell,
+	CancellationToken,
+	ValueTask
+> writePlaceholderCell = static (
+	TerminalSession session,
+	TerminalRasterPlaceholderCell cell,
+	CancellationToken cancellationToken
+) => session.WriteRasterPlaceholderCellAsync(
+	cell,
+	cancellationToken
+);
+Func<
+	TerminalSession,
+	ReadOnlyMemory<TerminalRasterPlaceholderCell>,
+	CancellationToken,
+	ValueTask
+> writePlaceholderCells = static (
+	TerminalSession session,
+	ReadOnlyMemory<TerminalRasterPlaceholderCell> cells,
+	CancellationToken cancellationToken
+) => session.WriteRasterPlaceholderCellsAsync(
+	cells,
+	cancellationToken
+);
 _ = createResource;
 _ = createPlacement;
 _ = createRelativePlacement;
+_ = createPlaceholder;
+_ = createRelativePlacementFromPlaceholder;
 _ = updatePlacement;
 _ = updateRelativePlacement;
+_ = getPlaceholderCell;
+_ = writePlaceholderCell;
+_ = writePlaceholderCells;
 
 Require(
 	9 == (int)TerminalCapability.PersistentRasterGraphics,
 	"PersistentRasterGraphics must retain the reviewed additive enum value 9."
+);
+Require(
+	10 == (int)TerminalCapability.UnicodeRasterPlaceholders,
+	"UnicodeRasterPlaceholders must retain the frozen additive enum value 10."
 );
 
 TerminalRasterOwnershipState ownershipState = new(
@@ -135,6 +218,13 @@ Require(
 	)?.PropertyType == typeof( TerminalRasterOwnershipState ),
 	"TerminalRasterPlacement must expose the 1.14 OwnershipState snapshot."
 );
+Require(
+	typeof( TerminalRasterPlaceholder ).GetProperty(
+		nameof( TerminalRasterPlaceholder.OwnershipState ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( TerminalRasterOwnershipState ),
+	"TerminalRasterPlaceholder must expose the shared OwnershipState snapshot."
+);
 string[] expectedOwnershipStatuses = [
 	nameof( TerminalRasterOwnershipStatus.Current ),
 	nameof( TerminalRasterOwnershipStatus.Stale ),
@@ -145,7 +235,7 @@ Require(
 	expectedOwnershipStatuses.SequenceEqual(
 		Enum.GetNames<TerminalRasterOwnershipStatus>()
 	),
-	"TerminalRasterOwnershipStatus does not match the frozen 1.14 semantic states."
+	"TerminalRasterOwnershipStatus does not match the frozen semantic states."
 );
 string[] expectedOwnershipLossReasons = [
 	nameof( TerminalRasterOwnershipLossReason.None ),
@@ -160,7 +250,7 @@ Require(
 	expectedOwnershipLossReasons.SequenceEqual(
 		Enum.GetNames<TerminalRasterOwnershipLossReason>()
 	),
-	"TerminalRasterOwnershipLossReason does not match the frozen 1.14 semantic reasons."
+	"TerminalRasterOwnershipLossReason does not match the frozen semantic reasons."
 );
 
 TerminalRasterSourceRectangle rectangle = new(
@@ -191,6 +281,49 @@ Require(
 	-1 == options.ZIndex,
 	"TerminalRasterPlacementOptions did not preserve caller-supplied z-order."
 );
+
+TerminalRasterPlaceholderOptions placeholderOptions = new() {
+	Columns = 4,
+	Rows = 3
+};
+Require(
+	4 == placeholderOptions.Columns && 3 == placeholderOptions.Rows,
+	"TerminalRasterPlaceholderOptions did not preserve semantic cell dimensions."
+);
+Require(
+	typeof( TerminalRasterPlaceholder ).GetProperty(
+		nameof( TerminalRasterPlaceholder.Columns ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( int )
+		&& typeof( TerminalRasterPlaceholder ).GetProperty(
+			nameof( TerminalRasterPlaceholder.Rows ),
+			BindingFlags.Instance | BindingFlags.Public
+		)?.PropertyType == typeof( int ),
+	"TerminalRasterPlaceholder must expose semantic cell dimensions only."
+);
+Require(
+	typeof( TerminalRasterPlaceholderCell ).GetProperty(
+		nameof( TerminalRasterPlaceholderCell.Row ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( int )
+		&& typeof( TerminalRasterPlaceholderCell ).GetProperty(
+			nameof( TerminalRasterPlaceholderCell.Column ),
+			BindingFlags.Instance | BindingFlags.Public
+		)?.PropertyType == typeof( int ),
+	"TerminalRasterPlaceholderCell must expose semantic row/column coordinates."
+);
+Require(
+	0 == typeof( TerminalRasterPlaceholder ).GetConstructors(
+		BindingFlags.Instance | BindingFlags.Public
+	).Length,
+	"TerminalRasterPlaceholder must not expose a public constructor."
+);
+Require(
+	0 == typeof( TerminalRasterPlaceholderCell ).GetConstructors(
+		BindingFlags.Instance | BindingFlags.Public
+	).Length,
+	"TerminalRasterPlaceholderCell must not expose a public constructor."
+);
 Require(
 	typeof( IAsyncDisposable ).IsAssignableFrom( typeof( TerminalRasterResource ) ),
 	"TerminalRasterResource must remain asynchronously disposable."
@@ -199,10 +332,17 @@ Require(
 	typeof( IAsyncDisposable ).IsAssignableFrom( typeof( TerminalRasterPlacement ) ),
 	"TerminalRasterPlacement must remain asynchronously disposable."
 );
+Require(
+	typeof( IAsyncDisposable ).IsAssignableFrom( typeof( TerminalRasterPlaceholder ) ),
+	"TerminalRasterPlaceholder must be asynchronously disposable."
+);
 
 AssertOpaquePublicSurface( typeof( TerminalRasterOwnershipState ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterResource ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderOptions ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholder ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderCell ) );
 Require(
 	typeof( TerminalRasterPlacement ).GetProperty(
 		"Parent",
@@ -222,17 +362,20 @@ static void AssertOpaquePublicSurface(
 		"ParentId",
 		"Generation",
 		"Backend",
-		"Kitty"
+		"Kitty",
+		"Apc",
+		"Encoding"
 	];
 	MemberInfo[] members = type.GetMembers(
 		BindingFlags.Instance | BindingFlags.Public
+		| BindingFlags.Static
 	);
 	foreach ( string fragment in forbiddenFragments ) {
 		Require(
 			!members.Any(
 				member => member.Name.Contains(
 					fragment,
-					StringComparison.Ordinal
+					StringComparison.OrdinalIgnoreCase
 				)
 			),
 			$"{type.Name} exposes forbidden protocol-specific public member text '{fragment}'."
