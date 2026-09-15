@@ -1,8 +1,8 @@
 # Icod.Terminal.TermInfoPersistentRaster.Sample
 
-This sample demonstrates the current loose-coupling integration contract between `Icod.TermInfo.Inspection 1.12.0` and `Icod.Terminal 1.13.0` persistent-raster execution.
+This sample demonstrates the current loose-coupling integration contract between `Icod.TermInfo.Inspection 1.14.0` and `Icod.Terminal` persistent-raster execution.
 
-The integration pattern was introduced in Icod.Terminal 1.11.1 for lifecycle planning. The current sample retains that boundary and additionally consumes the additive Icod.TermInfo 1.12 advanced-placement planner for source rectangles and signed z-order.
+The integration pattern was introduced in Icod.Terminal 1.11.1 for lifecycle planning. The current sample retains that boundary and consumes the current Inspection 1.14 package while continuing to demonstrate the advanced-placement planner introduced in Icod.TermInfo 1.12 for source rectangles and signed z-order.
 
 The responsibilities remain separate:
 
@@ -23,7 +23,7 @@ open TerminalSession
     -> require source-rectangle + signed-z-order placement semantics
     -> inspect static TermInfo placement evidence
     -> advanced-placement plan
-    -> if static placement evidence is Unknown, add caller-owned Declared evidence for the Icod.Terminal 1.13 placement contract
+    -> if static placement evidence is Unknown, add caller-owned Declared evidence for the Icod.Terminal placement contract
     -> reclassify / replan placement
     -> on lifecycle Success and placement Satisfied, execute concrete crop/z-order values through Terminal
     -> dispose placement/resource
@@ -31,7 +31,7 @@ open TerminalSession
 
 The advanced-placement evidence step is intentionally different from live lifecycle verification. `PersistentRasterGraphics` remains the coarse live Terminal capability; the sample does not pretend that one live capability observation is a separate source-rectangle or z-order probe. When static placement evidence is merely absent/unknown, the application may explicitly contribute the semantics guaranteed by the Terminal execution contract and let TermInfo reclassify that caller-owned evidence.
 
-TermInfo never carries the concrete source rectangle or signed z-order value. Those execution values remain application/Terminal-owned. Likewise, Icod.TermInfo 1.12 does **not** plan the relative-placement parent graph added by Icod.Terminal 1.13; immutable parentage, signed relative cell offsets, and subtree lifetime remain Terminal runtime concerns.
+TermInfo never carries the concrete source rectangle or signed z-order value. Those execution values remain application/Terminal-owned. The current Icod.TermInfo 1.14 integration still does **not** plan Terminal's relative-placement parent graph; immutable parentage, signed relative cell offsets, subtree lifetime, lifecycle observation, and Unicode placeholder ownership remain Terminal runtime concerns.
 
 Run the sample with, for example:
 
