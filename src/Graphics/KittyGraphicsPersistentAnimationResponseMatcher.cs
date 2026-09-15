@@ -50,14 +50,30 @@ internal sealed class KittyGraphicsPersistentAnimationResponseMatcher :
 			return false;
 		}
 
+		TerminalControlFrameStructure structure;
 		try {
-			KittyGraphicsResponse response = KittyGraphicsCodec.ParseResponse( frame );
-			return this.ImageId == response.ImageId
-				&& !response.ImageNumber.HasValue
-				&& !response.PlacementId.HasValue;
+			structure = TerminalControlFrameStructure.Parse( frame );
 		} catch ( FormatException ) {
 			return false;
 		}
+		ReadOnlySpan<byte> payload = structure.PayloadBytes.Span;
+		if ( TerminalControlFamily.Apc != structure.Family
+			|| payload.IsEmpty
+			|| (byte)'G' != payload[ 0 ] ) {
+			return false;
+		}
+
+		ReadOnlySpan<byte> controlAndMessage = payload[1..];
+		return ContainsExpectedImageField(
+			controlAndMessage,
+			this.ImageId
+		) && !ContainsFieldKey(
+			controlAndMessage,
+			(byte)'I'
+		) && !ContainsFieldKey(
+			controlAndMessage,
+			(byte)'p'
+		);
 	}
 
 	public bool IsCorrelatedPrefix(
@@ -98,6 +114,87 @@ internal sealed class KittyGraphicsPersistentAnimationResponseMatcher :
 			fieldStart = index + 1;
 		}
 		return false;
+	}
+
+	private static bool ContainsExpectedImageField(
+		ReadOnlySpan<byte> controlAndMessage,
+		uint expected
+	) {
+		int fieldStart = 0;
+		for ( int index = 0; index < controlAndMessage.Length; ++index ) {
+			byte value = controlAndMessage[ index ];
+			if ( value is not (byte)',' and not (byte)';' ) {
+				continue;
+			}
+
+			if ( IsExpectedImageField(
+				controlAndMessage.Slice(
+					fieldStart,
+					index - fieldStart
+				),
+				expected
+			) ) {
+				return true;
+			}
+			if ( (byte)';' == value ) {
+				return false;
+			}
+			fieldStart = index + 1;
+		}
+		return false;
+	}
+
+	private static bool ContainsFieldKey(
+		ReadOnlySpan<byte> controlAndMessage,
+		byte key
+	) {
+		int fieldStart = 0;
+		for ( int index = 0; index < controlAndMessage.Length; ++index ) {
+			byte value = controlAndMessage[ index ];
+			if ( value is not (byte)',' and not (byte)';' ) {
+				continue;
+			}
+
+			ReadOnlySpan<byte> field = controlAndMessage.Slice(
+				fieldStart,
+				index - fieldStart
+			);
+			if ( 2 <= field.Length
+				&& key == field[ 0 ]
+				&& (byte)'=' == field[ 1 ] ) {
+				return true;
+			}
+			if ( (byte)';' == value ) {
+				return false;
+			}
+			fieldStart = index + 1;
+		}
+		return false;
+	}
+
+	private static bool IsExpectedImageField(
+		ReadOnlySpan<byte> field,
+		uint expected
+	) {
+		if ( 3 > field.Length
+			|| (byte)'i' != field[ 0 ]
+			|| (byte)'=' != field[ 1 ] ) {
+			return false;
+		}
+
+		uint parsed = 0;
+		for ( int index = 2; index < field.Length; ++index ) {
+			byte item = field[ index ];
+			if ( item is < (byte)'0' or > (byte)'9' ) {
+				return false;
+			}
+			uint digit = (uint)( item - (byte)'0' );
+			if ( ( uint.MaxValue - digit ) / 10 < parsed ) {
+				return false;
+			}
+			parsed = ( parsed * 10 ) + digit;
+		}
+		return expected == parsed;
 	}
 
 	private static bool IsExpectedImageField(
