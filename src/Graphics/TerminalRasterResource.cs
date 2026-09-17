@@ -370,6 +370,74 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		);
 	}
 
+	internal ValueTask<TerminalControlMutationResult> StopAnimationAsync(
+		TerminalRasterAnimation animation,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.StopPersistentRasterAnimationAsync(
+			this.State,
+			animation,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> RunLoadingAnimationAsync(
+		TerminalRasterAnimation animation,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.RunLoadingPersistentRasterAnimationAsync(
+			this.State,
+			animation,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> RunAnimationAsync(
+		TerminalRasterAnimation animation,
+		int? repeatCount,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.RunPersistentRasterAnimationAsync(
+			this.State,
+			animation,
+			repeatCount,
+			cancellationToken
+		);
+	}
+
 	/// <summary>
 	/// Releases this resource's local ownership, deletes its current placements, and then attempts
 	/// one terminal-side resource-data deletion while its terminal identity remains current.
