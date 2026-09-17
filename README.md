@@ -17,6 +17,8 @@ The stable `1.0.0` compatibility floor remains unchanged. Version 1.15 retains t
 
 The 1.15 release contract passed the complete Staging qualification matrix on Windows, Linux, and macOS, including package/API verification, fresh package-only consumers, stable-package checks, validated artifacts, and `Icod.DCurses` downstream acceptance.
 
+Development line `1.16.0` adds resource-owned persistent-raster animation: an opaque root frame and appended full-size frame tokens, positive per-frame timing, explicit selection, loading-mode streaming, finite/indefinite terminal-driven playback, sequence-certainty observation, and resource-owned cleanup. This work remains on the draft 1.16 development branch and is not yet a published stable package.
+
 ## Support the Project
 
 `Icod.Terminal` and its ecosystem packages (`Icod.TermInfo` and `Icod.DCurses`) are built and maintained by a solo developer. If these packages save you or your team time, please consider supporting their continued development and maintenance.
@@ -42,7 +44,7 @@ higher-level terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data, compiled terminfo acquisition, and capability expansion.
-- `Icod.Terminal` owns the live terminal conversation: endpoint observation, native modes, input decoding, lifecycle, active queries, semantic events, capability evidence/planning, semantic output, raster execution, persistent raster ownership, and reversible/scoped terminal state.
+- `Icod.Terminal` owns the live terminal conversation: endpoint observation, native modes, input decoding, lifecycle, active queries, semantic events, capability evidence/planning, semantic output, raster execution, persistent raster resource/placement/placeholder/animation ownership, and reversible/scoped terminal state.
 - `Icod.DCurses` owns higher-level cells, windows, pads, retained presentation state, layout, clipping, scrolling, refresh/diff policy, damage, and curses-style interaction abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
@@ -103,6 +105,7 @@ The root README describes the current product by capability rather than by the r
 - **Persistent raster ownership** — opaque terminal-resident resources and placements; source-pixel cropping; signed z-order; immutable-parent relative placement; generation-scoped ownership; deterministic descendant-first cleanup; no hidden raster replay.
 - **Persistent ownership observation** — atomic `Current`, `Stale`, `Released`, and `Disposed` snapshots with semantic loss/release reasons and no passive terminal-side existence fiction.
 - **Unicode raster placeholders** — opaque virtual placements, semantic row/column cell tokens, self-contained current-cursor output, and physical placement relative to a virtual parent without exposing Kitty numeric identities or placeholder encoding.
+- **Persistent raster animation (1.16 development)** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
@@ -116,10 +119,16 @@ TerminalRasterResource
     |       ordinary or relative physical placement
     |
     +-- TerminalRasterPlaceholder
-            virtual placement
+    |       virtual placement
+    |       |
+    |       +-- TerminalRasterPlaceholderCell
+    |               semantic text-grid token
+    |
+    +-- TerminalRasterAnimation
+            resource-owned frame sequence
             |
-            +-- TerminalRasterPlaceholderCell
-                    semantic text-grid token
+            +-- TerminalRasterAnimationFrame
+                    opaque known-frame token
 ```
 
 Portable ownership bounds are explicit:
@@ -130,9 +139,10 @@ physical + virtual placements               4096
 relative-placement depth                       8
 placeholder rows                            1..256
 placeholder columns                         1..256
+known animation frames, including roots         4096
 ```
 
-Placeholder cell output is current-cursor text output. Terminal owns protocol-private image/placement identity and encoding; the caller owns screen coordinates, clipping, scrolling, redraw order, damage, and layout.
+Placeholder cell output is current-cursor text output. Animation changes the current pixels of the same resource without creating another placement graph. Terminal owns protocol-private image/placement/frame identity and encoding; the caller owns screen coordinates, clipping, scrolling, redraw order, damage, layout, and higher-level animation policy.
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) for lifecycle, capacity, failure, cleanup, relative-placement, and placeholder guarantees.
 
@@ -155,8 +165,8 @@ The repository uses C# 13. Release qualification covers Windows, Linux, and macO
 - One live session owns one authoritative terminal input/query/event conversation; features do not install competing readers.
 - Static terminal-description evidence and generation-scoped live evidence remain distinct. Timeout or silence does not automatically become `Unsupported` truth.
 - Public APIs describe semantic operations rather than exposing generic raw CSI/DCS/OSC/APC vendor dispatch or caller-manufactured graphics identities.
-- Capability routing is evidence-driven rather than terminal-brand driven. Ordinary raster, persistent raster, and Unicode-placeholder capabilities remain distinct.
-- Persistent resources, physical placements, and virtual placeholders are generation-scoped terminal-resident ownership, not exactly restorable state. The library does not retain hidden source images for automatic replay/re-upload.
+- Capability routing is evidence-driven rather than terminal-brand driven. Ordinary raster, persistent raster, Unicode-placeholder, and persistent-animation capabilities remain distinct.
+- Persistent resources, physical placements, virtual placeholders, animations, and frame tokens are generation-scoped terminal-resident ownership, not exactly restorable state. The library does not retain hidden source images or frames for automatic replay/re-upload.
 - Committed graphics operations do not intentionally truncate after commitment. Transport/protocol failure is surfaced without blind replay or speculative backend switching.
 - Terminal-controlled responses and unsolicited reports are external input. Correlation grants routing ownership, not authenticity or trust.
 - Graphics, parser, query, event, registry, placeholder, and protocol work is explicitly bounded.
@@ -168,14 +178,15 @@ Security and privacy details are maintained in [`docs/Security-and-Privacy.md`](
 
 ## Samples and Documentation
 
-The [`samples`](samples/README.md) directory contains focused examples for session construction, rich input, bounded queries, semantic capability planning, terminal colors and reversible state, notifications and metadata, backend-neutral raster display, persistent raster ownership, Unicode raster placeholders, and optional TermInfo planning integration.
+The [`samples`](samples/README.md) directory contains focused examples for session construction, rich input, bounded queries, semantic capability planning, terminal colors and reversible state, notifications and metadata, backend-neutral raster display, persistent raster ownership, Unicode raster placeholders, persistent raster animation, and optional TermInfo planning integration.
 
 Recommended documentation entry points:
 
 - [`docs/releases/1.15.0.md`](docs/releases/1.15.0.md) — curated 1.15 release notes;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
-- [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical placement, lifecycle, relative-placement, and placeholder contract;
+- [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
+- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral 1.16 animation walkthrough;
 - [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md) — semantic capability evidence and verification model;
 - [`docs/Input-and-Events.md`](docs/Input-and-Events.md) — authoritative input/event routing;
 - [`docs/Queries-and-Responses.md`](docs/Queries-and-Responses.md) — bounded query/response ownership and correlation;

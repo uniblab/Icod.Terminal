@@ -2,7 +2,7 @@
 
 This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources and placements.
 
-Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added bounded relative placement ownership with immutable parentage while preserving resource ownership as a separate lifetime axis. Version 1.14 adds side-effect-free observation of Terminal's local ownership certainty and semantic loss/release reason.
+Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added bounded relative placement ownership with immutable parentage while preserving resource ownership as a separate lifetime axis. Version 1.14 added side-effect-free observation of Terminal's local ownership certainty and semantic loss/release reason. Version 1.15 added virtual placements and independently renderable Unicode-placeholder cells. Version 1.16 adds resource-owned animation sequences, opaque frame tokens, positive timing, terminal-driven playback, and a distinct sequence-certainty axis.
 
 Historical tranche and versioned-roadmap documents explain how the design was developed and qualified. This document defines the supported semantic contract consumers should rely on.
 
@@ -19,7 +19,9 @@ CreateRasterResourceAsync(...)
         -> ordinary current-cursor placement ownership
         -> relative placement ownership
         -> acknowledged placement update
-        -> side-effect-free ownership observation
+        -> virtual placeholder ownership and typed cell output
+        -> resource-owned animation frames and playback control
+        -> side-effect-free ownership/sequence observation
         -> deterministic disposal
 ```
 
@@ -38,6 +40,15 @@ It is intentionally distinct from ordinary `RasterGraphics`. A terminal may supp
 `InspectCapability(...)` remains side-effect free. `VerifyCapabilityAsync(...)` is explicit and may issue only the reviewed bounded support probe for this semantic capability.
 
 Versions 1.13 and 1.14 do not add another capability enum for relative placement or lifecycle observation. Relative placement and ownership-state observation are local contracts layered on the reviewed persistent ownership capability.
+
+Virtual placeholder presentation and persistent animation remain distinct semantic capabilities:
+
+```text
+TerminalCapability.UnicodeRasterPlaceholders = 10
+TerminalCapability.PersistentRasterAnimation = 11
+```
+
+Persistent raster support does not silently imply either capability. Animation inspection is side-effect free, and explicit verification does not invent a durable-state probe when no safe bounded probe exists. A successful correlated frame append can establish current-generation live animation evidence for that operation.
 
 ## 3. Public ownership surface
 
@@ -643,3 +654,78 @@ The frozen cross-TFM 1.15 public API fingerprint is:
 ```text
 eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 ```
+
+
+## 30. Persistent raster animation — 1.16
+
+Every `TerminalRasterResource` owns exactly one `TerminalRasterAnimation` controller:
+
+```csharp
+TerminalRasterAnimation animation = resource.Animation;
+TerminalRasterAnimationFrame root = animation.RootFrame;
+```
+
+Accessing `Animation`, `RootFrame`, or `State` performs no terminal I/O. The controller is subordinate to the resource, has no public constructor, and is not independently disposable. Resource disposal remains the final authority for terminal-resident image and frame data.
+
+The resource's original pixels are the root frame. Additional frames are published as opaque `TerminalRasterAnimationFrame` tokens only after a successful correlated full-frame append. Frame tokens have no public constructor and expose no frame number, image identity, generation identity, or protocol command fields.
+
+Animation changes the current pixels of the same resource. It does not create another placement graph. Existing physical placements and virtual placeholders continue to refer to the resource; disposing a placement or placeholder does not delete animation frames or change animation ownership.
+
+## 31. Full-frame, timing, and playback contract
+
+`AddFrameAsync(...)` accepts one bounded `TerminalRasterImage` whose intrinsic width and height exactly match the owning resource. Version 1.16 does not expose partial-frame transfer, delta editing, composition, or retained source-frame replay.
+
+Frame duration is a positive exact whole number of milliseconds in `1..int.MaxValue`. Fractional milliseconds, zero, negative values, and larger values are rejected before output. Duration control and current-frame selection accept only known opaque tokens owned by that animation.
+
+The semantic playback operations are:
+
+```text
+StopAsync(...)
+RunLoadingAsync(...)
+RunAsync(...)
+SelectFrameAsync(...)
+SetFrameDurationAsync(...)
+```
+
+Loading mode waits at the known sequence tail so a caller can append later frames. `RunAsync()` uses indefinite looping by default. A non-null `RepeatCount` means additional traversals after the first and must be in `1..int.MaxValue - 1`. Raw animation-state, frame-selection, timing, and loop encodings remain internal.
+
+## 32. Sequence certainty and failure behavior
+
+Animation sequence certainty is independent of raster-resource ownership:
+
+```text
+TerminalRasterAnimationStatus.Current
+TerminalRasterAnimationStatus.SequenceUncertain
+TerminalRasterAnimationStatus.Stale
+TerminalRasterAnimationStatus.Released
+TerminalRasterAnimationStatus.OwnerDisposed
+```
+
+A committed append whose final outcome is ambiguous may have advanced the terminal's frame tail. Terminal therefore publishes no guessed token, performs no blind retry, and transitions the controller to `SequenceUncertain / FrameSequenceAmbiguous`.
+
+In `SequenceUncertain` state, new appends and run modes that depend on a known tail return controlled unavailability. Stop remains available, and timing/selection of already-known frame tokens remain valid because their identities were previously established. Sequence uncertainty does not falsely stale the otherwise current raster resource or its placements/placeholders.
+
+Wrong identities, malformed replies, timeouts, late replies, storage pressure, and transport failures remain bounded by the authoritative graphics-response transaction path. A correlated resource-missing result follows the established narrow resource-loss semantics; controlled playback failure does not poison the known frame sequence.
+
+## 33. Animation capacity and lifecycle
+
+Animation bookkeeping is session scoped and bounded:
+
+```text
+maximum known animation frames, including roots   4096
+maximum pending append per animation                  1
+```
+
+The frame ceiling is shared across animations in one session and counts root frames plus acknowledged additions; pending append reservations also consume capacity while active. Capacity exhaustion is reported before new frame output.
+
+Session generation loss or resource-missing evidence makes the animation stale. Intentional internal resource release makes it released. Explicit disposal of the resource wrapper makes it owner-disposed. These transitions are monotonic and observable through `TerminalRasterAnimation.State`.
+
+Terminal animation states that are stale, released, or owner-disposed are pruned from capacity accounting under the registry lock. A sequence-uncertain animation retains its known frames and capacity because its acknowledged tokens remain meaningful and the terminal-side tail may still exist.
+
+## 34. Animation security and compatibility boundary
+
+Animation transfer uses the existing reviewed direct persistent-raster transport, serialized output gate, authoritative input/query reader, and correlated acknowledgement parser. It does not add file, temporary-file, shared-memory, decoder, or second-reader paths.
+
+All locally knowable invalid arguments, cross-animation tokens, disposed handles, stale ownership, dimension mismatches, duration errors, loop errors, and capacity failures are rejected before private protocol identity is emitted. Once logical output commits, cancellation does not intentionally truncate the transaction, and failure does not trigger replay or backend switching.
+
+The 1.16 surface is additive. Existing persistent resource, physical placement, relative placement, lifecycle-observation, and virtual-placeholder behavior is unchanged when animation APIs are unused. `Icod.DCurses` and other callers continue to own screen coordinates, cells, clipping, damage, layout, refresh policy, and higher-level animation timelines.

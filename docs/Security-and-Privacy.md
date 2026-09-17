@@ -239,7 +239,28 @@ Icod.Timing   1.0.0
 
 Historical release records retain the dependency versions they actually shipped.
 
-## 19. Stable exclusions after 1.15
+## 19. Persistent raster animation — 1.16
+
+The animation surface is typed and protocol neutral. Public callers receive a resource-owned controller and opaque frame tokens; they cannot supply or observe Kitty image ids, frame numbers, generation ids, raw animation dictionaries, or backend selectors.
+
+Locally checkable animation input is bounded before output:
+
+- added frames must match the resource's intrinsic dimensions;
+- durations must be exact positive whole milliseconds within the signed 32-bit range;
+- finite repeat counts must be in `1..int.MaxValue - 1`;
+- frame tokens must belong to the exact animation/session/generation;
+- the session-wide known-frame budget is 4096, including roots;
+- only one append reservation may be active per animation.
+
+Frame pixels use the reviewed direct-transfer path. Terminal does not introduce file names, temporary files, shared memory, image decoders, or retained source-frame caches for animation.
+
+Animation acknowledgements remain untrusted terminal input. Correlation routes one response to one bounded operation; grammar, numeric fields, duplicate fields, identities, and status are still validated. An ambiguous committed append loses sequence certainty without inventing a token, retrying output, or declaring the otherwise current resource missing.
+
+`InspectCapability(PersistentRasterAnimation)` is side-effect free. Explicit verification does not manufacture a durable-state probe merely to fingerprint support. A successful real frame append can establish current-generation live evidence for the completed semantic operation.
+
+Applications must not treat animation state, selected frame, timing, looping, placement, or visual coverage as a security boundary. The terminal controls final rendering and may ignore, evict, reinterpret, record, or externally compose output.
+
+## 20. Stable exclusions after 1.16
 
 Security/privacy behavior does not include promises for:
 
@@ -250,11 +271,11 @@ Security/privacy behavior does not include promises for:
 - terminal-owned absolute screen/layout policy;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or screen-position tracking;
-- animation/frame lifecycle;
+- partial-frame animation updates, frame composition, and delta editing;
 - automatic persistent-raster replay/re-upload;
 - Sixel persistent/placeholder emulation;
 - hidden image caches;
 - image-file decoding;
 - PTY/ConPTY process hosting.
 
-Relative placement, lifecycle observation, and Unicode placeholder virtual placement are bounded semantic ownership/presentation features; they do not weaken these exclusions.
+Relative placement, lifecycle observation, Unicode placeholder virtual placement, and resource-owned animation are bounded semantic ownership/presentation features; they do not weaken these exclusions.

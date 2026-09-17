@@ -251,9 +251,31 @@ Session bookkeeping remains bounded:
 
 Virtual-placement ids use a private nonzero 24-bit domain because that is the complete identity representable by the reviewed placeholder encoding. These are local ownership bounds, not terminal storage-quota promises.
 
+### 7.7 Resource-owned animation — 1.16
+
+One persistent resource owns one `TerminalRasterAnimation` controller and its root frame. Successful full-size appends publish opaque `TerminalRasterAnimationFrame` tokens; private frame numbers never enter the public contract.
+
+```text
+TerminalRasterResource
+    |
+    +-- TerminalRasterPlacement
+    +-- TerminalRasterPlaceholder
+    +-- TerminalRasterAnimation
+            |
+            +-- TerminalRasterAnimationFrame
+```
+
+The controller is not independently disposable. Resource cleanup remains final authority for image and frame data, while placement and placeholder lifetimes remain separate presentation axes.
+
+Animation adds a second certainty dimension. A resource can remain `Current` while its animation becomes `SequenceUncertain` after an ambiguous committed append. In that state Terminal does not guess the tail or publish a token; known-token timing/selection and stop remain available, while new appends and tail-dependent run modes are blocked.
+
+Animation frame transfer and control reuse the session output gate, authoritative input/query reader, and graphics-response correlation path. No competing reader, hidden source-frame cache, file/shared-memory transfer, or automatic replay is introduced.
+
+Session bookkeeping admits at most 4096 known animation frames across resources, including roots, with one pending append reservation per animation. Stale, released, and owner-disposed animations release their capacity; sequence-uncertain animations retain acknowledged tokens and their capacity.
+
 ## 8. One authoritative input conversation
 
-A live session owns one incremental byte stream containing ordinary input, lifecycle traffic, active query responses, unsolicited semantic reports, graphics probe replies, persistent graphics acknowledgements, and placeholder acknowledgements.
+A live session owns one incremental byte stream containing ordinary input, lifecycle traffic, active query responses, unsolicited semantic reports, graphics probe replies, persistent graphics acknowledgements, placeholder acknowledgements, and animation frame/control acknowledgements.
 
 Stable precedence remains:
 
@@ -263,7 +285,7 @@ active query/response ownership
         -> ordinary application-input decoding
 ```
 
-No raster, persistent-resource, or placeholder feature creates a competing reader.
+No raster, persistent-resource, placeholder, or animation feature creates a competing reader.
 
 Wrong persistent identities do not satisfy another transaction. Timeout/late-response correlation remains bounded and does not allow a stale acknowledgement to complete a later resource, placement, or placeholder operation.
 
@@ -341,7 +363,7 @@ A conclusive live `PersistentRasterGraphics` result may be mapped by the caller 
 
 TermInfo planning does not replace Terminal's live capability checks, routing, commitment, identity ownership, or cleanup. Production `Icod.Terminal` retains no dependency on `Icod.TermInfo.Inspection` or `Icod.TermInfo.Source`.
 
-## 15. Stable exclusions after 1.15
+## 15. Stable exclusions after 1.16
 
 Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 
@@ -357,11 +379,11 @@ Stable 1.x still does not treat the following as ordinary `Icod.Terminal` respon
 - absolute screen-coordinate placement / Terminal-owned layout;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or emitted-screen-position tracking;
-- animation/frame lifecycle;
+- partial-frame animation updates, frame composition, and delta editing;
 - PTY/ConPTY process hosting;
 - cells, windows, layout, damage, or scene-graph ownership.
 
-Relative placement, lifecycle observation, and virtual placeholders are supported as bounded semantic ownership contracts; they do not transfer higher-level scene/layout ownership into Terminal.
+Relative placement, lifecycle observation, virtual placeholders, and resource-owned animation are supported as bounded semantic ownership contracts; they do not transfer higher-level scene/layout or timeline ownership into Terminal.
 
 ## 16. Dependency boundary
 
