@@ -281,7 +281,7 @@ public sealed class DependencyCouplingPolicyTests {
 				"packaging",
 				"VerifyDCursesPackage.ps1"
 			)
-		);
+		).ReplaceLineEndings( "\n" );
 
 		int initializePrimaryError = verifier.IndexOf(
 			"$primaryError = $null",
