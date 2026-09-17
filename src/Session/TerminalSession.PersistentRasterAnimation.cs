@@ -186,12 +186,194 @@ public sealed partial class TerminalSession {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
-		return TerminalControlResult<TerminalRasterAnimationFrame>.Available(
-			new TerminalRasterAnimationFrame(
-				animation,
-				checked( (int)frameState.FrameNumber )
-			)
+		TerminalRasterAnimationFrame frame = new(
+			animation,
+			checked( (int)frameState.FrameNumber )
 		);
+		frame.BindState( frameState );
+		return TerminalControlResult<TerminalRasterAnimationFrame>.Available( frame );
+	}
+
+	internal ValueTask<TerminalControlMutationResult> SetPersistentRasterAnimationFrameDurationAsync(
+		TerminalPersistentRasterResourceState resourceState,
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		int gapMilliseconds,
+		CancellationToken cancellationToken
+	) {
+		if ( gapMilliseconds <= 0 ) {
+			throw new ArgumentOutOfRangeException( nameof( gapMilliseconds ) );
+		}
+		return this.ControlPersistentRasterAnimationFrameAsync(
+			resourceState,
+			animation,
+			frame,
+			gapMilliseconds,
+			selectCurrent: false,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> SelectPersistentRasterAnimationFrameAsync(
+		TerminalPersistentRasterResourceState resourceState,
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		CancellationToken cancellationToken
+	) {
+		return this.ControlPersistentRasterAnimationFrameAsync(
+			resourceState,
+			animation,
+			frame,
+			gapMilliseconds: null,
+			selectCurrent: true,
+			cancellationToken
+		);
+	}
+
+	private async ValueTask<TerminalControlMutationResult> ControlPersistentRasterAnimationFrameAsync(
+		TerminalPersistentRasterResourceState resourceState,
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		int? gapMilliseconds,
+		bool selectCurrent,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( resourceState );
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( frame );
+		if ( !selectCurrent && !gapMilliseconds.HasValue ) {
+			throw new ArgumentException(
+				"An animation duration control requires a positive frame gap.",
+				nameof( gapMilliseconds )
+			);
+		}
+		if ( gapMilliseconds.HasValue && gapMilliseconds.Value <= 0 ) {
+			throw new ArgumentOutOfRangeException( nameof( gapMilliseconds ) );
+		}
+		if ( !ReferenceEquals( animation, frame.Owner ) ) {
+			throw new ArgumentException(
+				"The animation frame must belong to the selected animation controller.",
+				nameof( frame )
+			);
+		}
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ThrowIfSessionOutputClosed();
+
+		if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState ) ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The persistent raster resource is no longer current for animation control."
+			);
+		}
+
+		TerminalCapabilityStatus capability = this.InspectCapability(
+			TerminalCapability.PersistentRasterAnimation
+		);
+		if ( TerminalCapabilityEndpointAvailability.Unavailable
+			== capability.EndpointAvailability ) {
+			return TerminalControlMutationResult.Unavailable(
+				"Persistent raster animation requires a terminal output endpoint."
+			);
+		}
+		if ( TerminalCapabilitySupport.Unsupported == capability.Support ) {
+			return TerminalControlMutationResult.Unsupported(
+				"The verified terminal backend does not support persistent raster animation."
+			);
+		}
+
+		uint imageId = resourceState.ImageId;
+		if ( 0u == imageId ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The persistent raster resource does not have a current terminal image identity."
+			);
+		}
+
+		if ( !this.persistentRasterAnimationRegistry.TryGetOrCreate(
+			resourceState,
+			out TerminalPersistentRasterAnimationState? animationState
+		) || animationState is null ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The persistent raster animation is no longer owned by this session generation."
+			);
+		}
+		animation.BindState( animationState );
+		TerminalPersistentRasterAnimationFrameState? frameState = frame.State;
+		if ( frameState is null ) {
+			throw new ArgumentException(
+				"The animation frame token is not bound to an acknowledged private frame identity.",
+				nameof( frame )
+			);
+		}
+		if ( !this.persistentRasterAnimationRegistry.OwnsFrame(
+			animationState,
+			frameState
+		) ) {
+			return TerminalControlMutationResult.Unavailable(
+				"The animation frame is no longer current for this session generation."
+			);
+		}
+
+		ReadOnlyMemory<byte> payload = selectCurrent
+			? KittyGraphicsPersistentAnimationEncoder.EncodeCurrentFramePayload(
+				imageId,
+				frameState.FrameNumber
+			)
+			: KittyGraphicsPersistentAnimationEncoder.EncodeFrameDurationPayload(
+				imageId,
+				frameState.FrameNumber,
+				gapMilliseconds!.Value
+			)
+		;
+		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
+		TerminalQueryResponseResult queryResult = await this.GetQueryTransactionManager().ExecuteAsync(
+			_ => this.WritePersistentRasterAnimationControlPayloadCoreAsync( payload ),
+			TerminalQueryResponsePlan.ForCompletion( matcher ),
+			PersistentRasterCreationTimeout,
+			TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+			cancellationToken
+		).ConfigureAwait( false );
+
+		KittyGraphicsPersistentAnimationResponse response =
+			KittyGraphicsPersistentAnimationResponse.Parse(
+				queryResult.Frame,
+				imageId
+			);
+		if ( !response.IsSuccess ) {
+			if ( response.IsMissingResource ) {
+				_ = this.persistentRasterAnimationRegistry.InvalidateResource( resourceState );
+				_ = this.InvalidatePersistentRasterResourceWithVirtualDescendants(
+					resourceState
+				);
+				return TerminalControlMutationResult.Unavailable(
+					response.Message
+				);
+			}
+			return TerminalControlMutationResult.Failed( response.Message );
+		}
+
+		this.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+		return TerminalControlMutationResult.Success();
+	}
+
+	private async ValueTask WritePersistentRasterAnimationControlPayloadCoreAsync(
+		ReadOnlyMemory<byte> payload
+	) {
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent raster animation control payload cannot be empty.",
+				nameof( payload )
+			);
+		}
+
+		await this.WritePersistentRasterControlFrameCoreAsync(
+			payload
+		).ConfigureAwait( false );
+		await this.Output.FlushAsync(
+			CancellationToken.None
+		).ConfigureAwait( false );
 	}
 
 	private void CleanupAbandonedAnimationAppend(
