@@ -57,6 +57,9 @@ public sealed class TerminalLifecycleEvent {
 
 		this.Kind = kind;
 		this.Size = size;
+		this.Dimensions = size.HasValue
+			? new TerminalDimensions( size.Value.Columns, size.Value.Rows )
+			: null;
 	}
 
 	/// <summary>Gets the lifecycle event kind.</summary>
@@ -69,6 +72,11 @@ public sealed class TerminalLifecycleEvent {
 	/// were available.
 	/// </summary>
 	public TerminalSize? Size {
+		get;
+	}
+
+	/// <summary>Gets Terminal-owned dimensions for resize/resume events when available.</summary>
+	public TerminalDimensions? Dimensions {
 		get;
 	}
 }
