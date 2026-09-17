@@ -175,6 +175,80 @@ Func<
 	cells,
 	cancellationToken
 );
+Func<
+	TerminalRasterAnimation,
+	TerminalRasterImage,
+	TimeSpan,
+	CancellationToken,
+	ValueTask<TerminalControlResult<TerminalRasterAnimationFrame>>
+> addAnimationFrame = static (
+	TerminalRasterAnimation animation,
+	TerminalRasterImage image,
+	TimeSpan duration,
+	CancellationToken cancellationToken
+) => animation.AddFrameAsync(
+	image,
+	duration,
+	cancellationToken
+);
+Func<
+	TerminalRasterAnimation,
+	TerminalRasterAnimationFrame,
+	TimeSpan,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> setAnimationFrameDuration = static (
+	TerminalRasterAnimation animation,
+	TerminalRasterAnimationFrame frame,
+	TimeSpan duration,
+	CancellationToken cancellationToken
+) => animation.SetFrameDurationAsync(
+	frame,
+	duration,
+	cancellationToken
+);
+Func<
+	TerminalRasterAnimation,
+	TerminalRasterAnimationFrame,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> selectAnimationFrame = static (
+	TerminalRasterAnimation animation,
+	TerminalRasterAnimationFrame frame,
+	CancellationToken cancellationToken
+) => animation.SelectFrameAsync(
+	frame,
+	cancellationToken
+);
+Func<
+	TerminalRasterAnimation,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> stopAnimation = static (
+	TerminalRasterAnimation animation,
+	CancellationToken cancellationToken
+) => animation.StopAsync( cancellationToken );
+Func<
+	TerminalRasterAnimation,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> runLoadingAnimation = static (
+	TerminalRasterAnimation animation,
+	CancellationToken cancellationToken
+) => animation.RunLoadingAsync( cancellationToken );
+Func<
+	TerminalRasterAnimation,
+	TerminalRasterAnimationPlaybackOptions?,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> runAnimation = static (
+	TerminalRasterAnimation animation,
+	TerminalRasterAnimationPlaybackOptions? options,
+	CancellationToken cancellationToken
+) => animation.RunAsync(
+	options,
+	cancellationToken
+);
 _ = createResource;
 _ = createPlacement;
 _ = createRelativePlacement;
@@ -185,6 +259,12 @@ _ = updateRelativePlacement;
 _ = getPlaceholderCell;
 _ = writePlaceholderCell;
 _ = writePlaceholderCells;
+_ = addAnimationFrame;
+_ = setAnimationFrameDuration;
+_ = selectAnimationFrame;
+_ = stopAnimation;
+_ = runLoadingAnimation;
+_ = runAnimation;
 
 Require(
 	9 == (int)TerminalCapability.PersistentRasterGraphics,
@@ -193,6 +273,10 @@ Require(
 Require(
 	10 == (int)TerminalCapability.UnicodeRasterPlaceholders,
 	"UnicodeRasterPlaceholders must retain the frozen additive enum value 10."
+);
+Require(
+	11 == (int)TerminalCapability.PersistentRasterAnimation,
+	"PersistentRasterAnimation must retain the frozen additive enum value 11."
 );
 
 TerminalRasterOwnershipState ownershipState = new(
@@ -337,6 +421,88 @@ Require(
 	"TerminalRasterPlaceholder must be asynchronously disposable."
 );
 
+string[] expectedAnimationStatuses = [
+	nameof( TerminalRasterAnimationStatus.Current ),
+	nameof( TerminalRasterAnimationStatus.SequenceUncertain ),
+	nameof( TerminalRasterAnimationStatus.Stale ),
+	nameof( TerminalRasterAnimationStatus.Released ),
+	nameof( TerminalRasterAnimationStatus.OwnerDisposed )
+];
+Require(
+	expectedAnimationStatuses.SequenceEqual(
+		Enum.GetNames<TerminalRasterAnimationStatus>()
+	),
+	"TerminalRasterAnimationStatus does not match the frozen semantic states."
+);
+string[] expectedAnimationLossReasons = [
+	nameof( TerminalRasterAnimationLossReason.None ),
+	nameof( TerminalRasterAnimationLossReason.FrameSequenceAmbiguous ),
+	nameof( TerminalRasterAnimationLossReason.SessionStateLost ),
+	nameof( TerminalRasterAnimationLossReason.ResourceMissing ),
+	nameof( TerminalRasterAnimationLossReason.ResourceReleased ),
+	nameof( TerminalRasterAnimationLossReason.ExplicitResourceDisposal )
+];
+Require(
+	expectedAnimationLossReasons.SequenceEqual(
+		Enum.GetNames<TerminalRasterAnimationLossReason>()
+	),
+	"TerminalRasterAnimationLossReason does not match the frozen semantic reasons."
+);
+TerminalRasterAnimationState animationState = new(
+	TerminalRasterAnimationStatus.Current,
+	TerminalRasterAnimationLossReason.None
+);
+Require(
+	TerminalRasterAnimationStatus.Current == animationState.Status
+		&& TerminalRasterAnimationLossReason.None == animationState.LossReason,
+	"TerminalRasterAnimationState did not preserve the caller-supplied semantic snapshot."
+);
+Require(
+	typeof( TerminalRasterResource ).GetProperty(
+		nameof( TerminalRasterResource.Animation ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( TerminalRasterAnimation ),
+	"TerminalRasterResource must expose its one resource-owned animation controller."
+);
+Require(
+	typeof( TerminalRasterAnimation ).GetProperty(
+		nameof( TerminalRasterAnimation.RootFrame ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( TerminalRasterAnimationFrame )
+		&& typeof( TerminalRasterAnimation ).GetProperty(
+			nameof( TerminalRasterAnimation.State ),
+			BindingFlags.Instance | BindingFlags.Public
+		)?.PropertyType == typeof( TerminalRasterAnimationState ),
+	"TerminalRasterAnimation must expose only opaque root-frame and semantic-state observations."
+);
+Require(
+	0 == typeof( TerminalRasterAnimation ).GetConstructors(
+		BindingFlags.Instance | BindingFlags.Public
+	).Length
+		&& 0 == typeof( TerminalRasterAnimationFrame ).GetConstructors(
+			BindingFlags.Instance | BindingFlags.Public
+		).Length,
+	"Animation controllers and frame tokens must not expose public constructors."
+);
+Require(
+	!typeof( IDisposable ).IsAssignableFrom( typeof( TerminalRasterAnimation ) )
+		&& !typeof( IAsyncDisposable ).IsAssignableFrom( typeof( TerminalRasterAnimation ) ),
+	"TerminalRasterAnimation must remain resource-owned and not independently disposable."
+);
+TerminalRasterAnimationPlaybackOptions infinitePlayback = new();
+TerminalRasterAnimationPlaybackOptions finitePlayback = new() {
+	RepeatCount = 2
+};
+Require(
+	infinitePlayback.RepeatCount is null
+		&& 2 == finitePlayback.RepeatCount,
+	"TerminalRasterAnimationPlaybackOptions did not preserve finite/indefinite repeat policy."
+);
+
+AssertOpaquePublicSurface( typeof( TerminalRasterAnimationState ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterAnimationPlaybackOptions ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterAnimationFrame ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterAnimation ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterOwnershipState ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterResource ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
@@ -358,6 +524,8 @@ static void AssertOpaquePublicSurface(
 	string[] forbiddenFragments = [
 		"ImageId",
 		"ImageNumber",
+		"FrameNumber",
+		"SequenceNumber",
 		"PlacementId",
 		"ParentId",
 		"Generation",
