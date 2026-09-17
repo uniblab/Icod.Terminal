@@ -2,21 +2,21 @@
 
 **Release:** `1.16.0`  
 **Theme:** Persistent Raster Animation and Frame Lifecycle  
-**Status:** T160–T168 complete and accepted; T169 next  
+**Status:** T160–T169 complete; stable 1.16.0 candidate qualified  
 **Stable compatibility floor:** `1.0.0`  
 **Prior completed release line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
 
 ## Latest accepted checkpoint
 
-T168 sample, package, downstream, security, and permanent-documentation qualification is accepted at exact head `1689248396537bf00a220354a8a3e2d620bcb815`.
+The stable 1.16.0 candidate is accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`.
 
-- Workflow #1957 / run `35248147080` completed successfully across the full nine-job PR matrix.
-- The backend-neutral executable sample and source-policy gate build on Windows, Linux, and macOS for `net8.0`, `net9.0`, and `net10.0`.
-- Fresh NuGet-only consumption compile-binds the complete animation surface and verifies the frozen capability value, opaque identity boundary, ownership/state shapes, and repeat policy.
-- Packed XML verification covers the new public members across every target framework.
-- Permanent ownership, architecture, security/privacy, compatibility/versioning, and root README authorities now document the frozen 1.16 contract.
-- The Runtime Linux leg passed 2,169 `Icod.Terminal.Tests` on each target framework, 15/15 TermInfo integration tests on each target framework, and the stable `Icod.DCurses` acceptance/hardening suite.
-- T169 now owns stable version/package metadata, changelog, release notes, final API baseline/fingerprint, and exact-candidate release closure.
+- Workflow #1959 / run `35250115968` completed successfully across the full nine-job PR matrix.
+- The candidate produced `Icod.Terminal.1.16.0.nupkg` and `.snupkg`, and the stable release-line package verifier passed.
+- Generated public API snapshots were identical across `net8.0`, `net9.0`, and `net10.0`; the final fingerprint is `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`.
+- The Linux runtime leg passed 2,169 `Icod.Terminal.Tests` and 15/15 TermInfo integration tests on each target framework.
+- The animation sample and all other runtime samples passed on every target framework; stable `Icod.DCurses` acceptance and the eight-cycle hardening soak passed.
+- Release version authority, package notes/tags, changelog, curated release notes, packed README references, permanent authorities, and final API-baseline wording are synchronized.
+- Merge, `v1.16.0` tagging, GitHub Release creation, NuGet publication, and GitHub Packages publication remain explicit maintainer/release-workflow actions.
 
 ## Release objective
 

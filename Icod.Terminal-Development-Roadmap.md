@@ -5,8 +5,8 @@
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior completed line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
-- **Current development line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
-- **Current tranche:** T169 — stable 1.16.0 release closure; T160–T168 accepted
+- **Current stable candidate:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
+- **Development status:** T160–T169 complete; stable candidate qualified
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -17,9 +17,11 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-T168 is accepted at exact head `1689248396537bf00a220354a8a3e2d620bcb815`, workflow #1957 / run `35248147080`, with the complete nine-job matrix successful.
+The stable 1.16.0 candidate is accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
 
-The accepted scope includes the backend-neutral animation sample, all-TFM package/API/XML qualification, permanent ownership/architecture/security/compatibility/README documentation, and stable `Icod.DCurses` downstream acceptance. T169 is the remaining stable-release closure tranche.
+The candidate produced the stable `1.16.0` NuGet and symbol packages, retained identical public API snapshots across all target frameworks with fingerprint `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`, and passed cross-platform runtime/sample, package/API/XML, artifact, TermInfo integration, and stable `Icod.DCurses` downstream qualification.
+
+Merge, tag, GitHub Release, and package publication remain explicit maintainer/release-workflow actions.
 
 ## Current architecture
 
@@ -50,7 +52,7 @@ Icod.Timing   1.0.0
 
 Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.14.0`; Inspection and Source remain outside the production package graph.
 
-## Published/completed release sequence through 1.15.0
+## Qualified stable-candidate sequence through 1.16.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -66,7 +68,7 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.14.0`; In
 1.13.0  bounded immutable-parent relative placement ownership
 1.14.0  side-effect-free persistent-raster lifecycle observability
 1.15.0  Unicode placeholder and virtual raster placement
-1.16.0  persistent raster animation and frame lifecycle             CURRENT
+1.16.0  persistent raster animation and frame lifecycle             STABLE CANDIDATE
 ```
 
 The final 1.15 public API fingerprint is:
@@ -81,9 +83,9 @@ Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Pers
 
 1.15 versioned evidence: [`Icod.Terminal-1.15.0-Development-Roadmap.md`](Icod.Terminal-1.15.0-Development-Roadmap.md).
 
-## 1.16 development track — Persistent Raster Animation and Frame Lifecycle
+## 1.16 stable candidate — Persistent Raster Animation and Frame Lifecycle
 
-The selected 1.16 track extends the existing persistent-raster ownership model with terminal-resident animation frames and playback control while preserving the same architectural boundaries that guided 1.11–1.15.
+The completed 1.16 line extends the existing persistent-raster ownership model with terminal-resident animation frames and playback control while preserving the same architectural boundaries that guided 1.11–1.15.
 
 The governing rule is:
 

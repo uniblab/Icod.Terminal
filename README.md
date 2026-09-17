@@ -15,7 +15,7 @@ Version `1.16.0` adds resource-owned persistent-raster animation with opaque roo
 
 The stable `1.0.0` compatibility floor remains unchanged. Version 1.16 retains the complete 1.15 virtual-placeholder, 1.14 lifecycle-observation, 1.13 relative-placement, 1.12 crop/z-order, and earlier persistent-raster contracts. The final 1.16 public API fingerprint is `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`.
 
-The 1.16 release contract requires the complete Staging qualification matrix on Windows, Linux, and macOS, including package/API/XML verification, fresh package-only consumers, stable-package checks, validated artifacts, and `Icod.DCurses` downstream acceptance. Merge, tagging, release creation, and publication remain separate maintainer actions.
+The 1.16 stable candidate passed the complete Staging qualification matrix on Windows, Linux, and macOS, including package/API/XML verification, fresh package-only consumers, stable-package checks, validated artifacts, and `Icod.DCurses` downstream acceptance. Merge, tagging, release creation, and publication remain separate maintainer actions.
 
 ## Support the Project
 
