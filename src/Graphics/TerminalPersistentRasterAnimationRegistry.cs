@@ -44,6 +44,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 	internal int KnownFrameCount {
 		get {
 			lock ( this.synchronization ) {
+				this.PruneInactiveAnimationsUnsafe();
 				return this.knownFrameCount;
 			}
 		}
@@ -56,6 +57,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 		ArgumentNullException.ThrowIfNull( resource );
 
 		lock ( this.synchronization ) {
+			this.PruneInactiveAnimationsUnsafe();
 			if ( this.animations.TryGetValue(
 				resource,
 				out TerminalPersistentRasterAnimationState? existing
@@ -95,6 +97,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 		ArgumentNullException.ThrowIfNull( animation );
 
 		lock ( this.synchronization ) {
+			this.PruneInactiveAnimationsUnsafe();
 			if ( !this.IsRegisteredAnimationUnsafe( animation )
 				|| TerminalRasterAnimationStatus.Current != animation.ObserveState().Status
 				|| this.pendingAppends.ContainsKey( animation )
@@ -147,6 +150,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 		ArgumentNullException.ThrowIfNull( reservation );
 
 		lock ( this.synchronization ) {
+			this.PruneInactiveAnimationsUnsafe();
 			if ( !ReferenceEquals(
 				this,
 				reservation.Owner
@@ -190,6 +194,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 		ArgumentNullException.ThrowIfNull( frame );
 
 		lock ( this.synchronization ) {
+			this.PruneInactiveAnimationsUnsafe();
 			return this.IsRegisteredAnimationUnsafe( animation )
 				&& ReferenceEquals(
 					animation,
@@ -251,7 +256,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 		ArgumentNullException.ThrowIfNull( transition );
 
 		lock ( this.synchronization ) {
-			if ( !this.animations.Remove(
+			if ( !this.animations.TryGetValue(
 				resource,
 				out TerminalPersistentRasterAnimationState? animation
 			) ) {
@@ -259,16 +264,54 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 			}
 
 			_ = transition( animation );
-			_ = this.pendingAppends.Remove( animation );
-			if ( this.frames.Remove(
-				animation,
-				out HashSet<TerminalPersistentRasterAnimationFrameState>? knownFrames
-			) ) {
-				this.knownFrameCount = checked(
-					this.knownFrameCount - knownFrames.Count
-				);
+			return this.RemoveAnimationUnsafe(
+				resource,
+				animation
+			);
+		}
+	}
+
+	private bool RemoveAnimationUnsafe(
+		TerminalPersistentRasterResourceState resource,
+		TerminalPersistentRasterAnimationState animation
+	) {
+		if ( !this.animations.Remove( resource ) ) {
+			return false;
+		}
+
+		_ = this.pendingAppends.Remove( animation );
+		if ( this.frames.Remove(
+			animation,
+			out HashSet<TerminalPersistentRasterAnimationFrameState>? knownFrames
+		) ) {
+			this.knownFrameCount = checked(
+				this.knownFrameCount - knownFrames.Count
+			);
+		}
+		return true;
+	}
+
+	private void PruneInactiveAnimationsUnsafe() {
+		List<KeyValuePair<TerminalPersistentRasterResourceState, TerminalPersistentRasterAnimationState>>? inactive = null;
+		foreach ( KeyValuePair<TerminalPersistentRasterResourceState, TerminalPersistentRasterAnimationState> pair in this.animations ) {
+			TerminalRasterAnimationStatus status = pair.Value.ObserveState().Status;
+			if ( status is TerminalRasterAnimationStatus.Stale
+				or TerminalRasterAnimationStatus.Released
+				or TerminalRasterAnimationStatus.OwnerDisposed ) {
+				inactive ??= [];
+				inactive.Add( pair );
 			}
-			return true;
+		}
+
+		if ( inactive is null ) {
+			return;
+		}
+
+		foreach ( KeyValuePair<TerminalPersistentRasterResourceState, TerminalPersistentRasterAnimationState> pair in inactive ) {
+			_ = this.RemoveAnimationUnsafe(
+				pair.Key,
+				pair.Value
+			);
 		}
 	}
 
