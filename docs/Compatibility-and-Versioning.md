@@ -36,11 +36,12 @@ Relevant fingerprints include:
 1.13  c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 1.14  2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 1.15  eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
+1.16  d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
 ```
 
 Version 1.11.1 intentionally retained the 1.11 fingerprint because it added no production public API.
 
-The 1.15 fingerprint is frozen during development and is enforced across `net8.0`, `net9.0`, and `net10.0` before stable release closure.
+The final 1.16 fingerprint is enforced across `net8.0`, `net9.0`, and `net10.0`; all historical fingerprints remain immutable.
 
 ## 4. Additive persistent-raster progression
 
@@ -163,7 +164,7 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.14 optional integration compatibility
 
-The active 1.15 direct production dependency advances to:
+The active 1.16 direct production dependency graph remains:
 
 ```text
 Icod.TermInfo 1.14.0
@@ -258,9 +259,9 @@ Any post-closure pre-merge code or documentation change requires the same exact-
 
 PR qualification does not itself merge, tag, create a GitHub Release, or publish NuGet packages.
 
-For 1.15, the maintainer/release workflow remains responsible for:
+For 1.16, the maintainer/release workflow remains responsible for:
 
 1. merging the fully qualified PR;
 2. validating the mainline Release workflow;
-3. creating/pushing `v1.15.0` only after mainline validation succeeds;
+3. creating/pushing `v1.16.0` only after mainline validation succeeds;
 4. creating the GitHub Release and publishing NuGet through the established release workflow.

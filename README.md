@@ -9,15 +9,13 @@
 
 ## Status
 
-Current release line: `Icod.Terminal 1.15.0`.
+Current release line: `Icod.Terminal 1.16.0`.
 
-Version `1.15.0` adds opaque Unicode-placeholder virtual raster placement, independently renderable semantic placeholder-cell output, and physical placement relative to a virtual parent while preserving caller ownership of cursor position, clipping, scrolling, damage, and layout.
+Version `1.16.0` adds resource-owned persistent-raster animation with opaque root and appended full-size frame tokens, positive per-frame timing, explicit selection, loading-mode streaming, finite/indefinite terminal-driven playback, independent sequence-certainty observation, and resource-owned cleanup.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.15 retains the complete 1.14 lifecycle-observation, 1.13 relative-placement, 1.12 crop/z-order, and earlier persistent-raster contracts. The final 1.15 public API fingerprint is `eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d`.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.16 retains the complete 1.15 virtual-placeholder, 1.14 lifecycle-observation, 1.13 relative-placement, 1.12 crop/z-order, and earlier persistent-raster contracts. The final 1.16 public API fingerprint is `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`.
 
-The 1.15 release contract passed the complete Staging qualification matrix on Windows, Linux, and macOS, including package/API verification, fresh package-only consumers, stable-package checks, validated artifacts, and `Icod.DCurses` downstream acceptance.
-
-Development line `1.16.0` adds resource-owned persistent-raster animation: an opaque root frame and appended full-size frame tokens, positive per-frame timing, explicit selection, loading-mode streaming, finite/indefinite terminal-driven playback, sequence-certainty observation, and resource-owned cleanup. This work remains on the draft 1.16 development branch and is not yet a published stable package.
+The 1.16 release contract requires the complete Staging qualification matrix on Windows, Linux, and macOS, including package/API/XML verification, fresh package-only consumers, stable-package checks, validated artifacts, and `Icod.DCurses` downstream acceptance. Merge, tagging, release creation, and publication remain separate maintainer actions.
 
 ## Support the Project
 
@@ -65,7 +63,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the package:
 
 ```text
-dotnet add package Icod.Terminal --version 1.15.0
+dotnet add package Icod.Terminal --version 1.16.0
 ```
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
@@ -105,7 +103,7 @@ The root README describes the current product by capability rather than by the r
 - **Persistent raster ownership** — opaque terminal-resident resources and placements; source-pixel cropping; signed z-order; immutable-parent relative placement; generation-scoped ownership; deterministic descendant-first cleanup; no hidden raster replay.
 - **Persistent ownership observation** — atomic `Current`, `Stale`, `Released`, and `Disposed` snapshots with semantic loss/release reasons and no passive terminal-side existence fiction.
 - **Unicode raster placeholders** — opaque virtual placements, semantic row/column cell tokens, self-contained current-cursor output, and physical placement relative to a virtual parent without exposing Kitty numeric identities or placeholder encoding.
-- **Persistent raster animation (1.16 development)** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
+- **Persistent raster animation** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
@@ -182,7 +180,7 @@ The [`samples`](samples/README.md) directory contains focused examples for sessi
 
 Recommended documentation entry points:
 
-- [`docs/releases/1.15.0.md`](docs/releases/1.15.0.md) — curated 1.15 release notes;
+- [`docs/releases/1.16.0.md`](docs/releases/1.16.0.md) — curated 1.16 release notes;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
@@ -194,7 +192,7 @@ Recommended documentation entry points:
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md) — trust, disclosure, and protocol-security boundary;
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
-- [`docs/Public-API-Baseline-1.15.md`](docs/Public-API-Baseline-1.15.md) — final 1.15 API additions and fingerprint;
+- [`docs/Public-API-Baseline-1.16.md`](docs/Public-API-Baseline-1.16.md) — final 1.16 API additions and fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
@@ -203,10 +201,10 @@ Release notes, public-API baselines, tranche records, implementation plans, and 
 
 Stable `1.0.0` remains the compatibility floor. The package supports `net8.0`, `net9.0`, and `net10.0`; compatible 1.x releases add semantic capabilities and public members without silently repurposing established signatures, enum values, lifecycle guarantees, or protocol-neutral behavior.
 
-The final 1.15 public API fingerprint is:
+The final 1.16 public API fingerprint is:
 
 ```text
-eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
+d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
 ```
 
 Public API, package, target-framework, release-qualification, and compatibility policy is maintained in [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).

@@ -8,13 +8,13 @@ The stable compatibility floor remains `1.0.0`. The complete 1.15 public surface
 eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 ```
 
-T160 generated identical public API snapshots on `net8.0`, `net9.0`, and `net10.0`. The frozen 1.16 fingerprint is:
+The final generated public API snapshots are identical on `net8.0`, `net9.0`, and `net10.0`. The stable 1.16 fingerprint is:
 
 ```text
 d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
 ```
 
-The machine-readable fingerprint is stored separately in `docs/Public-API-Baseline-1.16.sha256` and is enforced by the package/public-API gate for the remainder of 1.16 development.
+The machine-readable fingerprint is stored separately in `docs/Public-API-Baseline-1.16.sha256` and is enforced by the package/public-API gate for the stable 1.16 release line.
 
 ## Public additions over 1.15
 
@@ -134,7 +134,7 @@ The semantic API freezes these local bounds before animation transport is implem
 - frame arguments must belong to the target animation controller;
 - caller cancellation observed before commitment is propagated locally.
 
-T160 itself emits no animation transfer or playback-control bytes. Methods whose transport arrives in later tranches return controlled unsupported results after local validation.
+The completed 1.16 implementation applies these validations before protocol output and routes accepted operations through the acknowledged animation transaction path.
 
 ## Identity and protocol boundary
 

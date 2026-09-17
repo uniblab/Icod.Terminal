@@ -1,6 +1,6 @@
 # Persistent Raster Ownership
 
-This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources and placements.
+This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources, placements, placeholders, and animations.
 
 Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added bounded relative placement ownership with immutable parentage while preserving resource ownership as a separate lifetime axis. Version 1.14 added side-effect-free observation of Terminal's local ownership certainty and semantic loss/release reason. Version 1.15 added virtual placements and independently renderable Unicode-placeholder cells. Version 1.16 adds resource-owned animation sequences, opaque frame tokens, positive timing, terminal-driven playback, and a distinct sequence-certainty axis.
 
@@ -729,3 +729,14 @@ Animation transfer uses the existing reviewed direct persistent-raster transport
 All locally knowable invalid arguments, cross-animation tokens, disposed handles, stale ownership, dimension mismatches, duration errors, loop errors, and capacity failures are rejected before private protocol identity is emitted. Once logical output commits, cancellation does not intentionally truncate the transaction, and failure does not trigger replay or backend switching.
 
 The 1.16 surface is additive. Existing persistent resource, physical placement, relative placement, lifecycle-observation, and virtual-placeholder behavior is unchanged when animation APIs are unused. `Icod.DCurses` and other callers continue to own screen coordinates, cells, clipping, damage, layout, refresh policy, and higher-level animation timelines.
+
+
+## 35. Final 1.16 public API baseline
+
+The final cross-TFM 1.16 public API fingerprint is:
+
+```text
+d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
+```
+
+The 1.15 and earlier baseline documents remain immutable historical evidence.
