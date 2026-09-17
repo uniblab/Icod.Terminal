@@ -127,6 +127,8 @@ Version 1.17 additively introduces Terminal-owned dimensions, an immutable seman
 
 Existing `GetSize()`, `TerminalLifecycleEvent.Size`, `TerminalSession.Terminal`, low-level terminal-string output, and other 1.x APIs remain available. The new APIs do not move retained cells, layout, Unicode-width policy, damage, refresh comparison, or repaint ownership into Terminal.
 
+Release qualification treats compatibility and future decoupling as separate claims: the candidate package must run with published stable `Icod.DCurses 1.6.0`, and an independent package-only consumer must compile against the Terminal-owned screen contracts with no direct TermInfo project reference or source use. The latter is evidence of API sufficiency, not a claim that DCurses 2.0 has already shipped.
+
 ## 5. Persistent-raster compatibility guarantees
 
 The following remain compatible guarantees:

@@ -38,8 +38,8 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	private readonly ITerminalControlProvider controlProvider;
 	private readonly Encoding applicationEncoding;
 	private readonly TerminalOutputStream terminalOutputStream;
-	private readonly TerminalProfile profile;
-	private readonly TerminalScreenPlanner screen;
+	private readonly Lazy<TerminalProfile> profile;
+	private readonly Lazy<TerminalScreenPlanner> screen;
 
 	private TerminalModeSnapshot? baselineMode;
 	private IDisposable? outputModeLease;
@@ -78,8 +78,10 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		this.InputObservation = inputObservation;
 		this.OutputObservation = outputObservation;
 		this.Identity = identity;
-		this.profile = TerminalProfile.Create( identity.Terminal );
-		this.screen = new TerminalScreenPlanner( identity.Terminal, this.profile );
+		this.profile = new Lazy<TerminalProfile>( () => TerminalProfile.Create( identity.Terminal ) );
+		this.screen = new Lazy<TerminalScreenPlanner>(
+			() => new TerminalScreenPlanner( identity.Terminal, this.profile.Value )
+		);
 		this.Input = input;
 		this.Output = output;
 		this.lifecycleSource = lifecycleSource;
@@ -121,16 +123,17 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	}
 
 	/// <summary>Gets the Terminal-owned semantic view of the selected terminal profile.</summary>
+	/// <remarks>Screen capability interpretation is deferred until this property or <see cref="Screen"/> is first requested.</remarks>
 	public TerminalProfile Profile {
 		get {
-			return this.profile;
+			return this.profile.Value;
 		}
 	}
 
 	/// <summary>Gets the semantic screen-operation planner bound to this session.</summary>
 	public TerminalScreenPlanner Screen {
 		get {
-			return this.screen;
+			return this.screen.Value;
 		}
 	}
 

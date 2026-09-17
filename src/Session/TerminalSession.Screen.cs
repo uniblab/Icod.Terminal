@@ -36,7 +36,7 @@ public sealed partial class TerminalSession {
 
 		return size.Status switch {
 			TerminalControlStatus.Unavailable =>
-				TerminalControlResult<TerminalDimensions>.Unavailable( size.Message ),
+				TerminalControlResult<TerminalDimensions>.Unavailable( size.Message, size.NativeErrorCode ),
 			TerminalControlStatus.Unsupported =>
 				TerminalControlResult<TerminalDimensions>.Unsupported( size.Message ),
 			TerminalControlStatus.Failed =>

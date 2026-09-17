@@ -12,6 +12,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Adds safe rendition normalization and transition planning, including indexed/direct color validation, reversible attributes, and no-color-video restrictions.
 - Adds a bounded, single-use screen-output transaction for same-session plans, application text, strict hyperlinks, and current raster-placeholder cells.
 - Adds serialized-output epoch validation, optional synchronized-output framing, pre-commit cancellation, non-cancellable committed cleanup, one final flush, and independent failure visibility.
+- Adds separate package-boundary witnesses for unchanged published `Icod.DCurses 1.6.0` compatibility and future TermInfo-decoupled rendering through only Terminal-owned screen contracts.
 - Keeps cells, windows, layout, clipping, Unicode width, damage, desired-versus-physical comparison, and repaint policy above Terminal.
 - Freezes the current alpha API fingerprint as `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across all three target frameworks.
 

@@ -29,6 +29,36 @@ using Xunit;
 /// without touching the process terminal.
 /// </summary>
 public sealed class TerminalSessionTests {
+	[Fact]
+	public async Task LegacySessionDoesNotInterpretUnusedScreenColorMetadata() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "legacy-inconsistent-color" )
+			.SetExtendedBoolean( "RGB" )
+			.Build();
+		TerminalModeSnapshot baseline = CreatePosixBaseline();
+		RecordingTerminalControlProvider provider = new( baseline );
+		TestTerminalOutput output = new();
+		TerminalSession session = await TerminalSession.OpenAsync(
+			provider,
+			TerminalEndpoint.StandardInput,
+			TerminalEndpoint.StandardOutput,
+			new TestTerminalInput(),
+			output,
+			new TerminalSessionOptions {
+				TerminalOverride = terminal,
+				ObserveLifecycleEvents = false
+			}
+		);
+		try {
+			Assert.Same( terminal, session.Terminal );
+			Assert.True( session.IsStateValid );
+			await session.WriteTextAsync( "legacy" );
+			Assert.Equal( "legacy"u8.ToArray(), output.Bytes );
+		} finally {
+			await session.DisposeAsync();
+		}
+		Assert.Same( baseline, provider.SetModeCalls[ ^1 ].Mode );
+	}
+
 	/// <summary>
 	/// Verifies that a successful POSIX session applies semantic state, exposes
 	/// borrowed services, flushes, and restores the exact baseline once.
@@ -377,6 +407,8 @@ public sealed class TerminalSessionTests {
 	}
 
 	private sealed class TestTerminalOutput : ITerminalOutput {
+		internal List<byte> Bytes { get; } = [];
+
 		internal int FlushCount {
 			get;
 			private set;
@@ -387,6 +419,7 @@ public sealed class TerminalSessionTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			this.Bytes.AddRange( buffer.ToArray() );
 			return ValueTask.CompletedTask;
 		}
 

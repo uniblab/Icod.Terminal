@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-	Icod.Terminal.DCursesPackageAcceptance
+	Icod.Terminal.DCursesScreenContractsAcceptance
 	Downstream Icod.DCurses acceptance utility for Icod.Terminal integration contracts.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 -->
@@ -26,12 +26,18 @@
 		<LangVersion>13.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 		<IsPackable>false</IsPackable>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<NuGetAudit>false</NuGetAudit>
+		<IcodTerminalPackageVersion Condition="'$(IcodTerminalPackageVersion)' == ''">0.0.0-local-validation-required</IcodTerminalPackageVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<Compile Include="Source/**/*.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Icod.Terminal" Version="$(IcodTerminalPackageVersion)" />
-		<PackageReference Include="Icod.DCurses" Version="1.6.0" />
 	</ItemGroup>
 </Project>

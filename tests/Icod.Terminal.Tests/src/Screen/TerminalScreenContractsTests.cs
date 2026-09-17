@@ -82,6 +82,31 @@ public sealed class TerminalScreenContractsTests {
 		Assert.Empty( output.Bytes );
 	}
 
+	[Theory]
+	[InlineData( TerminalControlStatus.Unavailable, 25 )]
+	[InlineData( TerminalControlStatus.Failed, 5 )]
+	[InlineData( TerminalControlStatus.Unsupported, null )]
+	public async Task DimensionsPreserveProviderDiagnostics(
+		TerminalControlStatus status,
+		int? nativeErrorCode
+	) {
+		TerminalControlResult<TerminalSize> size = status switch {
+			TerminalControlStatus.Unavailable => TerminalControlResult<TerminalSize>.Unavailable( "size unavailable", nativeErrorCode ),
+			TerminalControlStatus.Failed => TerminalControlResult<TerminalSize>.Failed( "size unavailable", nativeErrorCode ),
+			_ => TerminalControlResult<TerminalSize>.Unsupported( "size unavailable" )
+		};
+		await using TerminalSession session = await OpenSessionAsync(
+			new RecordingTerminalOutput(),
+			new TestTerminalControlProvider { Size = size }
+		);
+
+		TerminalControlResult<TerminalDimensions> dimensions = session.GetDimensions();
+
+		Assert.Equal( status, dimensions.Status );
+		Assert.Equal( "size unavailable", dimensions.Message );
+		Assert.Equal( nativeErrorCode, dimensions.NativeErrorCode );
+	}
+
 	[Fact]
 	public async Task TransactionCommitsPlanAndTextUnderOneFlushBoundary() {
 		RecordingTerminalOutput output = new();
@@ -217,6 +242,134 @@ public sealed class TerminalScreenContractsTests {
 		Assert.False( output.WriteCancellationCanBeCanceled[ 2 ] );
 	}
 
+	[Theory]
+	[InlineData( true, false )]
+	[InlineData( false, false )]
+	[InlineData( true, true )]
+	[InlineData( false, true )]
+	public async Task TransactionRejectsExistingFrameOwnerBeforeAnyOutput(
+		bool hyperlinkOwner,
+		bool failedCleanup
+	) {
+		RecordingTerminalOutput output = new() { FailOnWriteNumber = failedCleanup ? 2 : null };
+		await using TerminalSession session = await OpenSessionAsync( output );
+		await using IAsyncDisposable owner = hyperlinkOwner
+			? await session.AcquireHyperlinkAsync( "https://example.com/outer" )
+			: await session.AcquireSynchronizedOutputAsync();
+		if ( failedCleanup ) {
+			await Assert.ThrowsAsync<InvalidOperationException>( () => owner.DisposeAsync().AsTask() );
+		}
+		int attempts = output.WriteAttempts.Count;
+		int flushes = output.FlushCount;
+		byte[] before = output.Bytes.ToArray();
+		// Capture the epoch after the outer lease (and any failed cleanup).
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		transaction.WriteText( "must-not-write-prefix" );
+		transaction.WriteHyperlink( "inner", "https://example.com/inner" );
+
+		await Assert.ThrowsAsync<InvalidOperationException>( () => transaction.CommitAsync().AsTask() );
+
+		Assert.Equal( attempts, output.WriteAttempts.Count );
+		Assert.Equal( flushes, output.FlushCount );
+		Assert.Equal( before, output.Bytes );
+		await owner.DisposeAsync().AsTask().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( attempts + 1, output.WriteAttempts.Count );
+		Assert.Equal(
+			hyperlinkOwner ? "\u001b]8;;\u001b\\"u8.ToArray() : "\u001b[?2026l"u8.ToArray(),
+			output.WriteAttempts[ ^1 ]
+		);
+		TerminalScreenOutputTransaction next = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		next.WriteHyperlink( "next", "https://example.com/next" );
+		await next.CommitAsync().AsTask().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+	}
+
+	[Fact]
+	public async Task ScreenReservationPrecedesOutputGateAndReleasesAfterFailure() {
+		RecordingTerminalOutput output = new() { FailOnWriteNumber = 3 };
+		await using TerminalSession session = await OpenSessionAsync( output );
+		using IDisposable blockedOutput = await session.AcquireSessionOutputAsync( CancellationToken.None );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		transaction.WriteHyperlink( "body", "https://example.com/transaction" );
+		Task commit = transaction.CommitAsync().AsTask();
+		Task<TerminalHyperlinkLease> hyperlink = session.AcquireHyperlinkAsync( "https://example.com/outer" ).AsTask();
+		Task<TerminalSynchronizedOutputLease> synchronized = session.AcquireSynchronizedOutputAsync().AsTask();
+		Assert.False( commit.IsCompleted );
+		Assert.False( hyperlink.IsCompleted );
+		Assert.False( synchronized.IsCompleted );
+		blockedOutput.Dispose();
+
+		await Assert.ThrowsAsync<InvalidOperationException>( () => commit.WaitAsync( TimeSpan.FromSeconds( 5 ) ) );
+		await using TerminalHyperlinkLease hyperlinkOwner = await hyperlink.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		await using TerminalSynchronizedOutputLease synchronizedOwner = await synchronized.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( "\u001b]8;;\u001b\\"u8.ToArray(), output.WriteAttempts[ 3 ] );
+		Assert.Equal( "\u001b[?2026l"u8.ToArray(), output.WriteAttempts[ 4 ] );
+		Assert.All( output.WriteCancellationCanBeCanceled, Assert.False );
+	}
+
+	[Fact]
+	public async Task TransactionRejectsPendingSynchronizedCleanupWithoutAnOwner() {
+		RecordingTerminalOutput output = new() { FailedWriteNumbers = [ 1, 2 ] };
+		await using TerminalSession session = await OpenSessionAsync( output );
+		await Assert.ThrowsAsync<AggregateException>( () => session.AcquireSynchronizedOutputAsync().AsTask() );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		transaction.WriteText( "must-not-write" );
+
+		await Assert.ThrowsAsync<InvalidOperationException>( () => transaction.CommitAsync().AsTask() );
+
+		Assert.Equal( 2, output.WriteAttempts.Count );
+		Assert.Empty( output.Bytes );
+		Assert.Equal( 0, output.FlushCount );
+		await session.DisposeAsync();
+		Assert.Equal( "\u001b[?2026l"u8.ToArray(), output.Bytes );
+	}
+
+	[Fact]
+	public async Task UnframedTransactionPreservesOuterOwners() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		await using TerminalHyperlinkLease hyperlink = await session.AcquireHyperlinkAsync( "https://example.com/outer" );
+		await using TerminalSynchronizedOutputLease synchronized = await session.AcquireSynchronizedOutputAsync();
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteText( "body" );
+
+		await transaction.CommitAsync();
+
+		Assert.Equal( "\u001b]8;;https://example.com/outer\u001b\\\u001b[?2026hbody"u8.ToArray(), output.Bytes );
+		await synchronized.DisposeAsync();
+		await hyperlink.DisposeAsync();
+		Assert.Equal( "\u001b[?2026l"u8.ToArray(), output.WriteAttempts[ ^2 ] );
+		Assert.Equal( "\u001b]8;;\u001b\\"u8.ToArray(), output.WriteAttempts[ ^1 ] );
+	}
+
+	[Fact]
+	public async Task CancelledScreenGateWaitReleasesManagerReservationsWithoutOutput() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		using IDisposable blockedOutput = await session.AcquireSessionOutputAsync( CancellationToken.None );
+		using CancellationTokenSource cancellation = new();
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		transaction.WriteHyperlink( "cancelled", "https://example.com/cancelled" );
+		Task commit = transaction.CommitAsync( cancellation.Token ).AsTask();
+		cancellation.Cancel();
+		await Assert.ThrowsAnyAsync<OperationCanceledException>( () => commit );
+		Assert.Empty( output.WriteAttempts );
+		Assert.Equal( 0, output.FlushCount );
+		blockedOutput.Dispose();
+
+		await using TerminalHyperlinkLease hyperlink = await session.AcquireHyperlinkAsync( "https://example.com/next" ).AsTask().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		await using TerminalSynchronizedOutputLease synchronized = await session.AcquireSynchronizedOutputAsync().AsTask().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+	}
+
 	[Fact]
 	public async Task PreCommitCancellationAndSecondCommitEmitNoAdditionalBytes() {
 		RecordingTerminalOutput output = new();
@@ -309,7 +462,8 @@ public sealed class TerminalScreenContractsTests {
 	}
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
-		RecordingTerminalOutput output
+		RecordingTerminalOutput output,
+		TestTerminalControlProvider? provider = null
 	) {
 		ArgumentNullException.ThrowIfNull( output );
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "screen-contract" )
@@ -324,7 +478,7 @@ public sealed class TerminalScreenContractsTests {
 			.Build();
 
 		return TerminalSession.OpenAsync(
-			new TestTerminalControlProvider(),
+			provider ?? new TestTerminalControlProvider(),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			new TestTerminalInput(),
@@ -361,6 +515,8 @@ public sealed class TerminalScreenContractsTests {
 			init;
 		}
 
+		internal HashSet<int> FailedWriteNumbers { get; init; } = [];
+
 		internal List<byte[]> WriteAttempts {
 			get;
 		} = [];
@@ -376,7 +532,8 @@ public sealed class TerminalScreenContractsTests {
 			cancellationToken.ThrowIfCancellationRequested();
 			this.WriteAttempts.Add( buffer.ToArray() );
 			this.WriteCancellationCanBeCanceled.Add( cancellationToken.CanBeCanceled );
-			if ( this.FailOnWriteNumber == this.WriteAttempts.Count ) {
+			if ( this.FailOnWriteNumber == this.WriteAttempts.Count
+				|| this.FailedWriteNumbers.Contains( this.WriteAttempts.Count ) ) {
 				throw new InvalidOperationException( "Injected output failure." );
 			}
 			this.Bytes.AddRange( buffer.ToArray() );
@@ -393,6 +550,9 @@ public sealed class TerminalScreenContractsTests {
 	}
 
 	private sealed class TestTerminalControlProvider : ITerminalControlProvider {
+		internal TerminalControlResult<TerminalSize> Size { get; init; } =
+			TerminalControlResult<TerminalSize>.Available( new TerminalSize( 100, 30 ) );
+
 		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
 			0,
 			0,
@@ -427,9 +587,7 @@ public sealed class TerminalScreenContractsTests {
 			TerminalEndpoint endpoint
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
-			return TerminalControlResult<TerminalSize>.Available(
-				new TerminalSize( 100, 30 )
-			);
+			return this.Size;
 		}
 
 		public TerminalControlResult<TerminalModeSnapshot> GetMode(

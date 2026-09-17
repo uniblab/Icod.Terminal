@@ -73,6 +73,8 @@ Planning is side-effect free. A plan identifies its semantic operation, resolved
 
 This contract does not transfer cells, windows, pads, layout, clipping, Unicode display width, damage, desired-versus-physical comparison, or repaint policy into Terminal.
 
+The downstream boundary is qualified by two independent package consumers. Published stable `Icod.DCurses 1.6.0` exercises unchanged 1.x compatibility against the candidate Terminal package. A separate future-renderer consumer has only a direct `Icod.Terminal` package reference and uses Terminal-owned dimensions, profile, planner, operation plans, and screen-output transactions without direct TermInfo source use.
+
 ### 2.2 Advanced transport/provider API
 
 `ITerminalInput`, `ITerminalOutput`, `ITerminalControlProvider`, `TerminalEndpoint`, native mode snapshots, and controlled result types remain public for injected transports, diagnostics, and higher-level libraries.

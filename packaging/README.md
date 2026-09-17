@@ -63,7 +63,7 @@ from `docs/Public-API-Baseline-1.7.sha256`. Historical baselines remain checked 
 | `foundation` | exact package structure/Source Link/XML plus 0.8–0.10 package foundations |
 | `presentation` | pointer shape, semantic prompt, colors, and lifecycle-safe color ownership |
 | `semantic` | semantic metadata, safe OSC 9, OSC 777, OSC 633, OSC 1337, OSC 99, modern keyboard, **1.7/1.8 raster graphics**, and hardening |
-| `release` | stable 1.x release-line package contract and packaged `Icod.DCurses` compatibility witness |
+| `release` | stable 1.x release-line package contract, published `Icod.DCurses 1.6.0` compatibility, and future Terminal-only screen-contract acceptance |
 
 The semantic shard includes fresh package-only consumers and generated XML-documentation checks for additive stable APIs.
 
@@ -98,6 +98,8 @@ The shards have no ordering dependency on one another once the package candidate
 - runs those consumers for `net8.0`, `net9.0`, and `net10.0`.
 
 Package-only consumers intentionally retain isolated caches because proving external NuGet resolution is part of their contract. Source/project-reference acceptance scripts use the normal runner cache instead of forcing `--no-cache` restores.
+
+The release shard deliberately keeps two downstream witnesses distinct. The stable witness combines the candidate `Icod.Terminal` package with published `Icod.DCurses 1.6.0` and runs the retained ownership soak. The future-renderer witness references only the candidate `Icod.Terminal` package and compile-binds dimensions, profile, semantic planning, operation plans, and transaction composition without direct TermInfo source use.
 
 ## Main and manual distribution validation
 

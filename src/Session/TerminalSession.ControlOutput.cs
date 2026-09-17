@@ -136,7 +136,7 @@ public sealed partial class TerminalSession {
 		);
 	}
 
-	private sealed class ControlOutputLease : IDisposable {
+	internal sealed class ControlOutputLease : IDisposable {
 		private SemaphoreSlim? gate;
 
 		internal ControlOutputLease(

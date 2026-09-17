@@ -110,7 +110,13 @@ These operations participate in the session's appropriate output serialization/o
 
 For retained-screen renderers, `CreateScreenOutputTransaction(...)` provides a bounded single-use serialization boundary. A transaction captures the current session-output epoch, accepts only plans and raster tokens belonging to that session, and rejects intervening session-owned output before commitment. Optional synchronized framing, hyperlink close frames, and final flush are emitted while the same output gate remains held.
 
+A transaction containing hyperlink items rejects an existing session-owned hyperlink scope or pending hyperlink cleanup before any output. Likewise, synchronized transaction framing rejects existing synchronized-output leases or pending cleanup. Relevant manager reservations are held through commit and cleanup, in hyperlink-manager, synchronized-output-manager, output-gate order. A transaction without the conflicting frame type can emit inside an outer scope without closing it.
+
 Caller cancellation is observed before commitment. After commitment begins, ordinary cancellation does not intentionally truncate the logical transaction or required cleanup. A committed failure is surfaced without replay; the renderer remains responsible for invalidating its physical-screen certainty and repainting as appropriate.
+
+A retained-screen renderer can perform its Terminal-facing work through `GetDimensions()`, `Profile`, `Screen`, and `CreateScreenOutputTransaction(...)` without directly consuming TermInfo contracts. This does not remove the retained renderer's ownership of cells, layout, damage, comparison, or repaint policy.
+
+`Profile` and `Screen` interpret screen capability metadata lazily on first access, preserving legacy session opening and output when those APIs are unused. Repeated single-operation fallback plans are limited internally to 1,048,576 source characters, including padding directives. Larger fallback-only requests return no plan; a usable parameterized candidate remains available without materializing the repeated fallback. Padding-stripped byte costs are compared before repetition is materialized.
 
 `TerminalSession.Output` remains public as an **advanced borrowed transport escape hatch**. It is intentionally different from the input side.
 

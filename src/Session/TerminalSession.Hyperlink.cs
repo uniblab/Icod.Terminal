@@ -24,13 +24,20 @@ namespace Icod.Terminal;
 /// Provides semantic OSC 8 hyperlink output for a live terminal session.
 /// </summary>
 public sealed partial class TerminalSession {
+	private readonly object hyperlinkManagerSync = new();
 	private TerminalHyperlinkManager? hyperlinkManager;
 
 	private TerminalHyperlinkManager HyperlinkManager {
 		get {
-			return this.hyperlinkManager ??= new TerminalHyperlinkManager( this );
+			lock ( this.hyperlinkManagerSync ) {
+				return this.hyperlinkManager ??= new TerminalHyperlinkManager( this );
+			}
 		}
 	}
+
+	internal ValueTask<IDisposable> ReserveScreenHyperlinkOutputAsync(
+		CancellationToken cancellationToken
+	) => this.HyperlinkManager.ReserveScreenOutputAsync( cancellationToken );
 
 	/// <summary>
 	/// Acquires one session-owned OSC 8 hyperlink scope.

@@ -44,7 +44,7 @@ Version 1.17 adds:
 
 ## Current implementation checkpoint
 
-The active 1.17 PR now contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition.
+The active 1.17 PR now contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition. T178 now also contains separate candidate-package witnesses for published stable `Icod.DCurses 1.6.0` compatibility and future Terminal-only screen rendering without direct TermInfo use.
 
 T178 remains the active tranche for cross-platform exact-head qualification, package/API/XML checks, downstream compatibility evidence, adversarial review, and documentation polish. T179 stable release closure remains a later explicit maintainer decision.
 
@@ -122,6 +122,8 @@ Independent primary and cleanup failures remain observable; no replay is attempt
 Qualify bounds, overflow, stale epochs, foreign plans/tokens, lifecycle invalidation, disposal races, concurrency, partial writes, cleanup failure, strict encodings, padding, and borrowed-output exclusions.
 
 Add fresh package-only consumers and stable DCurses 1.6 compatibility. Add a dedicated acceptance consumer proving that future DCurses rendering needs only new Terminal screen contracts.
+
+The package release shard runs these as two independent consumers across every supported target framework. This implementation evidence does not close the exact-head cross-platform matrix or T179 stable publication decision.
 
 ## T179 — Stable closure
 

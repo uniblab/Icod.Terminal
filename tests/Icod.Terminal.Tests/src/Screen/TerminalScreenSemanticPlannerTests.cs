@@ -197,8 +197,67 @@ public sealed class TerminalScreenSemanticPlannerTests {
 		Assert.Equal( Encoding.Latin1.GetBytes( "LLDDFFRR" ), output.Bytes );
 	}
 
+	[Theory]
+	[InlineData( 1_048_577, "<ich:1048577><sf:1048577><right:1048577>" )]
+	[InlineData( int.MaxValue, "<ich:2147483647><sf:2147483647><right:2147483647>" )]
+	public async Task LargeCountsSelectParameterizedPlansWithoutMaterializingLosingFallbacks(
+		int count,
+		string expected
+	) {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "parameterized-repetition" )
+			.SetString( StringCapability.InsertCharacters, "<ich:%p1%d>" )
+			.SetString( StringCapability.InsertCharacter, "i" )
+			.SetString( StringCapability.ScrollForwardLines, "<sf:%p1%d>" )
+			.SetString( StringCapability.ScrollForward, "F" )
+			.SetString( StringCapability.CursorRight, "<right:%p1%d>" )
+			.SetString( StringCapability.CursorRightOne, "r" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan character = session.Screen.PlanCharacterShift(
+			TerminalScreenCharacterShiftKind.Insert, count
+		) ?? throw new InvalidOperationException();
+		TerminalScreenOperationPlan line = session.Screen.PlanLineShift(
+			TerminalScreenLineShiftKind.ScrollForward, count, 5
+		) ?? throw new InvalidOperationException();
+		TerminalScreenOperationPlan cursor = session.Screen.PlanCursorMove(
+			new TerminalScreenPosition( 0, 0 ), new TerminalScreenPosition( 0, count )
+		) ?? throw new InvalidOperationException();
+		Assert.Empty( output.Bytes );
+
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.Add( character );
+		transaction.Add( line );
+		transaction.Add( cursor );
+		await transaction.CommitAsync();
+
+		Assert.Equal( expected.Length, character.ByteCount + line.ByteCount + cursor.ByteCount );
+		Assert.Equal( Encoding.Latin1.GetBytes( expected ), output.Bytes );
+	}
+
+	[Theory]
+	[InlineData( "i", 1_048_577 )]
+	[InlineData( "$<1>", 1_048_577 )]
+	[InlineData( "i", int.MaxValue )]
+	[InlineData( "$<1>", int.MaxValue )]
+	public async Task ExcessiveFallbackOnlyRepetitionReturnsNoPlan( string literal, int count ) {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "repetition-only" )
+			.SetString( StringCapability.InsertCharacter, literal )
+			.SetString( StringCapability.ScrollForward, literal )
+			.SetString( StringCapability.CursorRightOne, literal )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		Assert.Null( session.Screen.PlanCharacterShift( TerminalScreenCharacterShiftKind.Insert, count ) );
+		Assert.Null( session.Screen.PlanLineShift( TerminalScreenLineShiftKind.ScrollForward, count, 5 ) );
+		Assert.Null( session.Screen.PlanCursorMove( new TerminalScreenPosition( 0, 0 ), new TerminalScreenPosition( 0, count ) ) );
+		Assert.Empty( output.Bytes );
+	}
+
 	private static ValueTask<TerminalSession> OpenSessionAsync(
-		RecordingTerminalOutput output
+		RecordingTerminalOutput output,
+		TerminalDescription? terminalOverride = null
 	) {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "semantic-screen" )
 			.SetNumber( NumericCapability.Colors, 16 )
@@ -241,7 +300,7 @@ public sealed class TerminalScreenSemanticPlannerTests {
 			new TestTerminalInput(),
 			output,
 			new TerminalSessionOptions {
-				TerminalOverride = terminal,
+				TerminalOverride = terminalOverride ?? terminal,
 				ObserveLifecycleEvents = false
 			}
 		);

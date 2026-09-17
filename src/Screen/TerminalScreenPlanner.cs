@@ -24,6 +24,10 @@ using Icod.TermInfo;
 
 /// <summary>Creates side-effect-free semantic screen-operation plans for one terminal session.</summary>
 public sealed class TerminalScreenPlanner {
+	// Keep repeated sources within the padding parser's bounded input size.
+	// Oversized fallback-only operations are unavailable instead of allocating without limit.
+	private const int MaximumRepeatedSourceLength = 1_048_576;
+
 	private readonly TerminalDescription terminal;
 	private readonly TerminalColorSupport colorSupport;
 	private readonly TerminalTextAttributes reversibleAttributes;
@@ -444,10 +448,16 @@ public sealed class TerminalScreenPlanner {
 			affectedLines
 		);
 		string? literal = this.terminal.GetString( oneCapability );
-		if ( literal is not null ) {
+		if ( literal is not null
+			&& (long)literal.Length * count <= MaximumRepeatedSourceLength ) {
+			TerminalScreenOperationPlan single = this.Create( operationKind, literal, affectedLines );
+			long repeatedByteCount = (long)single.ByteCount * count;
+			if ( best.HasValue && repeatedByteCount >= best.Value.ByteCount ) {
+				return best;
+			}
 			TerminalScreenOperationPlan repeated = this.Create(
 				operationKind,
-				string.Concat( Enumerable.Repeat( literal, count ) ),
+				0 == literal.Length ? string.Empty : string.Concat( Enumerable.Repeat( literal, count ) ),
 				affectedLines
 			);
 			ChooseBetter( ref best, repeated );

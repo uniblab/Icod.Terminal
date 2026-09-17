@@ -120,6 +120,11 @@ public sealed class TerminalScreenOutputTransaction {
 	}
 
 	/// <summary>Commits this transaction exactly once under the owning session's output gate.</summary>
+	/// <remarks>
+	/// Hyperlink items and synchronized framing reject conflicting session-owned leases or
+	/// pending cleanup before any transaction output. Transactions without those frames
+	/// may emit within existing scopes without changing their ownership.
+	/// </remarks>
 	public async ValueTask CommitAsync(
 		CancellationToken cancellationToken = default
 	) {
@@ -129,6 +134,14 @@ public sealed class TerminalScreenOutputTransaction {
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ValidateRetainedItems();
 
+		// Manager gates precede the output gate everywhere. Reserve in hyperlink,
+		// synchronized-output, output order and retain reservations through cleanup.
+		using IDisposable? hyperlinkReservation = this.items.Any(
+			static item => OutputItemKind.Hyperlink == item.Kind
+		) ? await this.session.ReserveScreenHyperlinkOutputAsync( cancellationToken ).ConfigureAwait( false ) : null;
+		using IDisposable? synchronizedReservation = this.useSynchronizedOutput
+			? await this.session.SynchronizedOutputManager.ReserveScreenOutputAsync( cancellationToken ).ConfigureAwait( false )
+			: null;
 		using IDisposable outputLease = await this.session.AcquireScreenOutputAsync(
 			this.outputEpoch,
 			cancellationToken
