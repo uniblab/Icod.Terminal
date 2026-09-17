@@ -4,9 +4,9 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Prior completed line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
-- **Current stable candidate:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
-- **Development status:** T160–T169 complete; stable candidate qualified
+- **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
+- **Current development line:** `1.17.0-alpha.1` — Terminal-owned Screen Output Contracts
+- **Development status:** T170 architecture and implementation track opened
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -17,11 +17,11 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-The stable 1.16.0 candidate is accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
+`Icod.Terminal 1.16.0` was published from annotated tag `v1.16.0` at exact commit `5e28d48936ab1d65657d672feee13bc9ef4fe017` on 2026-09-17. The stable candidate was accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
 
 The candidate produced the stable `1.16.0` NuGet and symbol packages, retained identical public API snapshots across all target frameworks with fingerprint `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`, and passed cross-platform runtime/sample, package/API/XML, artifact, TermInfo integration, and stable `Icod.DCurses` downstream qualification.
 
-Merge, tag, GitHub Release, and package publication remain explicit maintainer/release-workflow actions.
+Version 1.17 development begins from that published stable baseline. Publication of later prerelease/stable artifacts remains an explicit maintainer action.
 
 ## Current architecture
 
@@ -68,7 +68,8 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.14.0`; In
 1.13.0  bounded immutable-parent relative placement ownership
 1.14.0  side-effect-free persistent-raster lifecycle observability
 1.15.0  Unicode placeholder and virtual raster placement
-1.16.0  persistent raster animation and frame lifecycle             STABLE CANDIDATE
+1.16.0  persistent raster animation and frame lifecycle             PUBLISHED
+1.17.0  Terminal-owned dimensions, screen planning, and transactions ACTIVE
 ```
 
 The final 1.15 public API fingerprint is:
@@ -180,6 +181,35 @@ Frame composition remains a strong candidate for a later focused release after t
 - [`docs/Architecture.md`](docs/Architecture.md)
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
+
+## 1.17 active development — Terminal-owned Screen Output Contracts
+
+Version 1.17 prepares the semantic and transactional Terminal boundary required for a later TermInfo-free DCurses 2.0 package.
+
+The governing rule is:
+
+> Terminal owns terminal dimensions, semantic terminal-profile interpretation, safe screen-operation planning, and serialized output commitment; higher layers own retained cells, layout, damage, and refresh policy.
+
+The tranche sequence is:
+
+```text
+T170  architecture, reference snapshot, API-regret gate, and development identity
+T171  Terminal-owned dimensions and lifecycle projections
+T172  immutable semantic TerminalProfile and screen-capability projection
+T173  cursor, ACS glyph, alert, and opaque operation-plan foundation
+T174  rendition normalization, color validation, transition, and reset planning
+T175  erase, character/line shift, scroll, region, padding, and cost planning
+T176  bounded session-bound transaction, output epoch, serialization, and framing
+T177  hyperlink/raster composition, commitment, cleanup, and failure aggregation
+T178  lifecycle/concurrency/security/downstream/package/API/XML hardening
+T179  stable 1.17 release closure
+```
+
+Authorities:
+
+- [`Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md)
+- [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
+- [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
 
 ## Later development candidates
 
