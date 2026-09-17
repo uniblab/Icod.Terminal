@@ -318,6 +318,58 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		);
 	}
 
+	internal ValueTask<TerminalControlMutationResult> SetAnimationFrameDurationAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		int gapMilliseconds,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( frame );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.SetPersistentRasterAnimationFrameDurationAsync(
+			this.State,
+			animation,
+			frame,
+			gapMilliseconds,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> SelectAnimationFrameAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( frame );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.SelectPersistentRasterAnimationFrameAsync(
+			this.State,
+			animation,
+			frame,
+			cancellationToken
+		);
+	}
+
 	/// <summary>
 	/// Releases this resource's local ownership, deletes its current placements, and then attempts
 	/// one terminal-side resource-data deletion while its terminal identity remains current.
