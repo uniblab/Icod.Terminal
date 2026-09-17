@@ -130,8 +130,14 @@ public sealed class TerminalRasterAnimation {
 		ValidateFrame( frame );
 		ValidateDuration( duration );
 		cancellationToken.ThrowIfCancellationRequested();
-		return ValueTask.FromResult(
-			TerminalControlMutationResult.Unsupported( NotImplementedMessage )
+		int gapMilliseconds = checked(
+			(int)( duration.Ticks / TimeSpan.TicksPerMillisecond )
+		);
+		return this.resource.SetAnimationFrameDurationAsync(
+			this,
+			frame,
+			gapMilliseconds,
+			cancellationToken
 		);
 	}
 
@@ -141,8 +147,10 @@ public sealed class TerminalRasterAnimation {
 	) {
 		ValidateFrame( frame );
 		cancellationToken.ThrowIfCancellationRequested();
-		return ValueTask.FromResult(
-			TerminalControlMutationResult.Unsupported( NotImplementedMessage )
+		return this.resource.SelectAnimationFrameAsync(
+			this,
+			frame,
+			cancellationToken
 		);
 	}
 
@@ -196,6 +204,7 @@ public sealed class TerminalRasterAnimation {
 				"The persistent-raster animation controller is already bound to different internal state."
 			);
 		}
+		this.RootFrame.BindState( state.RootFrame );
 	}
 
 	private void ValidateFrame(
