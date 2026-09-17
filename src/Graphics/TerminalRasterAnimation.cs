@@ -119,6 +119,13 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
+	/// <summary>
+	/// Assigns a positive, exact-millisecond display duration to one known frame.
+	/// </summary>
+	/// <param name="frame">The opaque frame token owned by this animation.</param>
+	/// <param name="duration">The positive whole-millisecond display duration.</param>
+	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>
+	/// <returns>The acknowledged semantic mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> SetFrameDurationAsync(
 		TerminalRasterAnimationFrame frame,
 		TimeSpan duration,
@@ -138,6 +145,12 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
+	/// <summary>
+	/// Selects one known frame as the animation's current terminal-resident frame.
+	/// </summary>
+	/// <param name="frame">The opaque frame token owned by this animation.</param>
+	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>
+	/// <returns>The acknowledged semantic mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> SelectFrameAsync(
 		TerminalRasterAnimationFrame frame,
 		CancellationToken cancellationToken = default
@@ -151,6 +164,11 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
+	/// <summary>
+	/// Stops terminal-driven playback without releasing the owning raster resource or known frames.
+	/// </summary>
+	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>
+	/// <returns>The acknowledged semantic mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> StopAsync(
 		CancellationToken cancellationToken = default
 	) {
@@ -161,6 +179,11 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
+	/// <summary>
+	/// Starts loading-mode playback, which waits at the known sequence tail for later frame appends.
+	/// </summary>
+	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>
+	/// <returns>The acknowledged semantic mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> RunLoadingAsync(
 		CancellationToken cancellationToken = default
 	) {
@@ -171,6 +194,14 @@ public sealed class TerminalRasterAnimation {
 		);
 	}
 
+	/// <summary>
+	/// Starts normal terminal-driven playback with finite or indefinite repeat policy.
+	/// </summary>
+	/// <param name="options">
+	/// Optional semantic playback policy. A <see langword="null"/> repeat count requests indefinite looping.
+	/// </param>
+	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>
+	/// <returns>The acknowledged semantic mutation result.</returns>
 	public ValueTask<TerminalControlMutationResult> RunAsync(
 		TerminalRasterAnimationPlaybackOptions? options = null,
 		CancellationToken cancellationToken = default
