@@ -2,9 +2,18 @@
 
 **Release:** `1.16.0`  
 **Theme:** Persistent Raster Animation and Frame Lifecycle  
-**Status:** architecture approved; planning artifacts in progress  
+**Status:** T160–T167 complete and accepted; T168 in progress  
 **Stable compatibility floor:** `1.0.0`  
 **Prior completed release line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
+
+## Latest accepted checkpoint
+
+T167 adversarial hardening is accepted at exact head `aed8a9b7e76616d31cfa4993a73738d9c23aae98`.
+
+- Workflow #1940 / run `35195686985` completed successfully across the full nine-job PR matrix.
+- Hardening exposed and corrected stale animation-capacity reclamation after direct resource release or invalidation.
+- Fixed-count tests now qualify bounded capacity reuse, sequence-uncertain monotonicity, storage-pressure rollback, known-token control after ambiguity, concurrent state/append/control behavior, output serialization, loading-mode append churn, and lifecycle races.
+- T168 now owns the executable sample plus package/API/XML/downstream/security/documentation qualification.
 
 ## Release objective
 
