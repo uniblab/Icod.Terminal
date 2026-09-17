@@ -2,7 +2,7 @@
 
 **Release:** `1.17.0`  
 **Theme:** Terminal-owned Dimensions, Semantic Screen Planning, and Session-bound Output Transactions  
-**Status:** T170 architecture and implementation track opened  
+**Status:** T170-T177 implemented; T178 qualification in progress  
 **Development identity:** `1.17.0-alpha.1`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior published release:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
@@ -41,6 +41,12 @@ Version 1.17 adds:
 - output-epoch validation against intervening session-owned activity;
 - adversarial cancellation, transport, cleanup, ownership, lifecycle, and concurrency hardening;
 - package-only and downstream DCurses qualification.
+
+## Current implementation checkpoint
+
+The active 1.17 PR now contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition.
+
+T178 remains the active tranche for cross-platform exact-head qualification, package/API/XML checks, downstream compatibility evidence, adversarial review, and documentation polish. T179 stable release closure remains a later explicit maintainer decision.
 
 ## Tranche sequence
 

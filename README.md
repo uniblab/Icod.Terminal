@@ -11,6 +11,8 @@
 
 Current release line: `Icod.Terminal 1.16.0`.
 
+Active development line: `Icod.Terminal 1.17.0-alpha.1`, adding Terminal-owned dimensions, a semantic terminal profile and screen planner, and bounded session-bound output transactions as the Terminal-side prerequisite for removing `Icod.DCurses`' direct `Icod.TermInfo` dependency.
+
 Version `1.16.0` adds resource-owned persistent-raster animation with opaque root and appended full-size frame tokens, positive per-frame timing, explicit selection, loading-mode streaming, finite/indefinite terminal-driven playback, independent sequence-certainty observation, and resource-owned cleanup.
 
 The stable `1.0.0` compatibility floor remains unchanged. Version 1.16 retains the complete 1.15 virtual-placeholder, 1.14 lifecycle-observation, 1.13 relative-placement, 1.12 crop/z-order, and earlier persistent-raster contracts. The final 1.16 public API fingerprint is `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`.
@@ -98,6 +100,8 @@ The root README describes the current product by capability rather than by the r
 - **Typed terminal queries** — bounded cursor, status, style, color, clipboard, notification, pointer, and related observations integrated with the same input/query authority.
 - **Semantic capability planning** — side-effect-free `InspectCapability(...)`, explicit bounded `VerifyCapabilityAsync(...)`, separate support/evidence/endpoint-availability state, and no terminal-brand heuristics as capability truth.
 - **Semantic terminal output** — application text, titles, current location, hyperlinks, clipboard operations, notifications, cursor style, synchronized output, progress, pointer shape, prompt/shell metadata, and terminal color operations.
+- **Semantic screen planning** — Terminal-owned dimensions/profile facts plus opaque costed cursor, rendition, ACS, erase, shift, scroll, and region plans; retained-screen comparison and layout remain caller-owned.
+- **Session-bound screen transactions** — bounded ordered composition of screen plans, application text, strict hyperlinks, and raster-placeholder cells under one output gate and flush boundary, with optional synchronized framing.
 - **Reversible presentation state** — scoped ownership for terminal features whose prior state can be observed truthfully and restored deterministically.
 - **Backend-neutral ephemeral raster display** — bounded `TerminalRasterImage` data with verified Sixel and Kitty Graphics routing behind one semantic `DisplayRasterAsync(...)` surface.
 - **Persistent raster ownership** — opaque terminal-resident resources and placements; source-pixel cropping; signed z-order; immutable-parent relative placement; generation-scoped ownership; deterministic descendant-first cleanup; no hidden raster replay.
@@ -181,6 +185,7 @@ The [`samples`](samples/README.md) directory contains focused examples for sessi
 Recommended documentation entry points:
 
 - [`docs/releases/1.16.0.md`](docs/releases/1.16.0.md) — curated 1.16 release notes;
+- [`docs/releases/1.17.0-alpha.1.md`](docs/releases/1.17.0-alpha.1.md) — active 1.17 development notes;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
@@ -193,6 +198,7 @@ Recommended documentation entry points:
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
 - [`docs/Public-API-Baseline-1.16.md`](docs/Public-API-Baseline-1.16.md) — final 1.16 API additions and fingerprint;
+- [`docs/Public-API-Baseline-1.17.md`](docs/Public-API-Baseline-1.17.md) — active 1.17 API additions and fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.

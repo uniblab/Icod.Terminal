@@ -37,6 +37,8 @@ but it is not part of the Icod.Terminal runtime dependency chain.
 - semantic capability evidence, side-effect-free inspection, and bounded explicit verification;
 - bounded incremental control-language parsing;
 - semantic terminal-output operations;
+- Terminal-owned dimensions, semantic profile facts, and side-effect-free opaque screen-operation planning;
+- bounded session-bound screen-output transactions and serialized-output epoch validation;
 - reversible presentation/input/color ownership;
 - backend-neutral ephemeral raster output;
 - persistent terminal-resident raster resource and physical-placement ownership;
@@ -60,6 +62,16 @@ Applications normally use `TerminalSession` for normalized input/events, typed q
 These APIs participate in session ordering, validation, resource bounds, capability evidence, lifecycle, and cleanup semantics.
 
 Placeholder cells remain current-cursor text output. Terminal owns their protocol-private identity and encoding; applications and higher-level renderers own cursor movement, screen coordinates, clipping, scrolling, damage, and redraw order.
+
+### 2.1.1 Semantic screen planning and commitment
+
+`TerminalSession.Profile` and `TerminalSession.Screen` project the selected terminal description into Terminal-owned semantic facts and opaque operation plans. TermInfo remains the private capability-data, expansion, color, and padding authority. New screen signatures do not expose TermInfo types, raw capability identifiers, or terminal strings.
+
+Planning is side-effect free. A plan identifies its semantic operation, resolved terminal-byte cost, and padding-sensitive affected-line count. A higher layer may compare independently safe plans against its own retained-screen state; Terminal does not decide which cells changed or whether rewriting is preferable.
+
+`CreateScreenOutputTransaction(...)` captures the session serialized-output epoch and composes plans, application text, strict hyperlinks, and current raster-placeholder cells. Commit rejects stale work before output, holds the existing output gate, optionally emits synchronized-output framing, attempts required cleanup after commitment, and flushes before release.
+
+This contract does not transfer cells, windows, pads, layout, clipping, Unicode display width, damage, desired-versus-physical comparison, or repaint policy into Terminal.
 
 ### 2.2 Advanced transport/provider API
 

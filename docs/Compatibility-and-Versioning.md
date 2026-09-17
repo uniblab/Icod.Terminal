@@ -37,11 +37,14 @@ Relevant fingerprints include:
 1.14  2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 1.15  eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 1.16  d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
+1.17  c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9 (alpha development)
 ```
 
 Version 1.11.1 intentionally retained the 1.11 fingerprint because it added no production public API.
 
 The final 1.16 fingerprint is enforced across `net8.0`, `net9.0`, and `net10.0`; all historical fingerprints remain immutable.
+
+The 1.17 development fingerprint is likewise identical across all three target frameworks. It remains an alpha authority until stable release closure.
 
 ## 4. Additive persistent-raster progression
 
@@ -117,6 +120,12 @@ The resource's original image is the root frame. Full-size acknowledged addition
 The controller is resource owned and not independently disposable. Animation sequence certainty is separate from resource ownership: an ambiguous committed append can make the animation `SequenceUncertain` while the resource remains current.
 
 The session-wide animation registry is bounded to 4096 known frames including roots, with one pending append per animation. No source-frame replay cache, partial-frame update, composition, or decoder dependency is added.
+
+### 4.6 1.17 semantic screen output
+
+Version 1.17 additively introduces Terminal-owned dimensions, an immutable semantic profile, TermInfo-free screen values, opaque costed operation plans, and bounded session-bound output transactions.
+
+Existing `GetSize()`, `TerminalLifecycleEvent.Size`, `TerminalSession.Terminal`, low-level terminal-string output, and other 1.x APIs remain available. The new APIs do not move retained cells, layout, Unicode-width policy, damage, refresh comparison, or repaint ownership into Terminal.
 
 ## 5. Persistent-raster compatibility guarantees
 

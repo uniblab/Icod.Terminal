@@ -2,6 +2,21 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.17.0-alpha.1
+
+### Terminal-owned screen planning and commitment
+
+- Adds Terminal-owned positive dimensions, an immutable semantic terminal profile, and screen capabilities without removing the existing 1.x TermInfo-bearing compatibility APIs.
+- Adds protocol-neutral positions, colors, rendition, ACS line glyphs, alerts, erases, shifts, scrolling, and scroll-region vocabulary.
+- Adds a session-bound side-effect-free planner whose opaque plans report encoded byte cost and affected-line count without exposing capability ids or terminal strings.
+- Adds safe rendition normalization and transition planning, including indexed/direct color validation, reversible attributes, and no-color-video restrictions.
+- Adds a bounded, single-use screen-output transaction for same-session plans, application text, strict hyperlinks, and current raster-placeholder cells.
+- Adds serialized-output epoch validation, optional synchronized-output framing, pre-commit cancellation, non-cancellable committed cleanup, one final flush, and independent failure visibility.
+- Keeps cells, windows, layout, clipping, Unicode width, damage, desired-versus-physical comparison, and repaint policy above Terminal.
+- Freezes the current alpha API fingerprint as `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across all three target frameworks.
+
+See `docs/releases/1.17.0-alpha.1.md`, `docs/Public-API-Baseline-1.17.md`, and `Icod.Terminal-1.17.0-Development-Roadmap.md` for the development contract.
+
 ## 1.16.0
 
 ### Persistent raster animation and frame lifecycle

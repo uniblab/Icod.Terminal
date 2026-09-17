@@ -108,6 +108,10 @@ Examples include:
 
 These operations participate in the session's appropriate output serialization/ownership rules.
 
+For retained-screen renderers, `CreateScreenOutputTransaction(...)` provides a bounded single-use serialization boundary. A transaction captures the current session-output epoch, accepts only plans and raster tokens belonging to that session, and rejects intervening session-owned output before commitment. Optional synchronized framing, hyperlink close frames, and final flush are emitted while the same output gate remains held.
+
+Caller cancellation is observed before commitment. After commitment begins, ordinary cancellation does not intentionally truncate the logical transaction or required cleanup. A committed failure is surfaced without replay; the renderer remains responsible for invalidating its physical-screen certainty and repainting as appropriate.
+
 `TerminalSession.Output` remains public as an **advanced borrowed transport escape hatch**. It is intentionally different from the input side.
 
 Direct operations on `session.Output`:
@@ -117,6 +121,7 @@ Direct operations on `session.Output`:
 - are not automatically serialized with query request traffic;
 - are not automatically serialized with lifecycle/presentation/input-protocol control output;
 - can therefore interleave with session-managed output if the caller uses them concurrently.
+- are outside the screen transaction's serialized-output epoch guarantee.
 
 The caller is responsible for such direct transport use. Ordinary application code should prefer session-managed operations.
 

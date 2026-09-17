@@ -242,26 +242,70 @@ public sealed class TerminalScreenContractsTests {
 		Assert.Equal( Encoding.UTF8.GetBytes( "once" ), output.Bytes );
 	}
 
+	[Fact]
+	public void NewSemanticScreenContractsExposeNoTermInfoTypes() {
+		Type[] contractRoots = typeof( TerminalSession ).Assembly
+			.GetExportedTypes()
+			.Where(
+				static type => type.Name.StartsWith(
+					"TerminalScreen",
+					StringComparison.Ordinal
+				) || type == typeof( TerminalDimensions )
+					|| type == typeof( TerminalProfile )
+					|| type == typeof( TerminalLineGlyph )
+					|| type == typeof( TerminalLineGlyphRepresentation )
+					|| type == typeof( TerminalAlertKind )
+					|| type == typeof( TerminalTextAttributes )
+			)
+			.ToArray();
+
+		foreach ( Type root in contractRoots ) {
+			Assert.DoesNotContain(
+				GetPublicContractTypes( root ),
+				static type => string.Equals(
+					type.Namespace,
+					"Icod.TermInfo",
+					StringComparison.Ordinal
+				)
+			);
+		}
+	}
+
 	private static IReadOnlyCollection<Type> GetPublicContractTypes(
 		Type root
 	) {
 		ArgumentNullException.ThrowIfNull( root );
-		HashSet<Type> result = [];
+		HashSet<Type> result = [ root ];
 		foreach ( ConstructorInfo constructor in root.GetConstructors() ) {
 			foreach ( ParameterInfo parameter in constructor.GetParameters() ) {
-				result.Add( parameter.ParameterType );
+				AddTypeClosure( result, parameter.ParameterType );
 			}
 		}
 		foreach ( PropertyInfo property in root.GetProperties() ) {
-			result.Add( property.PropertyType );
+			AddTypeClosure( result, property.PropertyType );
 		}
 		foreach ( MethodInfo method in root.GetMethods() ) {
-			result.Add( method.ReturnType );
+			AddTypeClosure( result, method.ReturnType );
 			foreach ( ParameterInfo parameter in method.GetParameters() ) {
-				result.Add( parameter.ParameterType );
+				AddTypeClosure( result, parameter.ParameterType );
 			}
 		}
 		return result;
+	}
+
+	private static void AddTypeClosure(
+		HashSet<Type> result,
+		Type type
+	) {
+		if ( !result.Add( type ) ) {
+			return;
+		}
+		if ( type.HasElementType && type.GetElementType() is Type element ) {
+			AddTypeClosure( result, element );
+		}
+		foreach ( Type argument in type.GetGenericArguments() ) {
+			AddTypeClosure( result, argument );
+		}
 	}
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(

@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
 - **Current development line:** `1.17.0-alpha.1` — Terminal-owned Screen Output Contracts
-- **Development status:** T170 architecture and implementation track opened
+- **Development status:** T170-T177 implemented on the active PR; T178 qualification in progress
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
