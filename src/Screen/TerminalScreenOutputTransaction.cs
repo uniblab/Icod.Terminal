@@ -162,6 +162,17 @@ public sealed class TerminalScreenOutputTransaction {
 			}
 
 			for ( int index = 0; index < this.items.Count; ++index ) {
+				if ( OutputItemKind.Hyperlink == this.items[ index ].Kind ) {
+					int failureCount = failures.Count;
+					await this.WriteHyperlinkItemAsync(
+						this.items[ index ],
+						failures
+					).ConfigureAwait( false );
+					if ( failureCount != failures.Count ) {
+						break;
+					}
+					continue;
+				}
 				await this.WriteItemAsync(
 					this.items[ index ],
 					rasterStates[ index ]
@@ -213,10 +224,6 @@ public sealed class TerminalScreenOutputTransaction {
 				).ConfigureAwait( false );
 				break;
 
-			case OutputItemKind.Hyperlink:
-				await this.WriteHyperlinkItemAsync( item ).ConfigureAwait( false );
-				break;
-
 			case OutputItemKind.RasterCells:
 				TerminalRasterPlaceholderCell[] cells = item.RasterCells!;
 				if ( rasterStates is null || rasterStates.Length != cells.Length ) {
@@ -243,9 +250,10 @@ public sealed class TerminalScreenOutputTransaction {
 	}
 
 	private async ValueTask WriteHyperlinkItemAsync(
-		OutputItem item
+		OutputItem item,
+		List<Exception> failures
 	) {
-		List<Exception> failures = [];
+		ArgumentNullException.ThrowIfNull( failures );
 		bool cleanupRequired = false;
 		try {
 			cleanupRequired = true;
@@ -271,7 +279,6 @@ public sealed class TerminalScreenOutputTransaction {
 				failures.Add( exception );
 			}
 		}
-		ThrowFailures( failures );
 	}
 
 	private void ValidateRetainedItems() {
@@ -311,10 +318,10 @@ public sealed class TerminalScreenOutputTransaction {
 	private void AddPayloadBytes(
 		int byteCount
 	) {
-		this.payloadByteCount = checked( this.payloadByteCount + byteCount );
-		if ( MaximumPayloadByteCount < this.payloadByteCount ) {
+		if ( MaximumPayloadByteCount - this.payloadByteCount < byteCount ) {
 			throw new InvalidOperationException( "The screen-output transaction exceeds its application-payload limit." );
 		}
+		this.payloadByteCount += byteCount;
 	}
 
 	private void AddItem(
@@ -341,6 +348,7 @@ public sealed class TerminalScreenOutputTransaction {
 		if ( 0 != Volatile.Read( ref this.commitStarted ) ) {
 			throw new InvalidOperationException( "A screen-output transaction cannot be changed after commit begins." );
 		}
+		this.session.ThrowIfSessionOutputClosed();
 	}
 
 	private static void ThrowFailures(

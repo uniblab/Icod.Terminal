@@ -78,7 +78,7 @@ public sealed class TerminalScreenContractsTests {
 
 		Assert.NotNull( plan );
 		Assert.Equal( TerminalScreenOperationKind.CursorMove, plan.Value.Kind );
-		Assert.Equal( Encoding.Latin1.GetByteCount( "<cr>" ), plan.Value.ByteCount );
+		Assert.Equal( 4, plan.Value.ByteCount );
 		Assert.Empty( output.Bytes );
 	}
 

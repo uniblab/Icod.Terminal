@@ -503,7 +503,7 @@ public sealed class TerminalScreenPlanner {
 				);
 				int packed = this.colorSupport.RgbLayout.Value.Pack( rgb );
 				return packed >= this.colorSupport.ColorCount.Value
-					|| ( 0 < packed && packed < this.colorSupport.IndexedColorCount )
+					|| packed < this.colorSupport.IndexedColorCount
 					? TerminalScreenColor.Default
 					: requested;
 
