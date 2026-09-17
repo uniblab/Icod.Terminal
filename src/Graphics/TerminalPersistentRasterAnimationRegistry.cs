@@ -74,6 +74,7 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 			}
 
 			animation = new TerminalPersistentRasterAnimationState( resource );
+			resource.BindAnimationState( animation );
 			this.animations.Add(
 				resource,
 				animation
