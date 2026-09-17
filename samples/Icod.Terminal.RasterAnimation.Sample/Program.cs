@@ -1,6 +1,6 @@
 /*
 	Icod.Terminal.RasterAnimation.Sample
-	Sample application demonstrating Icod.Terminal persistent-raster animation.
+	Sample application demonstrating Icod.Terminal RasterAnimation features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
