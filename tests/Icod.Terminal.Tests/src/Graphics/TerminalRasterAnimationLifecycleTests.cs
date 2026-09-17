@@ -364,6 +364,7 @@ public sealed class TerminalRasterAnimationLifecycleTests {
 						static value => value.ToArray()
 					).ToArray();
 				}
+			}
 		}
 
 		public async ValueTask<int> ReadAsync(
