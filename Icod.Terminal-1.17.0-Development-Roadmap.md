@@ -2,7 +2,7 @@
 
 **Release:** `1.17.0`  
 **Theme:** Terminal-owned Dimensions, Semantic Screen Planning, and Session-bound Output Transactions  
-**Status:** T170-T177 implemented; T178 qualification in progress  
+**Status:** T170-T178 implemented and qualified; T179 stable closure open
 **Development identity:** `1.17.0-alpha.1`  
 **Stable compatibility floor:** `1.0.0`  
 **Prior published release:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
@@ -44,9 +44,9 @@ Version 1.17 adds:
 
 ## Current implementation checkpoint
 
-The active 1.17 PR now contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition. T178 now also contains separate candidate-package witnesses for published stable `Icod.DCurses 1.6.0` compatibility and future Terminal-only screen rendering without direct TermInfo use.
+The active 1.17 PR contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition. T178 adds separate candidate-package witnesses for published stable `Icod.DCurses 1.6.0` compatibility and future Terminal-only screen rendering without direct TermInfo use.
 
-T178 remains the active tranche for cross-platform exact-head qualification, package/API/XML checks, downstream compatibility evidence, adversarial review, and documentation polish. T179 stable release closure remains a later explicit maintainer decision.
+T178 hardening head `30c25118ab8f5cb4b40587d3086e984b3ba5832c` passed pull-request workflow #1979 / run `35286375813` across all nine Windows, Linux, macOS, package, downstream, API/XML, and artifact jobs. Independent aggregate review found no remaining Critical or Important issue. T179 stable release closure, merge, tagging, and publication remain later explicit maintainer decisions.
 
 ## Tranche sequence
 
@@ -123,7 +123,7 @@ Qualify bounds, overflow, stale epochs, foreign plans/tokens, lifecycle invalida
 
 Add fresh package-only consumers and stable DCurses 1.6 compatibility. Add a dedicated acceptance consumer proving that future DCurses rendering needs only new Terminal screen contracts.
 
-The package release shard runs these as two independent consumers across every supported target framework. This implementation evidence does not close the exact-head cross-platform matrix or T179 stable publication decision.
+The package release shard runs these as two independent consumers across every supported target framework. Pull-request workflow #1979 / run `35286375813` qualified the T178 hardening head across the complete nine-job matrix. This closes T178 qualification but does not close the T179 stable publication decision.
 
 ## T179 — Stable closure
 

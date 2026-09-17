@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
 - **Current development line:** `1.17.0-alpha.1` — Terminal-owned Screen Output Contracts
-- **Development status:** T170-T177 implemented on the active PR; T178 qualification in progress
+- **Development status:** T170-T178 implemented and qualified on the active PR; T179 stable closure open
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -16,6 +16,10 @@ This file is the concise entry point for current `Icod.Terminal` development and
 The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
 
 ## Latest accepted checkpoint
+
+The 1.17 T178 alpha hardening checkpoint is accepted at exact head `30c25118ab8f5cb4b40587d3086e984b3ba5832c`, pull-request workflow #1979 / run `35286375813`, with all nine jobs successful. The checkpoint passed Windows, Linux, and macOS runtime tests; package/API/XML/license and artifact validation; TermInfo integration; published `Icod.DCurses 1.6.0` compatibility; and the future Terminal-only screen-contract consumer. The frozen public API fingerprint remains `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across `net8.0`, `net9.0`, and `net10.0`.
+
+T179 stable closure, merge, tagging, release creation, and package publication remain explicit maintainer decisions.
 
 `Icod.Terminal 1.16.0` was published from annotated tag `v1.16.0` at exact commit `5e28d48936ab1d65657d672feee13bc9ef4fe017` on 2026-09-17. The stable candidate was accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
 
