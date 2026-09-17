@@ -28,9 +28,6 @@ namespace Icod.Terminal;
 /// The owning <see cref="TerminalRasterResource"/> remains final cleanup authority.
 /// </remarks>
 public sealed class TerminalRasterAnimation {
-	private const string NotImplementedMessage =
-		"Persistent-raster animation control is not implemented by this development checkpoint.";
-
 	private readonly TerminalRasterResource resource;
 	private TerminalPersistentRasterAnimationState? animationState;
 
@@ -158,8 +155,9 @@ public sealed class TerminalRasterAnimation {
 		CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
-		return ValueTask.FromResult(
-			TerminalControlMutationResult.Unsupported( NotImplementedMessage )
+		return this.resource.StopAnimationAsync(
+			this,
+			cancellationToken
 		);
 	}
 
@@ -167,8 +165,9 @@ public sealed class TerminalRasterAnimation {
 		CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
-		return ValueTask.FromResult(
-			TerminalControlMutationResult.Unsupported( NotImplementedMessage )
+		return this.resource.RunLoadingAnimationAsync(
+			this,
+			cancellationToken
 		);
 	}
 
@@ -178,8 +177,10 @@ public sealed class TerminalRasterAnimation {
 	) {
 		ValidatePlaybackOptions( options );
 		cancellationToken.ThrowIfCancellationRequested();
-		return ValueTask.FromResult(
-			TerminalControlMutationResult.Unsupported( NotImplementedMessage )
+		return this.resource.RunAnimationAsync(
+			this,
+			options?.RepeatCount,
+			cancellationToken
 		);
 	}
 
