@@ -139,6 +139,109 @@ public sealed class TerminalScreenContractsTests {
 		);
 	}
 
+	[Fact]
+	public async Task SynchronizedTransactionFramesBodyAndFlushesOnce() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction(
+				new TerminalScreenOutputTransactionOptions {
+					UseSynchronizedOutput = true
+				}
+			);
+		transaction.WriteText( "body" );
+
+		await transaction.CommitAsync();
+
+		Assert.Equal(
+			[
+				.. CsiWriter.EncodeSynchronizedOutputBeginFrame(),
+				.. Encoding.UTF8.GetBytes( "body" ),
+				.. CsiWriter.EncodeSynchronizedOutputEndFrame()
+			],
+			output.Bytes
+		);
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task TransactionComposesStrictHyperlinkTextInCallerOrder() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+		transaction.WriteText( "before" );
+		transaction.WriteHyperlink(
+			"link",
+			"https://example.com/target",
+			"screen-1"
+		);
+		transaction.WriteText( "after" );
+
+		await transaction.CommitAsync();
+
+		Assert.Equal(
+			[
+				.. Encoding.UTF8.GetBytes( "before" ),
+				.. OscWriter.EncodeHyperlinkBeginFrame(
+					"https://example.com/target",
+					"screen-1"
+				),
+				.. Encoding.UTF8.GetBytes( "link" ),
+				.. OscWriter.EncodeHyperlinkEndFrame(),
+				.. Encoding.UTF8.GetBytes( "after" )
+			],
+			output.Bytes
+		);
+	}
+
+	[Fact]
+	public async Task HyperlinkPrimaryFailureAttemptsNonCancellableClose() {
+		RecordingTerminalOutput output = new() {
+			FailOnWriteNumber = 2
+		};
+		await using TerminalSession session = await OpenSessionAsync( output );
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+		transaction.WriteHyperlink( "link", "https://example.com/" );
+
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => transaction.CommitAsync().AsTask()
+		);
+
+		Assert.Equal( 3, output.WriteAttempts.Count );
+		Assert.Equal(
+			OscWriter.EncodeHyperlinkEndFrame(),
+			output.WriteAttempts[ 2 ]
+		);
+		Assert.False( output.WriteCancellationCanBeCanceled[ 2 ] );
+	}
+
+	[Fact]
+	public async Task PreCommitCancellationAndSecondCommitEmitNoAdditionalBytes() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+		TerminalScreenOutputTransaction cancelled =
+			session.CreateScreenOutputTransaction();
+		cancelled.WriteText( "cancelled" );
+		using CancellationTokenSource cancellation = new();
+		cancellation.Cancel();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => cancelled.CommitAsync( cancellation.Token ).AsTask()
+		);
+		Assert.Empty( output.Bytes );
+
+		TerminalScreenOutputTransaction committed =
+			session.CreateScreenOutputTransaction();
+		committed.WriteText( "once" );
+		await committed.CommitAsync();
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => committed.CommitAsync().AsTask()
+		);
+		Assert.Equal( Encoding.UTF8.GetBytes( "once" ), output.Bytes );
+	}
+
 	private static IReadOnlyCollection<Type> GetPublicContractTypes(
 		Type root
 	) {
@@ -209,11 +312,29 @@ public sealed class TerminalScreenContractsTests {
 			private set;
 		}
 
+		internal int? FailOnWriteNumber {
+			get;
+			init;
+		}
+
+		internal List<byte[]> WriteAttempts {
+			get;
+		} = [];
+
+		internal List<bool> WriteCancellationCanBeCanceled {
+			get;
+		} = [];
+
 		public ValueTask WriteAsync(
 			ReadOnlyMemory<byte> buffer,
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			this.WriteAttempts.Add( buffer.ToArray() );
+			this.WriteCancellationCanBeCanceled.Add( cancellationToken.CanBeCanceled );
+			if ( this.FailOnWriteNumber == this.WriteAttempts.Count ) {
+				throw new InvalidOperationException( "Injected output failure." );
+			}
 			this.Bytes.AddRange( buffer.ToArray() );
 			return ValueTask.CompletedTask;
 		}

@@ -309,7 +309,7 @@ public sealed partial class TerminalSession {
 		}
 	}
 
-	private void ValidateRasterPlaceholderCellsForOutput(
+	internal void ValidateRasterPlaceholderCellsForOutput(
 		ReadOnlyMemory<TerminalRasterPlaceholderCell> cells,
 		string parameterName
 	) {
@@ -322,7 +322,7 @@ public sealed partial class TerminalSession {
 		}
 	}
 
-	private TerminalPersistentRasterPlaceholderState ValidateRasterPlaceholderCellForOutput(
+	internal TerminalPersistentRasterPlaceholderState ValidateRasterPlaceholderCellForOutput(
 		TerminalRasterPlaceholderCell cell,
 		string parameterName
 	) {

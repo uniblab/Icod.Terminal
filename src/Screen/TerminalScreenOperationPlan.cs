@@ -26,18 +26,23 @@ public readonly record struct TerminalScreenOperationPlan {
 		TerminalScreenPlanner owner,
 		TerminalScreenOperationKind kind,
 		IReadOnlyList<TerminalScreenOutputSegment> segments,
-		int byteCount
+		int byteCount,
+		int affectedLines
 	) {
 		ArgumentNullException.ThrowIfNull( owner );
 		ArgumentNullException.ThrowIfNull( segments );
 		if ( 0 > byteCount ) {
 			throw new ArgumentOutOfRangeException( nameof( byteCount ) );
 		}
+		if ( 0 >= affectedLines ) {
+			throw new ArgumentOutOfRangeException( nameof( affectedLines ) );
+		}
 
 		this.Owner = owner;
 		this.Kind = kind;
 		this.Segments = segments;
 		this.ByteCount = byteCount;
+		this.AffectedLines = affectedLines;
 	}
 
 	/// <summary>Gets the semantic purpose of this plan.</summary>
@@ -47,6 +52,11 @@ public readonly record struct TerminalScreenOperationPlan {
 
 	/// <summary>Gets the resolved terminal-byte cost after capability expansion.</summary>
 	public int ByteCount {
+		get;
+	}
+
+	/// <summary>Gets the number of terminal lines affected by padding-sensitive emission.</summary>
+	public int AffectedLines {
 		get;
 	}
 

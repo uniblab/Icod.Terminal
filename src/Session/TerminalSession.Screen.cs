@@ -49,10 +49,13 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>Creates one bounded single-use screen-output transaction.</summary>
-	public TerminalScreenOutputTransaction CreateScreenOutputTransaction() {
+	public TerminalScreenOutputTransaction CreateScreenOutputTransaction(
+		TerminalScreenOutputTransactionOptions? options = null
+	) {
 		return new TerminalScreenOutputTransaction(
 			this,
-			this.CaptureSessionOutputEpoch()
+			this.CaptureSessionOutputEpoch(),
+			options ?? new TerminalScreenOutputTransactionOptions()
 		);
 	}
 }

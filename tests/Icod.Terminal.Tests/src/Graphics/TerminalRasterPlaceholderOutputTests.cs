@@ -31,6 +31,36 @@ using Xunit;
 /// </summary>
 public sealed class TerminalRasterPlaceholderOutputTests {
 	[Fact]
+	public async Task ScreenTransactionComposesCurrentRasterPlaceholderCell() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		TerminalRasterPlaceholder placeholder = await CreatePlaceholderAsync(
+			session,
+			transport,
+			imageId: 0x0200002Au,
+			columns: 2,
+			rows: 2
+		);
+		TerminalRasterPlaceholderCell cell = placeholder.GetCell( 1, 0 );
+		int baselineWrites = transport.Writes.Count;
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+		transaction.WriteRasterPlaceholderCell( cell );
+
+		await transaction.CommitAsync();
+
+		Assert.Equal( baselineWrites + 1, transport.Writes.Count );
+		Assert.Equal(
+			KittyGraphicsPlaceholderCellEncoder.Encode(
+				placeholder.State,
+				row: 1,
+				column: 0
+			).ToArray(),
+			transport.Writes[ baselineWrites ]
+		);
+	}
+
+	[Fact]
 	public async Task SingleCellWritesExactCurrentCursorBytesWithoutQueryRoundTrip() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );

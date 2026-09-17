@@ -25,6 +25,15 @@ using Icod.TermInfo;
 
 /// <summary>Provides an immutable Terminal-owned semantic view of the selected terminal profile.</summary>
 public sealed class TerminalProfile {
+	private const int NoColorVideoStandout = 1;
+	private const int NoColorVideoUnderline = 2;
+	private const int NoColorVideoReverse = 4;
+	private const int NoColorVideoBlink = 8;
+	private const int NoColorVideoDim = 16;
+	private const int NoColorVideoBold = 32;
+	private const int NoColorVideoInvisible = 64;
+	private const int NoColorVideoItalic = 32768;
+
 	private TerminalProfile(
 		string name,
 		string? description,
@@ -61,6 +70,8 @@ public sealed class TerminalProfile {
 		TerminalDescription terminal
 	) {
 		ArgumentNullException.ThrowIfNull( terminal );
+		TerminalColorSupport colors = TerminalColors.GetColorSupport( terminal );
+		TerminalTextAttributes supportedAttributes = GetSupportedAttributes( terminal );
 		bool alternateCharacterSet =
 			null != terminal.GetString( StringCapability.AlternateCharacterSet )
 			&& null != terminal.GetString( StringCapability.EnterAlternateCharacterSetMode )
@@ -71,10 +82,89 @@ public sealed class TerminalProfile {
 			terminal.Description,
 			new ReadOnlyCollection<string>( terminal.Aliases.ToArray() ),
 			new TerminalScreenCapabilities(
+				colors.IndexedColorCount,
+				TerminalColorModel.DirectRgb == colors.Model,
+				colors.HasForegroundSelector,
+				colors.HasBackgroundSelector,
+				colors.HasOriginalColorPair,
+				supportedAttributes,
+				TranslateNoColorVideoMask( colors.NoColorVideoMask )
+					& supportedAttributes,
 				null != terminal.GetString( StringCapability.CursorAddress ),
-				null != terminal.GetString( StringCapability.EnterBoldMode ),
-				alternateCharacterSet
+				alternateCharacterSet,
+				null != terminal.GetString( StringCapability.CursorInvisible ),
+				null != terminal.GetString( StringCapability.CursorNormal ),
+				null != terminal.GetString( StringCapability.CursorVeryVisible )
 			)
 		);
+	}
+
+	private static TerminalTextAttributes GetSupportedAttributes(
+		TerminalDescription terminal
+	) {
+		TerminalTextAttributes result = TerminalTextAttributes.None;
+		if ( null != terminal.GetString( StringCapability.EnterBoldMode ) ) {
+			result |= TerminalTextAttributes.Bold;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterDimMode ) ) {
+			result |= TerminalTextAttributes.Dim;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterUnderlineMode ) ) {
+			result |= TerminalTextAttributes.Underline;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterReverseMode ) ) {
+			result |= TerminalTextAttributes.Reverse;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterStandoutMode ) ) {
+			result |= TerminalTextAttributes.Standout;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterItalicMode ) ) {
+			result |= TerminalTextAttributes.Italic;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterBlinkMode ) ) {
+			result |= TerminalTextAttributes.Blink;
+		}
+		if ( null != terminal.GetString( StringCapability.EnterInvisibleMode ) ) {
+			result |= TerminalTextAttributes.Conceal;
+		}
+		if ( terminal.TryGetExtendedString( "smxx", out _ ) ) {
+			result |= TerminalTextAttributes.Strikeout;
+		}
+		return result;
+	}
+
+	private static TerminalTextAttributes TranslateNoColorVideoMask(
+		int? mask
+	) {
+		if ( !mask.HasValue ) {
+			return TerminalTextAttributes.None;
+		}
+		int value = mask.Value;
+		TerminalTextAttributes result = TerminalTextAttributes.None;
+		if ( 0 != ( value & NoColorVideoStandout ) ) {
+			result |= TerminalTextAttributes.Standout;
+		}
+		if ( 0 != ( value & NoColorVideoUnderline ) ) {
+			result |= TerminalTextAttributes.Underline;
+		}
+		if ( 0 != ( value & NoColorVideoReverse ) ) {
+			result |= TerminalTextAttributes.Reverse;
+		}
+		if ( 0 != ( value & NoColorVideoBlink ) ) {
+			result |= TerminalTextAttributes.Blink;
+		}
+		if ( 0 != ( value & NoColorVideoDim ) ) {
+			result |= TerminalTextAttributes.Dim;
+		}
+		if ( 0 != ( value & NoColorVideoBold ) ) {
+			result |= TerminalTextAttributes.Bold;
+		}
+		if ( 0 != ( value & NoColorVideoInvisible ) ) {
+			result |= TerminalTextAttributes.Conceal;
+		}
+		if ( 0 != ( value & NoColorVideoItalic ) ) {
+			result |= TerminalTextAttributes.Italic;
+		}
+		return result;
 	}
 }

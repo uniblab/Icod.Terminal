@@ -64,5 +64,123 @@ public enum TerminalScreenOperationKind {
 	CursorMove,
 
 	/// <summary>Produce an audible or visual terminal alert.</summary>
-	Alert
+	Alert,
+
+	/// <summary>Change terminal text rendition.</summary>
+	Rendition,
+
+	/// <summary>Enter or leave the terminal alternate character set.</summary>
+	AlternateCharacterSet,
+
+	/// <summary>Erase a semantic terminal-screen region.</summary>
+	Erase,
+
+	/// <summary>Insert or delete terminal character positions.</summary>
+	CharacterShift,
+
+	/// <summary>Insert, delete, or scroll terminal lines.</summary>
+	LineShift,
+
+	/// <summary>Change the terminal scrolling region.</summary>
+	ScrollRegion
+}
+
+/// <summary>Identifies one semantic single-line box-drawing glyph.</summary>
+public enum TerminalLineGlyph {
+	/// <summary>Horizontal line.</summary>
+	Horizontal,
+
+	/// <summary>Vertical line.</summary>
+	Vertical,
+
+	/// <summary>Upper-left corner.</summary>
+	UpperLeftCorner,
+
+	/// <summary>Upper-right corner.</summary>
+	UpperRightCorner,
+
+	/// <summary>Lower-left corner.</summary>
+	LowerLeftCorner,
+
+	/// <summary>Lower-right corner.</summary>
+	LowerRightCorner,
+
+	/// <summary>T-junction whose branch extends upward.</summary>
+	TeeUp,
+
+	/// <summary>T-junction whose branch extends downward.</summary>
+	TeeDown,
+
+	/// <summary>T-junction whose branch extends leftward.</summary>
+	TeeLeft,
+
+	/// <summary>T-junction whose branch extends rightward.</summary>
+	TeeRight,
+
+	/// <summary>Four-way crossing.</summary>
+	Crossing
+}
+
+/// <summary>Represents one terminal-provided physical form of a semantic line glyph.</summary>
+public readonly record struct TerminalLineGlyphRepresentation {
+	internal TerminalLineGlyphRepresentation(
+		string content,
+		bool usesAlternateCharacterSet
+	) {
+		ArgumentException.ThrowIfNullOrEmpty( content );
+		this.Content = content;
+		this.UsesAlternateCharacterSet = usesAlternateCharacterSet;
+	}
+
+	/// <summary>Gets the application text to emit for the glyph.</summary>
+	public string Content {
+		get;
+	}
+
+	/// <summary>Gets whether the content must be emitted inside alternate-character-set mode.</summary>
+	public bool UsesAlternateCharacterSet {
+		get;
+	}
+}
+
+/// <summary>Identifies a semantic terminal erase operation.</summary>
+public enum TerminalScreenEraseKind {
+	/// <summary>Erase from the cursor through the end of the line.</summary>
+	ToEndOfLine,
+
+	/// <summary>Erase from the beginning of the line through the cursor.</summary>
+	ToBeginningOfLine,
+
+	/// <summary>Erase from the cursor through the end of the screen.</summary>
+	ToEndOfScreen,
+
+	/// <summary>Erase the complete screen.</summary>
+	Screen
+}
+
+/// <summary>Identifies a semantic character-position shift.</summary>
+public enum TerminalScreenCharacterShiftKind {
+	/// <summary>Insert blank character positions at the cursor.</summary>
+	Insert,
+
+	/// <summary>Delete character positions at the cursor.</summary>
+	Delete,
+
+	/// <summary>Erase character positions without shifting remaining content.</summary>
+	Erase
+}
+
+/// <summary>Identifies a semantic terminal-line shift.</summary>
+public enum TerminalScreenLineShiftKind {
+	/// <summary>Insert lines at the cursor row.</summary>
+	Insert,
+
+	/// <summary>Delete lines at the cursor row.</summary>
+	Delete,
+
+	/// <summary>Scroll content forward.</summary>
+	ScrollForward,
+
+	/// <summary>Scroll content in reverse.</summary>
+	ScrollReverse
 }

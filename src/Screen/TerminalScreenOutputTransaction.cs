@@ -20,6 +20,8 @@
 */
 namespace Icod.Terminal;
 
+using System.Runtime.ExceptionServices;
+
 /// <summary>Builds one bounded, ordered, session-bound terminal screen output transaction.</summary>
 public sealed class TerminalScreenOutputTransaction {
 	private const int MaximumItemCount = 65_536;
@@ -27,17 +29,21 @@ public sealed class TerminalScreenOutputTransaction {
 
 	private readonly TerminalSession session;
 	private readonly long outputEpoch;
+	private readonly bool useSynchronizedOutput;
 	private readonly List<OutputItem> items = [];
 	private int payloadByteCount;
 	private int commitStarted;
 
 	internal TerminalScreenOutputTransaction(
 		TerminalSession session,
-		long outputEpoch
+		long outputEpoch,
+		TerminalScreenOutputTransactionOptions options
 	) {
 		ArgumentNullException.ThrowIfNull( session );
+		ArgumentNullException.ThrowIfNull( options );
 		this.session = session;
 		this.outputEpoch = outputEpoch;
+		this.useSynchronizedOutput = options.UseSynchronizedOutput;
 	}
 
 	/// <summary>Adds one opaque semantic operation plan from the owning session.</summary>
@@ -51,7 +57,7 @@ public sealed class TerminalScreenOutputTransaction {
 		if ( !ReferenceEquals( this.session.Screen, plan.Owner ) ) {
 			throw new ArgumentException( "The screen-operation plan belongs to another terminal session.", nameof( plan ) );
 		}
-		this.AddItem( new OutputItem( plan.Segments!, null ) );
+		this.AddItem( OutputItem.ForPlan( plan.Segments! ) );
 	}
 
 	/// <summary>Adds application text using the owning session's configured encoding.</summary>
@@ -61,11 +67,54 @@ public sealed class TerminalScreenOutputTransaction {
 		ArgumentNullException.ThrowIfNull( value );
 		this.ThrowIfCommitStarted();
 		byte[] bytes = this.session.EncodeApplicationText( value );
-		this.payloadByteCount = checked( this.payloadByteCount + bytes.Length );
-		if ( MaximumPayloadByteCount < this.payloadByteCount ) {
-			throw new InvalidOperationException( "The screen-output transaction exceeds its application-payload limit." );
+		this.AddPayloadBytes( bytes.Length );
+		this.AddItem( OutputItem.ForBytes( bytes ) );
+	}
+
+	/// <summary>Adds one bounded strict OSC 8 hyperlink and its application text.</summary>
+	public void WriteHyperlink(
+		string value,
+		string uri,
+		string? identifier = null
+	) {
+		ArgumentNullException.ThrowIfNull( value );
+		ArgumentNullException.ThrowIfNull( uri );
+		this.ThrowIfCommitStarted();
+		byte[] begin = OscWriter.EncodeHyperlinkBeginFrame( uri, identifier );
+		byte[] text = this.session.EncodeApplicationText( value );
+		byte[] end = OscWriter.EncodeHyperlinkEndFrame();
+		this.AddPayloadBytes( text.Length );
+		this.AddItem( OutputItem.ForHyperlink( begin, text, end ) );
+	}
+
+	/// <summary>Adds one opaque raster-placeholder cell owned by this session.</summary>
+	public void WriteRasterPlaceholderCell(
+		TerminalRasterPlaceholderCell cell
+	) {
+		this.ThrowIfCommitStarted();
+		_ = this.session.ValidateRasterPlaceholderCellForOutput(
+			cell,
+			nameof( cell )
+		);
+		this.AddItem( OutputItem.ForRasterCells( [ cell ] ) );
+	}
+
+	/// <summary>Adds opaque raster-placeholder cells in caller-supplied order.</summary>
+	public void WriteRasterPlaceholderCells(
+		ReadOnlyMemory<TerminalRasterPlaceholderCell> cells
+	) {
+		this.ThrowIfCommitStarted();
+		if ( cells.IsEmpty ) {
+			throw new ArgumentException(
+				"At least one raster-placeholder cell is required.",
+				nameof( cells )
+			);
 		}
-		this.AddItem( new OutputItem( null, bytes ) );
+		this.session.ValidateRasterPlaceholderCellsForOutput(
+			cells,
+			nameof( cells )
+		);
+		this.AddItem( OutputItem.ForRasterCells( cells.ToArray() ) );
 	}
 
 	/// <summary>Commits this transaction exactly once under the owning session's output gate.</summary>
@@ -76,30 +125,151 @@ public sealed class TerminalScreenOutputTransaction {
 			throw new InvalidOperationException( "A screen-output transaction can be committed only once." );
 		}
 		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateRetainedItems();
 
 		using IDisposable outputLease = await this.session.AcquireScreenOutputAsync(
 			this.outputEpoch,
 			cancellationToken
 		).ConfigureAwait( false );
 		cancellationToken.ThrowIfCancellationRequested();
+		this.ValidateRetainedItems();
 
-		foreach ( OutputItem item in this.items ) {
-			if ( item.Segments is not null ) {
-				foreach ( TerminalScreenOutputSegment segment in item.Segments ) {
+		List<Exception> failures = [];
+		bool synchronizedCleanupRequired = false;
+		try {
+			if ( this.useSynchronizedOutput ) {
+				synchronizedCleanupRequired = true;
+				await this.session.Output.WriteAsync(
+					CsiWriter.EncodeSynchronizedOutputBeginFrame(),
+					CancellationToken.None
+				).ConfigureAwait( false );
+			}
+
+			foreach ( OutputItem item in this.items ) {
+				await this.WriteItemAsync( item ).ConfigureAwait( false );
+			}
+		} catch ( Exception exception ) {
+			failures.Add( exception );
+		}
+
+		if ( synchronizedCleanupRequired ) {
+			try {
+				await this.session.Output.WriteAsync(
+					CsiWriter.EncodeSynchronizedOutputEndFrame(),
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception exception ) {
+				failures.Add( exception );
+			}
+		}
+
+		try {
+			await this.session.Output.FlushAsync( CancellationToken.None ).ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			failures.Add( exception );
+		}
+
+		ThrowFailures( failures );
+	}
+
+	private async ValueTask WriteItemAsync(
+		OutputItem item
+	) {
+		switch ( item.Kind ) {
+			case OutputItemKind.Plan:
+				foreach ( TerminalScreenOutputSegment segment in item.Segments! ) {
 					await this.session.WriteTerminalStringCoreAsync(
 						segment.Value,
 						segment.AffectedLines,
 						CancellationToken.None
 					).ConfigureAwait( false );
 				}
-			} else {
+				break;
+
+			case OutputItemKind.Bytes:
 				await this.session.Output.WriteAsync(
 					item.Bytes!,
 					CancellationToken.None
 				).ConfigureAwait( false );
+				break;
+
+			case OutputItemKind.Hyperlink:
+				await this.WriteHyperlinkItemAsync( item ).ConfigureAwait( false );
+				break;
+
+			case OutputItemKind.RasterCells:
+				foreach ( TerminalRasterPlaceholderCell cell in item.RasterCells! ) {
+					TerminalPersistentRasterPlaceholderState state =
+						this.session.ValidateRasterPlaceholderCellForOutput(
+							cell,
+							nameof( item.RasterCells )
+						);
+					await this.session.Output.WriteAsync(
+						KittyGraphicsPlaceholderCellEncoder.Encode(
+							state,
+							cell.Row,
+							cell.Column
+						),
+						CancellationToken.None
+					).ConfigureAwait( false );
+				}
+				break;
+
+			default:
+				throw new InvalidOperationException( "The screen-output item kind is invalid." );
+		}
+	}
+
+	private async ValueTask WriteHyperlinkItemAsync(
+		OutputItem item
+	) {
+		List<Exception> failures = [];
+		bool cleanupRequired = false;
+		try {
+			cleanupRequired = true;
+			await this.session.Output.WriteAsync(
+				item.HyperlinkBegin!,
+				CancellationToken.None
+			).ConfigureAwait( false );
+			await this.session.Output.WriteAsync(
+				item.Bytes!,
+				CancellationToken.None
+			).ConfigureAwait( false );
+		} catch ( Exception exception ) {
+			failures.Add( exception );
+		}
+
+		if ( cleanupRequired ) {
+			try {
+				await this.session.Output.WriteAsync(
+					item.HyperlinkEnd!,
+					CancellationToken.None
+				).ConfigureAwait( false );
+			} catch ( Exception exception ) {
+				failures.Add( exception );
 			}
 		}
-		await this.session.Output.FlushAsync( CancellationToken.None ).ConfigureAwait( false );
+		ThrowFailures( failures );
+	}
+
+	private void ValidateRetainedItems() {
+		foreach ( OutputItem item in this.items ) {
+			if ( OutputItemKind.RasterCells == item.Kind ) {
+				this.session.ValidateRasterPlaceholderCellsForOutput(
+					item.RasterCells!,
+					nameof( item.RasterCells )
+				);
+			}
+		}
+	}
+
+	private void AddPayloadBytes(
+		int byteCount
+	) {
+		this.payloadByteCount = checked( this.payloadByteCount + byteCount );
+		if ( MaximumPayloadByteCount < this.payloadByteCount ) {
+			throw new InvalidOperationException( "The screen-output transaction exceeds its application-payload limit." );
+		}
 	}
 
 	private void AddItem(
@@ -117,8 +287,49 @@ public sealed class TerminalScreenOutputTransaction {
 		}
 	}
 
-	private readonly record struct OutputItem(
+	private static void ThrowFailures(
+		IReadOnlyList<Exception> failures
+	) {
+		if ( 0 == failures.Count ) {
+			return;
+		}
+		if ( 1 == failures.Count ) {
+			ExceptionDispatchInfo.Capture( failures[ 0 ] ).Throw();
+		}
+		throw new AggregateException( failures );
+	}
+
+	private enum OutputItemKind {
+		Plan,
+		Bytes,
+		Hyperlink,
+		RasterCells
+	}
+
+	private sealed record OutputItem(
+		OutputItemKind Kind,
 		IReadOnlyList<TerminalScreenOutputSegment>? Segments,
-		byte[]? Bytes
-	);
+		byte[]? Bytes,
+		byte[]? HyperlinkBegin,
+		byte[]? HyperlinkEnd,
+		TerminalRasterPlaceholderCell[]? RasterCells
+	) {
+		internal static OutputItem ForPlan(
+			IReadOnlyList<TerminalScreenOutputSegment> segments
+		) => new( OutputItemKind.Plan, segments, null, null, null, null );
+
+		internal static OutputItem ForBytes(
+			byte[] bytes
+		) => new( OutputItemKind.Bytes, null, bytes, null, null, null );
+
+		internal static OutputItem ForHyperlink(
+			byte[] begin,
+			byte[] text,
+			byte[] end
+		) => new( OutputItemKind.Hyperlink, null, text, begin, end, null );
+
+		internal static OutputItem ForRasterCells(
+			TerminalRasterPlaceholderCell[] cells
+		) => new( OutputItemKind.RasterCells, null, null, null, null, cells );
+	}
 }
