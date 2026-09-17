@@ -35,6 +35,7 @@ public sealed partial class TerminalSession {
 		bool invalidated = this.persistentRasterRegistry.InvalidateResource(
 			resourceState
 		);
+		_ = this.persistentRasterAnimationRegistry.InvalidateResource( resourceState );
 
 		foreach ( TerminalPersistentRasterPlacementState root in virtualRoots ) {
 			if ( this.persistentRasterRegistry.IsPlacementCurrent( root ) ) {
@@ -48,6 +49,7 @@ public sealed partial class TerminalSession {
 		TerminalPersistentRasterResourceState resourceState
 	) {
 		ArgumentNullException.ThrowIfNull( resourceState );
+		_ = this.persistentRasterAnimationRegistry.DisposeResourceOwner( resourceState );
 		TerminalPersistentRasterPlacementState[] virtualRoots =
 			this.persistentRasterVirtualParents.TakeChildrenForResource(
 				resourceState
@@ -154,12 +156,14 @@ public sealed partial class TerminalSession {
 	private void InvalidatePersistentRasterStateWithVirtualParents() {
 		this.persistentRasterVirtualParents.Clear();
 		this.InvalidatePersistentRasterState();
+		this.persistentRasterAnimationRegistry.Invalidate();
 	}
 
 	private async ValueTask<Exception?> ClosePersistentRasterStateWithVirtualParentsAsync() {
 		try {
 			return await this.ClosePersistentRasterStateAsync().ConfigureAwait( false );
 		} finally {
+			this.persistentRasterAnimationRegistry.Invalidate();
 			this.persistentRasterVirtualParents.Clear();
 		}
 	}
