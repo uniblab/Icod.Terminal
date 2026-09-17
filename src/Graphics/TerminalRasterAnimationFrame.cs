@@ -24,6 +24,8 @@ namespace Icod.Terminal;
 /// Represents one opaque, locally known frame in a persistent-raster animation sequence.
 /// </summary>
 public sealed class TerminalRasterAnimationFrame {
+	private TerminalPersistentRasterAnimationFrameState? state;
+
 	internal TerminalRasterAnimationFrame(
 		TerminalRasterAnimation owner,
 		int sequenceNumber
@@ -47,5 +49,34 @@ public sealed class TerminalRasterAnimationFrame {
 
 	internal int SequenceNumber {
 		get;
+	}
+
+	internal TerminalPersistentRasterAnimationFrameState? State {
+		get {
+			return Volatile.Read( ref this.state );
+		}
+	}
+
+	internal void BindState(
+		TerminalPersistentRasterAnimationFrameState value
+	) {
+		ArgumentNullException.ThrowIfNull( value );
+		if ( checked( (int)value.FrameNumber ) != this.SequenceNumber ) {
+			throw new ArgumentException(
+				"The private animation frame state does not match the opaque frame token sequence.",
+				nameof( value )
+			);
+		}
+
+		TerminalPersistentRasterAnimationFrameState? prior = Interlocked.CompareExchange(
+			ref this.state,
+			value,
+			null
+		);
+		if ( prior is not null && !ReferenceEquals( prior, value ) ) {
+			throw new InvalidOperationException(
+				"The opaque animation frame token is already bound to different private state."
+			);
+		}
 	}
 }
