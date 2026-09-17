@@ -16,6 +16,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
 | Render semantic virtual-raster cells with caller-owned cursor/layout control | [`Icod.Terminal.RasterPlaceholder.Sample`](Icod.Terminal.RasterPlaceholder.Sample/README.md) |
+| Stream and control terminal-resident animation frames through backend-neutral semantics | [`Icod.Terminal.RasterAnimation.Sample`](Icod.Terminal.RasterAnimation.Sample/README.md) |
 | Combine TermInfo lifecycle, advanced-placement, and explicit raster-backend planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
@@ -272,6 +273,7 @@ Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.RasterGraphics.Sample             (ephemeral display)
     -> Icod.Terminal.PersistentRaster.Sample           (terminal-resident ownership + lifecycle observation)
     -> Icod.Terminal.RasterPlaceholder.Sample          (virtual placement + caller-owned text-grid rendering)
+    -> Icod.Terminal.RasterAnimation.Sample            (terminal-driven animation + frame lifecycle)
     -> Icod.Terminal.TermInfoPersistentRaster.Sample   (TermInfo lifecycle/placement/backend planning + Terminal execution)
 ```
 
