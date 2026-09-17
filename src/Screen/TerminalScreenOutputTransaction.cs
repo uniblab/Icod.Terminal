@@ -32,6 +32,7 @@ public sealed class TerminalScreenOutputTransaction {
 	private readonly bool useSynchronizedOutput;
 	private readonly List<OutputItem> items = [];
 	private int payloadByteCount;
+	private int retainedItemCount;
 	private int commitStarted;
 
 	internal TerminalScreenOutputTransaction(
@@ -110,11 +111,12 @@ public sealed class TerminalScreenOutputTransaction {
 				nameof( cells )
 			);
 		}
+		this.EnsureItemCapacity( cells.Length );
 		this.session.ValidateRasterPlaceholderCellsForOutput(
 			cells,
 			nameof( cells )
 		);
-		this.AddItem( OutputItem.ForRasterCells( cells.ToArray() ) );
+		this.AddItem( OutputItem.ForRasterCells( cells.ToArray() ), cells.Length );
 	}
 
 	/// <summary>Commits this transaction exactly once under the owning session's output gate.</summary>
@@ -132,7 +134,8 @@ public sealed class TerminalScreenOutputTransaction {
 			cancellationToken
 		).ConfigureAwait( false );
 		cancellationToken.ThrowIfCancellationRequested();
-		this.ValidateRetainedItems();
+		TerminalPersistentRasterPlaceholderState[]?[] rasterStates =
+			this.CaptureRasterStatesForCommit();
 
 		List<Exception> failures = [];
 		bool synchronizedCleanupRequired = false;
@@ -145,8 +148,11 @@ public sealed class TerminalScreenOutputTransaction {
 				).ConfigureAwait( false );
 			}
 
-			foreach ( OutputItem item in this.items ) {
-				await this.WriteItemAsync( item ).ConfigureAwait( false );
+			for ( int index = 0; index < this.items.Count; ++index ) {
+				await this.WriteItemAsync(
+					this.items[ index ],
+					rasterStates[ index ]
+				).ConfigureAwait( false );
 			}
 		} catch ( Exception exception ) {
 			failures.Add( exception );
@@ -173,7 +179,8 @@ public sealed class TerminalScreenOutputTransaction {
 	}
 
 	private async ValueTask WriteItemAsync(
-		OutputItem item
+		OutputItem item,
+		TerminalPersistentRasterPlaceholderState[]? rasterStates
 	) {
 		switch ( item.Kind ) {
 			case OutputItemKind.Plan:
@@ -198,15 +205,17 @@ public sealed class TerminalScreenOutputTransaction {
 				break;
 
 			case OutputItemKind.RasterCells:
-				foreach ( TerminalRasterPlaceholderCell cell in item.RasterCells! ) {
-					TerminalPersistentRasterPlaceholderState state =
-						this.session.ValidateRasterPlaceholderCellForOutput(
-							cell,
-							nameof( item.RasterCells )
-						);
+				TerminalRasterPlaceholderCell[] cells = item.RasterCells!;
+				if ( rasterStates is null || rasterStates.Length != cells.Length ) {
+					throw new InvalidOperationException(
+						"Committed raster-placeholder state is inconsistent."
+					);
+				}
+				for ( int index = 0; index < cells.Length; ++index ) {
+					TerminalRasterPlaceholderCell cell = cells[ index ];
 					await this.session.Output.WriteAsync(
 						KittyGraphicsPlaceholderCellEncoder.Encode(
-							state,
+							rasterStates[ index ],
 							cell.Row,
 							cell.Column
 						),
@@ -263,6 +272,29 @@ public sealed class TerminalScreenOutputTransaction {
 		}
 	}
 
+	private TerminalPersistentRasterPlaceholderState[]?[] CaptureRasterStatesForCommit() {
+		TerminalPersistentRasterPlaceholderState[]?[] result =
+			new TerminalPersistentRasterPlaceholderState[]?[ this.items.Count ];
+		for ( int itemIndex = 0; itemIndex < this.items.Count; ++itemIndex ) {
+			OutputItem item = this.items[ itemIndex ];
+			if ( OutputItemKind.RasterCells != item.Kind ) {
+				continue;
+			}
+
+			TerminalRasterPlaceholderCell[] cells = item.RasterCells!;
+			TerminalPersistentRasterPlaceholderState[] states =
+				new TerminalPersistentRasterPlaceholderState[ cells.Length ];
+			for ( int cellIndex = 0; cellIndex < cells.Length; ++cellIndex ) {
+				states[ cellIndex ] = this.session.ValidateRasterPlaceholderCellForOutput(
+					cells[ cellIndex ],
+					nameof( item.RasterCells )
+				);
+			}
+			result[ itemIndex ] = states;
+		}
+		return result;
+	}
+
 	private void AddPayloadBytes(
 		int byteCount
 	) {
@@ -273,12 +305,23 @@ public sealed class TerminalScreenOutputTransaction {
 	}
 
 	private void AddItem(
-		OutputItem item
+		OutputItem item,
+		int retainedItemCount = 1
 	) {
-		if ( MaximumItemCount <= this.items.Count ) {
+		this.EnsureItemCapacity( retainedItemCount );
+		this.items.Add( item );
+		this.retainedItemCount += retainedItemCount;
+	}
+
+	private void EnsureItemCapacity(
+		int additionalItemCount
+	) {
+		if ( 0 >= additionalItemCount ) {
+			throw new ArgumentOutOfRangeException( nameof( additionalItemCount ) );
+		}
+		if ( MaximumItemCount - this.retainedItemCount < additionalItemCount ) {
 			throw new InvalidOperationException( "The screen-output transaction exceeds its item-count limit." );
 		}
-		this.items.Add( item );
 	}
 
 	private void ThrowIfCommitStarted() {

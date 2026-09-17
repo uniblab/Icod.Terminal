@@ -61,6 +61,71 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 	}
 
 	[Fact]
+	public async Task ScreenTransactionUsesUnderGateRasterSnapshotDuringDisposalRace() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		TerminalRasterPlaceholder placeholder = await CreatePlaceholderAsync(
+			session,
+			transport,
+			imageId: 0x0200002Au,
+			columns: 1,
+			rows: 1
+		);
+		TerminalRasterPlaceholderCell cell = placeholder.GetCell( 0, 0 );
+		int baselineWrites = transport.Writes.Count;
+		transport.BlockOnWriteNumber = baselineWrites + 1;
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+		transaction.WriteText( "before" );
+		transaction.WriteRasterPlaceholderCell( cell );
+
+		Task commitment = transaction.CommitAsync().AsTask();
+		await transport.WaitForBlockedWriteAsync();
+		Task disposal = placeholder.DisposeAsync().AsTask();
+		transport.ReleaseBlockedWrite();
+
+		await commitment;
+		await disposal;
+
+		Assert.Equal(
+			Encoding.UTF8.GetBytes( "before" ),
+			transport.Writes[ baselineWrites ]
+		);
+		Assert.Equal(
+			KittyGraphicsPlaceholderCellEncoder.Encode(
+				placeholder.State,
+				row: 0,
+				column: 0
+			).ToArray(),
+			transport.Writes[ baselineWrites + 1 ]
+		);
+	}
+
+	[Fact]
+	public async Task ScreenTransactionBoundsBulkRasterCellsBeforeRetention() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		TerminalRasterPlaceholder placeholder = await CreatePlaceholderAsync(
+			session,
+			transport,
+			imageId: 0x0200002Au,
+			columns: 1,
+			rows: 1
+		);
+		TerminalRasterPlaceholderCell cell = placeholder.GetCell( 0, 0 );
+		TerminalRasterPlaceholderCell[] cells = Enumerable.Repeat(
+			cell,
+			65_537
+		).ToArray();
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+
+		Assert.Throws<InvalidOperationException>(
+			() => transaction.WriteRasterPlaceholderCells( cells )
+		);
+	}
+
+	[Fact]
 	public async Task SingleCellWritesExactCurrentCursorBytesWithoutQueryRoundTrip() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
@@ -395,6 +460,17 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 		private readonly SemaphoreSlim writeSignal = new( 0 );
 		private readonly List<byte[]> writes = [];
 		private readonly List<bool> writeCancellationCanBeCanceled = [];
+		private readonly TaskCompletionSource blockedWriteStarted = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
+		private readonly TaskCompletionSource releaseBlockedWrite = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
+
+		internal int? BlockOnWriteNumber {
+			get;
+			set;
+		}
 
 		internal IReadOnlyList<byte[]> Writes {
 			get {
@@ -425,19 +501,24 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 			return value.Length;
 		}
 
-		public ValueTask WriteAsync(
+		public async ValueTask WriteAsync(
 			ReadOnlyMemory<byte> buffer,
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			int writeNumber;
 			lock ( this.synchronization ) {
 				this.writes.Add( buffer.ToArray() );
 				this.writeCancellationCanBeCanceled.Add(
 					cancellationToken.CanBeCanceled
 				);
+				writeNumber = this.writes.Count;
 			}
 			this.writeSignal.Release();
-			return ValueTask.CompletedTask;
+			if ( this.BlockOnWriteNumber == writeNumber ) {
+				this.blockedWriteStarted.TrySetResult();
+				await this.releaseBlockedWrite.Task.ConfigureAwait( false );
+			}
 		}
 
 		public ValueTask FlushAsync(
@@ -473,6 +554,19 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 					timeout.Token
 				).ConfigureAwait( false );
 			}
+		}
+
+		internal async Task WaitForBlockedWriteAsync() {
+			using CancellationTokenSource timeout = new(
+				TimeSpan.FromSeconds( 5 )
+			);
+			await this.blockedWriteStarted.Task.WaitAsync(
+				timeout.Token
+			).ConfigureAwait( false );
+		}
+
+		internal void ReleaseBlockedWrite() {
+			this.releaseBlockedWrite.TrySetResult();
 		}
 	}
 }
