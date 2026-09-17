@@ -38,6 +38,8 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	private readonly ITerminalControlProvider controlProvider;
 	private readonly Encoding applicationEncoding;
 	private readonly TerminalOutputStream terminalOutputStream;
+	private readonly TerminalProfile profile;
+	private readonly TerminalScreenPlanner screen;
 
 	private TerminalModeSnapshot? baselineMode;
 	private IDisposable? outputModeLease;
@@ -76,6 +78,8 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		this.InputObservation = inputObservation;
 		this.OutputObservation = outputObservation;
 		this.Identity = identity;
+		this.profile = TerminalProfile.Create( identity.Terminal );
+		this.screen = new TerminalScreenPlanner( identity.Terminal, this.profile );
 		this.Input = input;
 		this.Output = output;
 		this.lifecycleSource = lifecycleSource;
@@ -113,6 +117,20 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	public TerminalDescription Terminal {
 		get {
 			return this.Identity.Terminal;
+		}
+	}
+
+	/// <summary>Gets the Terminal-owned semantic view of the selected terminal profile.</summary>
+	public TerminalProfile Profile {
+		get {
+			return this.profile;
+		}
+	}
+
+	/// <summary>Gets the semantic screen-operation planner bound to this session.</summary>
+	public TerminalScreenPlanner Screen {
+		get {
+			return this.screen;
 		}
 	}
 
