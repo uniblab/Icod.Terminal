@@ -2,6 +2,32 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.16.0
+
+### Persistent raster animation and frame lifecycle
+
+- Adds `TerminalCapability.PersistentRasterAnimation = 11` while preserving every previously released capability value.
+- Adds one side-effect-free, resource-owned `TerminalRasterAnimation` controller per persistent raster resource; the original resource pixels are exposed as an opaque root frame.
+- Adds acknowledged full-size frame append through `AddFrameAsync(...)`, publishing an opaque `TerminalRasterAnimationFrame` only after a successful correlated response.
+- Adds positive exact-millisecond frame timing, explicit current-frame selection, stop, loading-mode streaming, and finite/indefinite normal playback without exposing protocol frame numbers or control dictionaries.
+- Defines finite `RepeatCount` as additional traversals after the first; `null` requests indefinite looping.
+- Keeps placements and placeholders attached to the same resource and independent from animation lifetime; the resource remains final cleanup authority for image and frame data.
+
+### Certainty, hardening, and qualification
+
+- Adds immutable animation state with `Current`, `SequenceUncertain`, `Stale`, `Released`, and `OwnerDisposed` statuses plus semantic loss reasons.
+- Separates sequence certainty from resource ownership: an ambiguous committed append blocks guessed-tail operations without falsely staling an otherwise current resource.
+- Keeps known-token timing/selection and stop available after sequence ambiguity while rejecting new appends and tail-dependent run modes.
+- Bounds session-wide known animation frames to 4096 including roots, permits one pending append per animation, and reclaims capacity from stale/released/owner-disposed animations while retaining sequence-uncertain tokens.
+- Reuses direct transfer, the serialized output gate, the authoritative query/input reader, and correlated graphics-response parsing; no file/shared-memory path, second reader, blind retry, or hidden source-frame replay is added.
+- Qualifies wrong/malformed identities, `ENOENT`, `EINVAL`, storage pressure, timeout/late isolation, pre/post-commit failures, lifecycle propagation, loading-mode churn, output contention, and fixed-count concurrency.
+- Adds `Icod.Terminal.RasterAnimation.Sample` and source-policy verification, plus fresh NuGet-only API/XML qualification across `net8.0`, `net9.0`, and `net10.0`.
+- Retains production dependencies `Icod.TermInfo 1.14.0` and `Icod.Timing 1.0.0`, with stable `Icod.DCurses` downstream acceptance and hardening.
+- Finalizes the 1.16 public API fingerprint as `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d` while retaining all historical baselines unchanged.
+- Continues to exclude frame composition/delta editing, partial-frame updates, gapless composition frames, absolute or pixel-within-cell placement, automatic image decoding, Terminal-owned scene/window/cell/damage/layout/timeline policy, public protocol identities, hidden replay caches, and PTY/ConPTY hosting.
+
+See `docs/releases/1.16.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.16.md`, and `Icod.Terminal-1.16.0-Development-Roadmap.md` for the complete 1.16 contract.
+
 ## 1.15.0
 
 ### Unicode placeholder and virtual raster placement

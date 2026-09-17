@@ -40,10 +40,12 @@ public sealed class TerminalCapabilityStatusTests {
 				TerminalCapability.BracketedPaste,
 				TerminalCapability.RasterGraphics,
 				TerminalCapability.PersistentRasterGraphics,
-				TerminalCapability.UnicodeRasterPlaceholders
+				TerminalCapability.UnicodeRasterPlaceholders,
+				TerminalCapability.PersistentRasterAnimation
 			],
 			Enum.GetValues<TerminalCapability>()
 		);
+		Assert.Equal( 11, (int)TerminalCapability.PersistentRasterAnimation );
 	}
 
 	[Fact]

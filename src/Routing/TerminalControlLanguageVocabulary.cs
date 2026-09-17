@@ -46,7 +46,8 @@ internal enum TerminalSemanticOperation {
 	BracketedPaste,
 	RasterGraphics,
 	PersistentRasterGraphics,
-	UnicodeRasterPlaceholders
+	UnicodeRasterPlaceholders,
+	PersistentRasterAnimation
 }
 
 /// <summary>
@@ -87,7 +88,8 @@ internal enum TerminalProtocolBackend {
 	DcsXtgetTcap,
 	DcsSixel,
 	ApcKittyGraphics,
-	ApcKittyUnicodeRasterPlaceholders
+	ApcKittyUnicodeRasterPlaceholders,
+	ApcKittyPersistentRasterAnimation
 }
 
 /// <summary>
@@ -185,6 +187,7 @@ internal static class TerminalControlLanguageVocabulary {
 
 			TerminalProtocolBackend.ApcKittyGraphics
 				or TerminalProtocolBackend.ApcKittyUnicodeRasterPlaceholders
+				or TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
 					=> TerminalControlFamily.Apc,
 
 			_ => throw new InvalidOperationException(

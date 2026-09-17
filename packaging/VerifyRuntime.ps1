@@ -42,6 +42,7 @@ try {
         'VerifyRasterGraphicsSample.ps1',
         'VerifyPersistentRasterSample.ps1',
         'VerifyRasterPlaceholderSample.ps1',
+        'VerifyRasterAnimationSample.ps1',
         'VerifyCapabilityPlanningSample.ps1',
         'VerifyDCursesSynchronizedOutput.ps1',
         'VerifyDCursesProgress.ps1',

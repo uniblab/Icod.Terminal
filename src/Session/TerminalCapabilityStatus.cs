@@ -78,7 +78,12 @@ public enum TerminalCapability {
 	/// <summary>
 	/// Rendering terminal-resident raster resources through Unicode placeholder cells.
 	/// </summary>
-	UnicodeRasterPlaceholders = 10
+	UnicodeRasterPlaceholders = 10,
+
+	/// <summary>
+	/// Owning and controlling terminal-driven animation of persistent raster resources.
+	/// </summary>
+	PersistentRasterAnimation = 11
 }
 
 /// <summary>

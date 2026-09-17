@@ -35,9 +35,17 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 
 		this.session = session;
 		this.State = state;
+		this.Animation = new TerminalRasterAnimation( this );
 	}
 
 	internal TerminalPersistentRasterResourceState State {
+		get;
+	}
+
+	/// <summary>
+	/// Gets the resource-owned persistent-raster animation controller without performing terminal I/O.
+	/// </summary>
+	public TerminalRasterAnimation Animation {
 		get;
 	}
 
@@ -279,6 +287,153 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 			columnOffset,
 			rowOffset,
 			options,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlResult<TerminalRasterAnimationFrame>> AddAnimationFrameAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterImage image,
+		int gapMilliseconds,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( image );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.AddPersistentRasterAnimationFrameAsync(
+			this.State,
+			animation,
+			image,
+			gapMilliseconds,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> SetAnimationFrameDurationAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		int gapMilliseconds,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( frame );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.SetPersistentRasterAnimationFrameDurationAsync(
+			this.State,
+			animation,
+			frame,
+			gapMilliseconds,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> SelectAnimationFrameAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( frame );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.SelectPersistentRasterAnimationFrameAsync(
+			this.State,
+			animation,
+			frame,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> StopAnimationAsync(
+		TerminalRasterAnimation animation,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.StopPersistentRasterAnimationAsync(
+			this.State,
+			animation,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> RunLoadingAnimationAsync(
+		TerminalRasterAnimation animation,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.RunLoadingPersistentRasterAnimationAsync(
+			this.State,
+			animation,
+			cancellationToken
+		);
+	}
+
+	internal ValueTask<TerminalControlMutationResult> RunAnimationAsync(
+		TerminalRasterAnimation animation,
+		int? repeatCount,
+		CancellationToken cancellationToken
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.RunPersistentRasterAnimationAsync(
+			this.State,
+			animation,
+			repeatCount,
 			cancellationToken
 		);
 	}

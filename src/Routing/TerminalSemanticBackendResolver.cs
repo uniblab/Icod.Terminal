@@ -503,6 +503,11 @@ internal static class TerminalSemanticBackendResolver {
 			TerminalSemanticOperation.UnicodeRasterPlaceholders,
 			( TerminalProtocolBackend.ApcKittyUnicodeRasterPlaceholders, false )
 		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.PersistentRasterAnimation,
+			( TerminalProtocolBackend.ApcKittyPersistentRasterAnimation, false )
+		);
 
 		ValidatePolicies( policies );
 		return new ReadOnlyDictionary<

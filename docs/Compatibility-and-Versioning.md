@@ -36,11 +36,12 @@ Relevant fingerprints include:
 1.13  c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 1.14  2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 1.15  eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
+1.16  d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
 ```
 
 Version 1.11.1 intentionally retained the 1.11 fingerprint because it added no production public API.
 
-The 1.15 fingerprint is frozen during development and is enforced across `net8.0`, `net9.0`, and `net10.0` before stable release closure.
+The final 1.16 fingerprint is enforced across `net8.0`, `net9.0`, and `net10.0`; all historical fingerprints remain immutable.
 
 ## 4. Additive persistent-raster progression
 
@@ -52,6 +53,7 @@ The stable/additive progression is:
 1.13  bounded immutable-parent relative placement ownership
 1.14  side-effect-free ownership-state observation
 1.15  opaque virtual placements and typed Unicode-placeholder cells
+1.16  resource-owned animation frames and playback lifecycle
 ```
 
 Each release preserves earlier behavior when its new APIs are unused.
@@ -95,11 +97,32 @@ The virtual placeholder itself is not relative. A physical placement may use a c
 
 Typed placeholder-cell output is current-cursor output. It does not transfer screen-coordinate/layout/clipping/damage ownership into Terminal.
 
+### 4.5 1.16 persistent raster animation
+
+Version 1.16 additively introduces:
+
+```text
+TerminalCapability.PersistentRasterAnimation = 11
+TerminalRasterAnimation
+TerminalRasterAnimationFrame
+TerminalRasterAnimationState
+TerminalRasterAnimationStatus
+TerminalRasterAnimationLossReason
+TerminalRasterAnimationPlaybackOptions
+TerminalRasterResource.Animation
+```
+
+The resource's original image is the root frame. Full-size acknowledged additions return opaque frame tokens. The API adds positive whole-millisecond frame timing, explicit frame selection, stop, loading-mode playback, and finite/indefinite normal playback without exposing protocol frame numbers or control dictionaries.
+
+The controller is resource owned and not independently disposable. Animation sequence certainty is separate from resource ownership: an ambiguous committed append can make the animation `SequenceUncertain` while the resource remains current.
+
+The session-wide animation registry is bounded to 4096 known frames including roots, with one pending append per animation. No source-frame replay cache, partial-frame update, composition, or decoder dependency is added.
+
 ## 5. Persistent-raster compatibility guarantees
 
 The following remain compatible guarantees:
 
-- public resource/physical-placement/virtual-placement protocol identities stay opaque;
+- public resource/physical-placement/virtual-placement/animation-frame protocol identities stay opaque;
 - ordinary physical placement uses the terminal's current cursor location;
 - typed placeholder-cell output uses the caller's current cursor location;
 - physical placement `Columns`/`Rows` remain independently optional and bounded to `1..16384`;
@@ -109,6 +132,7 @@ The following remain compatible guarantees:
 - stale mutation/output returns controlled failure before stale identity is emitted;
 - stale disposal remains local-only;
 - live resource ceiling remains 256 and combined physical/virtual placement ceiling remains 4096 per session;
+- known animation-frame capacity remains 4096 per session, including root frames;
 - relative depth remains bounded to 8;
 - no hidden source-image cache or automatic replay is introduced;
 - persistent transport remains direct Kitty transfer internally;
@@ -118,7 +142,7 @@ The following remain compatible guarantees:
 
 Stable 1.x preserves one authoritative terminal input conversation.
 
-Application input, lifecycle observations, query responses, semantic events, raster capability probes, persistent-raster acknowledgements, and placeholder acknowledgements remain coordinated by the same reader/router model.
+Application input, lifecycle observations, query responses, semantic events, raster capability probes, persistent-raster acknowledgements, placeholder acknowledgements, and animation frame/control acknowledgements remain coordinated by the same reader/router model.
 
 Compatibility includes:
 
@@ -140,7 +164,7 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.14 optional integration compatibility
 
-The active 1.15 direct production dependency advances to:
+The active 1.16 direct production dependency graph remains:
 
 ```text
 Icod.TermInfo 1.14.0
@@ -171,7 +195,7 @@ Historical release documents retain the TermInfo/Inspection versions actually sh
 
 Committed graphics operations do not intentionally truncate after commitment merely because ordinary caller cancellation arrives.
 
-Partial transport failure is surfaced without blind replay or automatic backend switching. This applies to ephemeral raster output, persistent upload/placement/placeholder transactions, and typed placeholder-cell output according to their existing logical transaction boundaries.
+Partial transport failure is surfaced without blind replay or automatic backend switching. This applies to ephemeral raster output, persistent upload/placement/placeholder transactions, animation frame/control transactions, and typed placeholder-cell output according to their existing logical transaction boundaries.
 
 ## 10. Backend-neutral public contracts
 
@@ -181,7 +205,7 @@ The following remain implementation details rather than compatibility promises:
 
 - Terminal's internal Kitty/Sixel routing scores/registry order;
 - raw APC/DCS control dictionaries;
-- private image numbers/image ids/physical/virtual placement ids;
+- private image numbers/image ids/physical/virtual placement ids and animation frame numbers;
 - session generation ids;
 - Unicode placeholder reserved codepoint and combining-mark tables;
 - SGR identity packing;
@@ -189,7 +213,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.15
+## 11. Deliberate non-promises after 1.16
 
 Stable 1.x does not promise:
 
@@ -204,12 +228,12 @@ Stable 1.x does not promise:
 - absolute screen-coordinate layout owned by `Icod.Terminal`;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or emitted-screen-position tracking;
-- animation/frame lifecycle;
+- partial-frame animation updates, frame composition, and delta editing;
 - scene-graph/cells/windows/damage/layout ownership;
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside this package.
 
-Relative placement, lifecycle observation, and virtual placeholders are deliberately bounded additions and must not be interpreted as promises for these excluded features.
+Relative placement, lifecycle observation, virtual placeholders, and resource-owned animation are deliberately bounded additions and must not be interpreted as promises for these excluded features.
 
 ## 12. Release qualification
 
@@ -235,9 +259,9 @@ Any post-closure pre-merge code or documentation change requires the same exact-
 
 PR qualification does not itself merge, tag, create a GitHub Release, or publish NuGet packages.
 
-For 1.15, the maintainer/release workflow remains responsible for:
+For 1.16, the maintainer/release workflow remains responsible for:
 
 1. merging the fully qualified PR;
 2. validating the mainline Release workflow;
-3. creating/pushing `v1.15.0` only after mainline validation succeeds;
+3. creating/pushing `v1.16.0` only after mainline validation succeeds;
 4. creating the GitHub Release and publishing NuGet through the established release workflow.
