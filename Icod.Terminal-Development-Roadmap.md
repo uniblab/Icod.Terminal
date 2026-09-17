@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior completed line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
 - **Current development line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
-- **Current tranche:** T168 — sample and release qualification; T160–T167 accepted
+- **Current tranche:** T169 — stable 1.16.0 release closure; T160–T168 accepted
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -14,6 +14,12 @@
 This file is the concise entry point for current `Icod.Terminal` development and long-range planning. Detailed design evidence remains in versioned roadmaps, release notes, public-API baselines, accepted CI checkpoints, and approved design/implementation documents.
 
 The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
+
+## Latest accepted checkpoint
+
+T168 is accepted at exact head `1689248396537bf00a220354a8a3e2d620bcb815`, workflow #1957 / run `35248147080`, with the complete nine-job matrix successful.
+
+The accepted scope includes the backend-neutral animation sample, all-TFM package/API/XML qualification, permanent ownership/architecture/security/compatibility/README documentation, and stable `Icod.DCurses` downstream acceptance. T169 is the remaining stable-release closure tranche.
 
 ## Current architecture
 
@@ -127,7 +133,7 @@ T168  executable sample, downstream, package/API/XML/security/docs qualification
 T169  stable 1.16.0 release closure
 ```
 
-Exact public spellings and bounds are frozen by T160 after API-regret review; the roadmap records the semantic architecture, not a premature final API promise.
+Exact public spellings and bounds were frozen by T160 and qualified through T168; the roadmap records the accepted semantic architecture.
 
 ## 1.16 design guardrails
 

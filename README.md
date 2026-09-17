@@ -139,7 +139,7 @@ physical + virtual placements               4096
 relative-placement depth                       8
 placeholder rows                            1..256
 placeholder columns                         1..256
-known animation frames, including roots         4096
+session-wide known animation frames, roots      4096
 ```
 
 Placeholder cell output is current-cursor text output. Animation changes the current pixels of the same resource without creating another placement graph. Terminal owns protocol-private image/placement/frame identity and encoding; the caller owns screen coordinates, clipping, scrolling, redraw order, damage, layout, and higher-level animation policy.
