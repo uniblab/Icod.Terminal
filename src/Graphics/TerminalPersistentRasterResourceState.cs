@@ -25,6 +25,7 @@ namespace Icod.Terminal;
 /// </summary>
 internal sealed class TerminalPersistentRasterResourceState {
 	private readonly TerminalPersistentRasterLifecycleState lifecycle = new();
+	private TerminalPersistentRasterAnimationState? animationState;
 	private int imageIdBits;
 	private int closed;
 
@@ -101,7 +102,48 @@ internal sealed class TerminalPersistentRasterResourceState {
 	internal bool TryMarkStale(
 		TerminalRasterOwnershipLossReason reason
 	) {
-		return this.lifecycle.TryMarkStale( reason );
+		bool transitioned = this.lifecycle.TryMarkStale( reason );
+		TerminalPersistentRasterAnimationState? animation = Volatile.Read(
+			ref this.animationState
+		);
+		if ( animation is not null ) {
+			switch ( reason ) {
+				case TerminalRasterOwnershipLossReason.SessionStateLost:
+					_ = animation.TryMarkStale(
+						TerminalRasterAnimationLossReason.SessionStateLost
+					);
+					break;
+				case TerminalRasterOwnershipLossReason.ResourceMissing:
+					_ = animation.TryMarkStale(
+						TerminalRasterAnimationLossReason.ResourceMissing
+					);
+					break;
+			}
+		}
+		return transitioned;
+	}
+
+	internal void BindAnimationState(
+		TerminalPersistentRasterAnimationState animation
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		if ( !ReferenceEquals( this, animation.Resource ) ) {
+			throw new ArgumentException(
+				"The persistent raster animation state must belong to this resource.",
+				nameof( animation )
+			);
+		}
+
+		TerminalPersistentRasterAnimationState? prior = Interlocked.CompareExchange(
+			ref this.animationState,
+			animation,
+			null
+		);
+		if ( prior is not null && !ReferenceEquals( prior, animation ) ) {
+			throw new InvalidOperationException(
+				"The persistent raster resource is already bound to different animation state."
+			);
+		}
 	}
 
 	internal void BindImageId(
@@ -125,6 +167,15 @@ internal sealed class TerminalPersistentRasterResourceState {
 	}
 
 	internal void Close() {
+		TerminalRasterOwnershipState ownership = this.lifecycle.Observe();
+		if ( TerminalRasterOwnershipStatus.Current == ownership.Status ) {
+			TerminalPersistentRasterAnimationState? animation = Volatile.Read(
+				ref this.animationState
+			);
+			if ( animation is not null ) {
+				_ = animation.TryMarkReleased();
+			}
+		}
 		Interlocked.Exchange(
 			ref this.closed,
 			1
