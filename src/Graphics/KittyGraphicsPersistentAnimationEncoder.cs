@@ -80,6 +80,51 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 		);
 	}
 
+	internal static ReadOnlyMemory<byte> EncodeStopPayload(
+		uint imageId
+	) {
+		return EncodePlaybackStatePayload(
+			imageId,
+			state: 1
+		);
+	}
+
+	internal static ReadOnlyMemory<byte> EncodeRunLoadingPayload(
+		uint imageId
+	) {
+		return EncodePlaybackStatePayload(
+			imageId,
+			state: 2
+		);
+	}
+
+	internal static ReadOnlyMemory<byte> EncodeRunPayload(
+		uint imageId,
+		int? repeatCount
+	) {
+		ValidateImageId( imageId );
+		int protocolLoopCount;
+		if ( repeatCount.HasValue ) {
+			if ( repeatCount.Value < 1 || int.MaxValue == repeatCount.Value ) {
+				throw new ArgumentOutOfRangeException(
+					nameof( repeatCount ),
+					repeatCount,
+					$"A finite animation repeat count must be between 1 and {int.MaxValue - 1}."
+				);
+			}
+			protocolLoopCount = checked( repeatCount.Value + 1 );
+		} else {
+			protocolLoopCount = 1;
+		}
+
+		return Encoding.ASCII.GetBytes(
+			"Ga=a,i="
+			+ imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",s=3,v="
+			+ protocolLoopCount.ToString( CultureInfo.InvariantCulture )
+		);
+	}
+
 	private static IEnumerable<ReadOnlyMemory<byte>> EncodeFramePayloadsCore(
 		KittyRasterData raster,
 		uint imageId,
@@ -141,6 +186,23 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			offset = checked( offset + rawCount );
 			first = false;
 		}
+	}
+
+	private static ReadOnlyMemory<byte> EncodePlaybackStatePayload(
+		uint imageId,
+		int state
+	) {
+		ValidateImageId( imageId );
+		if ( state is < 1 or > 2 ) {
+			throw new ArgumentOutOfRangeException( nameof( state ) );
+		}
+
+		return Encoding.ASCII.GetBytes(
+			"Ga=a,i="
+			+ imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",s="
+			+ state.ToString( CultureInfo.InvariantCulture )
+		);
 	}
 
 	private static string CreateFirstControlData(
