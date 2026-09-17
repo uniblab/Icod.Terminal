@@ -15,6 +15,16 @@ T167 adversarial hardening is accepted at exact head `aed8a9b7e76616d31cfa4993a7
 - Fixed-count tests now qualify bounded capacity reuse, sequence-uncertain monotonicity, storage-pressure rollback, known-token control after ambiguity, concurrent state/append/control behavior, output serialization, loading-mode append churn, and lifecycle races.
 - T168 now owns the executable sample plus package/API/XML/downstream/security/documentation qualification.
 
+### T168 sample and package-qualification checkpoint
+
+Exact head `9de5a165eddaef9d7e57feedf6df88e3c9d63de5` passed workflow #1955 / run `35246140125` across the complete nine-job matrix.
+
+- Added `Icod.Terminal.RasterAnimation.Sample`, a backend-neutral executable demonstrating root timing, full-frame append, placement, loading-mode append, explicit selection, finite/indefinite playback, stop, and resource-owned cleanup.
+- Added a source-policy verifier and net8/net9/net10 sample builds on Windows, Linux, and macOS.
+- Extended the fresh NuGet-only persistent-raster consumer to compile-bind the complete 1.16 animation surface and verify capability value 11, opaque controller/frame construction, resource ownership, state enums, repeat policy, and identity exclusions.
+- Extended packed XML verification across every TFM. The new gate exposed and closed missing XML documentation for all five public animation-control methods.
+- Permanent ownership, architecture, security/privacy, compatibility/versioning, root README, downstream, and final roadmap synchronization remain within T168.
+
 ## Release objective
 
 Version 1.16 extends the persistent-raster ownership model with terminal-resident animation frames and playback control while preserving the architectural boundaries established by 1.11–1.15.
