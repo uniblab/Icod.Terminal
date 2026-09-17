@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.16.0 adds resource-owned persistent-raster animation with opaque root/appended frame tokens, acknowledged full-frame transfer, positive timing, explicit selection, loading-mode streaming, finite/indefinite playback, bounded sequence certainty, and deterministic resource-owned cleanup without exposing protocol frame identity. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.16.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.17.0-alpha.1 begins the Terminal-owned dimensions, semantic screen planning, and session-bound output transaction track required for a later TermInfo-free Icod.DCurses 2.0 boundary. Development roadmap: https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-1.17.0-Development-Roadmap.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
