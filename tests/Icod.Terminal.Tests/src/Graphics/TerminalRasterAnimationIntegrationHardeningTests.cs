@@ -148,7 +148,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 	}
 
 	[Fact]
-	public async Task DisposedFrameTokenRejectsFurtherControlWithoutOutput() {
+	public async Task DisposedFrameTokenThrowsWithoutFurtherOutput() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		TerminalRasterResource resource = await CreateResourceAsync(
@@ -163,16 +163,15 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 
 		await resource.DisposeAsync();
 		int writesBeforeRejectedControls = transport.Writes.Count;
-		TerminalControlMutationResult duration = await resource.Animation
-			.SetFrameDurationAsync(
+		Assert.Throws<ObjectDisposedException>(
+			() => resource.Animation.SetFrameDurationAsync(
 				frame,
 				TimeSpan.FromMilliseconds( 25 )
-			);
-		TerminalControlMutationResult selection = await resource.Animation
-			.SelectFrameAsync( frame );
-
-		Assert.Equal( TerminalControlStatus.Unavailable, duration.Status );
-		Assert.Equal( TerminalControlStatus.Unavailable, selection.Status );
+			)
+		);
+		Assert.Throws<ObjectDisposedException>(
+			() => resource.Animation.SelectFrameAsync( frame )
+		);
 		Assert.Equal( writesBeforeRejectedControls, transport.Writes.Count );
 	}
 
@@ -327,7 +326,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 				throw new InvalidOperationException(
 					"The scripted terminal input channel is closed."
 				);
-			}
+		}
 		}
 
 		internal async Task WaitForWriteCountAsync(
