@@ -30,6 +30,7 @@ using Icod.TermInfo;
 public sealed partial class TerminalSession {
 	private readonly SemaphoreSlim controlOutputGate = new( 1, 1 );
 	private int acceptingSessionOutput = 1;
+	private long sessionOutputEpoch;
 
 	internal async ValueTask<IDisposable> AcquireControlOutputAsync(
 		CancellationToken cancellationToken
@@ -38,6 +39,7 @@ public sealed partial class TerminalSession {
 		await this.controlOutputGate.WaitAsync(
 			cancellationToken
 		).ConfigureAwait( false );
+		Interlocked.Increment( ref this.sessionOutputEpoch );
 		return new ControlOutputLease( this.controlOutputGate );
 	}
 
@@ -58,6 +60,33 @@ public sealed partial class TerminalSession {
 			);
 		}
 
+		Interlocked.Increment( ref this.sessionOutputEpoch );
+		return new ControlOutputLease( this.controlOutputGate );
+	}
+
+	internal long CaptureSessionOutputEpoch() {
+		this.ThrowIfSessionOutputClosed();
+		return Volatile.Read( ref this.sessionOutputEpoch );
+	}
+
+	internal async ValueTask<IDisposable> AcquireScreenOutputAsync(
+		long expectedEpoch,
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		this.ThrowIfSessionOutputClosed();
+		await this.controlOutputGate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		if ( 0 == Volatile.Read( ref this.acceptingSessionOutput ) ) {
+			this.controlOutputGate.Release();
+			throw new ObjectDisposedException( nameof( TerminalSession ) );
+		}
+		if ( expectedEpoch != Volatile.Read( ref this.sessionOutputEpoch ) ) {
+			this.controlOutputGate.Release();
+			throw new InvalidOperationException(
+				"The screen-output transaction is stale because intervening session output occurred."
+			);
+		}
+		Interlocked.Increment( ref this.sessionOutputEpoch );
 		return new ControlOutputLease( this.controlOutputGate );
 	}
 
