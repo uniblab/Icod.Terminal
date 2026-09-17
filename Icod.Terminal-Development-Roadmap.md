@@ -6,6 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior completed line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
 - **Current development line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
+- **Current tranche:** T168 — sample and release qualification; T160–T167 accepted
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
