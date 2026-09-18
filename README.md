@@ -54,11 +54,11 @@ The direct production dependency graph is intentionally small:
 
 ```text
 Icod.Terminal
-├── Icod.TermInfo 1.14.0
+├── Icod.TermInfo 1.15.0
 └── Icod.Timing   1.0.0
 ```
 
-`Icod.TermInfo.Inspection 1.14.0` is used only by optional integration tests and samples. It is not a production dependency of `Icod.Terminal`. Its raster-backend planner remains caller-side advisory policy rather than part of Terminal's production router.
+`Icod.TermInfo.Inspection 1.15.0` is used only by optional integration tests and samples. It is not a production dependency of `Icod.Terminal`. Its raster-backend planner remains caller-side advisory policy rather than part of Terminal's production router.
 
 See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architecture contract.
 

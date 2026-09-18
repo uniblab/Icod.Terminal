@@ -2,7 +2,7 @@
 
 **Release:** `1.17.0`  
 **Theme:** Terminal-owned Dimensions, Semantic Screen Planning, and Session-bound Output Transactions  
-**Status:** T170-T179 implemented; stable candidate qualified, bookkeeping-head requalification pending
+**Status:** T170-T179 implemented; TermInfo 1.15 dependency refresh locally qualified, exact-head requalification pending
 **Candidate identity:** `1.17.0`
 **Stable compatibility floor:** `1.0.0`  
 **Prior published release:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
@@ -46,11 +46,11 @@ Version 1.17 adds:
 
 The active 1.17 PR contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition. T178 adds separate candidate-package witnesses for published stable `Icod.DCurses 1.6.0` compatibility and future Terminal-only screen rendering without direct TermInfo use.
 
-The T179 stable candidate head `d02fc710d2fa8d492153c03dc644f21f194eb1dd` passed pull-request workflow #1981 / run `35293178330` across all nine Windows, Linux, macOS, package, downstream, API/XML, and artifact jobs. The initial Linux execution encountered the pre-existing scheduler-sensitive `LateTimedOutQueryResponseDoesNotLeakIntoSemanticLane` real-time boundary test; an isolated same-SHA retry passed without a source change. Independent candidate review found no Critical, Important, or Minor issue.
+The final documented T179 candidate head `0f78f0ceb39d1b8523391671c23f92a6b7c871a3` passed pull-request workflow #1982 / run `35294166853` across all nine Windows, Linux, macOS, package, downstream, API/XML, and artifact jobs. Independent candidate review found no Critical, Important, or Minor issue.
 
-Local qualification passed 2,369 unit tests and 15 TermInfo integration tests per target framework, all samples and DCurses acceptance, eight hardening-soak cycles per framework, and all four package shards. It produced `Icod.Terminal.1.17.0.nupkg` (`8f181bdbb3d3909ecf2128d491a2624cbb1c1ff579ee2c4002d16fc6de1eadec`) and `Icod.Terminal.1.17.0.snupkg` (`980fefa80d80ef771790ffdfd211b9a9b2da97c809b334ef66ca24361f33e28f`). The `net8.0`, `net9.0`, and `net10.0` API snapshots remain byte-identical with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
+Before merge, the active candidate advances production `Icod.TermInfo` and optional test/sample `Icod.TermInfo.Inspection` from `1.14.0` to `1.15.0`. Local qualification passed 2,369 unit tests and 15 TermInfo integration tests per target framework, all samples and DCurses acceptance, eight hardening-soak cycles per framework, and all four package shards. The `net8.0`, `net9.0`, and `net10.0` API snapshots remain byte-identical with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
 
-T179 candidate implementation and qualification are complete. The evidence-only bookkeeping head still requires the complete matrix; merge, tagging, release creation, and publication remain later explicit maintainer decisions.
+The dependency-refresh commit and later evidence-only bookkeeping head still require the complete matrix; merge, tagging, release creation, and publication remain later explicit maintainer decisions.
 
 ## Tranche sequence
 

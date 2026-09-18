@@ -16,7 +16,8 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Keeps cells, windows, layout, clipping, Unicode width, damage, desired-versus-physical comparison, and repaint policy above Terminal.
 - Hardens dimensions, planner cost/output selection, rendition/color validation, editing ranges/padding, transaction bounds/concurrency/cleanup, and hyperlink/raster ownership/cancellation behavior.
 - Finalizes the 1.17 public API fingerprint as `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across all three target frameworks.
-- Retains production dependencies `Icod.TermInfo 1.14.0` and `Icod.Timing 1.0.0`; the new screen contracts expose no TermInfo types.
+- Advances the production dependency to `Icod.TermInfo 1.15.0` while retaining `Icod.Timing 1.0.0`; the new screen contracts expose no TermInfo types.
+- Aligns optional integration tests and samples with `Icod.TermInfo.Inspection 1.15.0` without adding Inspection or Source to the production graph.
 
 See `docs/releases/1.17.0.md`, `docs/Public-API-Baseline-1.17.md`, and `Icod.Terminal-1.17.0-Development-Roadmap.md` for the complete 1.17 contract.
 
