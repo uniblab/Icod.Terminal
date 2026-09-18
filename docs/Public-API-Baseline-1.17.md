@@ -1,6 +1,6 @@
 # Icod.Terminal 1.17 Public API Baseline
 
-This document records the additive public API proposed for the `Icod.Terminal 1.17.0` screen-planning and session-bound output track.
+This document records the final additive public API for the `Icod.Terminal 1.17.0` screen-planning and session-bound output release.
 
 The stable compatibility floor remains `1.0.0`. The complete 1.16 public surface remains available and unchanged. The predecessor 1.16 public API fingerprint is:
 
@@ -8,13 +8,13 @@ The stable compatibility floor remains `1.0.0`. The complete 1.16 public surface
 d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
 ```
 
-The generated public API snapshots are identical on `net8.0`, `net9.0`, and `net10.0`. The current 1.17 development fingerprint is:
+The generated public API snapshots are identical on `net8.0`, `net9.0`, and `net10.0`. The final 1.17 fingerprint is:
 
 ```text
 c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9
 ```
 
-The machine-readable fingerprint is stored in `docs/Public-API-Baseline-1.17.sha256` and is enforced by the package/public-API gate during the 1.17 development line.
+The machine-readable fingerprint is stored in `docs/Public-API-Baseline-1.17.sha256` and is enforced by the stable package/public-API gate.
 
 ## Public additions over 1.16
 

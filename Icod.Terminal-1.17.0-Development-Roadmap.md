@@ -2,8 +2,8 @@
 
 **Release:** `1.17.0`  
 **Theme:** Terminal-owned Dimensions, Semantic Screen Planning, and Session-bound Output Transactions  
-**Status:** T170-T178 implemented and qualified; T179 stable closure open
-**Development identity:** `1.17.0-alpha.1`  
+**Status:** T170-T178 implemented and qualified; T179 stable-candidate preparation in progress
+**Candidate identity:** `1.17.0`
 **Stable compatibility floor:** `1.0.0`  
 **Prior published release:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
 
@@ -46,7 +46,7 @@ Version 1.17 adds:
 
 The active 1.17 PR contains the T170-T177 production surface: Terminal-owned dimensions/profile contracts, all planned semantic operation families, output-epoch integration, synchronized transaction framing, strict hyperlink composition, and same-session raster-placeholder composition. T178 adds separate candidate-package witnesses for published stable `Icod.DCurses 1.6.0` compatibility and future Terminal-only screen rendering without direct TermInfo use.
 
-T178 hardening head `30c25118ab8f5cb4b40587d3086e984b3ba5832c` passed pull-request workflow #1979 / run `35286375813` across all nine Windows, Linux, macOS, package, downstream, API/XML, and artifact jobs. Independent aggregate review found no remaining Critical or Important issue. T179 stable release closure, merge, tagging, and publication remain later explicit maintainer decisions.
+The final T178 hardening/documentation head `da4216df31eb7a3cf7fe8532a66283cd92e91f8b` passed pull-request workflow #1980 / run `35287002955` across all nine Windows, Linux, macOS, package, downstream, API/XML, and artifact jobs. Independent aggregate review found no remaining Critical or Important issue. T179 is preparing stable identity and permanent release authorities; exact-head stable-candidate qualification remains open. Merge, tagging, and publication remain later explicit maintainer decisions.
 
 ## Tranche sequence
 
@@ -127,7 +127,7 @@ The package release shard runs these as two independent consumers across every s
 
 ## T179 — Stable closure
 
-Freeze public API/XML snapshots across all target frameworks, update permanent architecture/compatibility/security authorities, synchronize release metadata and documentation, and qualify the exact candidate head across Windows, Linux, and macOS.
+Freeze public API/XML snapshots across all target frameworks, update permanent architecture/compatibility/security authorities, synchronize stable release metadata and documentation, and qualify the exact candidate head across Windows, Linux, and macOS. Candidate preparation uses [`docs/superpowers/plans/2026-09-18-1.17.0-stable-closure.md`](docs/superpowers/plans/2026-09-18-1.17.0-stable-closure.md) and is in progress.
 
 Publication remains an explicit maintainer action after the stable candidate is accepted.
 

@@ -2,7 +2,7 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
-## 1.17.0-alpha.1
+## 1.17.0
 
 ### Terminal-owned screen planning and commitment
 
@@ -14,9 +14,11 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Adds serialized-output epoch validation, optional synchronized-output framing, pre-commit cancellation, non-cancellable committed cleanup, one final flush, and independent failure visibility.
 - Adds separate package-boundary witnesses for unchanged published `Icod.DCurses 1.6.0` compatibility and future TermInfo-decoupled rendering through only Terminal-owned screen contracts.
 - Keeps cells, windows, layout, clipping, Unicode width, damage, desired-versus-physical comparison, and repaint policy above Terminal.
-- Freezes the current alpha API fingerprint as `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across all three target frameworks.
+- Hardens dimensions, planner cost/output selection, rendition/color validation, editing ranges/padding, transaction bounds/concurrency/cleanup, and hyperlink/raster ownership/cancellation behavior.
+- Finalizes the 1.17 public API fingerprint as `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across all three target frameworks.
+- Retains production dependencies `Icod.TermInfo 1.14.0` and `Icod.Timing 1.0.0`; the new screen contracts expose no TermInfo types.
 
-See `docs/releases/1.17.0-alpha.1.md`, `docs/Public-API-Baseline-1.17.md`, and `Icod.Terminal-1.17.0-Development-Roadmap.md` for the development contract.
+See `docs/releases/1.17.0.md`, `docs/Public-API-Baseline-1.17.md`, and `Icod.Terminal-1.17.0-Development-Roadmap.md` for the complete 1.17 contract.
 
 ## 1.16.0
 

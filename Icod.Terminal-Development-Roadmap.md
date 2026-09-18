@@ -5,8 +5,8 @@
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
-- **Current development line:** `1.17.0-alpha.1` — Terminal-owned Screen Output Contracts
-- **Development status:** T170-T178 implemented and qualified on the active PR; T179 stable closure open
+- **Current candidate line:** `1.17.0` — Terminal-owned Screen Output Contracts
+- **Development status:** T170-T178 implemented and qualified; T179 stable-candidate preparation in progress
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -17,15 +17,15 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-The 1.17 T178 alpha hardening checkpoint is accepted at exact head `30c25118ab8f5cb4b40587d3086e984b3ba5832c`, pull-request workflow #1979 / run `35286375813`, with all nine jobs successful. The checkpoint passed Windows, Linux, and macOS runtime tests; package/API/XML/license and artifact validation; TermInfo integration; published `Icod.DCurses 1.6.0` compatibility; and the future Terminal-only screen-contract consumer. The frozen public API fingerprint remains `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across `net8.0`, `net9.0`, and `net10.0`.
+The final 1.17 T178 hardening/documentation checkpoint is accepted at exact head `da4216df31eb7a3cf7fe8532a66283cd92e91f8b`, pull-request workflow #1980 / run `35287002955`, with all nine jobs successful. The checkpoint passed Windows, Linux, and macOS runtime tests; package/API/XML/license and artifact validation; TermInfo integration; published `Icod.DCurses 1.6.0` compatibility; and the future Terminal-only screen-contract consumer. The frozen public API fingerprint remains `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across `net8.0`, `net9.0`, and `net10.0`.
 
-T179 stable closure, merge, tagging, release creation, and package publication remain explicit maintainer decisions.
+T179 is preparing the stable `1.17.0` package and permanent release authorities. Exact-head stable-candidate qualification, merge, tagging, release creation, and package publication remain open; the last four are explicit maintainer actions.
 
 `Icod.Terminal 1.16.0` was published from annotated tag `v1.16.0` at exact commit `5e28d48936ab1d65657d672feee13bc9ef4fe017` on 2026-09-17. The stable candidate was accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
 
 The candidate produced the stable `1.16.0` NuGet and symbol packages, retained identical public API snapshots across all target frameworks with fingerprint `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`, and passed cross-platform runtime/sample, package/API/XML, artifact, TermInfo integration, and stable `Icod.DCurses` downstream qualification.
 
-Version 1.17 development begins from that published stable baseline. Publication of later prerelease/stable artifacts remains an explicit maintainer action.
+Version 1.17 development began from that published stable baseline. Publication of the prepared stable candidate remains an explicit maintainer action.
 
 ## Current architecture
 
@@ -186,7 +186,7 @@ Frame composition remains a strong candidate for a later focused release after t
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
 
-## 1.17 active development — Terminal-owned Screen Output Contracts
+## 1.17 stable candidate — Terminal-owned Screen Output Contracts
 
 Version 1.17 prepares the semantic and transactional Terminal boundary required for a later TermInfo-free DCurses 2.0 package.
 
@@ -217,6 +217,6 @@ Authorities:
 
 ## Later development candidates
 
-After 1.16, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
+After 1.17, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

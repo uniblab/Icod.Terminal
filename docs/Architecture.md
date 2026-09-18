@@ -313,9 +313,9 @@ Virtual-parent loss similarly invalidates the dependent placement subtree withou
 
 ## 10. Output commitment
 
-Caller cancellation is honored before commitment where possible. Once a logical graphics transaction commits, ordinary cancellation does not intentionally truncate it.
+Caller cancellation is honored before commitment where possible. Once a logical screen or graphics transaction commits, ordinary cancellation does not intentionally truncate it.
 
-Persistent resource upload, placement create/update, and placeholder creation are serialized acknowledged transactions. Typed placeholder-cell output uses the normal session output gate. Post-commit transport failure is surfaced without blind replay, automatic backend switching, or invented terminal certainty.
+Screen-output transactions, persistent resource upload, placement create/update, and placeholder creation are serialized through the session's existing output authority. Typed placeholder-cell output uses the normal session output gate. Post-commit transport failure is surfaced without blind replay, automatic backend switching, or invented terminal certainty.
 
 ## 11. Generation-scoped ownership
 
@@ -351,7 +351,7 @@ Persistent source cropping and virtual-placeholder rendering operate on already-
 
 ## 14. Optional TermInfo 1.14 backend planning boundary
 
-The active 1.16 repository uses `Icod.TermInfo 1.14.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.14.0`.
+The active 1.17 repository uses `Icod.TermInfo 1.14.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.14.0`.
 
 Inspection 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. That planner remains a **consumer/application policy layer**; it is not invoked by `Icod.Terminal` production routing.
 
@@ -377,7 +377,7 @@ A conclusive live `PersistentRasterGraphics` result may be mapped by the caller 
 
 TermInfo planning does not replace Terminal's live capability checks, routing, commitment, identity ownership, or cleanup. Production `Icod.Terminal` retains no dependency on `Icod.TermInfo.Inspection` or `Icod.TermInfo.Source`.
 
-## 15. Stable exclusions after 1.16
+## 15. Stable exclusions after 1.17
 
 Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 
@@ -401,7 +401,7 @@ Relative placement, lifecycle observation, virtual placeholders, and resource-ow
 
 ## 16. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.16 production graph is:
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.17 production graph is:
 
 ```text
 Icod.TermInfo 1.14.0
