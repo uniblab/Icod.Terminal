@@ -118,6 +118,13 @@ public sealed class DependencyCouplingPolicyTests {
 				StringComparison.Ordinal
 			);
 		}
+		Assert.Contains(
+			ownedSources,
+			acceptanceSource => File.ReadAllText( acceptanceSource ).Contains(
+				".PlanRenditionBaseline()",
+				StringComparison.Ordinal
+			)
+		);
 
 		foreach ( string targetFramework in new[] { "net8.0", "net9.0", "net10.0" } ) {
 			using JsonDocument evaluation = EvaluateProjectItems(

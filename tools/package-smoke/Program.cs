@@ -128,12 +128,24 @@ try {
 			&& 0 < homePlan.ByteCount,
 		"The package consumer received an invalid cursor plan."
 	);
+	TerminalScreenOperationPlan renditionBaseline = session.Screen
+		.PlanRenditionBaseline()
+		?? throw new InvalidOperationException(
+			"The package consumer could not plan unknown-state rendition restoration."
+		);
+	Require(
+		TerminalScreenOperationKind.Rendition == renditionBaseline.Kind
+			&& 0 < renditionBaseline.ByteCount
+			&& 1 == renditionBaseline.AffectedLines,
+		"The package consumer received an invalid rendition-baseline plan."
+	);
 	TerminalScreenOutputTransaction screenOutput =
 		session.CreateScreenOutputTransaction(
 			new TerminalScreenOutputTransactionOptions {
 				UseSynchronizedOutput = true
 			}
 		);
+	screenOutput.Add( renditionBaseline );
 	screenOutput.Add( homePlan );
 	screenOutput.WriteText( "screen-package-smoke" );
 	screenOutput.WriteHyperlink( "docs", "https://example.com/icod-terminal" );

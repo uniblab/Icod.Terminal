@@ -69,6 +69,8 @@ Placeholder cells remain current-cursor text output. Terminal owns their protoco
 
 Planning is side-effect free. A plan identifies its semantic operation, resolved terminal-byte cost, and padding-sensitive affected-line count. A higher layer may compare independently safe plans against its own retained-screen state; Terminal does not decide which cells changed or whether rewriting is preferable.
 
+`PlanRenditionBaseline()` represents unknown physical rendition state. It derives obligations from profile entry/selection evidence and returns a plan only when every exposed attribute and color axis can be restored unconditionally. Attribute restoration precedes original-color restoration. A reset-only profile has no reachable rendition state and therefore receives a valid zero-byte plan; a partially restorable profile receives no plan.
+
 `CreateScreenOutputTransaction(...)` captures the session serialized-output epoch and composes plans, application text, strict hyperlinks, and current raster-placeholder cells. Commit rejects stale work before output, holds the existing output gate, optionally emits synchronized-output framing, attempts required cleanup after commitment, and flushes before release.
 
 This contract does not transfer cells, windows, pads, layout, clipping, Unicode display width, damage, desired-versus-physical comparison, or repaint policy into Terminal.
@@ -351,7 +353,7 @@ Persistent source cropping and virtual-placeholder rendering operate on already-
 
 ## 14. Optional TermInfo 1.14 backend planning boundary
 
-The active 1.17 repository uses `Icod.TermInfo 1.15.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.15.0`.
+The active 1.18 repository uses `Icod.TermInfo 1.15.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.15.0`.
 
 Inspection 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. That planner remains a **consumer/application policy layer**; it is not invoked by `Icod.Terminal` production routing.
 
@@ -377,7 +379,7 @@ A conclusive live `PersistentRasterGraphics` result may be mapped by the caller 
 
 TermInfo planning does not replace Terminal's live capability checks, routing, commitment, identity ownership, or cleanup. Production `Icod.Terminal` retains no dependency on `Icod.TermInfo.Inspection` or `Icod.TermInfo.Source`.
 
-## 15. Stable exclusions after 1.17
+## 15. Stable exclusions after 1.18
 
 Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 
@@ -401,7 +403,7 @@ Relative placement, lifecycle observation, virtual placeholders, and resource-ow
 
 ## 16. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.17 production graph is:
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.18 production graph is:
 
 ```text
 Icod.TermInfo 1.15.0

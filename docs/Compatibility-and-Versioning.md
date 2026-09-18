@@ -127,6 +127,14 @@ Existing `GetSize()`, `TerminalLifecycleEvent.Size`, `TerminalSession.Terminal`,
 
 Release qualification treats compatibility and future decoupling as separate claims: the 1.17 package must run with published stable `Icod.DCurses 1.6.0`, and an independent package-only consumer must compile against the Terminal-owned screen contracts with no direct TermInfo project reference or source use. The latter is evidence of API sufficiency, not a claim that DCurses 2.0 has already shipped.
 
+### 4.7 1.18 unknown-rendition recovery
+
+Version 1.18 additively introduces `TerminalScreenPlanner.PlanRenditionBaseline()`. Existing known-state normalization, transition, and reset behavior is unchanged.
+
+The operation does not reinterpret a default rendition as known physical state. It returns an opaque same-session plan only when every profile-exposed attribute-entry and color-selection axis can be restored unconditionally. It returns `null` rather than weakening this guarantee, and returns a valid zero-byte plan only when no reachable rendition state is exposed.
+
+The public signature contains no TermInfo type. Package qualification retains the 1.17 compatibility surface, production dependency versions, and all historical API baselines while adding the frozen 1.18 fingerprint.
+
 ## 5. Persistent-raster compatibility guarantees
 
 The following remain compatible guarantees:
@@ -173,7 +181,7 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.15 optional integration compatibility
 
-The active 1.17 direct production dependency graph remains:
+The active 1.18 direct production dependency graph remains:
 
 ```text
 Icod.TermInfo 1.15.0
@@ -222,7 +230,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.17
+## 11. Deliberate non-promises after 1.18
 
 Stable 1.x does not promise:
 

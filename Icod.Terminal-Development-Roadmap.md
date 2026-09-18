@@ -6,7 +6,8 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.17.0` — Terminal-owned Screen Output Contracts
 - **Current patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.17.0 published; 1.17.1 documentation-only patch in qualification
+- **Development status:** 1.17.1 published; 1.18.0 stable candidate qualified on PR #63
+- **Active development target:** `1.18.0` — Unknown-rendition baseline recovery for Terminal-only screen consumers
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -22,6 +23,8 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 The published feature line uses production `Icod.TermInfo 1.15.0` and optional test/sample `Icod.TermInfo.Inspection 1.15.0`. It retains identical public API snapshots across `net8.0`, `net9.0`, and `net10.0` with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
 
 Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
+
+Version 1.18.0 is a qualified stable source candidate on PR #63. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete. Merge, tag, release creation, and publication remain maintainer actions.
 
 ## Current architecture
 
@@ -71,12 +74,13 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; In
 1.16.0  persistent raster animation and frame lifecycle             PUBLISHED
 1.17.0  Terminal-owned dimensions, screen planning, and transactions PUBLISHED
 1.17.1  packaged README and release metadata correction             PATCH
+1.18.0  unknown-rendition baseline recovery                         CANDIDATE
 ```
 
-The final 1.17 public API fingerprint is:
+The 1.18 public API fingerprint is:
 
 ```text
-c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9
+48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d
 ```
 
 Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
@@ -212,8 +216,44 @@ Authorities:
 - [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
 - [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
 
+## 1.18 development line — Unknown-rendition Baseline Recovery
+
+Version 1.18 is a focused additive release that closes the sole blocking Terminal contract found by the DCurses 2.0 readiness gate.
+
+The governing rule is:
+
+> Terminal may claim a rendition baseline only when it can unconditionally restore every rendition axis exposed by the selected profile that Terminal can enter; otherwise no plan is available.
+
+The release adds one public planner method:
+
+```csharp
+public TerminalScreenOperationPlan? PlanRenditionBaseline();
+```
+
+The plan represents unknown physical rendition state, restores attributes before original colors in a safe deterministic order, retains Terminal-owned expansion/padding/cost and same-session transaction ownership, and returns a valid zero-byte plan only when the selected profile exposes no enterable attribute and no selectable color axis. Existing known-state reset and transition behavior remains unchanged.
+
+T180-T185 are accepted. The stable candidate at `56bbc011325e5c88e67f243a9b882b97bae9aac7` passed the complete Windows/Linux/macOS, package, API/XML, downstream, and artifact matrix in workflow run `35382158657`. Publication remains a separate maintainer action.
+
+The tranche sequence is:
+
+```text
+T180  contract freeze, reference snapshot, API-regret gate, and alpha identity
+T181  unknown-state rendition-baseline planner and focused red-green tests
+T182  capability ordering, padding, cost, zero-byte, and nullability hardening
+T183  session ownership, transaction commitment, and adversarial qualification
+T184  package/API/XML/docs and DCurses 2.0 package-only acceptance
+T185  release-candidate qualification and stable 1.18.0 closure
+```
+
+Authorities:
+
+- [`Icod.Terminal-1.18.0-Development-Roadmap.md`](Icod.Terminal-1.18.0-Development-Roadmap.md)
+- [`docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md`](docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
+- [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
+- [`Icod.DCurses 2.0 PR #32`](https://github.com/uniblab/Icod.DCurses/pull/32)
+
 ## Later development candidates
 
-After 1.17, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
+After 1.18, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

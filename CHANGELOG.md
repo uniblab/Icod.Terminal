@@ -2,6 +2,21 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.18.0
+
+### Unknown-rendition baseline recovery
+
+- Adds `TerminalScreenPlanner.PlanRenditionBaseline()` for safe recovery from unknown physical rendition state without requiring a caller-supplied known current rendition.
+- Derives obligations from raw attribute-entry and color-selection evidence; returns `null` when any exposed axis cannot be restored unconditionally.
+- Emits global attribute reset or every required safe specific exit in stable order, then restores original colors.
+- Preserves valid zero-byte planning for empty and reset-only profiles while retaining exact byte cost, padding, affected-line, same-session ownership, stale-epoch, cancellation, and transaction semantics.
+- Exposes no TermInfo type or raw capability/terminal-string API and leaves retained screen/layout/damage policy above Terminal.
+- Finalizes identical `net8.0`/`net9.0`/`net10.0` public API snapshots with fingerprint `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
+- Retains production dependencies `Icod.TermInfo 1.15.0` and `Icod.Timing 1.0.0`.
+- Qualifies fresh package consumers, published `Icod.DCurses 1.6.0` compatibility, and a separate TermInfo-free future-renderer package consumer on all target frameworks.
+
+See `docs/releases/1.18.0.md`, `docs/Public-API-Baseline-1.18.md`, and `Icod.Terminal-1.18.0-Development-Roadmap.md` for the complete contract.
+
 ## 1.17.1
 
 ### Packaged README and release metadata correction
