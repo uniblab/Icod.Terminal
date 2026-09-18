@@ -37,11 +37,12 @@ Relevant fingerprints include:
 1.14  2a23205217183a602f8fc454c49b47d278ebdc26b5e358c0384ed0d692405696
 1.15  eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
 1.16  d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d
+1.17  c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9
 ```
 
 Version 1.11.1 intentionally retained the 1.11 fingerprint because it added no production public API.
 
-The final 1.16 fingerprint is enforced across `net8.0`, `net9.0`, and `net10.0`; all historical fingerprints remain immutable.
+The final 1.17 fingerprint is enforced across `net8.0`, `net9.0`, and `net10.0`; all historical fingerprints remain immutable.
 
 ## 4. Additive persistent-raster progression
 
@@ -118,6 +119,14 @@ The controller is resource owned and not independently disposable. Animation seq
 
 The session-wide animation registry is bounded to 4096 known frames including roots, with one pending append per animation. No source-frame replay cache, partial-frame update, composition, or decoder dependency is added.
 
+### 4.6 1.17 semantic screen output
+
+Version 1.17 additively introduces Terminal-owned dimensions, an immutable semantic profile, TermInfo-free screen values, opaque costed operation plans, and bounded session-bound output transactions.
+
+Existing `GetSize()`, `TerminalLifecycleEvent.Size`, `TerminalSession.Terminal`, low-level terminal-string output, and other 1.x APIs remain available. The new APIs do not move retained cells, layout, Unicode-width policy, damage, refresh comparison, or repaint ownership into Terminal.
+
+Release qualification treats compatibility and future decoupling as separate claims: the candidate package must run with published stable `Icod.DCurses 1.6.0`, and an independent package-only consumer must compile against the Terminal-owned screen contracts with no direct TermInfo project reference or source use. The latter is evidence of API sufficiency, not a claim that DCurses 2.0 has already shipped.
+
 ## 5. Persistent-raster compatibility guarantees
 
 The following remain compatible guarantees:
@@ -164,14 +173,14 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.14 optional integration compatibility
 
-The active 1.16 direct production dependency graph remains:
+The active 1.17 direct production dependency graph remains:
 
 ```text
-Icod.TermInfo 1.14.0
+Icod.TermInfo 1.15.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.14.0`; Inspection and Source remain outside the production graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.15.0`; Inspection and Source remain outside the production graph.
 
 Inspection 1.14 adds advisory raster-backend evidence/candidate/selection planning. Icod.Terminal qualifies that API at the consumer boundary but does **not** use `RasterBackendPlanner` in its production router.
 
@@ -195,7 +204,7 @@ Historical release documents retain the TermInfo/Inspection versions actually sh
 
 Committed graphics operations do not intentionally truncate after commitment merely because ordinary caller cancellation arrives.
 
-Partial transport failure is surfaced without blind replay or automatic backend switching. This applies to ephemeral raster output, persistent upload/placement/placeholder transactions, animation frame/control transactions, and typed placeholder-cell output according to their existing logical transaction boundaries.
+Partial transport failure is surfaced without blind replay or automatic backend switching. This applies to screen-output transactions, ephemeral raster output, persistent upload/placement/placeholder transactions, animation frame/control transactions, and typed placeholder-cell output according to their existing logical transaction boundaries.
 
 ## 10. Backend-neutral public contracts
 
@@ -213,7 +222,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.16
+## 11. Deliberate non-promises after 1.17
 
 Stable 1.x does not promise:
 
@@ -228,6 +237,7 @@ Stable 1.x does not promise:
 - absolute screen-coordinate layout owned by `Icod.Terminal`;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or emitted-screen-position tracking;
+- Terminal-owned retained-screen comparison, damage, refresh, or repaint policy;
 - partial-frame animation updates, frame composition, and delta editing;
 - scene-graph/cells/windows/damage/layout ownership;
 - image-file decoding/transcoding;
@@ -259,9 +269,9 @@ Any post-closure pre-merge code or documentation change requires the same exact-
 
 PR qualification does not itself merge, tag, create a GitHub Release, or publish NuGet packages.
 
-For 1.16, the maintainer/release workflow remains responsible for:
+For 1.17, the maintainer/release workflow remains responsible for:
 
 1. merging the fully qualified PR;
 2. validating the mainline Release workflow;
-3. creating/pushing `v1.16.0` only after mainline validation succeeds;
+3. creating/pushing `v1.17.0` only after mainline validation succeeds;
 4. creating the GitHub Release and publishing NuGet through the established release workflow.

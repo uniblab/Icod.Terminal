@@ -24,12 +24,15 @@ namespace Icod.Terminal;
 /// Synchronized-output ownership integration for <see cref="TerminalSession"/>.
 /// </summary>
 public sealed partial class TerminalSession {
+	private readonly object synchronizedOutputManagerSync = new();
 	private TerminalSynchronizedOutputManager? synchronizedOutputManager;
 
 	internal TerminalSynchronizedOutputManager SynchronizedOutputManager {
 		get {
-			return this.synchronizedOutputManager ??=
-				new TerminalSynchronizedOutputManager( this );
+			lock ( this.synchronizedOutputManagerSync ) {
+				return this.synchronizedOutputManager ??=
+					new TerminalSynchronizedOutputManager( this );
+			}
 		}
 	}
 

@@ -105,6 +105,39 @@ try {
 		100 == size.Columns && 40 == size.Rows,
 		"The package consumer received unexpected terminal dimensions."
 	);
+	TerminalControlResult<TerminalDimensions> dimensionsResult =
+		session.GetDimensions();
+	Require(
+		dimensionsResult.IsAvailable
+			&& new TerminalDimensions( 100, 40 ) == dimensionsResult.GetRequiredValue(),
+		"The package consumer did not receive Terminal-owned dimensions."
+	);
+	Require(
+		"xterm" == session.Profile.Name
+			&& session.Profile.Screen.SupportsAbsoluteCursorAddressing,
+		"The package consumer did not receive the semantic terminal profile."
+	);
+	TerminalScreenOperationPlan homePlan = session.Screen.PlanCursorMove(
+		null,
+		new TerminalScreenPosition( 0, 0 )
+	) ?? throw new InvalidOperationException(
+		"The package consumer could not plan a safe cursor-home operation."
+	);
+	Require(
+		TerminalScreenOperationKind.CursorMove == homePlan.Kind
+			&& 0 < homePlan.ByteCount,
+		"The package consumer received an invalid cursor plan."
+	);
+	TerminalScreenOutputTransaction screenOutput =
+		session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions {
+				UseSynchronizedOutput = true
+			}
+		);
+	screenOutput.Add( homePlan );
+	screenOutput.WriteText( "screen-package-smoke" );
+	screenOutput.WriteHyperlink( "docs", "https://example.com/icod-terminal" );
+	await screenOutput.CommitAsync();
 
 	TerminalControlResult<TerminalInputProtocolLease> protocolResult =
 		await session.AcquireInputProtocolsAsync(

@@ -97,6 +97,24 @@ internal sealed class TerminalSynchronizedOutputManager : ITerminalSessionLifecy
 		}
 	}
 
+	internal async ValueTask<IDisposable> ReserveScreenOutputAsync(
+		CancellationToken cancellationToken
+	) {
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			this.ThrowIfClosed();
+			if ( this.suspended || 0 < this.owners.Count || this.cleanupRequired || this.physicalActive ) {
+				throw new InvalidOperationException(
+					"Screen synchronized output conflicts with existing synchronized-output ownership, suspended state, or pending cleanup."
+				);
+			}
+			return new TerminalSession.ControlOutputLease( this.gate );
+		} catch {
+			this.gate.Release();
+			throw;
+		}
+	}
+
 	internal async ValueTask ReleaseAsync(
 		long ownerId
 	) {

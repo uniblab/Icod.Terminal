@@ -146,7 +146,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
-The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.14.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and now exercises the 1.14 advisory raster-backend planner.
+The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.15.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and exercises the advisory raster-backend planner introduced in TermInfo 1.14.
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0

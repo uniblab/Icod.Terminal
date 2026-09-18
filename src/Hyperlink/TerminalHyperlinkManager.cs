@@ -119,6 +119,24 @@ internal sealed class TerminalHyperlinkManager : ITerminalSessionLifecyclePartic
 		}
 	}
 
+	internal async ValueTask<IDisposable> ReserveScreenOutputAsync(
+		CancellationToken cancellationToken
+	) {
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			this.ThrowIfClosed();
+			if ( this.suspended || 0 < this.stack.Count || this.cleanupCloseRequired ) {
+				throw new InvalidOperationException(
+					"Screen hyperlink output conflicts with existing hyperlink ownership, suspended state, or pending cleanup."
+				);
+			}
+			return new TerminalSession.ControlOutputLease( this.gate );
+		} catch {
+			this.gate.Release();
+			throw;
+		}
+	}
+
 	internal async ValueTask ReleaseAsync(
 		long leaseId
 	) {

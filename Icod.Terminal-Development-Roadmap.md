@@ -4,9 +4,9 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Prior completed line:** `1.15.0` — Unicode Placeholder and Virtual Raster Placement
-- **Current stable candidate:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
-- **Development status:** T160–T169 complete; stable candidate qualified
+- **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
+- **Current candidate line:** `1.17.0` — Terminal-owned Screen Output Contracts
+- **Development status:** T170-T179 implemented; TermInfo 1.15 dependency refresh locally qualified, exact-head requalification pending
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -17,11 +17,17 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-The stable 1.16.0 candidate is accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
+The final documented T179 candidate was accepted at exact head `0f78f0ceb39d1b8523391671c23f92a6b7c871a3`, pull-request workflow #1982 / run `35294166853`, with all nine jobs successful. That checkpoint retained production `Icod.TermInfo 1.14.0`.
+
+Before merge, dependency-refresh candidate `dbddaaeb656ecf69961af83ef440bf68f28ff75b` advances production `Icod.TermInfo` and optional test/sample `Icod.TermInfo.Inspection` to `1.15.0`. Its byte-identical local tree-equivalent commit `1eab0f8793a9b8984e1db9b553671721c6b0b5df` passed 2,369 unit tests and 15 TermInfo integration tests on each of `net8.0`, `net9.0`, and `net10.0`, plus all samples, downstream DCurses acceptance, eight hardening-soak cycles per framework, and all four package shards. The stable 1.x package consumer, published `Icod.DCurses 1.6.0`, and the future Terminal-only DCurses consumer all passed. Its exact local package artifacts have SHA-256 `d06ca42015c5a1ec92c9f1931ddc842e14131cc7d8347bcd6e9e9b47572032d3` (`.nupkg`) and `555933bf87e060fff92a8a56ebd6a3c6e65a9f77fb30e957f14cd1d097bcc6d9` (`.snupkg`). Public API snapshots remain identical across all three frameworks with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
+
+The exact committed dependency-refresh head and its evidence-only bookkeeping head still require the complete nine-job matrix. Merge, tagging, release creation, and package publication remain open explicit maintainer actions.
+
+`Icod.Terminal 1.16.0` was published from annotated tag `v1.16.0` at exact commit `5e28d48936ab1d65657d672feee13bc9ef4fe017` on 2026-09-17. The stable candidate was accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
 
 The candidate produced the stable `1.16.0` NuGet and symbol packages, retained identical public API snapshots across all target frameworks with fingerprint `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`, and passed cross-platform runtime/sample, package/API/XML, artifact, TermInfo integration, and stable `Icod.DCurses` downstream qualification.
 
-Merge, tag, GitHub Release, and package publication remain explicit maintainer/release-workflow actions.
+Version 1.17 development began from that published stable baseline. Publication of the prepared stable candidate remains an explicit maintainer action.
 
 ## Current architecture
 
@@ -46,11 +52,11 @@ terminal applications
 The production dependency graph remains:
 
 ```text
-Icod.TermInfo 1.14.0
+Icod.TermInfo 1.15.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.14.0`; Inspection and Source remain outside the production package graph.
+Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; Inspection and Source remain outside the production package graph.
 
 ## Qualified stable-candidate sequence through 1.16.0
 
@@ -68,7 +74,8 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.14.0`; In
 1.13.0  bounded immutable-parent relative placement ownership
 1.14.0  side-effect-free persistent-raster lifecycle observability
 1.15.0  Unicode placeholder and virtual raster placement
-1.16.0  persistent raster animation and frame lifecycle             STABLE CANDIDATE
+1.16.0  persistent raster animation and frame lifecycle             PUBLISHED
+1.17.0  Terminal-owned dimensions, screen planning, and transactions ACTIVE
 ```
 
 The final 1.15 public API fingerprint is:
@@ -181,8 +188,37 @@ Frame composition remains a strong candidate for a later focused release after t
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
 
+## 1.17 stable candidate — Terminal-owned Screen Output Contracts
+
+Version 1.17 prepares the semantic and transactional Terminal boundary required for a later TermInfo-free DCurses 2.0 package.
+
+The governing rule is:
+
+> Terminal owns terminal dimensions, semantic terminal-profile interpretation, safe screen-operation planning, and serialized output commitment; higher layers own retained cells, layout, damage, and refresh policy.
+
+The tranche sequence is:
+
+```text
+T170  architecture, reference snapshot, API-regret gate, and development identity
+T171  Terminal-owned dimensions and lifecycle projections
+T172  immutable semantic TerminalProfile and screen-capability projection
+T173  cursor, ACS glyph, alert, and opaque operation-plan foundation
+T174  rendition normalization, color validation, transition, and reset planning
+T175  erase, character/line shift, scroll, region, padding, and cost planning
+T176  bounded session-bound transaction, output epoch, serialization, and framing
+T177  hyperlink/raster composition, commitment, cleanup, and failure aggregation
+T178  lifecycle/concurrency/security/downstream/package/API/XML hardening
+T179  stable 1.17 release closure
+```
+
+Authorities:
+
+- [`Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md)
+- [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
+- [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
+
 ## Later development candidates
 
-After 1.16, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
+After 1.17, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-	Icod.Terminal.TermInfoPersistentRaster.Sample
-	Sample application demonstrating Icod.Terminal TermInfoPersistentRaster features.
+	Icod.Terminal.DCursesScreenContractsAcceptance
+	Downstream Icod.DCurses acceptance utility for Icod.Terminal integration contracts.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 -->
 
@@ -27,18 +27,17 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-		<AssemblyName>Icod.Terminal.TermInfoPersistentRaster.Sample</AssemblyName>
-		<RootNamespace>Icod.Terminal.TermInfoPersistentRaster.Sample</RootNamespace>
 		<IsPackable>false</IsPackable>
-		<Configurations>Debug;Staging;Release</Configurations>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<NuGetAudit>false</NuGetAudit>
+		<IcodTerminalPackageVersion Condition="'$(IcodTerminalPackageVersion)' == ''">0.0.0-local-validation-required</IcodTerminalPackageVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="Program.cs" />
+		<Compile Include="Source/**/*.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo.Inspection" Version="1.15.0" />
-		<ProjectReference Include="..\..\Icod.Terminal.csproj" />
+		<PackageReference Include="Icod.Terminal" Version="$(IcodTerminalPackageVersion)" />
 	</ItemGroup>
 </Project>

@@ -191,7 +191,7 @@ The stable semantic surface intentionally does not expose:
 
 ## 14. TermInfo 1.14 advisory backend planning
 
-The active 1.16 repository directly depends on `Icod.TermInfo 1.14.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.14.0`.
+The active 1.17 repository directly depends on `Icod.TermInfo 1.15.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.15.0`.
 
 Inspection's `RasterBackendPlanner` classifies advisory Sixel/Kitty availability and applies explicit caller preference. This is **not** production Terminal routing and is not a security/authentication oracle.
 
@@ -228,14 +228,14 @@ TermInfo backend planning does not justify extra probes by itself; runtime verif
 
 ## 18. Dependency boundary
 
-The active 1.16 production package graph is:
+The active 1.17 production package graph is:
 
 ```text
-Icod.TermInfo 1.14.0
+Icod.TermInfo 1.15.0
 Icod.Timing   1.0.0
 ```
 
-`Icod.TermInfo.Inspection 1.14.0` is test/sample-only where used. Inspection, Source, image decoders, scene/layout libraries, and graphics toolkits are not added to the production graph.
+`Icod.TermInfo.Inspection 1.15.0` is test/sample-only where used. Inspection, Source, image decoders, scene/layout libraries, and graphics toolkits are not added to the production graph.
 
 Historical release records retain the dependency versions they actually shipped.
 
@@ -260,7 +260,19 @@ Animation acknowledgements remain untrusted terminal input. Correlation routes o
 
 Applications must not treat animation state, selected frame, timing, looping, placement, or visual coverage as a security boundary. The terminal controls final rendering and may ignore, evict, reinterpret, record, or externally compose output.
 
-## 20. Stable exclusions after 1.16
+## 20. Semantic screen planning and output commitment — 1.17
+
+Terminal-profile facts are immutable projections of the selected description, not authenticated live observations. Applications must not treat declared screen capabilities, dimensions, cursor position, rendition state, terminal content, or successful output as a security boundary or as proof of what a terminal ultimately rendered.
+
+Screen planning is side-effect free and returns opaque reviewed plans. Public callers cannot inject raw capability identifiers, expansion programs, padding directives, or arbitrary terminal strings through the planner. Dimensions, coordinates, counts, colors, regions, payload bytes, operation count, and aggregate transaction payload are validated and bounded before commitment.
+
+Plans, hyperlink content, and raster-placeholder cells retain exact session/owner identity. A transaction rejects foreign, stale, released, or disposed retained items before output. Creation captures the serialized-output epoch; intervening session-owned output invalidates the batch before commitment rather than allowing an outdated retained-screen decision to be emitted.
+
+Commit holds the existing output gate across the logical batch, optional synchronized-output framing, required hyperlink cleanup, one final flush, and gate release. Pre-commit cancellation emits nothing. After commitment, cleanup is attempted without ordinary caller cancellation; independent primary and cleanup failures are flattened in deterministic order. Failure does not trigger blind replay or claim that the terminal applied none, some, or all of the bytes.
+
+Application text and hyperlink labels remain disclosure surfaces. The caller remains responsible for deciding whether terminal-visible content and hyperlink targets are appropriate. Strict hyperlink validation prevents control-character framing injection but does not authenticate or make a URI safe to follow.
+
+## 21. Stable exclusions after 1.17
 
 Security/privacy behavior does not include promises for:
 

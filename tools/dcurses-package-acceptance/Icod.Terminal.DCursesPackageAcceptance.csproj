@@ -32,6 +32,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Icod.Terminal" Version="$(IcodTerminalPackageVersion)" />
-		<PackageReference Include="Icod.DCurses" Version="0.1.0" />
+		<PackageReference Include="Icod.DCurses" Version="1.6.0" />
 	</ItemGroup>
 </Project>

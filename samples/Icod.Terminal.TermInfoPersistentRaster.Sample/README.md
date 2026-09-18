@@ -1,6 +1,6 @@
 # Icod.Terminal.TermInfoPersistentRaster.Sample
 
-This sample demonstrates the current loose-coupling integration contract between `Icod.TermInfo.Inspection 1.14.0` and `Icod.Terminal` persistent-raster execution.
+This sample demonstrates the current loose-coupling integration contract between `Icod.TermInfo.Inspection 1.15.0` and `Icod.Terminal` persistent-raster execution.
 
 The integration pattern was introduced in Icod.Terminal 1.11.1 for lifecycle planning. The current sample retains that boundary, continues to demonstrate the advanced-placement planner introduced in Icod.TermInfo 1.12 for source rectangles and signed z-order, and now also consumes the Icod.TermInfo 1.14 advisory raster-backend evidence and selection layer.
 
