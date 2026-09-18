@@ -107,7 +107,7 @@ Acceptance covers same-session commitment, foreign-session rejection, stale-epoc
 
 ## T184 — Package and downstream acceptance
 
-Freeze identical public API/XML snapshots for `net8.0`, `net9.0`, and `net10.0`; update the active baseline selector, package smoke, and the future-DCurses screen-contract consumer; and compile the DCurses T2001 package-only witness against the candidate package without a direct `Icod.TermInfo` reference. The retained downstream witness's synthetic profile must add representative enter/select capabilities before it can truthfully expect `<sgr0><op>`; its public API call, transaction path, and exact-byte assertion remain unchanged.
+Freeze identical public API/XML snapshots for `net8.0`, `net9.0`, and `net10.0`; update the active baseline selector, package smoke, and the local future-DCurses compile/package consumer. That local consumer and the eventual DCurses production boundary must have no direct `Icod.TermInfo` reference. Separately, compile and run the DCurses T2001 exact-byte witness against the candidate package using its already reviewed test-only TermInfo fixture exception. The retained downstream witness's synthetic profile must add representative enter/select capabilities before it can truthfully expect `<sgr0><op>`; its public API call, transaction path, and exact-byte assertion remain unchanged.
 
 Published `Icod.DCurses 1.6.0` compatibility remains a separate required witness. Production dependencies remain `Icod.TermInfo 1.15.0` and `Icod.Timing 1.0.0` unless an independently justified qualification issue requires a later reviewed change.
 
