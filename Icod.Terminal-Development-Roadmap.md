@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
 - **Current candidate line:** `1.17.0` — Terminal-owned Screen Output Contracts
-- **Development status:** T170-T178 implemented and qualified; T179 stable-candidate preparation in progress
+- **Development status:** T170-T179 implemented; stable candidate qualified, bookkeeping-head requalification pending
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -17,9 +17,11 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-The final 1.17 T178 hardening/documentation checkpoint is accepted at exact head `da4216df31eb7a3cf7fe8532a66283cd92e91f8b`, pull-request workflow #1980 / run `35287002955`, with all nine jobs successful. The checkpoint passed Windows, Linux, and macOS runtime tests; package/API/XML/license and artifact validation; TermInfo integration; published `Icod.DCurses 1.6.0` compatibility; and the future Terminal-only screen-contract consumer. The frozen public API fingerprint remains `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across `net8.0`, `net9.0`, and `net10.0`.
+The T179 stable candidate is accepted at exact head `d02fc710d2fa8d492153c03dc644f21f194eb1dd`, pull-request workflow #1981 / run `35293178330`, with all nine jobs successful. The initial Linux execution encountered the pre-existing scheduler-sensitive `LateTimedOutQueryResponseDoesNotLeakIntoSemanticLane` real-time boundary test; the isolated retry passed on the same SHA without a source change. Windows, macOS, every package shard, and the validated artifact passed in the same workflow.
 
-T179 is preparing the stable `1.17.0` package and permanent release authorities. Exact-head stable-candidate qualification, merge, tagging, release creation, and package publication remain open; the last four are explicit maintainer actions.
+Local release qualification produced `Icod.Terminal.1.17.0.nupkg` with SHA-256 `8f181bdbb3d3909ecf2128d491a2624cbb1c1ff579ee2c4002d16fc6de1eadec` and `Icod.Terminal.1.17.0.snupkg` with SHA-256 `980fefa80d80ef771790ffdfd211b9a9b2da97c809b334ef66ca24361f33e28f`. Runtime verification passed 2,369 unit tests and 15 TermInfo integration tests on each of `net8.0`, `net9.0`, and `net10.0`, plus all samples, downstream DCurses acceptance, and eight hardening-soak cycles per framework. All four package shards passed, including the stable 1.x package consumer, published `Icod.DCurses 1.6.0`, and the future Terminal-only DCurses consumer. The public API snapshots remain identical across all three frameworks with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
+
+The evidence-only T179 bookkeeping head still requires the same complete nine-job matrix. Merge, tagging, release creation, and package publication remain open explicit maintainer actions.
 
 `Icod.Terminal 1.16.0` was published from annotated tag `v1.16.0` at exact commit `5e28d48936ab1d65657d672feee13bc9ef4fe017` on 2026-09-17. The stable candidate was accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
 
