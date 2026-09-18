@@ -181,7 +181,7 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.15 optional integration compatibility
 
-The active 1.17 direct production dependency graph remains:
+The active 1.18 direct production dependency graph remains:
 
 ```text
 Icod.TermInfo 1.15.0
@@ -230,7 +230,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.17
+## 11. Deliberate non-promises after 1.18
 
 Stable 1.x does not promise:
 
