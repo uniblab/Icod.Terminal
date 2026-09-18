@@ -9,17 +9,15 @@
 
 ## Status
 
-Current published stable release: `Icod.Terminal 1.17.1`.
+Current stable release: `Icod.Terminal 1.18.0`.
 
-Version `1.17.1` corrects the packaged README and release metadata for the 1.17 line. It makes no runtime or public-API change from `1.17.0`.
-
-This source prepares the stable `1.18.0` candidate. Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
+Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary required for a later `Icod.DCurses 2.0` release to remove its direct `Icod.TermInfo` dependency.
 
 The stable `1.0.0` compatibility floor remains unchanged. Version 1.18 retains the complete 1.17 screen-planning/transaction surface, 1.16 animation, 1.15 virtual-placeholder, and every earlier stable 1.x contract. The 1.18 public API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
-See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELOG.md) for release-specific details. Until 1.18.0 is published, installation guidance below continues to name the published 1.17.1 package.
+See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -69,7 +67,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the currently published package:
 
 ```text
-dotnet add package Icod.Terminal --version 1.17.1
+dotnet add package Icod.Terminal --version 1.18.0
 ```
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
