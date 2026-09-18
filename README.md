@@ -9,15 +9,17 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.17.1`.
+Current published stable release: `Icod.Terminal 1.17.1`.
 
 Version `1.17.1` corrects the packaged README and release metadata for the 1.17 line. It makes no runtime or public-API change from `1.17.0`.
 
+This source prepares the stable `1.18.0` candidate. Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
+
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary required for a later `Icod.DCurses 2.0` release to remove its direct `Icod.TermInfo` dependency.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.17 retains the complete 1.16 animation, 1.15 virtual-placeholder, 1.14 lifecycle-observation, 1.13 relative-placement, 1.12 crop/z-order, and earlier persistent-raster contracts. The final 1.17 public API fingerprint is `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.18 retains the complete 1.17 screen-planning/transaction surface, 1.16 animation, 1.15 virtual-placeholder, and every earlier stable 1.x contract. The 1.18 public API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
-The 1.17 line is additive over the complete 1.16 persistent-raster animation surface and every earlier stable 1.x contract. See the [1.17.1 release notes](docs/releases/1.17.1.md) and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELOG.md) for release-specific details. Until 1.18.0 is published, installation guidance below continues to name the published 1.17.1 package.
 
 ## Support the Project
 
@@ -112,6 +114,22 @@ if ( home is TerminalScreenOperationPlan plan ) {
 	await output.CommitAsync();
 }
 ```
+
+When a renderer cannot trust its current physical rendition, version 1.18 can establish a safe baseline before emitting retained content:
+
+```csharp
+TerminalScreenOperationPlan? baseline =
+	session.Screen.PlanRenditionBaseline();
+
+if ( baseline is TerminalScreenOperationPlan plan ) {
+	TerminalScreenOutputTransaction output =
+		session.CreateScreenOutputTransaction();
+	output.Add( plan );
+	await output.CommitAsync();
+}
+```
+
+A `null` result means at least one rendition axis exposed by the selected profile cannot be restored unconditionally from unknown state; callers must not substitute a claimed known default.
 
 `Profile` contains immutable selected-profile facts, while `GetDimensions()` reports the current Terminal-owned size result. A plan is opaque and session-bound; creating it emits nothing, and the transaction preserves ordering under one output gate and flush boundary. Retained cells, layout, Unicode width, clipping, damage, and repaint policy remain caller-owned.
 

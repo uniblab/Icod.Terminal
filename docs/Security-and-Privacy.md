@@ -260,11 +260,13 @@ Animation acknowledgements remain untrusted terminal input. Correlation routes o
 
 Applications must not treat animation state, selected frame, timing, looping, placement, or visual coverage as a security boundary. The terminal controls final rendering and may ignore, evict, reinterpret, record, or externally compose output.
 
-## 20. Semantic screen planning and output commitment — 1.17
+## 20. Semantic screen planning and output commitment — 1.17 and 1.18
 
 Terminal-profile facts are immutable projections of the selected description, not authenticated live observations. Applications must not treat declared screen capabilities, dimensions, cursor position, rendition state, terminal content, or successful output as a security boundary or as proof of what a terminal ultimately rendered.
 
 Screen planning is side-effect free and returns opaque reviewed plans. Public callers cannot inject raw capability identifiers, expansion programs, padding directives, or arbitrary terminal strings through the planner. Dimensions, coordinates, counts, colors, regions, payload bytes, operation count, and aggregate transaction payload are validated and bounded before commitment.
+
+Unknown physical rendition is not treated as a known default. `PlanRenditionBaseline()` derives restoration obligations from selected-profile entry/selection evidence and returns `null` if any exposed axis lacks unconditional restoration. This prevents higher layers from silently accepting a partial reset as a safe baseline. Reset and selection strings remain private TermInfo-derived data inside the opaque plan.
 
 Plans, hyperlink content, and raster-placeholder cells retain exact session/owner identity. A transaction rejects foreign, stale, released, or disposed retained items before output. Creation captures the serialized-output epoch; intervening session-owned output invalidates the batch before commitment rather than allowing an outdated retained-screen decision to be emitted.
 
@@ -272,7 +274,7 @@ Commit holds the existing output gate across the logical batch, optional synchro
 
 Application text and hyperlink labels remain disclosure surfaces. The caller remains responsible for deciding whether terminal-visible content and hyperlink targets are appropriate. Strict hyperlink validation prevents control-character framing injection but does not authenticate or make a URI safe to follow.
 
-## 21. Stable exclusions after 1.17
+## 21. Stable exclusions after 1.18
 
 Security/privacy behavior does not include promises for:
 

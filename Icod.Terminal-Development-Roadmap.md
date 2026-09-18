@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.17.0` — Terminal-owned Screen Output Contracts
 - **Current patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.17.0 published; 1.17.1 documentation-only patch in qualification
+- **Development status:** 1.17.1 published; 1.18.0 stable candidate in exact-head qualification
 - **Active development target:** `1.18.0` — Unknown-rendition baseline recovery for Terminal-only screen consumers
 - **Stable compatibility floor:** `1.0.0`
 
@@ -23,6 +23,8 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 The published feature line uses production `Icod.TermInfo 1.15.0` and optional test/sample `Icod.TermInfo.Inspection 1.15.0`. It retains identical public API snapshots across `net8.0`, `net9.0`, and `net10.0` with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
 
 Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
+
+Version 1.18.0 is now a stable source candidate on PR #63. T180-T184 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, and TermInfo-free future-renderer package witness are complete. T185 exact-head stable qualification remains before merge or publication.
 
 ## Current architecture
 
@@ -72,13 +74,13 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; In
 1.16.0  persistent raster animation and frame lifecycle             PUBLISHED
 1.17.0  Terminal-owned dimensions, screen planning, and transactions PUBLISHED
 1.17.1  packaged README and release metadata correction             PATCH
-1.18.0  unknown-rendition baseline recovery                         PLANNED
+1.18.0  unknown-rendition baseline recovery                         CANDIDATE
 ```
 
-The final 1.17 public API fingerprint is:
+The 1.18 public API fingerprint is:
 
 ```text
-c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9
+48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d
 ```
 
 Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
@@ -229,6 +231,8 @@ public TerminalScreenOperationPlan? PlanRenditionBaseline();
 ```
 
 The plan represents unknown physical rendition state, restores attributes before original colors in a safe deterministic order, retains Terminal-owned expansion/padding/cost and same-session transaction ownership, and returns a valid zero-byte plan only when the selected profile exposes no enterable attribute and no selectable color axis. Existing known-state reset and transition behavior remains unchanged.
+
+T180-T184 are accepted. T185 prepares the stable package/docs metadata and records one final exact-head Windows/Linux/macOS, package, API/XML, downstream, and artifact qualification. Publication remains a separate maintainer action.
 
 The tranche sequence is:
 

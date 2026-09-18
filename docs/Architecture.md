@@ -69,6 +69,8 @@ Placeholder cells remain current-cursor text output. Terminal owns their protoco
 
 Planning is side-effect free. A plan identifies its semantic operation, resolved terminal-byte cost, and padding-sensitive affected-line count. A higher layer may compare independently safe plans against its own retained-screen state; Terminal does not decide which cells changed or whether rewriting is preferable.
 
+`PlanRenditionBaseline()` represents unknown physical rendition state. It derives obligations from profile entry/selection evidence and returns a plan only when every exposed attribute and color axis can be restored unconditionally. Attribute restoration precedes original-color restoration. A reset-only profile has no reachable rendition state and therefore receives a valid zero-byte plan; a partially restorable profile receives no plan.
+
 `CreateScreenOutputTransaction(...)` captures the session serialized-output epoch and composes plans, application text, strict hyperlinks, and current raster-placeholder cells. Commit rejects stale work before output, holds the existing output gate, optionally emits synchronized-output framing, attempts required cleanup after commitment, and flushes before release.
 
 This contract does not transfer cells, windows, pads, layout, clipping, Unicode display width, damage, desired-versus-physical comparison, or repaint policy into Terminal.

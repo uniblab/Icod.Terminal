@@ -2,8 +2,8 @@
 
 **Release:** `1.18.0`
 **Theme:** Unknown-rendition baseline recovery for Terminal-only screen consumers
-**Status:** Planning approved; implementation not started
-**Planned development identity:** `1.18.0-alpha.1`
+**Status:** T180-T184 accepted; stable `1.18.0` candidate closure in progress
+**Candidate identity:** `1.18.0`
 **Stable compatibility floor:** `1.0.0`
 **Current published line:** `1.17.0`; `1.17.1` is the documentation-only patch baseline
 
@@ -28,6 +28,18 @@ Icod.DCurses -> Icod.Terminal -> Icod.TermInfo
 - [`docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md`](docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
 - [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
 - [`Icod.DCurses 2.0 PR #32`](https://github.com/uniblab/Icod.DCurses/pull/32)
+
+## Accepted implementation record
+
+T180-T184 are complete on PR #63. The implementation adds only `PlanRenditionBaseline()` to the public surface and retains production `Icod.TermInfo 1.15.0` / `Icod.Timing 1.0.0`.
+
+- T180 recorded the `CS1061` package/source RED witness before the method existed.
+- T181 implemented unknown-state restoration with all-or-nothing availability.
+- T182 qualified attribute-only, color-only, combined, specific-exit, unsafe, empty, reset-only, padding, deterministic, and side-effect-free behavior.
+- T183 qualified same-session ordering, foreign-session rejection, stale output epochs, and pre-commit cancellation.
+- T184 froze identical API snapshots at `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`, verified the deliberate mismatch rejection, and passed the candidate package, XML, dependency, published DCurses 1.6.0, and TermInfo-free future-renderer consumers across all three target frameworks.
+
+The retained DCurses PR #32 package witness remains governed by its published-package resume criterion. It resumes after `Icod.Terminal 1.18.0` is published; no unpublished project reference or raw TermInfo workaround is introduced.
 
 ## Public contract
 
@@ -118,6 +130,8 @@ Published `Icod.DCurses 1.6.0` compatibility remains a separate required witness
 Complete cross-platform, package, public-API, XML-documentation, dependency, security, and exact-head artifact qualification. Synchronize README, changelog, compatibility authority, release notes, and the main roadmap.
 
 Tagging, release creation, and publication remain explicit maintainer actions after the stable candidate is accepted.
+
+Current closure work removes the prerelease suffix, synchronizes consumer/release/architecture/security documentation, runs the complete exact-head workflow, records its artifact/test evidence, and stops before merge, tag, GitHub Release, or publication.
 
 ## Explicit non-goals
 
