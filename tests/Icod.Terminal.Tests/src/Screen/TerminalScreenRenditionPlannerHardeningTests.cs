@@ -28,6 +28,30 @@ using Xunit;
 /// <summary>Hardens rendition normalization, transition, and reset planning.</summary>
 public sealed class TerminalScreenRenditionPlannerHardeningTests {
 	[Fact]
+	public async Task RenditionBaselinePlanIsOpaqueCostedAndExactlyEmittable() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "rendition-baseline" )
+			.SetNumber( NumericCapability.Colors, 16 )
+			.SetString( StringCapability.EnterBoldMode, "<bold>" )
+			.SetString( StringCapability.ExitAttributeMode, "<sgr0>" )
+			.SetString( StringCapability.SetForegroundColor, "<f:%p1%d>" )
+			.SetString( StringCapability.SetBackgroundColor, "<b:%p1%d>" )
+			.SetString( StringCapability.OriginalColorPair, "<op>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		Assert.Empty( output.Bytes );
+		AssertRenditionPlan( plan, 10 );
+
+		await CommitAsync( session, plan );
+
+		Assert.Equal( Encoding.Latin1.GetBytes( "<sgr0><op>" ), output.Bytes );
+	}
+
+	[Fact]
 	public async Task DirectRgbBlackInsideRetainedIndexedPrefixDegradesToDefault() {
 		TerminalDescription terminal = CreateDirectColorBuilder( "direct-reserved-zero" )
 			.SetExtendedNumber( "CO", 256 )

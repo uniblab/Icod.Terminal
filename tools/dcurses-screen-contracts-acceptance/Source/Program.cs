@@ -84,6 +84,7 @@ internal static class FutureDcursesRenderer {
 		) ?? throw new InvalidOperationException(
 			"The selected terminal cannot position the retained-screen cursor."
 		);
+		TerminalScreenOperationPlan? renditionBaseline = planner.PlanRenditionBaseline();
 
 		TerminalScreenRendition requested = new(
 			TerminalScreenColor.Indexed( 2 ),
@@ -136,6 +137,7 @@ internal static class FutureDcursesRenderer {
 				}
 			);
 		output.Add( cursor );
+		AddIfSupported( output, renditionBaseline );
 		AddIfSupported( output, scrollRegion );
 		AddIfSupported( output, rendition );
 		AddIfSupported( output, erase );
