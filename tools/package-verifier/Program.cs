@@ -30,6 +30,8 @@ using System.Xml.Linq;
 internal static class Program {
 	private const string PackageId = "Icod.Terminal";
 	private const string RepositoryUrl = "https://github.com/uniblab/Icod.Terminal";
+	private const string RenditionBaselineDocumentationMember =
+		"M:Icod.Terminal.TerminalScreenPlanner.PlanRenditionBaseline";
 
 	private static readonly string[] TargetFrameworks = [
 		"net8.0",
@@ -686,6 +688,47 @@ internal static class Program {
 					", ",
 					missingQueryDocumentation
 				)
+		);
+
+		XElement? renditionBaseline = documentation
+			.Descendants()
+			.FirstOrDefault(
+				element => "member" == element.Name.LocalName
+					&& RenditionBaselineDocumentationMember
+						== element.Attribute( "name" )?.Value
+			);
+		Require(
+			renditionBaseline is not null,
+			$"{documentationPath} is missing rendition-baseline documentation."
+		);
+		string renditionSummary = renditionBaseline!
+			.Elements()
+			.FirstOrDefault( element => "summary" == element.Name.LocalName )
+			?.Value
+			?? string.Empty;
+		XElement? renditionReturns = renditionBaseline!
+			.Elements()
+			.FirstOrDefault( element => "returns" == element.Name.LocalName );
+		Require(
+			renditionSummary.Contains(
+				"unknown physical rendition state",
+				StringComparison.Ordinal
+			),
+			$"{documentationPath} does not document unknown-state baseline semantics."
+		);
+		Require(
+			renditionReturns is not null
+				&& renditionReturns.Value.Contains(
+					"cannot be restored unconditionally",
+					StringComparison.Ordinal
+				)
+				&& renditionReturns
+					.Descendants()
+					.Any(
+						element => "see" == element.Name.LocalName
+							&& "null" == element.Attribute( "langword" )?.Value
+					),
+			$"{documentationPath} does not document rendition-baseline nullability semantics."
 		);
 	}
 
