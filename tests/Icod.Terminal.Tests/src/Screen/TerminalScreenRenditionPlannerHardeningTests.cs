@@ -52,6 +52,207 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 	}
 
 	[Fact]
+	public async Task RenditionBaselineResetsExposedAttributesOnly() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "attribute-baseline" )
+			.SetString( StringCapability.EnterBoldMode, "<bold>" )
+			.SetString( StringCapability.ExitAttributeMode, "<sgr0>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		AssertRenditionPlan( plan, 6 );
+		Assert.Empty( output.Bytes );
+
+		await CommitAsync( session, plan );
+
+		Assert.Equal( Encoding.Latin1.GetBytes( "<sgr0>" ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task RenditionBaselineRestoresExposedColorsOnly() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "color-baseline" )
+			.SetNumber( NumericCapability.Colors, 16 )
+			.SetString( StringCapability.SetForegroundColor, "<f:%p1%d>" )
+			.SetString( StringCapability.OriginalColorPair, "<op>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		AssertRenditionPlan( plan, 4 );
+		Assert.Empty( output.Bytes );
+
+		await CommitAsync( session, plan );
+
+		Assert.Equal( Encoding.Latin1.GetBytes( "<op>" ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task RenditionBaselineUsesEverySpecificAttributeExitInStableOrder() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "specific-attribute-baseline" )
+			.SetString( StringCapability.EnterUnderlineMode, "<U>" )
+			.SetString( StringCapability.ExitUnderlineMode, "<u>" )
+			.SetString( StringCapability.EnterStandoutMode, "<S>" )
+			.SetString( StringCapability.ExitStandoutMode, "<s>" )
+			.SetString( StringCapability.EnterItalicMode, "<I>" )
+			.SetString( StringCapability.ExitItalicMode, "<i>" )
+			.SetExtendedString( "smxx", "<X>" )
+			.SetExtendedString( "rmxx", "<x>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		AssertRenditionPlan( plan, 12 );
+		Assert.Empty( output.Bytes );
+
+		await CommitAsync( session, plan );
+
+		Assert.Equal( Encoding.Latin1.GetBytes( "<u><s><i><x>" ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task RenditionBaselineRejectsAnUnrestorableExposedAttribute() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "unsafe-attribute-baseline" )
+			.SetString( StringCapability.EnterBoldMode, "<bold>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		Assert.Null( session.Screen.PlanRenditionBaseline() );
+		Assert.Empty( output.Bytes );
+		Assert.Equal( 0, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task RenditionBaselineRejectsAnUnrestorableExposedColorAxis() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "unsafe-color-baseline" )
+			.SetNumber( NumericCapability.Colors, 16 )
+			.SetString( StringCapability.SetForegroundColor, "<f:%p1%d>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+
+		Assert.Null( session.Screen.PlanRenditionBaseline() );
+		Assert.Empty( output.Bytes );
+		Assert.Equal( 0, output.FlushCount );
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public async Task RenditionBaselineAllowsZeroByteEmptyAndResetOnlyProfiles(
+		bool includeUnusedResets
+	) {
+		TerminalDescriptionBuilder builder = new( "zero-byte-baseline" );
+		if ( includeUnusedResets ) {
+			builder
+				.SetString( StringCapability.ExitAttributeMode, "<sgr0>" )
+				.SetString( StringCapability.OriginalColorPair, "<op>" );
+		}
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			builder.Build()
+		);
+
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		AssertRenditionPlan( plan, 0 );
+		Assert.Empty( output.Bytes );
+
+		await CommitAsync( session, plan );
+
+		Assert.Empty( output.Bytes );
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task RenditionBaselinePaddingUsesOneAffectedLineWithoutIncreasingCost() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "padded-baseline" )
+			.SetNumber( NumericCapability.Colors, 16 )
+			.SetString( StringCapability.EnterBoldMode, "B" )
+			.SetString( StringCapability.ExitAttributeMode, "A$<2*/>" )
+			.SetString( StringCapability.SetForegroundColor, "F%p1%d" )
+			.SetString( StringCapability.OriginalColorPair, "C$<3*/>" )
+			.Build();
+		RecordingDelayProvider delays = new();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			terminal,
+			delays
+		);
+
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		AssertRenditionPlan( plan, 2 );
+		Assert.Empty( output.Bytes );
+		Assert.Empty( delays.Delays );
+		Assert.Equal( 0, output.FlushCount );
+
+		await CommitAsync( session, plan );
+
+		Assert.Equal( Encoding.Latin1.GetBytes( "AC" ), output.Bytes );
+		Assert.Equal( 1, output.FlushCount );
+		Assert.Equal( 2, delays.Delays.Count );
+		Assert.Equal( TimeSpan.FromMilliseconds( 2 ), delays.Delays[ 0 ].Duration );
+		Assert.Equal( TimeSpan.FromMilliseconds( 3 ), delays.Delays[ 1 ].Duration );
+		Assert.All( delays.Delays, delay => Assert.True( delay.IsMandatory ) );
+		Assert.Equal( 0, delays.SynchronousDelayCount );
+		Assert.Equal( 2, delays.AsynchronousDelayCount );
+	}
+
+	[Fact]
+	public async Task RepeatedRenditionBaselinePlanningIsDeterministicAndSideEffectFree() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "repeat-baseline" )
+			.SetNumber( NumericCapability.Colors, 16 )
+			.SetString( StringCapability.EnterUnderlineMode, "U" )
+			.SetString( StringCapability.ExitUnderlineMode, "u" )
+			.SetString( StringCapability.SetBackgroundColor, "B%p1%d" )
+			.SetString( StringCapability.OriginalColorPair, "O" )
+			.Build();
+		RecordingDelayProvider delays = new();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			terminal,
+			delays
+		);
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+
+		TerminalScreenOperationPlan first = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+		TerminalScreenOperationPlan second = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+
+		Assert.Equal( first.Kind, second.Kind );
+		Assert.Equal( first.ByteCount, second.ByteCount );
+		Assert.Equal( first.AffectedLines, second.AffectedLines );
+		AssertRenditionPlan( first, 2 );
+		Assert.Empty( output.Bytes );
+		Assert.Empty( delays.Delays );
+		Assert.Equal( 0, output.FlushCount );
+
+		transaction.Add( first );
+		transaction.Add( second );
+		await transaction.CommitAsync();
+
+		Assert.Equal( Encoding.Latin1.GetBytes( "uOuO" ), output.Bytes );
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
 	public async Task DirectRgbBlackInsideRetainedIndexedPrefixDegradesToDefault() {
 		TerminalDescription terminal = CreateDirectColorBuilder( "direct-reserved-zero" )
 			.SetExtendedNumber( "CO", 256 )
@@ -701,7 +902,8 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		RecordingTerminalOutput output,
-		TerminalDescription terminal
+		TerminalDescription terminal,
+		ITermInfoDelayProvider? delayProvider = null
 	) {
 		return TerminalSession.OpenAsync(
 			new TestTerminalControlProvider(),
@@ -711,9 +913,42 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 			output,
 			new TerminalSessionOptions {
 				TerminalOverride = terminal,
-				ObserveLifecycleEvents = false
+				ObserveLifecycleEvents = false,
+				CapabilityPaddingMode = PaddingMode.Delay,
+				CapabilityDelayProvider = delayProvider
 			}
 		);
+	}
+
+	private sealed class RecordingDelayProvider : ITermInfoDelayProvider {
+		internal List<TermInfoDelay> Delays {
+			get;
+		} = [];
+
+		internal int SynchronousDelayCount {
+			get;
+			private set;
+		}
+
+		internal int AsynchronousDelayCount {
+			get;
+			private set;
+		}
+
+		public void Delay( TermInfoDelay delay ) {
+			this.SynchronousDelayCount++;
+			this.Delays.Add( delay );
+		}
+
+		public ValueTask DelayAsync(
+			TermInfoDelay delay,
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			this.AsynchronousDelayCount++;
+			this.Delays.Add( delay );
+			return ValueTask.CompletedTask;
+		}
 	}
 
 	private sealed class TestTerminalInput : ITerminalInput {
@@ -731,6 +966,11 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 			get;
 		} = [];
 
+		internal int FlushCount {
+			get;
+			private set;
+		}
+
 		public ValueTask WriteAsync(
 			ReadOnlyMemory<byte> buffer,
 			CancellationToken cancellationToken = default
@@ -744,6 +984,7 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			this.FlushCount++;
 			return ValueTask.CompletedTask;
 		}
 	}
