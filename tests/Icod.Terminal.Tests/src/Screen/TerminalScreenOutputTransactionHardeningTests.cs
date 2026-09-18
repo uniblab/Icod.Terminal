@@ -163,6 +163,112 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 	}
 
 	[Fact]
+	public async Task RenditionBaselineSerializesWithAdjacentApplicationText() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			CreateRenditionBaselineTerminal( "owned-rendition-baseline" )
+		);
+		TerminalScreenOperationPlan plan = session.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+
+		transaction.WriteText( "before" );
+		transaction.Add( plan );
+		transaction.WriteText( "after" );
+		await transaction.CommitAsync();
+
+		Assert.Equal(
+			"before<sgr0><op>after"u8.ToArray(),
+			output.GetCombinedWrites()
+		);
+		Assert.Equal( 1, output.FlushAttemptCount );
+	}
+
+	[Fact]
+	public async Task ForeignRenditionBaselineIsRejectedBeforeAnyOutput() {
+		RecordingTerminalOutput firstOutput = new();
+		RecordingTerminalOutput secondOutput = new();
+		await using TerminalSession first = await OpenSessionAsync(
+			firstOutput,
+			CreateRenditionBaselineTerminal( "foreign-rendition-baseline" )
+		);
+		await using TerminalSession second = await OpenSessionAsync(
+			secondOutput,
+			CreateRenditionBaselineTerminal( "receiving-rendition-baseline" )
+		);
+		TerminalScreenOperationPlan foreign = first.Screen.PlanRenditionBaseline()
+			?? throw new InvalidOperationException();
+		TerminalScreenOutputTransaction transaction =
+			second.CreateScreenOutputTransaction();
+		transaction.WriteText( "before" );
+
+		ArgumentException exception = Assert.Throws<ArgumentException>(
+			() => transaction.Add( foreign )
+		);
+
+		Assert.Equal( "plan", exception.ParamName );
+		Assert.Equal( 0, firstOutput.WriteAttemptCount );
+		Assert.Equal( 0, firstOutput.FlushAttemptCount );
+		Assert.Equal( 0, secondOutput.WriteAttemptCount );
+		Assert.Equal( 0, secondOutput.FlushAttemptCount );
+	}
+
+	[Fact]
+	public async Task StaleRenditionBaselineTransactionEmitsNothing() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			CreateRenditionBaselineTerminal( "stale-rendition-baseline" )
+		);
+		TerminalScreenOutputTransaction stale =
+			session.CreateScreenOutputTransaction();
+		stale.Add(
+			session.Screen.PlanRenditionBaseline()
+				?? throw new InvalidOperationException()
+		);
+		TerminalScreenOutputTransaction intervening =
+			session.CreateScreenOutputTransaction();
+		await intervening.CommitAsync();
+
+		InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+			() => stale.CommitAsync().AsTask()
+		);
+
+		Assert.Equal(
+			"The screen-output transaction is stale because intervening session output occurred.",
+			exception.Message
+		);
+		Assert.Equal( 0, output.WriteAttemptCount );
+		Assert.Equal( 1, output.FlushAttemptCount );
+	}
+
+	[Fact]
+	public async Task PreCancelledRenditionBaselineTransactionEmitsNothing() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			output,
+			CreateRenditionBaselineTerminal( "cancelled-rendition-baseline" )
+		);
+		TerminalScreenOutputTransaction transaction =
+			session.CreateScreenOutputTransaction();
+		transaction.Add(
+			session.Screen.PlanRenditionBaseline()
+				?? throw new InvalidOperationException()
+		);
+		using CancellationTokenSource cancellation = new();
+		cancellation.Cancel();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => transaction.CommitAsync( cancellation.Token ).AsTask()
+		);
+
+		Assert.Equal( 0, output.WriteAttemptCount );
+		Assert.Equal( 0, output.FlushAttemptCount );
+	}
+
+	[Fact]
 	public async Task Utf8PayloadBoundaryRejectionDoesNotPoisonLaterAdds() {
 		RecordingTerminalOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync( output );
@@ -581,7 +687,8 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 	}
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
-		RecordingTerminalOutput output
+		RecordingTerminalOutput output,
+		TerminalDescription? terminalOverride = null
 	) {
 		ArgumentNullException.ThrowIfNull( output );
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "screen-output-hardening" )
@@ -594,11 +701,24 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 			new TestTerminalInput(),
 			output,
 			new TerminalSessionOptions {
-				TerminalOverride = terminal,
+				TerminalOverride = terminalOverride ?? terminal,
 				ConfigureOutput = false,
 				ObserveLifecycleEvents = false
 			}
 		);
+	}
+
+	private static TerminalDescription CreateRenditionBaselineTerminal(
+		string name
+	) {
+		return new TerminalDescriptionBuilder( name )
+			.SetNumber( NumericCapability.Colors, 16 )
+			.SetString( StringCapability.EnterBoldMode, "<bold>" )
+			.SetString( StringCapability.ExitAttributeMode, "<sgr0>" )
+			.SetString( StringCapability.SetForegroundColor, "<f:%p1%d>" )
+			.SetString( StringCapability.SetBackgroundColor, "<b:%p1%d>" )
+			.SetString( StringCapability.OriginalColorPair, "<op>" )
+			.Build();
 	}
 
 	private sealed class TestTerminalInput : ITerminalInput {
