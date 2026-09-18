@@ -21,6 +21,7 @@
 namespace Icod.Terminal.Tests.Screen;
 
 using System.Text;
+using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
 using Xunit;
@@ -222,12 +223,15 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 			.SetString( StringCapability.OriginalColorPair, "O" )
 			.Build();
 		RecordingDelayProvider delays = new();
+		RecordingLifecycleSource lifecycle = new();
 		RecordingTerminalOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync(
 			output,
 			terminal,
-			delays
+			delays,
+			lifecycle
 		);
+		await lifecycle.WaitUntilReadAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
 		TerminalScreenOutputTransaction transaction =
 			session.CreateScreenOutputTransaction();
 
@@ -243,6 +247,7 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 		Assert.Empty( output.Bytes );
 		Assert.Empty( delays.Delays );
 		Assert.Equal( 0, output.FlushCount );
+		Assert.Equal( 1, lifecycle.ReadCount );
 
 		transaction.Add( first );
 		transaction.Add( second );
@@ -250,6 +255,7 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 
 		Assert.Equal( Encoding.Latin1.GetBytes( "uOuO" ), output.Bytes );
 		Assert.Equal( 1, output.FlushCount );
+		Assert.Equal( 1, lifecycle.ReadCount );
 	}
 
 	[Fact]
@@ -903,7 +909,8 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		RecordingTerminalOutput output,
 		TerminalDescription terminal,
-		ITermInfoDelayProvider? delayProvider = null
+		ITermInfoDelayProvider? delayProvider = null,
+		ITerminalLifecycleSource? lifecycleSource = null
 	) {
 		return TerminalSession.OpenAsync(
 			new TestTerminalControlProvider(),
@@ -914,10 +921,38 @@ public sealed class TerminalScreenRenditionPlannerHardeningTests {
 			new TerminalSessionOptions {
 				TerminalOverride = terminal,
 				ObserveLifecycleEvents = false,
+				LifecycleSource = lifecycleSource,
 				CapabilityPaddingMode = PaddingMode.Delay,
 				CapabilityDelayProvider = delayProvider
 			}
 		);
+	}
+
+	private sealed class RecordingLifecycleSource : ITerminalLifecycleSource {
+		private readonly Channel<TerminalLifecycleSignal> signals =
+			Channel.CreateUnbounded<TerminalLifecycleSignal>();
+		private readonly TaskCompletionSource firstRead = new(
+			TaskCreationOptions.RunContinuationsAsynchronously
+		);
+
+		internal int ReadCount {
+			get;
+			private set;
+		}
+
+		internal Task WaitUntilReadAsync() => this.firstRead.Task;
+
+		public ValueTask<TerminalLifecycleSignal> ReadAsync(
+			CancellationToken cancellationToken = default
+		) {
+			this.ReadCount++;
+			this.firstRead.TrySetResult();
+			return this.signals.Reader.ReadAsync( cancellationToken );
+		}
+
+		public void Dispose() {
+			this.signals.Writer.TryComplete();
+		}
 	}
 
 	private sealed class RecordingDelayProvider : ITermInfoDelayProvider {
