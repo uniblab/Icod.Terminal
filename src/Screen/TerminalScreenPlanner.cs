@@ -189,7 +189,7 @@ public sealed class TerminalScreenPlanner {
 					| TerminalTextAttributes.Reverse
 					| TerminalTextAttributes.Blink
 					| TerminalTextAttributes.Conceal
-				) ) ) || !this.TryAddAttributeExits( segments, attributes ) ) {
+				) ) || !this.TryAddAttributeExits( segments, attributes ) ) {
 					return null;
 				}
 			}
