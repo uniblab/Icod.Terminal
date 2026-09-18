@@ -175,6 +175,10 @@ public sealed class TerminalScreenPlanner {
 	}
 
 	/// <summary>Plans restoration from an unknown physical rendition state to Terminal's normalized default.</summary>
+	/// <returns>
+	/// A session-bound rendition plan, or <see langword="null"/> when any rendition axis
+	/// exposed by the selected profile cannot be restored unconditionally.
+	/// </returns>
 	public TerminalScreenOperationPlan? PlanRenditionBaseline() {
 		TerminalTextAttributes attributes = this.Profile.Screen.SupportedAttributes;
 		bool colors = this.Profile.Screen.SupportsColor
