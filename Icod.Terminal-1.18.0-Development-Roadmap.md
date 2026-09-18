@@ -81,6 +81,7 @@ Implement `PlanRenditionBaseline()` in `TerminalScreenPlanner` using existing pr
 Acceptance covers:
 
 - attribute-only profiles using global attribute reset;
+- multi-attribute profiles without a global reset using every required safe specific exit in stable order;
 - color-only profiles using original-color-pair restoration;
 - combined profiles emitting attribute reset before color restoration;
 - correct `Rendition` kind and one affected line;
@@ -93,6 +94,7 @@ Prove that availability describes unconditional recovery rather than a best-effo
 Acceptance covers:
 
 - `null` when any enterable attribute lacks both a global reset and a safe specific exit;
+- complete specific-exit coverage and stable underline, standout, italic, then strikeout ordering when no global reset exists;
 - `null` when foreground or background selection is available without original-color-pair restoration;
 - a zero-byte plan only for a profile with no enterable attribute and no selectable color axis, including a reset-only profile;
 - exact padding-sensitive byte cost after capability expansion;
