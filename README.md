@@ -5,21 +5,19 @@
 [![PR Staging build](https://github.com/uniblab/Icod.Terminal/actions/workflows/pull-request.yaml/badge.svg)](https://github.com/uniblab/Icod.Terminal/actions/workflows/pull-request.yaml)
 [![Main Release validation](https://github.com/uniblab/Icod.Terminal/actions/workflows/main.yaml/badge.svg?branch=main)](https://github.com/uniblab/Icod.Terminal/actions/workflows/main.yaml)
 
-`Icod.Terminal` is a managed, cross-platform live-terminal session and terminal-control library for .NET. It sits between immutable terminal capability data from `Icod.TermInfo` and higher-level consumers such as `Icod.DCurses`, terminal-aware command-line tools, monitors, editors, pagers, and REPLs.
+`Icod.Terminal` is a managed, cross-platform live-terminal session and terminal-control library for .NET. It combines immutable terminal capability data from `Icod.TermInfo` with live endpoint observation, input, queries, semantic output, screen-operation planning, and terminal-state ownership for higher-level consumers such as TUI libraries, command-line tools, monitors, editors, pagers, and REPLs.
 
 ## Status
 
-Current published release: `Icod.Terminal 1.16.0`.
+Current stable release: `Icod.Terminal 1.17.1`.
 
-Prepared stable candidate: `Icod.Terminal 1.17.0`, adding Terminal-owned dimensions, a semantic terminal profile and screen planner, and bounded session-bound output transactions as the Terminal-side prerequisite for removing `Icod.DCurses`' direct `Icod.TermInfo` dependency. The candidate is not published until the maintainer completes merge, tag, release, and publication actions.
+Version `1.17.1` corrects the packaged README and release metadata for the 1.17 line. It makes no runtime or public-API change from `1.17.0`.
 
-The 1.17 package gate keeps two downstream witnesses separate: published stable `Icod.DCurses 1.6.0` must continue to consume the candidate package unchanged, while a future-renderer acceptance consumer directly references only `Icod.Terminal` and compile-binds the new Terminal-owned screen contracts.
-
-Version `1.17.0` is additive over the complete 1.16 persistent-raster animation surface and every earlier stable 1.x contract.
+Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary required for a later `Icod.DCurses 2.0` release to remove its direct `Icod.TermInfo` dependency.
 
 The stable `1.0.0` compatibility floor remains unchanged. Version 1.17 retains the complete 1.16 animation, 1.15 virtual-placeholder, 1.14 lifecycle-observation, 1.13 relative-placement, 1.12 crop/z-order, and earlier persistent-raster contracts. The final 1.17 public API fingerprint is `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
 
-The 1.17 stable candidate must pass the complete Staging qualification matrix on Windows, Linux, and macOS, including package/API/XML verification, fresh package-only consumers, stable-package checks, validated artifacts, published `Icod.DCurses 1.6.0` compatibility, and the future Terminal-only rendering witness. Merge, tagging, release creation, and publication remain separate maintainer actions.
+The 1.17 line is additive over the complete 1.16 persistent-raster animation surface and every earlier stable 1.x contract. See the [1.17.1 release notes](docs/releases/1.17.1.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -31,7 +29,7 @@ The 1.17 stable candidate must pass the complete Staging qualification matrix on
 
 ## Architecture
 
-`Icod.Terminal` is the live-session layer of the Icod terminal stack:
+`Icod.Terminal` is the live-session layer of the Icod terminal stack. The intended `Icod.DCurses 2.0` dependency direction is:
 
 ```text
 higher-level terminal applications
@@ -50,6 +48,8 @@ higher-level terminal applications
 - `Icod.DCurses` owns higher-level cells, windows, pads, retained presentation state, layout, clipping, scrolling, refresh/diff policy, damage, and curses-style interaction abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
+Published `Icod.DCurses 1.6.0` is the compatibility baseline and still directly references both `Icod.Terminal` and `Icod.TermInfo`. The planned 2.0 migration removes only the direct DCurses-to-TermInfo edge; `Icod.Terminal` continues to use TermInfo internally.
+
 The direct production dependency graph is intentionally small:
 
 ```text
@@ -67,7 +67,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the currently published package:
 
 ```text
-dotnet add package Icod.Terminal --version 1.16.0
+dotnet add package Icod.Terminal --version 1.17.1
 ```
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
@@ -92,6 +92,28 @@ TerminalEvent terminalEvent = await session.ReadEventAsync(
 A live `TerminalSession` owns the authoritative input reader for its transport. Use `ReadEventAsync(...)` and the typed query APIs rather than introducing a competing `Console.Read*` or stream reader on the same terminal conversation.
 
 For curses-style cells, windows, layout, clipping, scrolling, and refresh/damage policy, prefer `Icod.DCurses` rather than rebuilding those responsibilities directly over `TerminalSession`.
+
+Version 1.17 screen operations are planned without output and then committed through one session-bound transaction:
+
+```csharp
+TerminalProfile profile = session.Profile;
+TerminalControlResult<TerminalDimensions> dimensions = session.GetDimensions();
+
+TerminalScreenOperationPlan? home = session.Screen.PlanCursorMove(
+	null,
+	new TerminalScreenPosition( 0, 0 )
+);
+
+if ( home is TerminalScreenOperationPlan plan ) {
+	TerminalScreenOutputTransaction output =
+		session.CreateScreenOutputTransaction();
+	output.Add( plan );
+	output.WriteText( "Ready" );
+	await output.CommitAsync();
+}
+```
+
+`Profile` contains immutable selected-profile facts, while `GetDimensions()` reports the current Terminal-owned size result. A plan is opaque and session-bound; creating it emits nothing, and the transaction preserves ordering under one output gate and flush boundary. Retained cells, layout, Unicode width, clipping, damage, and repaint policy remain caller-owned.
 
 ## Feature Inventory
 
@@ -186,7 +208,8 @@ The [`samples`](samples/README.md) directory contains focused examples for sessi
 
 Recommended documentation entry points:
 
-- [`docs/releases/1.17.0.md`](docs/releases/1.17.0.md) — curated 1.17 release notes;
+- [`docs/releases/1.17.1.md`](docs/releases/1.17.1.md) — 1.17 packaged-README and metadata correction;
+- [`docs/releases/1.17.0.md`](docs/releases/1.17.0.md) — Terminal-owned screen-planning and output-transaction release notes;
 - [`docs/releases/1.17.0-alpha.1.md`](docs/releases/1.17.0-alpha.1.md) — historical 1.17 prerelease notes;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;

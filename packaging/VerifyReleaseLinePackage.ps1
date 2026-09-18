@@ -35,7 +35,7 @@ if ( [string]::IsNullOrWhiteSpace( $ExpectedVersion ) ) {
 	throw 'Unable to determine the expected Icod.Terminal package version.'
 }
 
-$isPrerelease = $ExpectedVersion.Contains(
+$isPrerelease = 0 -le $ExpectedVersion.IndexOf(
 	'-',
 	[System.StringComparison]::Ordinal
 )
@@ -53,7 +53,7 @@ if ( -not $isPrerelease ) {
 		'net10.0',
 		'Compatibility-and-Versioning.md'
 	) ) {
-		$curatedHasText = $curatedReleaseNotes.Contains(
+		$curatedHasText = 0 -le $curatedReleaseNotes.IndexOf(
 			$requiredText,
 			[System.StringComparison]::Ordinal
 		)
@@ -68,7 +68,7 @@ if ( -not $isPrerelease ) {
 	}
 	$changelog = [System.IO.File]::ReadAllText( $changelogPath )
 	$changelogHeading = "## $ExpectedVersion"
-	if ( -not $changelog.Contains(
+	if ( 0 -gt $changelog.IndexOf(
 			$changelogHeading,
 			[System.StringComparison]::Ordinal
 		) ) {
@@ -125,7 +125,7 @@ try {
 			"docs/releases/$ExpectedVersion.md",
 			'Compatibility-and-Versioning.md'
 		) ) {
-			$releaseNotesHaveText = $releaseNotes.Contains(
+			$releaseNotesHaveText = 0 -le $releaseNotes.IndexOf(
 				$requiredText,
 				[System.StringComparison]::Ordinal
 			)
@@ -153,12 +153,46 @@ try {
 			'CHANGELOG.md',
 			'docs/Architecture.md'
 		) ) {
-			$readmeHasText = $readme.Contains(
+			$readmeHasText = 0 -le $readme.IndexOf(
 				$requiredText,
 				[System.StringComparison]::Ordinal
 			)
 			if ( -not $readmeHasText ) {
 				throw "The packed README is missing required release-line text '$requiredText'."
+			}
+		}
+
+		$statusMatches = [regex]::Matches(
+			$readme,
+			'(?m)^Current stable release: `Icod\.Terminal (?<version>[^`\r\n]+)`\.\r?$'
+		)
+		if ( 1 -ne $statusMatches.Count ) {
+			throw "The packed README must contain exactly one current-stable-release line; found $($statusMatches.Count)."
+		}
+		$statusVersion = $statusMatches[ 0 ].Groups[ 'version' ].Value
+		if ( $ExpectedVersion -cne $statusVersion ) {
+			throw "The packed README current stable release '$statusVersion' does not match '$ExpectedVersion'."
+		}
+
+		$installMatches = [regex]::Matches(
+			$readme,
+			'(?m)^dotnet add package Icod\.Terminal --version (?<version>\S+)\r?$'
+		)
+		if ( 1 -ne $installMatches.Count ) {
+			throw "The packed README must contain exactly one explicit package-install command; found $($installMatches.Count)."
+		}
+		$installVersion = $installMatches[ 0 ].Groups[ 'version' ].Value
+		if ( $ExpectedVersion -cne $installVersion ) {
+			throw "The packed README install version '$installVersion' does not match '$ExpectedVersion'."
+		}
+
+		foreach ( $forbiddenPattern in @(
+			'(?i)\bcandidate\b',
+			'(?i)\bnot published\b',
+			'(?i)\bmerge, tagging, release creation, and publication\b'
+		) ) {
+			if ( [regex]::IsMatch( $readme, $forbiddenPattern ) ) {
+				throw "The packed README contains stale pre-release text matching '$forbiddenPattern'."
 			}
 		}
 	}
