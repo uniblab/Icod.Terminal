@@ -174,6 +174,37 @@ public sealed class TerminalScreenPlanner {
 		);
 	}
 
+	/// <summary>Plans restoration from an unknown physical rendition state to Terminal's normalized default.</summary>
+	public TerminalScreenOperationPlan? PlanRenditionBaseline() {
+		TerminalTextAttributes attributes = this.Profile.Screen.SupportedAttributes;
+		bool colors = this.Profile.Screen.SupportsColor
+			&& ( this.Profile.Screen.SupportsForegroundColor
+				|| this.Profile.Screen.SupportsBackgroundColor );
+		List<TerminalScreenOutputSegment> segments = [];
+		if ( TerminalTextAttributes.None != attributes ) {
+			if ( !this.TryAddLiteral( segments, StringCapability.ExitAttributeMode, 1 ) ) {
+				if ( 0 != ( attributes & (
+					TerminalTextAttributes.Bold
+					| TerminalTextAttributes.Dim
+					| TerminalTextAttributes.Reverse
+					| TerminalTextAttributes.Blink
+					| TerminalTextAttributes.Conceal
+				) ) ) || !this.TryAddAttributeExits( segments, attributes ) ) {
+					return null;
+				}
+			}
+		}
+		if ( colors
+			&& !this.TryAddLiteral( segments, StringCapability.OriginalColorPair, 1 ) ) {
+			return null;
+		}
+		return this.Create(
+			TerminalScreenOperationKind.Rendition,
+			segments,
+			1
+		);
+	}
+
 	/// <summary>Plans a safe transition between normalized screen renditions.</summary>
 	public TerminalScreenOperationPlan? PlanRenditionTransition(
 		TerminalScreenRendition current,
