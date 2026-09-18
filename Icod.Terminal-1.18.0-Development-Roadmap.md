@@ -2,7 +2,7 @@
 
 **Release:** `1.18.0`
 **Theme:** Unknown-rendition baseline recovery for Terminal-only screen consumers
-**Status:** T180-T184 accepted; stable `1.18.0` candidate closure in progress
+**Status:** T180-T185 accepted; stable `1.18.0` candidate qualified
 **Candidate identity:** `1.18.0`
 **Stable compatibility floor:** `1.0.0`
 **Current published line:** `1.17.0`; `1.17.1` is the documentation-only patch baseline
@@ -31,15 +31,29 @@ Icod.DCurses -> Icod.Terminal -> Icod.TermInfo
 
 ## Accepted implementation record
 
-T180-T184 are complete on PR #63. The implementation adds only `PlanRenditionBaseline()` to the public surface and retains production `Icod.TermInfo 1.15.0` / `Icod.Timing 1.0.0`.
+T180-T185 are complete on PR #63. The implementation adds only `PlanRenditionBaseline()` to the public surface and retains production `Icod.TermInfo 1.15.0` / `Icod.Timing 1.0.0`.
 
 - T180 recorded the `CS1061` package/source RED witness before the method existed.
 - T181 implemented unknown-state restoration with all-or-nothing availability.
 - T182 qualified attribute-only, color-only, combined, specific-exit, unsafe, empty, reset-only, padding, deterministic, and side-effect-free behavior.
 - T183 qualified same-session ordering, foreign-session rejection, stale output epochs, and pre-commit cancellation.
 - T184 froze identical API snapshots at `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`, verified the deliberate mismatch rejection, and passed the candidate package, XML, dependency, published DCurses 1.6.0, and TermInfo-free future-renderer consumers across all three target frameworks.
+- T185 finalized stable package identity and release-facing metadata, then qualified the stable candidate at commit `56bbc011325e5c88e67f243a9b882b97bae9aac7` in workflow run `35382158657`.
 
 The retained DCurses PR #32 package witness remains governed by its published-package resume criterion. It resumes after `Icod.Terminal 1.18.0` is published; no unpublished project reference or raw TermInfo workaround is introduced.
+
+## Stable-candidate qualification
+
+Workflow run [`35382158657`](https://github.com/uniblab/Icod.Terminal/actions/runs/35382158657) passed all nine jobs at source head `56bbc011325e5c88e67f243a9b882b97bae9aac7`: Windows, Linux, macOS, package candidate, Foundation, Presentation, Semantic and hardening, Stable 1.x release line, and validated package artifact.
+
+- Unit tests: 2,383 passed, zero failed, on each of `net8.0`, `net9.0`, and `net10.0`.
+- TermInfo integration tests: 15 passed, zero failed, on each target framework.
+- Stable package: `Icod.Terminal.1.18.0.nupkg`, SHA-256 `e8f2b374fd0865aa151910686197096b344f7daf8d0ef72331520d944b322932`.
+- Symbols package: `Icod.Terminal.1.18.0.snupkg`, SHA-256 `8a14d163f2ea0bf030bea0416e0a84a919a2e8c83c692956b3a2a98470d78422`.
+- Candidate artifact: ID `10563191796`, uploaded ZIP SHA-256 `b0fc9e57dcd0ccf42befc7d8d6fe91e9b0e19b62691fbfb775164252147fa028`.
+- Validated artifact: ID `10562732859`, uploaded ZIP SHA-256 `1ddf8f76fbb6131271dd9123d5cab8043ddc68fd0084dfc1d1e84e8916121537`.
+- Public API: identical on all target frameworks, SHA-256 `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
+- Package consumers: stable 1.x smoke, published `Icod.DCurses 1.6.0` soak, and the TermInfo-free future-renderer screen-contract witness passed on all target frameworks.
 
 ## Public contract
 

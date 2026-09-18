@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.17.0` — Terminal-owned Screen Output Contracts
 - **Current patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.17.1 published; 1.18.0 stable candidate in exact-head qualification
+- **Development status:** 1.17.1 published; 1.18.0 stable candidate qualified on PR #63
 - **Active development target:** `1.18.0` — Unknown-rendition baseline recovery for Terminal-only screen consumers
 - **Stable compatibility floor:** `1.0.0`
 
@@ -24,7 +24,7 @@ The published feature line uses production `Icod.TermInfo 1.15.0` and optional t
 
 Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
 
-Version 1.18.0 is now a stable source candidate on PR #63. T180-T184 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, and TermInfo-free future-renderer package witness are complete. T185 exact-head stable qualification remains before merge or publication.
+Version 1.18.0 is a qualified stable source candidate on PR #63. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete. Merge, tag, release creation, and publication remain maintainer actions.
 
 ## Current architecture
 
@@ -232,7 +232,7 @@ public TerminalScreenOperationPlan? PlanRenditionBaseline();
 
 The plan represents unknown physical rendition state, restores attributes before original colors in a safe deterministic order, retains Terminal-owned expansion/padding/cost and same-session transaction ownership, and returns a valid zero-byte plan only when the selected profile exposes no enterable attribute and no selectable color axis. Existing known-state reset and transition behavior remains unchanged.
 
-T180-T184 are accepted. T185 prepares the stable package/docs metadata and records one final exact-head Windows/Linux/macOS, package, API/XML, downstream, and artifact qualification. Publication remains a separate maintainer action.
+T180-T185 are accepted. The stable candidate at `56bbc011325e5c88e67f243a9b882b97bae9aac7` passed the complete Windows/Linux/macOS, package, API/XML, downstream, and artifact matrix in workflow run `35382158657`. Publication remains a separate maintainer action.
 
 The tranche sequence is:
 
