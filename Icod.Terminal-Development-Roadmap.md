@@ -228,7 +228,7 @@ The release adds one public planner method:
 public TerminalScreenOperationPlan? PlanRenditionBaseline();
 ```
 
-The plan represents unknown physical rendition state, restores attributes before original colors in a safe deterministic order, retains Terminal-owned expansion/padding/cost and same-session transaction ownership, and returns a valid zero-byte plan only when no reachable rendition state exists. Existing known-state reset and transition behavior remains unchanged.
+The plan represents unknown physical rendition state, restores attributes before original colors in a safe deterministic order, retains Terminal-owned expansion/padding/cost and same-session transaction ownership, and returns a valid zero-byte plan only when the selected profile exposes no enterable attribute and no selectable color axis. Existing known-state reset and transition behavior remains unchanged.
 
 The tranche sequence is:
 

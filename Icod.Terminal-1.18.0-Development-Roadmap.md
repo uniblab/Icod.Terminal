@@ -9,11 +9,11 @@
 
 ## Release objective
 
-Version 1.18 closes the single Terminal contract gap found by the `Icod.DCurses 2.0` decoupling readiness gate. A renderer that does not know the terminal's physical rendition state must be able to request one safe, opaque plan that restores every rendition axis Terminal itself could have changed.
+Version 1.18 closes the single Terminal contract gap found by the `Icod.DCurses 2.0` decoupling readiness gate. A renderer that does not know the terminal's physical rendition state must be able to request one safe, opaque plan that restores every rendition axis exposed by the selected profile's enter/select evidence.
 
 The governing rule is:
 
-> Terminal may claim a rendition baseline only when it can unconditionally restore every rendition axis reachable through its own semantic planner; otherwise no plan is available.
+> Terminal may claim a rendition baseline only when it can unconditionally restore every rendition axis exposed by the selected profile that Terminal can enter or select; otherwise no plan is available.
 
 The dependency direction remains:
 
@@ -47,7 +47,7 @@ The returned plan:
 - includes capability expansion, padding, exact encoded-byte cost, and affected-line accounting;
 - remains valid only through the existing same-session transaction ownership rules.
 
-The method returns `null` if any Terminal-reachable rendition axis cannot be restored safely from an unknown state. A valid zero-byte plan is allowed only when the planner cannot change any rendition axis at all.
+The method returns `null` if any profile-exposed enterable/selectable rendition axis cannot be restored safely from an unknown state. This obligation is computed from entry/selection evidence before current normalization suppresses unsafe requests. A valid zero-byte plan is allowed only when the profile exposes no enterable attribute and no selectable color axis; reset capabilities alone do not create reachable state.
 
 Existing `PlanRenditionTransition(...)`, `PlanRenditionReset(current)`, normalization, operation-plan opacity, and transaction semantics remain unchanged.
 
@@ -71,8 +71,8 @@ Acceptance requires:
 - no change to existing 1.x signatures or behavior;
 - no raw TermInfo or escape-sequence exposure;
 - explicit distinction between unknown physical state and known-current reset;
-- exact safety, nullability, ordering, ownership, and zero-byte rules;
-- a package-level failing witness matching the DCurses T2001 blocker.
+- exact profile-evidence, safety, nullability, ordering, ownership, and zero-byte rules;
+- a package-level failing witness matching the DCurses T2001 blocker, with representative enter/select capabilities added to its synthetic profile so the `<sgr0><op>` expectation is semantically reachable.
 
 ## T181 — Baseline planner
 
@@ -94,7 +94,7 @@ Acceptance covers:
 
 - `null` when any enterable attribute lacks both a global reset and a safe specific exit;
 - `null` when foreground or background selection is available without original-color-pair restoration;
-- a zero-byte plan only for a profile with no Terminal-reachable rendition changes;
+- a zero-byte plan only for a profile with no enterable attribute and no selectable color axis, including a reset-only profile;
 - exact padding-sensitive byte cost after capability expansion;
 - deterministic segment ordering, overflow safety, and repeated-call stability;
 - no dependence on a caller-supplied or retained physical rendition state.
@@ -107,7 +107,7 @@ Acceptance covers same-session commitment, foreign-session rejection, stale-epoc
 
 ## T184 — Package and downstream acceptance
 
-Freeze identical public API/XML snapshots for `net8.0`, `net9.0`, and `net10.0`; update package smoke and the future-DCurses screen-contract consumer; and compile the DCurses T2001 package-only witness against the candidate package without a direct `Icod.TermInfo` reference.
+Freeze identical public API/XML snapshots for `net8.0`, `net9.0`, and `net10.0`; update the active baseline selector, package smoke, and the future-DCurses screen-contract consumer; and compile the DCurses T2001 package-only witness against the candidate package without a direct `Icod.TermInfo` reference. The retained downstream witness's synthetic profile must add representative enter/select capabilities before it can truthfully expect `<sgr0><op>`; its public API call, transaction path, and exact-byte assertion remain unchanged.
 
 Published `Icod.DCurses 1.6.0` compatibility remains a separate required witness. Production dependencies remain `Icod.TermInfo 1.15.0` and `Icod.Timing 1.0.0` unless an independently justified qualification issue requires a later reviewed change.
 
