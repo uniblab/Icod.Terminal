@@ -125,7 +125,7 @@ Version 1.17 additively introduces Terminal-owned dimensions, an immutable seman
 
 Existing `GetSize()`, `TerminalLifecycleEvent.Size`, `TerminalSession.Terminal`, low-level terminal-string output, and other 1.x APIs remain available. The new APIs do not move retained cells, layout, Unicode-width policy, damage, refresh comparison, or repaint ownership into Terminal.
 
-Release qualification treats compatibility and future decoupling as separate claims: the candidate package must run with published stable `Icod.DCurses 1.6.0`, and an independent package-only consumer must compile against the Terminal-owned screen contracts with no direct TermInfo project reference or source use. The latter is evidence of API sufficiency, not a claim that DCurses 2.0 has already shipped.
+Release qualification treats compatibility and future decoupling as separate claims: the 1.17 package must run with published stable `Icod.DCurses 1.6.0`, and an independent package-only consumer must compile against the Terminal-owned screen contracts with no direct TermInfo project reference or source use. The latter is evidence of API sufficiency, not a claim that DCurses 2.0 has already shipped.
 
 ## 5. Persistent-raster compatibility guarantees
 
@@ -171,7 +171,7 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 `RasterGraphics`, `PersistentRasterGraphics`, and `UnicodeRasterPlaceholders` remain distinct semantic capabilities. Generic raster or persistent support must not silently manufacture placeholder support.
 
-## 8. TermInfo 1.14 optional integration compatibility
+## 8. TermInfo 1.15 optional integration compatibility
 
 The active 1.17 direct production dependency graph remains:
 
@@ -269,9 +269,9 @@ Any post-closure pre-merge code or documentation change requires the same exact-
 
 PR qualification does not itself merge, tag, create a GitHub Release, or publish NuGet packages.
 
-For 1.17, the maintainer/release workflow remains responsible for:
+For each stable or patch release, the maintainer/release workflow remains responsible for:
 
 1. merging the fully qualified PR;
 2. validating the mainline Release workflow;
-3. creating/pushing `v1.17.0` only after mainline validation succeeds;
+3. creating/pushing `v<version>` only after mainline validation succeeds;
 4. creating the GitHub Release and publishing NuGet through the established release workflow.

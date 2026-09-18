@@ -4,9 +4,9 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Prior published line:** `1.16.0` — Persistent Raster Animation and Frame Lifecycle
-- **Current candidate line:** `1.17.0` — Terminal-owned Screen Output Contracts
-- **Development status:** T170-T179 implemented; TermInfo 1.15 dependency refresh locally qualified, exact-head requalification pending
+- **Current published feature line:** `1.17.0` — Terminal-owned Screen Output Contracts
+- **Current patch line:** `1.17.1` — Packaged README and release metadata correction
+- **Development status:** 1.17.0 published; 1.17.1 documentation-only patch in qualification
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -17,17 +17,11 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-The final documented T179 candidate was accepted at exact head `0f78f0ceb39d1b8523391671c23f92a6b7c871a3`, pull-request workflow #1982 / run `35294166853`, with all nine jobs successful. That checkpoint retained production `Icod.TermInfo 1.14.0`.
+`Icod.Terminal 1.17.0` was published from annotated tag `v1.17.0` at exact merge commit `ce2d76dda3f7d455a891d4268f453c99112cae8e` on 2026-09-18. The final dependency-refresh evidence head `af6ef4bfc53603302597c927b3058854edd95ebd` passed all nine jobs in pull-request workflow #1984 / run `35297012969` before merge.
 
-Before merge, dependency-refresh candidate `dbddaaeb656ecf69961af83ef440bf68f28ff75b` advances production `Icod.TermInfo` and optional test/sample `Icod.TermInfo.Inspection` to `1.15.0`. Its byte-identical local tree-equivalent commit `1eab0f8793a9b8984e1db9b553671721c6b0b5df` passed 2,369 unit tests and 15 TermInfo integration tests on each of `net8.0`, `net9.0`, and `net10.0`, plus all samples, downstream DCurses acceptance, eight hardening-soak cycles per framework, and all four package shards. The stable 1.x package consumer, published `Icod.DCurses 1.6.0`, and the future Terminal-only DCurses consumer all passed. Its exact local package artifacts have SHA-256 `d06ca42015c5a1ec92c9f1931ddc842e14131cc7d8347bcd6e9e9b47572032d3` (`.nupkg`) and `555933bf87e060fff92a8a56ebd6a3c6e65a9f77fb30e957f14cd1d097bcc6d9` (`.snupkg`). Public API snapshots remain identical across all three frameworks with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
+The published feature line uses production `Icod.TermInfo 1.15.0` and optional test/sample `Icod.TermInfo.Inspection 1.15.0`. It retains identical public API snapshots across `net8.0`, `net9.0`, and `net10.0` with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
 
-The exact committed dependency-refresh head and its evidence-only bookkeeping head still require the complete nine-job matrix. Merge, tagging, release creation, and package publication remain open explicit maintainer actions.
-
-`Icod.Terminal 1.16.0` was published from annotated tag `v1.16.0` at exact commit `5e28d48936ab1d65657d672feee13bc9ef4fe017` on 2026-09-17. The stable candidate was accepted at exact head `4865691ea65b759a7fe5b279dea08ec8427a6278`, workflow #1959 / run `35250115968`, with the complete nine-job matrix successful.
-
-The candidate produced the stable `1.16.0` NuGet and symbol packages, retained identical public API snapshots across all target frameworks with fingerprint `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d`, and passed cross-platform runtime/sample, package/API/XML, artifact, TermInfo integration, and stable `Icod.DCurses` downstream qualification.
-
-Version 1.17 development began from that published stable baseline. Publication of the prepared stable candidate remains an explicit maintainer action.
+Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
 
 ## Current architecture
 
@@ -58,7 +52,7 @@ Icod.Timing   1.0.0
 
 Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; Inspection and Source remain outside the production package graph.
 
-## Qualified stable-candidate sequence through 1.16.0
+## Qualified stable sequence through 1.17.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -75,22 +69,23 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; In
 1.14.0  side-effect-free persistent-raster lifecycle observability
 1.15.0  Unicode placeholder and virtual raster placement
 1.16.0  persistent raster animation and frame lifecycle             PUBLISHED
-1.17.0  Terminal-owned dimensions, screen planning, and transactions ACTIVE
+1.17.0  Terminal-owned dimensions, screen planning, and transactions PUBLISHED
+1.17.1  packaged README and release metadata correction             PATCH
 ```
 
-The final 1.15 public API fingerprint is:
+The final 1.17 public API fingerprint is:
 
 ```text
-eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d
+c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9
 ```
 
 Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
 
-1.15 release notes: [`docs/releases/1.15.0.md`](docs/releases/1.15.0.md).
+1.17 release notes: [`docs/releases/1.17.0.md`](docs/releases/1.17.0.md).
 
-1.15 versioned evidence: [`Icod.Terminal-1.15.0-Development-Roadmap.md`](Icod.Terminal-1.15.0-Development-Roadmap.md).
+1.17 versioned evidence: [`Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md).
 
-## 1.16 stable candidate — Persistent Raster Animation and Frame Lifecycle
+## 1.16 stable release — Persistent Raster Animation and Frame Lifecycle
 
 The completed 1.16 line extends the existing persistent-raster ownership model with terminal-resident animation frames and playback control while preserving the same architectural boundaries that guided 1.11–1.15.
 
@@ -188,7 +183,7 @@ Frame composition remains a strong candidate for a later focused release after t
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
 
-## 1.17 stable candidate — Terminal-owned Screen Output Contracts
+## 1.17 stable line — Terminal-owned Screen Output Contracts
 
 Version 1.17 prepares the semantic and transactional Terminal boundary required for a later TermInfo-free DCurses 2.0 package.
 

@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.17.0 adds Terminal-owned dimensions, an immutable semantic terminal profile, opaque costed screen-operation planning, and bounded session-bound output transactions while preserving the stable 1.x surface. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.17.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.17.1 corrects the packaged README and release metadata for the published 1.17 line without changing the runtime or public API. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.17.1.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

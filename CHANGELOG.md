@@ -2,6 +2,19 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.17.1
+
+### Packaged README and release metadata correction
+
+- Corrects the published-version and installation guidance embedded in the package README.
+- Replaces pre-release candidate language with a concise description of the stable 1.17 line.
+- Distinguishes the published `Icod.DCurses 1.6.0` dependency graph from the intended TermInfo-decoupled `Icod.DCurses 2.0` architecture.
+- Adds a compact example of Terminal-owned dimensions/profile access, side-effect-free screen planning, and session-bound transaction commitment.
+- Makes no runtime or public-API change from 1.17.0; the public API fingerprint remains `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9` across `net8.0`, `net9.0`, and `net10.0`.
+- Retains production dependencies `Icod.TermInfo 1.15.0` and `Icod.Timing 1.0.0`.
+
+See `docs/releases/1.17.1.md` for the complete patch-release notes.
+
 ## 1.17.0
 
 ### Terminal-owned screen planning and commitment
