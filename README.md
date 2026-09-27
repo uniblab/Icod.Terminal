@@ -122,6 +122,36 @@ Each transaction is single-use, and intervening output can invalidate it before 
 
 `Profile` contains immutable selected-profile facts, while `GetDimensions()` reports the current Terminal-owned size result. A plan is opaque and session-bound; creating it emits nothing, and the transaction preserves ordering under one output gate and flush boundary. Retained cells, layout, Unicode width, clipping, damage, and repaint policy remain caller-owned.
 
+### Choosing a capability API
+
+| Question | API | Terminal traffic |
+| --- | --- | --- |
+| What representations does the selected description contain? | `session.Profile.Screen` | None; immutable static facts. |
+| Can this session plan the operation with these arguments? | `session.Screen.Plan...(...)` | None; returns a concrete plan or no plan, or reports invalid input/expansion. |
+| What support and endpoint availability are currently known? | `session.InspectCapability(...)` | None; returns an immutable snapshot. |
+| Can an existing live query establish stronger support knowledge? | `session.VerifyCapabilityAsync(...)` | May send queries for keyboard reporting, raster graphics, or persistent raster graphics. The other nine capabilities return inspection results. |
+
+For example, inspect advertisement and request a plan independently:
+
+```csharp
+bool advertised = session.Profile.Screen.AdvertisesErase(
+	TerminalScreenEraseKind.ToEndOfLine
+);
+TerminalScreenOperationPlan? erase = session.Screen.PlanErase(
+	TerminalScreenEraseKind.ToEndOfLine
+);
+// 'advertised' is a diagnostic fact; 'erase' describes this concrete request.
+if ( erase.HasValue ) {
+	TerminalScreenOutputTransaction output = session.CreateScreenOutputTransaction();
+	output.Add( erase.Value );
+	await output.CommitAsync();
+}
+```
+
+Advertisement includes present empty or malformed representations. A valid zero-byte plan is usable; malformed expansion can fail. Ask for cursor plans even when absolute addressing is absent because alternative routes may exist. Planning emits nothing; committing the transaction performs output and can fail independently of support knowledge.
+
+`IsUsable` combines current support knowledge with endpoint availability. Silence can leave support `Unknown`, and an unavailable endpoint does not mean `Unsupported`. Verification does not enable keyboard reporting or create raster resources. Re-inspect after lifecycle invalidation because earlier snapshots do not update themselves. The [capability sample walkthrough](samples/Icod.Terminal.CapabilityPlanning.Sample/README.md) includes annotated output, lifecycle re-inspection, and verification commands.
+
 ## Feature Inventory
 
 The root README describes the current product by capability rather than by the release in which each feature first appeared.
