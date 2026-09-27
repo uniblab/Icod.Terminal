@@ -11,7 +11,10 @@ Import-Module (Join-Path $PSScriptRoot 'RepositoryTools.psm1') -Force
 
 $project = Join-Path $repositoryRoot 'samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj'
 if (-not (Test-Path -LiteralPath $project -PathType Leaf)) {
-    throw "Capability planning sample project '$project' does not exist."
+    throw "Capability planning sample project '$project' does not exist."    Invoke-DotNet -Arguments @(
+        'run', '--project', $project, '-c', $Configuration, '-f', $framework,
+        '--no-build', '--no-restore', '--', '--help'
+    )
 }
 
 Write-Host ''
@@ -31,6 +34,9 @@ foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
         '-f', $framework,
         '--no-restore',
         '-p:ContinuousIntegrationBuild=true'
+    )    Invoke-DotNet -Arguments @(
+        'run', '--project', $project, '-c', $Configuration, '-f', $framework,
+        '--no-build', '--no-restore', '--', '--help'
     )
 }
 

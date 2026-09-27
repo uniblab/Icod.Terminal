@@ -20,77 +20,15 @@
 */
 namespace Icod.Terminal.CapabilityPlanning.Sample;
 
-using Icod.Terminal;
-
 internal static class Program {
-	private static readonly TerminalCapability[] Capabilities = [
-		TerminalCapability.ClipboardRead,
-		TerminalCapability.ClipboardWrite,
-		TerminalCapability.CursorStyle,
-		TerminalCapability.SynchronizedOutput,
-		TerminalCapability.KeyboardReporting,
-		TerminalCapability.MouseReporting,
-		TerminalCapability.FocusReporting,
-		TerminalCapability.BracketedPaste,
-		TerminalCapability.RasterGraphics
-	];
-
-	private static async Task<int> Main(
-		string[] args
-	) {
-		ArgumentNullException.ThrowIfNull( args );
-
-		bool verify = args.Contains(
-			"--verify",
-			StringComparer.Ordinal
-		);
-		await using TerminalSession session = await TerminalSession.OpenAsync();
-
-		Console.WriteLine( "Semantic capability planning:" );
-		foreach ( TerminalCapability capability in Capabilities ) {
-			TerminalCapabilityStatus status = session.InspectCapability( capability );
-			Console.WriteLine( FormatStatus( status ) );
+	private static async Task<int> Main( string[] args ) {
+		using CancellationTokenSource cancellation = new();
+		ConsoleCancelEventHandler handler = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+		Console.CancelKeyPress += handler;
+		try {
+			return await CapabilityPlanningExample.RunAsync( args, Console.Out, Console.Error, cancellation.Token );
+		} finally {
+			Console.CancelKeyPress -= handler;
 		}
-
-		if ( verify ) {
-			Console.WriteLine();
-			Console.WriteLine( "Explicit bounded verification:" );
-			foreach ( TerminalCapability capability in new[] {
-				TerminalCapability.KeyboardReporting,
-				TerminalCapability.RasterGraphics
-			} ) {
-				TerminalCapabilityStatus status = await session.VerifyCapabilityAsync(
-					capability
-				);
-				Console.WriteLine( FormatStatus( status ) );
-			}
-		}
-
-		TerminalCapabilityStatus raster = session.InspectCapability(
-			TerminalCapability.RasterGraphics
-		);
-		Console.WriteLine();
-		Console.WriteLine(
-			raster.IsUsable
-				? "Plan: raster presentation is presently usable."
-				: "Plan: use a non-raster presentation path."
-		);
-		return 0;
-	}
-
-	private static string FormatStatus(
-		TerminalCapabilityStatus status
-	) {
-		return string.Concat(
-			status.Capability,
-			": support=",
-			status.Support,
-			", endpoint=",
-			status.EndpointAvailability,
-			", evidence=",
-			status.EvidenceKind,
-			", usable=",
-			status.IsUsable
-		);
 	}
 }

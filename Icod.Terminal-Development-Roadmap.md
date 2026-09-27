@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.19.0` — Screen-output planning and downstream hardening
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.19.0 released; 1.20.0 scope selected and development roadmap prepared; implementation pending T200 contract review
+- **Development status:** 1.19.0 released; 1.20.0 implementation and package qualification in progress in PR #65
 - **Active development target:** `1.20.0` — Profile and capability decisions
 - **Selected scope:** 3 + focused 6 + 10 — terminal-profile refinement, existing capability-verification hardening, and documentation/samples
 - **Stable compatibility floor:** `1.0.0`
@@ -21,7 +21,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.19.0` was merged through [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64) at `b3f7adf929d36ea654f2116ad6132781edc3fb3b`, tagged `v1.19.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.19.0) on 2026-09-27. The final pre-merge head `5849ec717ba59a37ec7395d11f5c892ef3f380b2` passed all nine jobs in [workflow 36296373936](https://github.com/uniblab/Icod.Terminal/actions/runs/36296373936), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. Its production dependencies are `Icod.TermInfo 1.16.0` and `Icod.Timing 1.0.0`; optional integration uses `Icod.TermInfo.Inspection 1.16.0`.
 
-Version 1.20.0 selects **3 + focused 6 + 10**. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md) defines T200-T209 and the [design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md) bounds the profile additions and the three existing verification paths. No 1.20 implementation or qualification is accepted by this planning update.
+Version 1.20.0 selects **3 + focused 6 + 10**. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md) defines T200-T209 and the [design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md) bounds the profile additions and the three existing verification paths. The additive profile API and generation-bound verification fix are implemented; the versioned roadmap records the executable sample, API comparison, and package qualification progress.
 
 ### Earlier checkpoints
 

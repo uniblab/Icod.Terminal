@@ -82,7 +82,7 @@ Timeout is not treated as proof that a terminal lacks support.
 
 ### `Icod.Terminal.CapabilityPlanning.Sample`
 
-Demonstrates protocol-neutral capability inspection and optional explicit verification.
+Reports static screen advertisement, concrete plans, and all twelve capability snapshots. Default reporting performs no explicit support probes; `--verify` uses only the three existing reviewed paths. `--help` and `-h` work without a terminal. See the [walkthrough](Icod.Terminal.CapabilityPlanning.Sample/README.md) for exit codes, cancellation, and interpretation.
 
 ```text
 dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj -f net10.0

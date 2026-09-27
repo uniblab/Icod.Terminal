@@ -90,3 +90,11 @@ pwsh -NoProfile -File packaging/VerifyDCursesPackage.ps1 -ArtifactDirectory arti
 ```
 
 The synthetic host alone uses transitive TermInfo types to construct test descriptions and implement the legacy control-provider fixture. The controlled renderer and sample frame routine use Terminal types only. The verifier restores the candidate package in a temporary directory and keeps its existing source/reference checks on the controlled renderer.
+
+## Static advertisement before planning — 1.20
+
+`TerminalProfile.Screen` now reports static representations for existing cursor routes, erase kinds, character/line shifts, and scroll regions through `Advertises...` properties/methods. These immutable facts do not emit output, validate expansion parameters, mutate live evidence, or change a pending transaction's output epoch.
+
+An advertisement is not a promise that every request can be planned. Empty and malformed capability sources are present too. Continue to request a concrete `TerminalScreenOperationPlan?` using the actual parameters, distinguish unavailable from valid zero-byte plans, and handle the planner's documented errors. Missing absolute addressing does not disqualify existing home/relative or row/column cursor routes.
+
+The [capability guide](Capability-Inspection-and-Planning.md#13-static-screen-advertisement-and-concrete-plans--120) relates static facts to live evidence and endpoint availability. The [capability sample](../samples/Icod.Terminal.CapabilityPlanning.Sample/README.md) reports advertisement and concrete plan availability together without committing a demonstration frame.

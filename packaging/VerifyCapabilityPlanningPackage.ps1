@@ -36,6 +36,18 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
 }
 
 $requiredMembers = @(
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorHome',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorRowAddressing',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorColumnAddressing',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCarriageReturn',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorUp',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorDown',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorLeft',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCursorRight',
+	'P:Icod.Terminal.TerminalScreenCapabilities.AdvertisesScrollRegion',
+	'M:Icod.Terminal.TerminalScreenCapabilities.AdvertisesErase(Icod.Terminal.TerminalScreenEraseKind)',
+	'M:Icod.Terminal.TerminalScreenCapabilities.AdvertisesCharacterShift(Icod.Terminal.TerminalScreenCharacterShiftKind)',
+	'M:Icod.Terminal.TerminalScreenCapabilities.AdvertisesLineShift(Icod.Terminal.TerminalScreenLineShiftKind)',
 	'T:Icod.Terminal.TerminalCapability',
 	'T:Icod.Terminal.TerminalCapabilitySupport',
 	'T:Icod.Terminal.TerminalCapabilityEndpointAvailability',
@@ -88,6 +100,8 @@ try {
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-capability-planning-smoke/Icod.Terminal.PackageCapabilityPlanningSmoke.csproj') -Destination (Join-Path $smokeRoot 'Icod.Terminal.PackageCapabilityPlanningSmoke.csproj')
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-capability-planning-smoke/Program.cs') -Destination (Join-Path $smokeRoot 'Program.cs')
 
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-capability-planning-smoke/CapabilityPlanningScenario.cs') -Destination (Join-Path $smokeRoot 'CapabilityPlanningScenario.cs')
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'samples/Icod.Terminal.CapabilityPlanning.Sample/CapabilityPlanningExample.cs') -Destination (Join-Path $smokeRoot 'CapabilityPlanningExample.cs')
 	$nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
 	$artifactUri = [System.Security.SecurityElement]::Escape($ArtifactDirectory)
 	$nugetConfigText = @"
@@ -134,4 +148,4 @@ try {
 	}
 }
 
-Write-Host "1.10 capability-planning package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.20 capability-planning package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

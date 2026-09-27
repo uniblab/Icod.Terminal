@@ -12,7 +12,7 @@
 
 **Selected scope:** **3 + focused 6 + 10**.
 
-**Status:** Planning only. Release scope selected on 2026-09-27; T200-T209 remain pending. This PR initially changes planning documents only. The design's additive API proposal is reviewed in T200 before production implementation.
+**Status:** Implementation and qualification in progress. The selected scope is unchanged; the API and generation fix are implemented, and sample/package acceptance is underway. Final stable closure remains pending the recorded gates.
 
 ## Global constraints
 
@@ -254,3 +254,26 @@ Use the existing CI workflow for platform authority. Where local multi-node MSBu
 ## Deferred scope
 
 New protocol families, broad query-router changes, configurable query scheduling/coalescing, cursor-visibility transaction composition, endpoint/transport expansion, public extensibility, animation composition, new raster positioning, image decoding, PTY hosting, and retained-screen/layout policy remain separate decisions. Performance changes require measured need; no benchmark improvement is promised by this release.
+
+## Implementation evidence
+
+The planning baseline is PR #65 head `883e4441456046c17d030c933a305fa1d70daef2`; all nine jobs in [workflow 36299598632](https://github.com/uniblab/Icod.Terminal/actions/runs/36299598632) passed. Local implementation is isolated from the released 1.19 branch. No physical emulator, performance, or six-runner architecture certification is implied by the scripted checks below.
+
+| Obligation | Executable evidence |
+| --- | --- |
+| Presence, defaults, invalid kinds, immutable equality | `TerminalScreenProfileAdvertisementTests`: all 30 existing representations, each present/empty/malformed, plus default/unrelated profiles and invalid kinds. |
+| Advertisement versus actual planning | `TerminalScreenPlannerCoreHardeningTests.AdvertisementDoesNotRequireAbsoluteAddressingOrConsumeOutputEpoch` and `AdvertisementDistinguishesEmptyRepresentationFromMissingOperation`; existing row/column, parameter-bound and malformed-route cases remain required. |
+| Twelve inspected values / three live paths | `TerminalSessionCapabilityInspectionTests`, `TerminalCapabilityLifecycleAndOwnershipTests.CapabilityWithoutReviewedProbeRemainsInspectionOnly`, and the actual sample/package scenario. |
+| Decisive/static/unavailable evidence | `TerminalCapabilityAdversarialTests.RepeatedVerificationOfDecisiveEvidenceEmitsNoTraffic`, `UnsupportedBackendDoesNotEraseIndependentStaticAlternate`, and the three unavailable-endpoint cases. |
+| Sixel versus persistent support | `TerminalKittyGraphicsCapabilityEvidenceTests.PublicVerificationKeepsSixelAndPersistentSupportSeparate`. |
+| Framing, size, truncation, unrelated/late replies | `TerminalKittyGraphicsHardeningTests`: every split point for seven/eight-bit replies, correlated abort/bad termination, oversized drain, logical deadline, unrelated traffic, and late Kitty reply before a subsequent CSI query. |
+| Cancellation, admission, late ownership, one reader | `TerminalQueryTransactionTests`: pre-emission and queued cancellation/timeout, post-emission cancellation, late ownership expiry, buffered-response isolation, suspension and disposal. |
+| Old generation and fresh recovery | `PublicVerificationCannotPromoteReplyFromInvalidatedGeneration` covers all three public paths and a later successful fresh request; `PrimaryDaObservationCannotWriteEvidenceIntoNewGeneration` covers the shared DA observation boundary. |
+| Managed lifecycle | `TerminalKeyboardLifecycleHardeningTests.ResumeReprobesBeforeReestablishingKeyboardReporting`, capability snapshot/static evidence tests, and query suspension tests. |
+| Actual consumer behavior | `CapabilityPlanningSampleTests` source-links the real helper; the fresh package host executes the same deterministic available/unavailable scenarios, all nine no-probe values, all three selected verification results, and help/argument validation. |
+
+T201 contract tests first failed 35/35 for missing members. The generation regression then failed all three public paths with stale `Verified` evidence before the ledger fix. After correction, the full unit suite passed 2,455/2,455 on each of .NET 8, 9, and 10. Sample help/argument contracts failed three cases before implementation, then all six initial sample tests passed on .NET 10. Later qualification below supersedes these intermediate counts.
+
+The 1.19 published-package reflection snapshot reproduces its recorded fingerprint `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`. Comparing it with 1.20 yields exactly nine new read-only Boolean properties and three Boolean methods on `TerminalScreenCapabilities`, with no removed or changed old signatures/enum values. All three new framework snapshots have fingerprint `d308fb6ead5bd24c564d159297e6d08793c08eb4db21418eca6a5563aa5c4cbf`.
+
+The maintainer requested no subagents. Implementation and final review are inline; the briefly started review agent was stopped before completion and provides no review evidence. The final review checks mappings, API compatibility, generation recording, parser/correlation reuse, dependency neutrality, and sample side effects directly.

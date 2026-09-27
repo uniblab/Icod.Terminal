@@ -80,6 +80,24 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		Assert.True( renewed.IsUsable );
 	}
 
+	[Theory]
+	[InlineData( TerminalCapability.KeyboardReporting )]
+	[InlineData( TerminalCapability.RasterGraphics )]
+	[InlineData( TerminalCapability.PersistentRasterGraphics )]
+	public async Task DisposalTerminatesActivePublicVerification( TerminalCapability capability ) {
+		ProbeTransport transport = new();
+		ManualMonotonicClock clock = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		Task<TerminalCapabilityStatus> verification = session.VerifyCapabilityAsync( capability ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		TerminalCapabilityStatus[] snapshots = await Task.WhenAll( Enumerable.Range( 0, 16 )
+			.Select( _ => Task.Run( () => session.InspectCapability( capability ) ) ) );
+		Assert.All( snapshots, snapshot => Assert.Equal( TerminalCapabilitySupport.Unknown, snapshot.Support ) );
+		Task disposal = session.DisposeAsync().AsTask();
+		await Assert.ThrowsAsync<ObjectDisposedException>( () => verification.WaitAsync( TimeSpan.FromSeconds( 5 ) ) );
+		await disposal.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		await Assert.ThrowsAsync<ObjectDisposedException>( async () => await session.VerifyCapabilityAsync( capability ) );
+	}
 	[Fact]
 	public async Task OkResponseBeforePrimaryDaVerifiesKittyGraphics() {
 		ProbeTransport transport = new();
