@@ -12,7 +12,7 @@
 
 **Selected scope:** **3 + focused 6 + 10**.
 
-**Status:** Implementation and qualification in progress. The selected scope is unchanged; the API and generation fix are implemented, and sample/package acceptance is underway. Final stable closure remains pending the recorded gates.
+**Status:** T200-T208 accepted. Stable 1.20.0 metadata is prepared; T209 final artifact qualification and maintainer presentation are in progress. The selected scope is complete with no deferred Option 3 deliverable.
 
 ## Global constraints
 
@@ -199,11 +199,11 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** additive API evidence, required XML docs, executed consumer/sample behavior, unchanged dependency boundary, and downstream compatibility.
 
-- [ ] Extend the fresh-package capability consumer to exercise new profile facts and the complete verification/no-probe matrix; execute the actual sample routine by source linking. Keep fixture dependencies in the test host and resolve Terminal from the package, not the source project.
-- [ ] Require XML documentation for every additive member. Check removed/changed old signatures and enum values against 1.19 independently of the new fingerprint.
-- [ ] Generate all-framework 1.20 API snapshots, review additions, and freeze equal fingerprints. Preserve every historical baseline and prove the verifier rejects a deliberately wrong temporary fingerprint.
-- [ ] Build one candidate artifact and run all four existing package shards against those exact bytes. Retain DCurses 1.6.0 and 2.2.0, the Terminal-only renderer, and 1.19 screen-sample execution.
-- [ ] Check nuspec dependencies, symbols, license, packaged README, release metadata, and consumer reference boundaries. Record source, artifact identity, and hashes; commit qualification changes.
+- [x] Extend the fresh-package capability consumer to exercise new profile facts and the complete verification/no-probe matrix; execute the actual sample routine by source linking. Keep fixture dependencies in the test host and resolve Terminal from the package, not the source project.
+- [x] Require XML documentation for every additive member. Check removed/changed old signatures and enum values against 1.19 independently of the new fingerprint.
+- [x] Generate all-framework 1.20 API snapshots, review additions, and freeze equal fingerprints. Preserve every historical baseline and prove the verifier rejects a deliberately wrong temporary fingerprint.
+- [x] Build one candidate artifact and run all four existing package shards against those exact bytes. Retain DCurses 1.6.0 and 2.2.0, the Terminal-only renderer, and 1.19 screen-sample execution.
+- [x] Check nuspec dependencies, symbols, license, packaged README, release metadata, and consumer reference boundaries. Record source, artifact identity, and hashes; commit qualification changes.
 
 **Acceptance:** The release is consumable as a package with additive documented APIs and no direct TermInfo coupling in the controlled consumer.
 
@@ -211,11 +211,11 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Files:** tests and production files only for demonstrated in-scope findings; this roadmap for exact evidence.
 
-- [ ] Pass the full Windows/Linux/macOS runtime matrix across all target frameworks, including optional Inspection integration and sample builds.
-- [ ] Pass package preparation, all four contract shards, and validated artifact for the same final source head. Do not reuse earlier-head results as current evidence.
-- [ ] Review API meaning, source mappings, parser/correlation behavior, generation races, dependency neutrality, and the sample's no-probe guarantees. Resolve findings with failing regression evidence where applicable.
-- [ ] Reconcile every selected requirement with a completed task or explicit maintainer-approved deferral. No unresolved correctness issue or silently dropped Option 3 deliverable.
-- [ ] Record actual qualification limits: scripted tests are not physical-emulator certification, performance benchmarks, or a fresh six-runner architecture matrix.
+- [x] Pass the full Windows/Linux/macOS runtime matrix across all target frameworks, including optional Inspection integration and sample builds.
+- [x] Pass package preparation, all four contract shards, and validated artifact for the same final source head. Do not reuse earlier-head results as current evidence.
+- [x] Review API meaning, source mappings, parser/correlation behavior, generation races, dependency neutrality, and the sample's no-probe guarantees. Resolve findings with failing regression evidence where applicable.
+- [x] Reconcile every selected requirement with a completed task or explicit maintainer-approved deferral. No unresolved correctness issue or silently dropped Option 3 deliverable.
+- [x] Record actual qualification limits: scripted tests are not physical-emulator certification, performance benchmarks, or a fresh six-runner architecture matrix.
 
 **Acceptance:** All selected behavior is reviewable and the final head has complete regression/package evidence.
 
@@ -223,7 +223,7 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Files:** `Directory.Build.props`; root/current documentation; this roadmap; the main roadmap; `CHANGELOG.md`; `docs/releases/1.20.0.md`; the new 1.20 API baseline.
 
-- [ ] Set stable `1.20.0` metadata only after T200-T208 acceptance; synchronize README, changelog, release notes, and roadmap status.
+- [x] Set stable `1.20.0` metadata only after T200-T208 acceptance; synchronize README, changelog, release notes, and roadmap status.
 - [ ] Rebuild and qualify the final stable candidate; record exact source/merge identities, CI jobs, package/symbol hashes, and each framework's API fingerprint.
 - [ ] Confirm package contents and public compatibility against 1.19; distinguish historical checkpoints from final artifacts.
 - [ ] Present the completed PR for maintainer review. Merge, tag, GitHub Release, and publication are separate maintainer actions.
@@ -291,3 +291,21 @@ The corrected full local unit suite passes 2,465/2,465 on each of .NET 8, 9, and
 The corrected alpha checkpoint `7d4f97d8d01a42bcd1fe788bf6514c42bd08e04a` / [workflow 36302069177](https://github.com/uniblab/Icod.Terminal/actions/runs/36302069177) passed all four package shards and Linux runtime. Its macOS .NET 10 sample scenario exposed a test-host real-clock assumption under concurrent runtime load; the canned keyboard reply missed the production one-second deadline. The fixture now injects a non-advancing monotonic clock with a separate 20-second caller cancellation and 30-second outer bound. Production deadlines are unchanged and remain qualified by the existing explicitly advanced timeout tests. The actual sample helper is unchanged.
 
 That CI alpha artifact is `10926116302`, with package SHA-256 `d26db69341cb0525edb43b6c0cd8d5f3e706979de37c05a52ea4835d16799131` and symbols `9dab25b5642e8f4f9d6d3aa8cc27354ebd8e71142f497a49ec8883f5caec301a`; it was built from synthetic PR merge `f4ef787246d57a1c9e8d517657657ebfb97d112a`. All three extracted API snapshots match the frozen 1.20 fingerprint. This remains intermediate qualification, superseded by the final stable source and artifacts.
+
+### Accepted implementation checkpoint
+
+T200-T208 are accepted at head `af48b77f4506c70fd000d927c296aa96af8a81d6`, synthetic PR merge `2a400ab370742440f57f716ed547596d835cc4c5`. All nine jobs in [workflow 36302411388 / #2015](https://github.com/uniblab/Icod.Terminal/actions/runs/36302411388) passed. Windows, Linux, and macOS each passed 2,465 unit tests and 15 optional TermInfo integration tests per framework, plus all runtime/sample/downstream checks.
+
+| Gate | Job |
+| --- | --- |
+| Package preparation/API | `108572403419` |
+| Runtime Windows | `108572403556` |
+| Runtime Linux | `108572403616` |
+| Runtime macOS | `108572403560` |
+| Foundation shard | `108572627274` |
+| Presentation shard | `108572627293` |
+| Semantic/hardening shard | `108572627297` |
+| Stable release/downstream shard | `108572627343` |
+| Validated artifact | `108572895640` |
+
+Candidate artifact `10926096794` contains package SHA-256 `dc0d77c6fd0b3c4fc484f81d2b5e3a3b102c8d22a285a4a762dcaf81a26a2f14`, symbol-package SHA-256 `53edeb32b080e599df01c0a96d87cb994eb55439099c4fd8cb50609d0391c330`, and three equal API snapshots (`d308fb6ead5bd24c564d159297e6d08793c08eb4db21418eca6a5563aa5c4cbf`). These are the accepted alpha implementation bytes, explicitly distinct from the forthcoming stable 1.20.0 artifact. Inline review findings are resolved; no requirement was silently deferred. Stable metadata changes below do not change runtime behavior or public signatures.

@@ -379,7 +379,7 @@ A conclusive live `PersistentRasterGraphics` result may be mapped by the caller 
 
 TermInfo planning does not replace Terminal's live capability checks, routing, commitment, identity ownership, or cleanup. Production `Icod.Terminal` retains no dependency on `Icod.TermInfo.Inspection` or `Icod.TermInfo.Source`.
 
-## 15. Stable exclusions after 1.19
+## 15. Stable exclusions after 1.20
 
 Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 

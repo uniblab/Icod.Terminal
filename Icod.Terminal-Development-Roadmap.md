@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.19.0` — Screen-output planning and downstream hardening
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.19.0 released; 1.20.0 implementation and package qualification in progress in PR #65
+- **Development status:** 1.20 implementation accepted; stable 1.20.0 release qualification in PR #65; merge and publication remain maintainer actions
 - **Active development target:** `1.20.0` — Profile and capability decisions
 - **Selected scope:** 3 + focused 6 + 10 — terminal-profile refinement, existing capability-verification hardening, and documentation/samples
 - **Stable compatibility floor:** `1.0.0`

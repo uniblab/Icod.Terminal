@@ -2,6 +2,14 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.20.0
+
+- Adds immutable static advertisement for existing cursor routes, erase, character/line shifts, and scroll regions; presence includes empty/malformed sources and remains separate from concrete planning.
+- Prevents old-generation support replies from updating current evidence and prevents late keyboard flags from verifying a newly queued request after cancellation.
+- Retains exactly three live verification paths across the twelve-capability vocabulary, with existing per-query deadlines, errors, lifecycle and response ownership.
+- Expands the capability sample with concrete plan reporting, all twelve status rows, explicit three-path verification, headless help, argument validation, and cancellation cleanup. Unit and fresh-package tests execute its actual routine.
+- Freezes twelve additive public members with equal .NET 8/9/10 fingerprints. Preserves all 1.19 signatures/enum values, TermInfo/Inspection 1.16.0, Timing 1.0.0, and DCurses 1.6.0/2.2.0 compatibility. See [1.20.0 release notes](docs/releases/1.20.0.md).
+
 ## 1.19.0
 
 - Adds bounded home-plus-relative and same-row carriage-return-plus-relative cursor planning, comparing complete costs and preserving existing preference on ties.

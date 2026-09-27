@@ -24,7 +24,7 @@ A stable release must qualify the public package/runtime graph on all supported 
 
 ## 3. Public API baselines
 
-The 1.19 line retains the complete 1.18 surface and fingerprint; see [Public-API-Baseline-1.19.md](Public-API-Baseline-1.19.md). Cursor movement may select a newly available cheaper complete route, while equal-cost routes preserve existing preference. Invalid optional routes are unavailable without displacing independently valid candidates. Transaction ownership, limits, cancellation, and failure behavior remain unchanged.
+The 1.20 line retains every 1.19 signature and enum value with twelve additive static screen-advertisement members; see [Public-API-Baseline-1.20.md](Public-API-Baseline-1.20.md). Cursor movement may select a newly available cheaper complete route, while equal-cost routes preserve existing preference. Invalid optional routes are unavailable without displacing independently valid candidates. Transaction ownership, limits, cancellation, and failure behavior remain unchanged.
 
 Every API-bearing stable minor release records a deterministic reflection snapshot and SHA-256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
 
@@ -232,7 +232,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.19
+## 11. Deliberate non-promises after 1.20
 
 Stable 1.x does not promise:
 
