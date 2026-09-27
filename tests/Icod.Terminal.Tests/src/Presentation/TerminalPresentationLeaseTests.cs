@@ -235,6 +235,27 @@ public sealed class TerminalPresentationLeaseTests {
 		Assert.Equal( new[] { "prior" }, output.SuccessfulWrites );
 	}
 
+	[Fact]
+	public async Task FailedCursorReturnInvalidatesFrameAndDisposalRetriesOrdinaryCursor() {
+		RecordingTerminalOutput output = new() { FailOnValue = "<C1>" };
+		TerminalSession session = await OpenSessionAsync( CreatePresentationTerminal(), output );
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+
+		await Assert.ThrowsAsync<IOException>( () => frame.CommitAsync().AsTask() );
+		Assert.Equal( new[] { "<C0>", "frame", "<C1>" }, output.WriteAttempts );
+		TerminalScreenOutputTransaction next = session.CreateScreenOutputTransaction();
+		next.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		next.WriteText( "unsafe" );
+		await Assert.ThrowsAsync<InvalidOperationException>( () => next.CommitAsync().AsTask() );
+		Assert.DoesNotContain( "unsafe", output.WriteAttempts );
+
+		await session.DisposeAsync();
+		Assert.Equal( "<C1>", output.WriteAttempts[ ^1 ] );
+		Assert.Equal( "<C1>", output.SuccessfulWrites[ ^1 ] );
+	}
+
 	/// <summary>Verifies missing TermInfo transitions are controlled rather than guessed.</summary>
 	[Fact]
 	public async Task MissingCapabilityReturnsUnavailableWithoutAnsiFallback() {

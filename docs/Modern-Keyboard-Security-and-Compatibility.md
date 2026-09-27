@@ -46,6 +46,8 @@ Known functional identities map to `TerminalKey`. A syntactically valid modern f
 
 Traditional keyboard decoding remains active regardless of whether a modern protocol is negotiated. Applications should treat modern reporting as an optional enhancement, not a prerequisite for ordinary input.
 
+Kitty can report phase on legacy functional CSI forms as well as CSI-u. In 1.21, supported arrow, navigation, and function-key forms with an explicit `modifier:phase` suffix produce named `TerminalKey` press/repeat/release events. Ordinary unsuffixed terminfo keys remain traditional press events; the library never infers a release from an absent phase. This additive decoding uses the existing reader and does not enable a new terminal mode. Cursor-position replies retain query ownership, including the ambiguous CSI `R` family.
+
 ## Bounded decoding
 
 Modern keyboard frames use the same bounded incremental parser as other terminal input.

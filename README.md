@@ -11,6 +11,8 @@
 
 Current stable release: `Icod.Terminal 1.20.0`.
 
+Version 1.21.0 is in development in [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66). Its [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) covers phase-bearing Kitty functional keys and temporary cursor visibility around a screen transaction. The source branch is not a published stable package; the install command below remains at 1.20.0.
+
 Version 1.20 adds immutable screen-advertisement facts, fixes generation and late-response ownership in existing support verification, and expands the [capability guide](docs/Capability-Inspection-and-Planning.md) and [runnable sample](samples/Icod.Terminal.CapabilityPlanning.Sample/README.md). Static advertisement, concrete plans, live support evidence, and endpoint availability remain separate decisions.
 
 Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
@@ -248,6 +250,7 @@ Recommended documentation entry points:
 
 - [`docs/releases/1.20.0.md`](docs/releases/1.20.0.md) — current profile and capability release notes;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
+- [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;

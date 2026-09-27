@@ -60,6 +60,8 @@ string scriptedText =
 		+ "\u001b[200~hello\u001b[201~"
 		+ "\u001b[<0;3;4M"
 		+ "\u001b[1;5A"
+		+ "\u001b[1;5:3D"
+		+ "\u001b[2;5:2~"
 ;
 var input = new ScriptedTerminalInput(
 	Encoding.UTF8.GetBytes( scriptedText )
@@ -265,6 +267,22 @@ try {
 			&& TerminalKey.Up == modifiedKey.Key
 			&& TerminalKeyModifiers.Control == modifiedKey.Modifiers,
 		"The package consumer did not normalize Control+Up correctly."
+	);
+	TerminalInputEvent released = await ReadInputAsync( session, "a Kitty Left release" );
+	Require(
+		TerminalInputEventKind.Key == released.Kind
+			&& TerminalKey.Left == released.Key
+			&& TerminalKeyModifiers.Control == released.Modifiers
+			&& TerminalKeyEventPhase.Release == released.KeyPhase,
+		"The package consumer lost a functional-key release event."
+	);
+	TerminalInputEvent repeated = await ReadInputAsync( session, "a Kitty Insert repeat" );
+	Require(
+		TerminalInputEventKind.Key == repeated.Kind
+			&& TerminalKey.Insert == repeated.Key
+			&& TerminalKeyModifiers.Control == repeated.Modifiers
+			&& TerminalKeyEventPhase.Repeat == repeated.KeyPhase,
+		"The package consumer lost a functional-key repeat event."
 	);
 
 	await protocolLease.DisposeAsync();

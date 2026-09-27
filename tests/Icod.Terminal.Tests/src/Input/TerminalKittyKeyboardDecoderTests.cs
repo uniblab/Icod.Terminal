@@ -70,6 +70,32 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 	}
 
 	[Fact]
+	public async Task KittyFunctionalReleaseSurvivesEveryFrameSplit() {
+		byte[] bytes = Encoding.ASCII.GetBytes( "\u001b[1;5:3DZ" );
+		for ( int split = 1; split < bytes.Length - 1; ++split ) {
+			TerminalInputDecoder decoder = CreateDecoder( new ScriptedTerminalInput(
+				[ bytes[ ..split ], bytes[ split.. ] ]
+			) );
+			TerminalInputEvent key = await decoder.ReadAsync();
+			TerminalInputEvent text = await decoder.ReadAsync();
+			Assert.Equal( TerminalKey.Left, key.Key );
+			Assert.Equal( TerminalKeyModifiers.Control, key.Modifiers );
+			Assert.Equal( TerminalKeyEventPhase.Release, key.KeyPhase );
+			Assert.Equal( new Rune( 'Z' ), text.Character );
+		}
+	}
+
+	[Theory]
+	[InlineData( "\u001b[1;1:9DZ" )]
+	[InlineData( "\u001b[999;1:2AZ" )]
+	[InlineData( "\u001b[2;0:2~Z" )]
+	public async Task InvalidPhaseBearingFunctionKeyRecoversAtFollowingText( string bytes ) {
+		TerminalInputEvent recovered = await CreateDecoder( bytes ).ReadAsync();
+		Assert.Equal( TerminalInputEventKind.Text, recovered.Kind );
+		Assert.Equal( new Rune( 'Z' ), recovered.Character );
+	}
+
+	[Fact]
 	public async Task KittyModifierBitsMapToSemanticModifierValues() {
 		TerminalInputDecoder decoder = CreateDecoder(
 			"\u001b[97;256:2u"

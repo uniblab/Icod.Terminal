@@ -40,7 +40,16 @@ Normalize desired rendition through `NormalizeRendition(...)` before retaining i
 
 Every required movement must be available. Padding is handled by Terminal, complete byte costs are compared, and existing candidates retain preference on equal-cost ties. Malformed, oversized, or unevaluable optional routes are discarded without losing an independently usable candidate. Repeated fallback sources remain bounded. The caller must supply coordinates appropriate to the terminal's current coordinate/mode context; Terminal does not invent a screen layout or clamp the target.
 
-Cursor visibility remains owned by presentation leases. It is not a new screen-plan operation in 1.19.
+Cursor visibility remains owned by presentation leases. In 1.21, a transaction can request one temporary visibility scope without introducing a screen-plan operation or changing the persistent lease winner:
+
+```csharp
+TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+frame.WriteText( "Redrawn content" );
+await frame.CommitAsync(); // Restores the current presentation lease owner (or ordinary cursor).
+```
+
+The request emits nothing when set. At commit, Terminal checks the advertised entry and return capabilities, reserves presentation state ahead of the output gate, and rejects unsupported or stale work before frame bytes. The cursor is selected before the first frame item and restored after the last item, including cleanup after a failed write. A long-lived hidden cursor belongs in a presentation lease; the transaction setting lasts for only one committed frame. Missing restoration or flush after emission invalidates Terminal's presentation-state certainty and surfaces failure; it cannot undo text already written.
 
 ## Construct and commit
 

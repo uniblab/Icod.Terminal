@@ -201,7 +201,8 @@ try {
 		'T:Icod.Terminal.ITerminalInput',
 		'P:Icod.Terminal.TerminalSession.Output',
 		'M:Icod.Terminal.TerminalSession.ReadEventAsync(System.Threading.CancellationToken)',
-		'M:Icod.Terminal.TerminalSession.ReadEventAsync(System.TimeSpan,System.Threading.CancellationToken)'
+		'M:Icod.Terminal.TerminalSession.ReadEventAsync(System.TimeSpan,System.Threading.CancellationToken)',
+		'M:Icod.Terminal.TerminalScreenOutputTransaction.SetCursorVisibilityForCommit(Icod.Terminal.TerminalCursorVisibility)'
 	)
 	$forbiddenMember = 'P:Icod.Terminal.TerminalSession.Input'
 
