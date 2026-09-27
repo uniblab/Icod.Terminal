@@ -10,7 +10,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | --- | --- |
 | Open a session and read an event | `Icod.Terminal.Sample` |
 | Plan/commit a screen frame, refresh on input with a temporary hidden cursor, and demonstrate stale-work recovery | [`Icod.Terminal.ScreenOutput.Sample`](Icod.Terminal.ScreenOutput.Sample/README.md), [consumer guide](../docs/Screen-Output.md) |
-| Inspect rich input, lifecycle, and semantic events | `Icod.Terminal.RichInput.Sample` |
+| Inspect rich input, lifecycle, and semantic events | [`Icod.Terminal.RichInput.Sample`](Icod.Terminal.RichInput.Sample/README.md) |
 | Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
 | Compare static advertisement, concrete plans, and live capability knowledge | [`Icod.Terminal.CapabilityPlanning.Sample`](Icod.Terminal.CapabilityPlanning.Sample/README.md) |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
@@ -76,7 +76,7 @@ Normal execution needs interactive input/output and alternate-screen/cursor/rend
 
 Interactive inspector for text, keys, bracketed paste, focus, mouse, lifecycle, unsolicited semantic events, and negotiated modern keyboard reporting.
 
-On terminals that send Kitty phase-bearing functional CSI frames, navigation and editing keys retain repeat/release phases in the existing event model. The example tracks a held Left key and Control+Insert repeats only while a modern keyboard-reporting lease is active. Traditional key decoding remains the fallback; an ordinary traditional press does not imply that a matching release will arrive. The package smoke host copies the same Terminal-only editor-state source and feeds it phase-bearing input through a fresh package; TermInfo use in that host is limited to constructing a synthetic terminal fixture.
+On terminals that send Kitty phase-bearing functional CSI frames, navigation and editing keys retain repeat/release phases in the existing event model. The example tracks a held Left key and Control+Insert repeats only while a modern keyboard-reporting lease is active. Traditional key decoding remains the fallback; an ordinary traditional press does not imply that a matching release will arrive. The [sample walkthrough](Icod.Terminal.RichInput.Sample/README.md) explains reporting, output, privacy, and fresh-package verification.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0

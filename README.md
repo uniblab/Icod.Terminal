@@ -9,7 +9,7 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.21.0`.
+This source tree documents the `Icod.Terminal 1.21.0` release line. NuGet publication follows the repository merge; check the published package version before installing.
 
 Version 1.21 adds Kitty functional-key phase reporting and temporary cursor visibility for one screen transaction, restoring the presentation lease owner or ordinary cursor afterward. See the [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) and [screen-output sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the implementation and an input-driven refresh.
 
@@ -68,11 +68,13 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install this version:
+Install the latest published version:
 
 ```text
-dotnet add package Icod.Terminal --version 1.21.0
+dotnet add package Icod.Terminal
 ```
+
+The temporary cursor-visibility API shown below requires `Icod.Terminal 1.21.0` or later. Before publication, use the source tree or the PR's verified package candidate to try that API.
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
 
@@ -121,6 +123,17 @@ await frame.CommitAsync();
 A null baseline means at least one rendition axis exposed by the selected profile cannot be restored unconditionally from unknown state; callers must not substitute a claimed known default. A null cursor plan means the requested movement is unavailable. A valid zero-byte plan is still usable.
 
 Each transaction is single-use, and intervening output can invalidate it before commitment. After a committed failure, output may be partial: discard physical-state assumptions and let the application choose recovery. See the [screen-output guide](docs/Screen-Output.md) and [interactive sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the complete flow, presentation cleanup, and an executable stale-transaction recovery example.
+
+For a 1.21 frame, insert this check between the frame creation and the first `frame.Add(...)` above. The request surrounds the frame's items and restores the effective presentation lease owner afterward. If the profile lacks a safe entry and ordinary return, the frame uses the ordinary path:
+
+```csharp
+if ( session.Profile.Screen.SupportsCursorHidden
+	&& session.Profile.Screen.SupportsCursorNormal ) {
+	frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+}
+```
+
+This capability check is a conservative fallback, not a guarantee: the effective lease owner or a concurrent state change can still prevent commitment. Handle commit failures without replaying an emitted prefix. Use a presentation lease when the cursor preference should last beyond one frame; see the [sample's input-driven refresh](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the complete flow.
 
 `Profile` contains immutable selected-profile facts, while `GetDimensions()` reports the current Terminal-owned size result. A plan is opaque and session-bound; creating it emits nothing, and the transaction preserves ordering under one output gate and flush boundary. Retained cells, layout, Unicode width, clipping, damage, and repaint policy remain caller-owned.
 
@@ -252,6 +265,7 @@ Recommended documentation entry points:
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
 - [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
+- [`samples/Icod.Terminal.RichInput.Sample/README.md`](samples/Icod.Terminal.RichInput.Sample/README.md) — modern keyboard phases, fallback, and editor-state walkthrough;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
