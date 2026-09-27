@@ -1,6 +1,6 @@
 # Icod.Terminal.RasterPlaceholder.Sample
 
-This sample demonstrates the backend-neutral Unicode raster-placeholder model introduced in `Icod.Terminal 1.15.0`.
+This sample demonstrates the backend-neutral Unicode raster-placeholder model using semantic screen planning and output transactions. The caller chooses coordinates; Terminal selects the advertised cursor route, including the bounded alternatives added in 1.19.
 
 Run it with, for example:
 
@@ -8,7 +8,7 @@ Run it with, for example:
 dotnet run --project samples/Icod.Terminal.RasterPlaceholder.Sample/Icod.Terminal.RasterPlaceholder.Sample.csproj -f net10.0
 ```
 
-The sample keeps the 1.15 responsibility boundary explicit:
+The sample keeps the responsibility boundary explicit:
 
 ```text
 application / higher-level renderer
@@ -27,14 +27,18 @@ The executable flow:
 4. creates one `TerminalRasterPlaceholder` with a 4x2 semantic cell grid;
 5. confirms that successful creation publishes usable live placeholder evidence;
 6. generates semantic cell tokens with `GetCell(...)`;
-7. uses ordinary TermInfo `CursorAddress` expansion plus `WriteTerminalStringAsync(...)` for caller-owned cursor movement;
-8. writes the complete grid with typed bulk placeholder output;
-9. moves back to one grid location and redraws one cell sparsely;
-10. emits three semantic cells in a deliberately non-raster order;
+7. uses preflighted `PlanCursorMove(null, target)` plans for caller-selected screen positions, without assuming a known current cursor;
+8. adds each row's cursor plan and typed bulk placeholder cells to one screen transaction and commits the complete grid;
+9. commits a fresh transaction containing a cursor plan and one sparse cell redraw;
+10. commits another cursor-and-cell transaction with three semantic cells in a deliberately non-raster order;
 11. creates a physical placement relative to the virtual placeholder;
 12. releases placement, placeholder, and resource ownership deterministically through `await using`.
 
 Every placeholder cell is self-contained. The sample does not depend on the previously emitted cell, hidden cursor history, or raster-order emission.
+
+All required cursor plans are checked before creating raster resources. A missing route produces a diagnostic rather than requiring one particular underlying capability. A plan can be reused within its owning session, but every transaction is newly created immediately before building that output group. Cursor movement and its associated cells cannot be interleaved by other coordinated session output during commitment. Creation/acknowledgement of raster resources and placements remains a separate operation.
+
+The sample draws at fixed caller-selected positions (the grid begins at zero-based row 4, column 8). It needs an interactive terminal with usable persistent raster/placeholder support and sufficient space; it does not implement clipping or resize-driven layout. Resource cleanup is deterministic through `await using`, but a committed failure may leave partial output and is not automatically replayed. The sample imports Terminal only; TermInfo expansion and raw terminal-string output are intentionally absent.
 
 The sample intentionally contains no terminal-brand branch, graphics-backend selection, public numeric raster identity, raw graphics control frame, placeholder codepoint literal, or copied combining-mark table. Those details remain private implementation concerns of `Icod.Terminal`.
 

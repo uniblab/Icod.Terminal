@@ -10,7 +10,7 @@
 
 **Spec:** [Selected 1.19 scope in the main roadmap](Icod.Terminal-Development-Roadmap.md#119-development-line--downstream-screen-output-hardening-and-planner-expansion), together with the scope and constraints below.
 
-**Status:** T190-T199 accepted for the qualified stable candidate recorded below. Candidate identity: `1.19.0`; ready for maintainer release action, not published.
+**Status:** T190-T199 accepted for the qualified stable candidate recorded below, with the approved pre-publication documentation/sample follow-up described next. Candidate identity: `1.19.0`; not published. PR #64 records the latest head's validation separately from the historical artifacts below.
 
 **Baseline:** Released `1.18.0`, tag `v1.18.0`, merge commit `3e150377db990141aa6903631a8b95cb2c41116e`.
 
@@ -52,6 +52,19 @@ This release improves the existing screen-output contract. It does not establish
 | Compile-only consumers or samples that assume unsupported features | Execute the renderer path; demonstrate graceful unavailable handling and recovery without raw TermInfo access. | T191, T196-T197 |
 
 ## Starting evidence and design decisions
+
+### Approved pre-publication documentation and sample follow-up
+
+On 2026-09-27 the maintainer approved five focused improvements plus matching TermInfo's Ken Arnold attribution:
+
+- Refresh the root README's current API fingerprint and documentation links, and teach baseline/cursor/text composition in one complete transaction example.
+- Give the screen sample a dedicated walkthrough, help, alternate-screen presentation ownership, and explicit q/Q/Escape/EOF exit behavior.
+- Remove the unused mandatory dimension query from its fixed-origin frame. A package fixture reproduced the old failure with unavailable dimensions before this correction.
+- Replace the raster-placeholder sample's TermInfo expansion/raw terminal-string output with semantic cursor-and-cell transactions; update its source guard and walkthrough.
+- Expose a controlled `--recovery` demonstration of deliberate stale-work rejection and a fresh frame. Extend the package harness to execute the actual recovery and presentation/event routines, including missing plans, cancellation, and committed failures. Key-input fixtures stay open so a missing q/Escape handler cannot pass by falling through to EOF. The event loop explicitly handles `TerminalEventKind.Cancelled`.
+- Add “Ken Arnold, for his work on `termcap` and `curses`” using the attribution in Icod.TermInfo's root README.
+
+The sample still has no automatic transport-failure retry or retained-screen engine. The library API and production implementation remain unchanged. The first extended package run passed all three frameworks after the dimension and cancellation corrections; final rebuilt-package and exact-head workflow results are maintained in [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64). The hashes below identify their stated earlier checkpoints, not artifacts rebuilt from this follow-up.
 
 ### Implementation and review checkpoint
 
@@ -210,7 +223,7 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Use the same public planner/transaction flow as T191. Execute the same sample frame routine from the package harness without an interactive terminal; assertion failures terminate the harness with a nonzero exit code.
 
-- [x] Implement a small sample that reads dimensions/profile, establishes a valid rendition baseline, plans cursor/rendition/text output, and commits. Document caller-driven recovery and execute it in the downstream harness. Show optional synchronized output only when its existing contract permits it.
+- [x] Implement a small sample that uses semantic profile planning, establishes a valid rendition baseline, plans cursor/rendition/text output, and commits. The fixed-origin frame requires no dimension query; document availability checks for applications that need dimensions. Demonstrate caller-driven stale-work recovery and execute it in the downstream harness. Show optional synchronized output only when its existing contract permits it.
 - [x] Make unavailable plans and baseline failure visible in the sample's control flow; propagate stale-transaction and committed-output failures for the host to handle as documented. Use semantic APIs without raw escape strings or a direct TermInfo dependency.
 - [x] Write the guide around those executable steps, including zero-byte versus unavailable plans, single-use transactions, capacity, cancellation, disposal, and the division of screen-state ownership.
 - [x] Add the verifier to the runtime gate; compile the sample on all three frameworks and execute its frame routine in the package harness. Link the guide/sample from both READMEs, review XML comments for changed APIs, and commit.

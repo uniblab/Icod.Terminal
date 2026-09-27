@@ -29,7 +29,6 @@ public static class ScreenOutputExample {
 		ArgumentNullException.ThrowIfNull( session );
 		ArgumentNullException.ThrowIfNull( text );
 		cancellationToken.ThrowIfCancellationRequested();
-		TerminalDimensions dimensions = session.GetDimensions().GetRequiredValue();
 		// This example leaves wrapping/layout to its caller, including text width.
 		TerminalScreenPlanner planner = session.Screen;
 		TerminalScreenOperationPlan? baseline = planner.PlanRenditionBaseline();
@@ -54,5 +53,67 @@ public static class ScreenOutputExample {
 		frame.Add( leave.Value );
 		await frame.CommitAsync( cancellationToken );
 		return true;
+	}
+
+	/// <summary>Demonstrates rejection of deliberately stale work followed by one fresh frame.</summary>
+	/// <remarks>
+	/// This is a controlled example, not a general retry policy. Transport failures and
+	/// cancellation propagate; only the expected stale commit is handled here.
+	/// </remarks>
+	public static async ValueTask<bool> DemonstrateStaleRecoveryAsync(
+		TerminalSession session, CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		cancellationToken.ThrowIfCancellationRequested();
+		TerminalScreenOutputTransaction stale = session.CreateScreenOutputTransaction();
+		stale.WriteText( "This stale frame must never appear." );
+		// The caller intentionally invalidates its pending frame through coordinated output.
+		await session.WriteTextAsync( "Intervening output.\r\n", cancellationToken );
+		try {
+			await stale.CommitAsync( cancellationToken );
+		} catch ( InvalidOperationException ) {
+			// No stale bytes were emitted. Discard the consumed builder and replan.
+			return await DrawFrameAsync( session, "Fresh frame after stale rejection.", cancellationToken );
+		}
+		throw new InvalidOperationException( "The demonstration expected stale work to be rejected." );
+	}
+
+	/// <summary>Owns an alternate-screen scope, draws the demonstration, and waits for q, Escape, or EOF.</summary>
+	/// <returns>False if presentation or required screen operations are unavailable.</returns>
+	public static async ValueTask<bool> RunInteractiveAsync(
+		TerminalSession session, bool demonstrateRecovery = false,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		TerminalControlResult<TerminalPresentationLease> result = await session.AcquirePresentationAsync(
+			new TerminalPresentationOptions { AlternateScreen = true }, cancellationToken
+		);
+		if ( !result.IsAvailable ) {
+			return false;
+		}
+		await using TerminalPresentationLease presentation = result.GetRequiredValue();
+		bool drawn = demonstrateRecovery
+			? await DemonstrateStaleRecoveryAsync( session, cancellationToken )
+			: await DrawFrameAsync( session, "Terminal-owned screen output", cancellationToken );
+		if ( !drawn ) {
+			return false;
+		}
+		await session.WriteTextAsync( "\r\nPress q or Escape to exit.\r\n", cancellationToken );
+		while ( true ) {
+			TerminalEvent terminalEvent = await session.ReadEventAsync( cancellationToken );
+			// Event waits report cancellation as an event, rather than throwing.
+			if ( terminalEvent.Kind == TerminalEventKind.Cancelled ) {
+				throw new OperationCanceledException( cancellationToken );
+			}
+			if ( terminalEvent.Kind != TerminalEventKind.Input || terminalEvent.Input is not { } input ) {
+				continue;
+			}
+			if ( input.Kind == TerminalInputEventKind.EndOfInput
+				|| ( input.Kind == TerminalInputEventKind.Key && input.Key == TerminalKey.Escape )
+				|| ( ( input.Kind is TerminalInputEventKind.Text or TerminalInputEventKind.Key )
+					&& input.Character is { Value: 'q' or 'Q' } ) ) {
+				return true;
+			}
+		}
 	}
 }

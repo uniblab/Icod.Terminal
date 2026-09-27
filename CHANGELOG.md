@@ -10,6 +10,8 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Adds published DCurses 2.2.0 refresh/rendition/resize/recovery qualification while retaining the 1.6.0 compatibility witness.
 - Qualifies pending screen transactions across actual resize, external resume, and suspend/resume restoration without changing transaction ownership or cleanup semantics.
 - Adds a runnable screen-output sample, package-hosted execution of its frame routine, and a consumer guide for planning, commitment, and caller-owned recovery.
+- Expands the sample with alternate-screen ownership, q/Escape exit, help, and deliberate stale-frame recovery; migrates raster-placeholder drawing to semantic cursor-and-cell transactions.
+- Refreshes current README/API links and adds Ken Arnold's attribution for his work on `termcap` and `curses`.
 - Preserves the complete public API, all target frameworks, and production dependency versions. See [1.19.0 release notes](docs/releases/1.19.0.md).
 
 ## 1.18.0

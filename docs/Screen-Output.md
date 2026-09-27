@@ -2,11 +2,11 @@
 
 `TerminalSession.Screen` creates opaque, side-effect-free screen-operation plans. `CreateScreenOutputTransaction()` collects those plans and application text for a single serialized commit. Terminal interprets capabilities and owns output framing; your renderer owns cells, layout, damage, physical-state assumptions, and repaint policy.
 
-The [screen-output sample](../samples/Icod.Terminal.ScreenOutput.Sample/Program.cs) and its [frame routine](../samples/Icod.Terminal.ScreenOutput.Sample/ScreenOutputExample.cs) demonstrate this boundary. The package acceptance harness executes the same frame routine with a recording transport.
+The [screen-output sample walkthrough](../samples/Icod.Terminal.ScreenOutput.Sample/README.md) and its [frame and recovery routines](../samples/Icod.Terminal.ScreenOutput.Sample/ScreenOutputExample.cs) demonstrate this boundary. The package acceptance harness executes the same methods with recording transports and controlled input.
 
 ## Inspect and plan
 
-Read `session.GetDimensions().GetRequiredValue()` for positive cell dimensions and `session.Profile.Screen` for semantic profile facts. A profile is capability evidence, not live verification that the terminal has accepted a command. Your application decides text width, clipping, wrapping, and whether an operation is appropriate for the retained screen.
+Use `session.GetDimensions()` when layout needs current cell dimensions. Check `IsAvailable` before calling `GetRequiredValue()`; unavailable size is a controlled result, not permission to invent dimensions. The fixed-origin sample does not need a size query. Use `session.Profile.Screen` for semantic profile facts. A profile is capability evidence, not live verification that the terminal has accepted a command. Your application decides text width, clipping, wrapping, and whether an operation is appropriate for the retained screen.
 
 Start with `PlanRenditionBaseline()` whenever the physical rendition is unknown. Only a non-null baseline establishes that Terminal can restore every rendition axis exposed by this profile. Do not silently skip a missing baseline and then claim the current rendition is default.
 
@@ -58,19 +58,31 @@ Synchronized output is optional and must respect its existing capability and own
 
 Cancellation before output commitment prevents emission. After commitment begins, caller cancellation does not intentionally truncate the logical output or its required cleanup. Hyperlink closes, synchronized end frames, and flushes are attempted under the existing cleanup rules; independent failures are surfaced in attempt order.
 
-A failed committed transaction may have emitted a prefix. It is not a rollback operation. Mark your retained physical-state assumptions unknown, resolve the cause, and choose a fresh repaint or fallback. Never retry the consumed builder or automatically replay the failed byte stream. Even a fresh baseline is usable only when `PlanRenditionBaseline()` supplies one; Terminal cannot repair an unavailable transport or guarantee recovery from arbitrary terminal parser corruption. The small sample deliberately propagates these failures to its host; the package harness separately demonstrates a host choosing fresh recovery after resolving an injected failure.
+A failed committed transaction may have emitted a prefix. It is not a rollback operation. Mark your retained physical-state assumptions unknown, resolve the cause, and choose a fresh repaint or fallback. Never retry the consumed builder or automatically replay the failed byte stream. Even a fresh baseline is usable only when `PlanRenditionBaseline()` supplies one; Terminal cannot repair an unavailable transport or guarantee recovery from arbitrary terminal parser corruption. The sample propagates transport failures to its host and does not automatically retry them.
 
 Dispose the session/presentation leases through `await using` to attempt owned cleanup. Cleanup failures remain observable and should be reported by the host application.
 
+### Executable stale-work recovery
+
+Run the sample with `--recovery` to exercise `DemonstrateStaleRecoveryAsync(...)`. It creates a pending transaction, performs an intervening session-managed write, and catches the expected rejection of that deliberately stale transaction. The consumed transaction is abandoned. `DrawFrameAsync(...)` then plans a new baseline and cursor move and creates a fresh transaction. The old payload is never emitted.
+
+This is a controlled demonstration of caller-selected recovery, not a general exception-based retry loop. `InvalidOperationException` also represents other ownership/lifetime errors, so arbitrary occurrences must not be classified as stale work. Failure of the intervening write, cancellation, or failure of the fresh frame propagates; no replay follows. The package harness verifies exact emitted bytes and these failure paths.
+
+The interactive wrapper owns an alternate-screen lease and waits through `ReadEventAsync(...)`, preserving the session's single input authority. That API reports cancellation as `TerminalEventKind.Cancelled`; the sample converts it to cancellation of the demonstration so its scopes are disposed. It ignores other unrelated or unfamiliar events, exits on q/Q/Escape or EOF, and leaves resize/layout policy to the caller.
+
 ## Run and verify the example
 
-Run on an interactive terminal; the example writes at the top-left and restores its text rendition:
+Run on an interactive terminal. The example writes at the top-left of an owned alternate screen and resets its text rendition. Press q or Escape to release presentation ownership and return to the shell:
 
 ```sh
 dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0
+dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0 -- --recovery
+dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0 -- --help
 ```
 
-For noninteractive smoke verification, build a candidate package and run the downstream verifier. It hosts the same sample frame routine in a synthetic terminal, checks exact bytes, executes missing-baseline rejection, and runs DCurses 1.6.0/2.2.0 compatibility workloads:
+`--help` works without a terminal. Interactive mode declines unavailable alternate-screen support; it does not silently fall back to drawing over the shell. See the [walkthrough](../samples/Icod.Terminal.ScreenOutput.Sample/README.md) for prerequisites and exit codes.
+
+For noninteractive smoke verification, build a candidate package and run the downstream verifier. It hosts the same sample routines in a synthetic terminal, checks exact frame/recovery bytes, unavailable dimensions and mandatory plans, exit keys/EOF, cancellation, transport-failure propagation, and presentation cleanup. It also runs DCurses 1.6.0/2.2.0 compatibility workloads:
 
 ```sh
 pwsh -NoProfile -File packaging/BuildPackageArtifact.ps1 -ArtifactDirectory artifacts/screen-candidate -Configuration Staging

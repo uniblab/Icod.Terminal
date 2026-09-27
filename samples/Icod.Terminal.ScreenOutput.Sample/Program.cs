@@ -20,13 +20,38 @@
 */
 namespace Icod.Terminal.ScreenOutput.Sample;
 
+/// <summary>Runs a semantic screen-frame demonstration in an owned alternate screen.</summary>
 internal static class Program {
-	private static async Task<int> Main() {
-		await using TerminalSession session = await TerminalSession.OpenAsync();
-		if ( !await ScreenOutputExample.DrawFrameAsync( session, "Terminal-owned screen output" ) ) {
-			Console.Error.WriteLine( "This terminal cannot safely position the cursor and restore rendition." );
+	/// <summary>Accepts --help or --recovery; q or Escape ends the interactive demonstration.</summary>
+	private static async Task<int> Main( string[] args ) {
+		if ( args.Length == 1 && args[ 0 ] is "--help" or "-h" ) {
+			Console.WriteLine( "Usage: Icod.Terminal.ScreenOutput.Sample [--recovery]" );
+			Console.WriteLine( "Requires interactive input/output and alternate-screen support. Press q or Escape to exit." );
+			Console.WriteLine( "--recovery demonstrates stale-frame rejection followed by one freshly planned frame." );
+			return 0;
+		}
+		if ( args.Length > 1 || ( args.Length == 1 && args[ 0 ] != "--recovery" ) ) {
+			Console.Error.WriteLine( "Unknown arguments. Use --help for usage." );
+			return 2;
+		}
+		try {
+			// Dispose presentation and session ownership before reporting to the shell.
+			bool available;
+			await using ( TerminalSession session = await TerminalSession.OpenAsync() ) {
+				available = await ScreenOutputExample.RunInteractiveAsync( session, args.Length == 1 );
+			}
+			if ( available ) {
+				return 0;
+			}
+			Console.Error.WriteLine( "This terminal lacks the alternate-screen, cursor, or rendition operations required by the demo." );
+			return 1;
+		} catch ( OperationCanceledException ) {
+			Console.Error.WriteLine( "Screen demonstration cancelled." );
+			return 130;
+		} catch ( Exception exception ) {
+			// Committed output may be partial. Surface failures; do not replay the frame.
+			Console.Error.WriteLine( $"Screen demonstration failed: {exception}" );
 			return 1;
 		}
-		return 0;
 	}
 }

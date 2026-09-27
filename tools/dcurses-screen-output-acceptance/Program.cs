@@ -27,6 +27,7 @@ using Icod.Terminal.ScreenOutput.Sample;
 // Fixture-only TermInfo access: the controlled renderer source stays Terminal-only.
 foreach ( bool recoverable in new[] { false, true } ) {
 	RecordingOutput output = new();
+	TestControlProvider provider = new();
 	TerminalDescriptionBuilder builder = new( "screen-output-witness" );
 	builder.SetString( StringCapability.CursorAddress, "<cup:%p1%d,%p2%d>" );
 	builder.SetString( StringCapability.EnterBoldMode, "<bold>" );
@@ -34,7 +35,7 @@ foreach ( bool recoverable in new[] { false, true } ) {
 		builder.SetString( StringCapability.ExitAttributeMode, "<reset>" );
 	}
 	await using TerminalSession session = await TerminalSession.OpenAsync(
-		new TestControlProvider(), TerminalEndpoint.StandardInput,
+		provider, TerminalEndpoint.StandardInput,
 		TerminalEndpoint.StandardOutput, new EmptyInput(), output,
 		new TerminalSessionOptions {
 			TerminalOverride = builder.Build(), ConfigureOutput = false,
@@ -74,9 +75,81 @@ foreach ( bool recoverable in new[] { false, true } ) {
 	await FutureDcursesRenderer.RefreshAsync( session );
 	Require( output.Text == expected && output.FlushCount == 1, "Fresh baseline refresh must recover." );
 	output.Clear();
+	provider.SizeAvailable = false;
+	Require( !session.GetDimensions().IsAvailable, "Fixture must expose unavailable dimensions." );
 	Require( await ScreenOutputExample.DrawFrameAsync( session, "sample" ), "Sample must execute its supported frame." );
 	Require( output.Text == "<reset><cup:0,0><bold>sample<reset>" && output.FlushCount == 1,
 		"Sample must emit baseline, cursor, rendition, text, and reset in one commit." );
+	output.Clear();
+	Require( await ScreenOutputExample.DemonstrateStaleRecoveryAsync( session ), "Sample must recover using fresh work." );
+	Require( output.Text == "Intervening output.\r\n<reset><cup:0,0><bold>Fresh frame after stale rejection.<reset>",
+		"Recovery must omit the stale payload and emit one freshly planned frame." );
+	output.Clear();
+	using CancellationTokenSource cancelled = new();
+	cancelled.Cancel();
+	try {
+		await ScreenOutputExample.DemonstrateStaleRecoveryAsync( session, cancelled.Token );
+		throw new InvalidOperationException( "Pre-cancelled recovery must not run." );
+	} catch ( OperationCanceledException ) {
+		Require( output.Text.Length == 0, "Pre-cancelled recovery must emit nothing." );
+	}
+	output.FailNextWrite = true;
+	try {
+		await ScreenOutputExample.DemonstrateStaleRecoveryAsync( session );
+		throw new InvalidOperationException( "Recovery must propagate a transport failure." );
+	} catch ( Exception exception ) when ( exception is IOException or AggregateException ) {
+		Require( output.Text == "Intervening output.\r\n", "Failed committed output must not be replayed." );
+	}
+}
+
+// Execute the sample's real presentation and event path, including cleanup on failure.
+foreach ( string scenario in new[] { "q", "escape", "eof", "no-presentation", "no-baseline", "failure", "cancel" } ) {
+	Console.WriteLine( $"Screen sample host: {scenario}" );
+	RecordingOutput output = new();
+	TerminalDescriptionBuilder builder = new( "sample-host" );
+	builder.SetString( StringCapability.CursorAddress, "<cup:%p1%d,%p2%d>" );
+	builder.SetString( StringCapability.EnterBoldMode, "<bold>" );
+	if ( scenario != "no-baseline" ) {
+		builder.SetString( StringCapability.ExitAttributeMode, "<reset>" );
+	}
+	if ( scenario != "no-presentation" ) {
+		builder.SetString( StringCapability.EnterCursorAddressingMode, "<enter>" );
+		builder.SetString( StringCapability.ExitCursorAddressingMode, "<leave>" );
+	}
+	using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+	using CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource( timeout.Token );
+	if ( scenario == "failure" ) {
+		output.FailOnText = "Terminal-owned screen output";
+	}
+	if ( scenario == "cancel" ) {
+		output.AfterWrite = text => { if ( text.Contains( "Press q", StringComparison.Ordinal ) ) cancellation.Cancel(); };
+	}
+	await using TerminalSession session = await TerminalSession.OpenAsync(
+		new TestControlProvider { SizeAvailable = false }, TerminalEndpoint.StandardInput,
+		TerminalEndpoint.StandardOutput,
+		new SampleInput( scenario == "escape" ? "\u001b" : scenario == "q" ? "q" : "" ), output,
+		new TerminalSessionOptions { TerminalOverride = builder.Build(), ConfigureOutput = false, ObserveLifecycleEvents = false }
+	);
+	bool expectedFailure = false;
+	try {
+		bool available = await ScreenOutputExample.RunInteractiveAsync( session, scenario == "escape", cancellation.Token );
+		Require( available == ( scenario is not "no-presentation" and not "no-baseline" ), "Unexpected sample availability." );
+	} catch ( OperationCanceledException ) when ( scenario == "cancel" && !timeout.IsCancellationRequested ) {
+		expectedFailure = true;
+	} catch ( Exception exception ) when ( scenario == "failure" && exception is IOException or AggregateException ) {
+		expectedFailure = true;
+	}
+	Require( expectedFailure == ( scenario is "failure" or "cancel" ), "Expected the sample failure to propagate." );
+	if ( scenario == "no-presentation" ) {
+		Require( output.Text.Length == 0, "Unavailable presentation must not draw on the caller's screen." );
+	} else {
+		Require( output.Text.StartsWith( "<enter>", StringComparison.Ordinal )
+			&& output.Text.EndsWith( "<leave>", StringComparison.Ordinal ), "Sample must release alternate-screen ownership." );
+		Require( !output.Text.Contains( "This stale frame", StringComparison.Ordinal ), "Stale sample payload leaked." );
+		if ( scenario == "no-baseline" ) {
+			Require( output.Text == "<enter><leave>", "Missing baseline must not emit a frame inside the presentation scope." );
+		}
+	}
 }
 // Published decoupled renderer, independently of the controlled compile boundary.
 RecordingOutput cursesOutput = new();
@@ -154,12 +227,17 @@ internal sealed class RecordingOutput : ITerminalOutput {
 	internal string Text => Encoding.UTF8.GetString( this.bytes.ToArray() );
 	internal int FlushCount { get; private set; }
 	internal bool FailNextWrite { get; set; }
+	internal string? FailOnText { get; set; }
+	internal Action<string>? AfterWrite { get; set; }
 	internal void Clear() { this.bytes.Clear(); this.FlushCount = 0; }
 	public ValueTask WriteAsync( ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default ) {
 		cancellationToken.ThrowIfCancellationRequested();
 		this.bytes.AddRange( buffer.ToArray() );
-		if ( this.FailNextWrite ) {
+		string text = Encoding.UTF8.GetString( buffer.Span );
+		this.AfterWrite?.Invoke( text );
+		if ( this.FailNextWrite || ( this.FailOnText is not null && text.Contains( this.FailOnText, StringComparison.Ordinal ) ) ) {
 			this.FailNextWrite = false;
+			this.FailOnText = null;
 			throw new IOException( "Synthetic committed write failure." );
 		}
 		return ValueTask.CompletedTask;
@@ -171,8 +249,25 @@ internal sealed class RecordingOutput : ITerminalOutput {
 	}
 }
 
+internal sealed class SampleInput( string text ) : ITerminalInput {
+	private readonly byte[] bytes = Encoding.UTF8.GetBytes( text );
+	private int position;
+	public async ValueTask<int> ReadAsync( Memory<byte> buffer, CancellationToken cancellationToken = default ) {
+		cancellationToken.ThrowIfCancellationRequested();
+		int length = Math.Min( buffer.Length, this.bytes.Length - this.position );
+		this.bytes.AsMemory( this.position, length ).CopyTo( buffer );
+		this.position += length;
+		if ( length == 0 && this.bytes.Length > 0 ) {
+			// Keep key fixtures open: ignoring q/Escape must time out, not pass via EOF.
+			await Task.Delay( Timeout.InfiniteTimeSpan, cancellationToken );
+		}
+		return length;
+	}
+}
+
 internal sealed class TestControlProvider : ITerminalControlProvider {
 	internal TerminalSize Size { get; set; } = new( 80, 24 );
+	internal bool SizeAvailable { get; set; } = true;
 	private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
 		0, 0, 0, 0x0002UL, new byte[32], 0, 32, 0,
 		new TerminalSpeed(13, 9600), new TerminalSpeed(13, 9600)
@@ -186,7 +281,8 @@ internal sealed class TestControlProvider : ITerminalControlProvider {
 	public TerminalControlResult<TerminalModeSnapshot> GetMode( TerminalEndpoint endpoint ) =>
 		TerminalControlResult<TerminalModeSnapshot>.Available( this.baseline );
 	public TerminalControlResult<TerminalSize> GetSize( TerminalEndpoint endpoint ) =>
-		TerminalControlResult<TerminalSize>.Available( this.Size );
+		this.SizeAvailable ? TerminalControlResult<TerminalSize>.Available( this.Size )
+			: TerminalControlResult<TerminalSize>.Unavailable( "No live size in this fixture." );
 	public TerminalControlMutationResult SetMode( TerminalEndpoint endpoint,
 		TerminalModeSnapshot mode, TerminalModeApplyTiming timing ) => TerminalControlMutationResult.Success();
 }

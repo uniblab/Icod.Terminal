@@ -19,7 +19,6 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using Icod.Terminal;
-using Icod.TermInfo;
 
 const int imageWidth = 4;
 const int imageHeight = 2;
@@ -81,11 +80,22 @@ if ( TerminalCapabilitySupport.Unsupported == placeholderCapability.Support ) {
 	return 1;
 }
 
-if ( session.Terminal.GetString( StringCapability.CursorAddress ) is null ) {
-	await session.WriteTextAsync(
-		"This sample requires the terminal's ordinary CursorAddress capability so the caller can position placeholder cells.\r\n"
-	);
-	return 1;
+// The caller chooses screen coordinates; Terminal chooses complete cursor routes.
+TerminalScreenPosition[] positions = [
+	new( baseRow, baseColumn ),
+	new( baseRow + 1, baseColumn ),
+	new( baseRow + 1, baseColumn + 2 ),
+	new( baseRow + placeholderRows + 1, baseColumn ),
+	new( baseRow + placeholderRows + 3, 0 )
+];
+TerminalScreenOperationPlan[] moves = new TerminalScreenOperationPlan[ positions.Length ];
+for ( int index = 0; index < positions.Length; ++index ) {
+	TerminalScreenOperationPlan? move = session.Screen.PlanCursorMove( null, positions[ index ] );
+	if ( !move.HasValue ) {
+		await session.WriteTextAsync( "This sample requires safe cursor plans for its caller-selected grid positions.\r\n" );
+		return 1;
+	}
+	moves[ index ] = move.Value;
 }
 
 TerminalControlResult<TerminalRasterResource> resourceResult =
@@ -133,6 +143,7 @@ if ( !observedPlaceholderCapability.IsUsable ) {
 	return 1;
 }
 
+TerminalScreenOutputTransaction grid = session.CreateScreenOutputTransaction();
 for ( int row = 0; row < placeholder.Rows; ++row ) {
 	TerminalRasterPlaceholderCell[] cells = new TerminalRasterPlaceholderCell[
 		placeholder.Columns
@@ -144,37 +155,30 @@ for ( int row = 0; row < placeholder.Rows; ++row ) {
 		);
 	}
 
-	await MoveCursorAsync(
-		session,
-		baseRow + row,
-		baseColumn
-	);
-	await session.WriteRasterPlaceholderCellsAsync( cells );
+	grid.Add( moves[ row ] );
+	grid.WriteRasterPlaceholderCells( cells );
 }
+await grid.CommitAsync();
 
-await MoveCursorAsync(
-	session,
-	baseRow + 1,
-	baseColumn + 2
-);
-await session.WriteRasterPlaceholderCellAsync(
+TerminalScreenOutputTransaction sparse = session.CreateScreenOutputTransaction();
+sparse.Add( moves[ 2 ] );
+sparse.WriteRasterPlaceholderCell(
 	placeholder.GetCell(
 		row: 1,
 		column: 2
 	)
 );
+await sparse.CommitAsync();
 
 TerminalRasterPlaceholderCell[] reordered = [
 	placeholder.GetCell( 1, 3 ),
 	placeholder.GetCell( 0, 1 ),
 	placeholder.GetCell( 1, 0 ),
 ];
-await MoveCursorAsync(
-	session,
-	baseRow + placeholder.Rows + 1,
-	baseColumn
-);
-await session.WriteRasterPlaceholderCellsAsync( reordered );
+TerminalScreenOutputTransaction reorderedFrame = session.CreateScreenOutputTransaction();
+reorderedFrame.Add( moves[ 3 ] );
+reorderedFrame.WriteRasterPlaceholderCells( reordered );
+await reorderedFrame.CommitAsync();
 
 TerminalControlResult<TerminalRasterPlacement> childResult =
 	await resource.CreateRelativePlacementFromPlaceholderAsync(
@@ -200,32 +204,16 @@ if ( TerminalControlStatus.Available != childResult.Status
 }
 await using TerminalRasterPlacement child = childResult.Value;
 
-await MoveCursorAsync(
-	session,
-	baseRow + placeholder.Rows + 3,
-	0
-);
-await session.WriteTextAsync(
+TerminalScreenOutputTransaction report = session.CreateScreenOutputTransaction();
+report.Add( moves[ 4 ] );
+report.WriteText(
 	"Rendered a complete 4x2 grid, redrew one cell sparsely, emitted three cells in caller-selected order, and created a physical child relative to the virtual placeholder.\r\n"
 );
-await session.WriteTextAsync(
+report.WriteText(
 	"All remaining placeholder, placement, and resource ownership is released deterministically.\r\n"
 );
+await report.CommitAsync();
 return 0;
-
-static async ValueTask MoveCursorAsync(
-	TerminalSession session,
-	int row,
-	int column
-) {
-	ArgumentNullException.ThrowIfNull( session );
-	string motion = session.Terminal.Expand(
-		StringCapability.CursorAddress,
-		row,
-		column
-	);
-	await session.WriteTerminalStringAsync( motion );
-}
 
 static string FormatFailure(
 	string operation,

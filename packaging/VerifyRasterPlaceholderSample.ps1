@@ -26,9 +26,13 @@ foreach ($forbidden in @(
     '10EEEE',
     'Apc',
     'U=1',
-    '\u001b_G'
+    '\u001b_G',
+    'Icod.TermInfo',
+    'StringCapability',
+    'WriteTerminalStringAsync',
+    'session.Terminal'
 )) {
-    if ($programText.Contains($forbidden, [System.StringComparison]::Ordinal)) {
+    if (0 -le $programText.IndexOf($forbidden, [System.StringComparison]::Ordinal)) {
         throw "Raster placeholder sample must remain protocol-neutral; found forbidden text '$forbidden'."
     }
 }
@@ -37,12 +41,14 @@ foreach ($required in @(
     'UnicodeRasterPlaceholders',
     'CreatePlaceholderAsync',
     'GetCell',
-    'WriteRasterPlaceholderCellAsync',
-    'WriteRasterPlaceholderCellsAsync',
-    'StringCapability.CursorAddress',
+    'WriteRasterPlaceholderCell(',
+    'WriteRasterPlaceholderCells(',
+    'PlanCursorMove',
+    'CreateScreenOutputTransaction',
+    'CommitAsync',
     'CreateRelativePlacementFromPlaceholderAsync'
 )) {
-    if (-not $programText.Contains($required, [System.StringComparison]::Ordinal)) {
+    if (0 -gt $programText.IndexOf($required, [System.StringComparison]::Ordinal)) {
         throw "Raster placeholder sample is missing required semantic API usage '$required'."
     }
 }
