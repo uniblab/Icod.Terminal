@@ -45,6 +45,30 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 		Assert.Equal( TerminalKeyEventPhase.Press, inputEvent.KeyPhase );
 	}
 
+	[Theory]
+	[InlineData( "\u001b[1;1:3D", TerminalKey.Left, TerminalKeyModifiers.None, TerminalKeyEventPhase.Release )]
+	[InlineData( "\u001b[1;6:2A", TerminalKey.Up, TerminalKeyModifiers.Shift | TerminalKeyModifiers.Control, TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[1;1:2H", TerminalKey.Home, TerminalKeyModifiers.None, TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[1;1:3P", TerminalKey.Function, TerminalKeyModifiers.None, TerminalKeyEventPhase.Release )]
+	[InlineData( "\u001b[2;5:2~", TerminalKey.Insert, TerminalKeyModifiers.Control, TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[6;1:3~", TerminalKey.PageDown, TerminalKeyModifiers.None, TerminalKeyEventPhase.Release )]
+	public async Task KittyLegacyFunctionalKeyFormsPreservePhase(
+		string bytes,
+		TerminalKey key,
+		TerminalKeyModifiers modifiers,
+		TerminalKeyEventPhase phase
+	) {
+		TerminalInputEvent inputEvent = await CreateDecoder( bytes ).ReadAsync();
+
+		Assert.Equal( TerminalInputEventKind.Key, inputEvent.Kind );
+		Assert.Equal( key, inputEvent.Key );
+		Assert.Equal( modifiers, inputEvent.Modifiers );
+		Assert.Equal( phase, inputEvent.KeyPhase );
+		if ( TerminalKey.Function == key ) {
+			Assert.Equal( 1, inputEvent.FunctionKeyNumber );
+		}
+	}
+
 	[Fact]
 	public async Task KittyModifierBitsMapToSemanticModifierValues() {
 		TerminalInputDecoder decoder = CreateDecoder(
