@@ -21,7 +21,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.20.0` was merged through [PR #65](https://github.com/uniblab/Icod.Terminal/pull/65) at `8aa6d0543a3d48d6ec28c84f930da35282703b4a`, tagged `v1.20.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.20.0) on 2026-09-27. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification) records its qualified pre-merge source, nine-job CI checkpoint, candidate package hashes, and three-framework API baseline; those candidate hashes are not asserted as the published artifact's hashes. Its selected 3 + focused 6 + 10 scope is complete.
 
-Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110 and records the Kitty functional-key fixture, frame visibility ownership and cleanup, package/downstream acceptance, and the [nine-job stable candidate](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815). The candidate has not been merged or published.
+Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110 and records the Kitty functional-key fixture, frame visibility ownership and cleanup, package/downstream acceptance, and the [nine-job final implementation candidate](https://github.com/uniblab/Icod.Terminal/actions/runs/36357002885) (Linux passed on its same-source retry). The candidate has not been merged or published.
 
 ### Earlier checkpoints
 

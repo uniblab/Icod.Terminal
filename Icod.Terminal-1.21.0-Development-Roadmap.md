@@ -2,7 +2,7 @@
 
 **Goal:** Close demonstrated keyboard/rich-input consumer gaps and let a screen-output transaction temporarily compose cursor visibility with a frame while preserving presentation-lease ownership.
 
-**Status:** The stable 1.21.0 candidate passed its nine-job matrix in PR #66. The published baseline remains 1.20.0 until the maintainer merges and publishes 1.21.0.
+**Status:** Implementation and package witnesses are complete in PR #66. Source `67bce975c9d4b2af6af8ab4a8e70876f6d04ab9e` passed the nine-job qualification after one Linux runtime retry. The published baseline remains 1.20.0 until the maintainer merges and publishes 1.21.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible packaging scripts and cmd/sh. No new tooling dependency.
 
@@ -34,10 +34,10 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Inspect:** `docs/Input-and-Events.md`, `docs/Modern-Keyboard-Security-and-Compatibility.md`, `docs/Presentation-and-Reversible-State.md`, `docs/Screen-Output.md`; `src/Input/TerminalInputEvent.cs`, `TerminalInputDecoder.ModernKeyboard.cs`, `TerminalInputDecoder.TraditionalKeys.cs`, `TerminalInputProtocolManager.cs`; `src/Presentation/TerminalPresentationManager.cs`; `src/Screen/TerminalScreenOutputTransaction.cs`; existing DCurses acceptance harness and samples.
 
-- [ ] Capture exact 1.20 source, package/API baseline, supported frameworks, CI matrix, and already supported rich-input forms.
-- [ ] Demonstrate a user-visible input gap with an actual downstream scenario and a failing byte/event fixture; freeze at least one bounded addition with a semantic result and traditional fallback. Record why alternatives are deferred.
-- [ ] Draw lock/order and epoch boundaries for presentation manager, state-composition gate, synchronized/hyperlink managers, and screen output gate; freeze the transaction visibility API, unsupported result shape, and allowed values without a raw capability or lease bypass.
-- [ ] Update the task inventory if evidence changes spelling or file placement, preserving both selected outcomes. Set prerelease metadata only when implementation begins.
+- [x] Capture exact 1.20 source, package/API baseline, supported frameworks, CI matrix, and already supported rich-input forms.
+- [x] Demonstrate a user-visible input gap with an actual downstream scenario and a failing byte/event fixture; freeze at least one bounded addition with a semantic result and traditional fallback. Record why alternatives are deferred.
+- [x] Draw lock/order and epoch boundaries for presentation manager, state-composition gate, synchronized/hyperlink managers, and screen output gate; freeze the transaction visibility API, unsupported result shape, and allowed values without a raw capability or lease bypass.
+- [x] Update the task inventory if evidence changes spelling or file placement, preserving both selected outcomes. Set prerelease metadata only when implementation begins.
 
 **Acceptance:** Reviewed input fixture and visibility state/ordering table, additive API proposal, and no guessed baseline or duplicate current feature.
 
@@ -60,9 +60,9 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `src/Input/TerminalInputEvent.cs`, `TerminalRichInputContracts.cs`, relevant decoder contract tests and downstream modern-keyboard witness.
 
-- [ ] Add failing tests for the frozen semantic distinction or rich-input framing case; cover ordinary text vs key events, press/repeat/release, modifiers, associated text where reported, and unknown modern identities without leaking raw private-use codes.
-- [ ] Define immutable event shape, invalid combinations, nullability, versioning behavior, and resource limits; preserve existing enum numeric values.
-- [ ] Exercise fallback when modern reporting cannot be acquired and interaction with paste, focus, mouse, semantic events, and active query ownership.
+- [x] Add failing tests for the frozen semantic distinction or rich-input framing case; cover ordinary text vs key events, press/repeat/release, modifiers, associated text where reported, and unknown modern identities without leaking raw private-use codes.
+- [x] Define immutable event shape, invalid combinations, nullability, versioning behavior, and resource limits; preserve existing enum numeric values.
+- [x] Exercise fallback when modern reporting cannot be acquired and interaction with paste, focus, mouse, semantic events, and active query ownership.
 
 **Acceptance:** Tests explain the addition and fail against 1.20 before production changes.
 
@@ -70,9 +70,9 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `src/Input/TerminalInputDecoder.*.cs`, `TerminalInputCoordinator.cs` only if a reproduced routing defect needs it, and `tests/Icod.Terminal.Tests/src/Input/*`.
 
-- [ ] Implement the frozen form through the existing incremental decoder and authoritative event stream; keep traditional and xterm decode-only behavior available.
-- [ ] Test all split points, UTF-8 scalar boundaries, malformed/truncated/oversized frames, Escape ambiguity, recovery into a subsequent event, and deterministic routing when a query is pending.
-- [ ] Keep existing frame, parameter, associated-text, and paste bounds; introduce explicit new limits only if the selected fixture requires them.
+- [x] Implement the frozen form through the existing incremental decoder and authoritative event stream; keep traditional and xterm decode-only behavior available.
+- [x] Test all split points of the selected ASCII CSI forms, malformed/truncated/oversized frames, and recovery into a subsequent event; preserve existing UTF-8 scalar, Escape ambiguity, and query-routing regression coverage.
+- [x] Keep existing frame, parameter, associated-text, and paste bounds; introduce explicit new limits only if the selected fixture requires them.
 
 **Acceptance:** New fixtures pass without changing an unrelated query, introducing a second reader, or silently mislabeling ordinary text.
 
@@ -80,9 +80,9 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `src/Input/TerminalInputProtocolManager.cs`, `src/Session/TerminalSession.KittyKeyboard.cs`, existing keyboard composition/lifecycle tests.
 
-- [ ] Verify that the selected behavior works under overlapping reporting leases and supported progressive modes. Add negotiation only if the frozen case needs it and the stack can be restored truthfully.
-- [ ] Cover main/alternate screen handoff, suspend/resume, cancellation before/after output, release of the strongest owner, failed restoration, disposal, and stale generation/late query replies.
-- [ ] Keep capability evidence, endpoint availability, and the lease's actual acquisition distinct.
+- [x] Verify that the selected behavior works under overlapping reporting leases and supported progressive modes. Add negotiation only if the frozen case needs it and the stack can be restored truthfully.
+- [x] Cover main/alternate screen handoff, suspend/resume, cancellation before/after output, release of the strongest owner, failed restoration, disposal, and stale generation/late query replies.
+- [x] Keep capability evidence, endpoint availability, and the lease's actual acquisition distinct.
 
 **Acceptance:** One-reader ordering and reversible state ownership hold on all three target frameworks; unsupported negotiation falls back to traditional input.
 
@@ -90,8 +90,8 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `samples/Icod.Terminal.RichInput.Sample/Program.cs`, `tools/dcurses-modern-keyboard-acceptance/`, `tools/package-modern-keyboard-smoke/`, associated package verifier and tests.
 
-- [ ] Run the exact new consumer fixture through the public event loop, including unsupported modern reporting; assert phase/text/modifier semantics and unchanged paste/mouse/focus behavior.
-- [ ] Use a fresh 1.21 package in the consumer harness; no source-project reference or direct TermInfo in the controlled consumer.
+- [x] Run the exact new consumer fixture through the public event loop, including unsupported modern reporting; assert phase/text/modifier semantics and unchanged paste/mouse/focus behavior.
+- [x] Use a fresh 1.21 package in the consumer harness; no source-project reference or direct TermInfo in the controlled consumer.
 
 **Acceptance:** The chosen input increment is useful to a real consumer and survives package resolution.
 
@@ -99,10 +99,10 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `src/Screen/TerminalScreenOutputTransaction.cs`, `src/Presentation/TerminalPresentationManager.cs`, `src/Presentation/TerminalPresentationContracts.cs`, related screen/presentation tests.
 
-- [ ] Add tests for an opt-in visibility scope over one frame: enter, ordered items, restore the effective owner; no visibility request emits the old sequence. Explicitly distinguish an active lease from the manager's ordinary capability baseline.
-- [ ] Validate capability-backed entry and restoration, same-session ownership, retained-item limits, stale epochs, already-consumed builders, lifecycle admission, and pre-cancelled commits before writing.
-- [ ] Freeze a minimal additive builder API in the current namespace. Decide whether a controlled unavailable result or rejected commit best matches existing transaction conventions; document the choice and null/invalid inputs.
-- [ ] Confirm lock ordering and reservation lifetime: presentation/state-composition reservation before output, no manager reacquisition while holding the output gate, and no interleaving acquisition/release during temporary ownership.
+- [x] Add tests for an opt-in visibility scope over one frame: enter, ordered items, restore the effective owner; no visibility request emits the old sequence. Explicitly distinguish an active lease from the manager's ordinary capability baseline.
+- [x] Validate capability-backed entry and restoration, same-session ownership, retained-item limits, stale epochs, already-consumed builders, lifecycle admission, and pre-cancelled commits before writing.
+- [x] Freeze a minimal additive builder API in the current namespace. Decide whether a controlled unavailable result or rejected commit best matches existing transaction conventions; document the choice and null/invalid inputs.
+- [x] Confirm lock ordering and reservation lifetime: presentation/state-composition reservation before output, no manager reacquisition while holding the output gate, and no interleaving acquisition/release during temporary ownership.
 
 **Acceptance:** Unsupported or stale work cannot change visibility or leak a synthetic public lease.
 
@@ -110,9 +110,9 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `src/Presentation/TerminalPresentationManager.cs`, `src/Session/TerminalSession.Presentation.cs`, `src/Screen/TerminalScreenOutputTransaction.cs`.
 
-- [ ] Reserve the presentation owner and output epoch before first emission; temporarily apply requested visibility, write existing bounded items, restore the previously effective owner, then release reservations.
-- [ ] Compose with synchronized output, hyperlinks, raster placeholders, and current transaction limits; preserve manager/output lock ordering and screen-local keyboard handoff.
-- [ ] When a write, flush, cancellation-after-start, or restoration fails, make a best-effort uncancelled cleanup attempt and surface all relevant failures in deterministic order. Mark physical assumptions unknown where restoration cannot be proven. Never promise atomic rollback or replay an emitted prefix.
+- [x] Reserve the presentation owner and output epoch before first emission; temporarily apply requested visibility, write existing bounded items, restore the previously effective owner, then release reservations.
+- [x] Compose with synchronized output, hyperlinks, raster placeholders, and current transaction limits; preserve manager/output lock ordering and screen-local keyboard handoff.
+- [x] When a write, flush, cancellation-after-start, or restoration fails, make a best-effort uncancelled cleanup attempt and surface all relevant failures in deterministic order. Mark physical assumptions unknown where restoration cannot be proven. Never promise atomic rollback or replay an emitted prefix.
 
 **Acceptance:** Temporary visibility is owned and cleaned up with the same correctness standard as presentation leases and screen transactions.
 
@@ -120,9 +120,9 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `tests/Icod.Terminal.Tests/src/Screen/TerminalScreenOutputCompositionTests.cs`, `TerminalScreenOutputTransactionHardeningTests.cs`, `tests/Icod.Terminal.Tests/src/Presentation/*`, `tests/Icod.Terminal.Tests/src/Input/TerminalKeyboardCompositionConcurrencyTests.cs`.
 
-- [ ] Matrix: no lease, one lease, nested cursor owners, concurrent acquisition/release, alternate-screen plus Kitty keyboard, suspend/resume, disposal, unsupported normal/hidden/very-visible capabilities.
-- [ ] Inject failure at entry, mid-frame, restoration, and flush; verify byte order, reported aggregate errors, no ghost owner, stale transaction consumption, and safe subsequent recovery.
-- [ ] Keep zero-item, maximum-item/payload, synchronized-output and hyperlink conflict behavior explicit. Use bounded coordination in tests instead of timing assumptions.
+- [x] Matrix: no lease, one lease, nested cursor owners, concurrent acquisition/release, alternate-screen plus Kitty keyboard, suspend/resume, disposal, unsupported normal/hidden/very-visible capabilities.
+- [x] Inject failure at entry, mid-frame, restoration, and flush; verify byte order, reported aggregate errors, no ghost owner, stale transaction consumption, and safe subsequent recovery.
+- [x] Keep zero-item, maximum-item/payload, synchronized-output and hyperlink conflict behavior explicit. Use bounded coordination in tests instead of timing assumptions.
 
 **Acceptance:** Ownership and output are coherent under failure and concurrent lifecycle activity.
 
@@ -130,9 +130,9 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `README.md`, `docs/Input-and-Events.md`, `docs/Presentation-and-Reversible-State.md`, `docs/Screen-Output.md`, `docs/Modern-Keyboard-Security-and-Compatibility.md`, `samples/README.md`, screen-output and rich-input samples.
 
-- [ ] Document which input cases are new versus already supported, reporting prerequisites, fallback, privacy implications of associated text, and unsupported forms.
-- [ ] Show an input-driven frame that requests temporary visibility, handles unavailable capability and stale epoch, and repaints from caller-owned state after ambiguous output failure; show a lease for long-lived cursor preferences.
-- [ ] Execute the real sample routine headlessly in tests and through the package consumer, including the failure path. Keep interactive demonstrations usable without assuming a physical emulator in CI.
+- [x] Document which input cases are new versus already supported, reporting prerequisites, fallback, privacy implications of associated text, and unsupported forms.
+- [x] Show an input-driven frame that requests temporary visibility, handles unavailable capability and stale epoch, and repaints from caller-owned state after ambiguous output failure; show a lease for long-lived cursor preferences.
+- [x] Execute the real sample routine headlessly in tests and through the package consumer, including the failure path. Keep interactive demonstrations usable without assuming a physical emulator in CI.
 
 **Acceptance:** Guide and sample teach the exercised public contract, including truthful restoration and recovery limits.
 
@@ -140,17 +140,17 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 
 **Likely files:** `docs/Public-API-Baseline-1.21.md`, corresponding fingerprint file; package contract tools; `docs/releases/1.21.0.md` and changelog when implementation is ready.
 
-- [ ] Compare 1.21 API against the preserved 1.20 baseline for removed/changed signatures and enum values, XML docs for additive members, and equal snapshots across three frameworks.
-- [ ] Build one candidate artifact and run foundation, presentation, semantic, and stable-release package shards against those exact bytes. Exercise DCurses 1.6.0/2.2.0, Terminal-only renderer, input witness, screen sample, and existing capability sample where the gate applies.
-- [ ] Verify package metadata, dependencies, README, symbols, source/artifact identity, and no TermInfo leak into package-only consumers.
+- [x] Compare 1.21 API against the preserved 1.20 baseline for removed/changed signatures and enum values, XML docs for additive members, and equal snapshots across three frameworks.
+- [x] Build one candidate artifact and run foundation, presentation, semantic, and stable-release package shards against those exact bytes. Exercise DCurses 1.6.0/2.2.0, Terminal-only renderer, input witness, screen sample, and existing capability sample where the gate applies.
+- [x] Verify package metadata, dependencies, README, symbols, source/artifact identity, and no TermInfo leak into package-only consumers.
 
 **Acceptance:** Additive, documented package surface with retained downstream compatibility.
 
 ### T2110 — Cross-platform review and stable closure
 
-- [ ] Pass full Windows, Linux, and macOS runtime/integration/sample matrix for .NET 8/9/10 at the final implementation head; inspect input routing, manager/output lock ordering, cancellation, and failure reporting inline.
-- [ ] Reconcile both selected outcomes against a completed task and named evidence; record scripted-test limits and any explicit deferral.
-- [ ] After qualification, set stable 1.21.0 metadata, update changelog/release notes and main roadmap, rerun the final candidate gates, record exact source/CI/artifact/API hashes, and present the PR for maintainer review.
+- [x] Pass full Windows, Linux, and macOS runtime/integration/sample matrix for .NET 8/9/10 at the final implementation head; inspect input routing, manager/output lock ordering, cancellation, and failure reporting inline.
+- [x] Reconcile both selected outcomes against a completed task and named evidence; record scripted-test limits and any explicit deferral.
+- [x] After qualification, set stable 1.21.0 metadata, update changelog/release notes and main roadmap, rerun the final candidate gates, record exact source/CI/artifact/API hashes, and present the PR for maintainer review.
 
 **Acceptance:** A reviewable stable candidate with precise evidence. Merge, tag, GitHub release, and package publication are maintainer actions.
 
@@ -172,11 +172,12 @@ foreach ($shard in @('foundation', 'presentation', 'semantic', 'release')) {
 | Tranche | Evidence and decision |
 | --- | --- |
 | T2100–T2102 | The 1.20 decoder lost Kitty phase-bearing functional-key CSI forms. The original fixture failed on all three Linux target frameworks in [workflow 36352906230](https://github.com/uniblab/Icod.Terminal/actions/runs/36352906230), then the bounded semantic decoder landed in `3ad23dd72d0bff7ca40944e0fc7e41be5aa7f916`. Invalid forms drain, and the later oversized-frame fixture exercises recovery into text without expanding the retained frame limit. No public input enum/type or new reporting protocol was added. |
-| T2103–T2104 | Existing reporting leases and the authoritative `ReadEventAsync` path own negotiation, fallback, and query ordering. The new functional-key fixture also runs through the fresh-package input consumer alongside traditional, CSI-u, paste, mouse, and focus assertions. No second reader or production Inspection dependency is needed. |
-| T2105–T2107 | The only public addition is `TerminalScreenOutputTransaction.SetCursorVisibilityForCommit(TerminalCursorVisibility)`. A state-composition and presentation reservation precedes the existing frame output gate; tests cover lease-owned and ordinary returns, missing capabilities, stale and pre-cancelled frames, failed entry/frame/return, and uncertain-state cleanup. The first failed-return test demonstrated missing disposal retry on all three Linux frameworks in [workflow 36353946489](https://github.com/uniblab/Icod.Terminal/actions/runs/36353946489); `0cfb34799034bcb1a75a217338df98b3a2c962d6` added the retry and bounded-frame drain. An unrelated lease transition cannot establish the outcome of a failed temporary cursor return. |
-| T2108 | The screen-output sample now accepts `r` for input-driven refresh with temporary cursor visibility, and falls back when entry/return capabilities are missing. Its actual routine runs in source and fresh-package harnesses. README, input, presentation, modern-keyboard, screen, and sample guides explain limits and recovery. |
-| T2109 | The 1.21 public API is additive over the preserved 1.20 baseline. The generated all-framework fingerprint is `939649e1d5c110039cfb3e5057561f8ef7fcb4de20af2de2152f9ec6ab357824`; the 1.21 file and XML gate pin the new method. The candidate and all package shards passed at the preceding [workflow 36354217590](https://github.com/uniblab/Icod.Terminal/actions/runs/36354217590); subsequent final-head qualification is required before closure. |
-| T2110 | Stable `1.21.0` metadata, curated release notes, changelog, and README are present. Candidate source `020b82215410c603c590c3ae624170a8a41ef594` passed all nine jobs in [workflow 36354755815](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815): Windows, Linux, and macOS each passed 2,484 unit and 15 TermInfo integration tests per `net8.0`/`net9.0`/`net10.0`; candidate, foundation, presentation, semantic/hardening, stable 1.x, and validated-artifact jobs all succeeded. The candidate artifact is [10943590769](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815/artifacts/10943590769); its `Icod.Terminal.1.21.0.nupkg` SHA-256 is `61ce77d4deefad2987ceced40ba16e09d781bfd5f670d2d50b0936de74263fbe`, and its `.snupkg` SHA-256 is `905f31f4acc68217bab4312b92f5dfb79f9e0536d1e7ed3f72cab0addec97e39`. These are candidate bytes, not assertions about a later published package. |
+| T2103–T2104 | Existing reporting leases and the authoritative `ReadEventAsync` path own negotiation, fallback, and query ordering. The new functional-key fixture runs through a fresh-package input consumer alongside traditional, CSI-u, paste, mouse, and focus assertions. The controlled editor-state source from `samples/Icod.Terminal.RichInput.Sample/EditorKeyState.cs` is compiled against Terminal alone and observes Left press/release and Control+Insert repeat; the package harness's fixture provider separately uses TermInfo. [Workflow 36356662539](https://github.com/uniblab/Icod.Terminal/actions/runs/36356662539) failed on the editor's missing Left press before the sample state logic landed in `2197bda3f53d630c7a5f2c6bfd0b29f4f56e831c`. No second reader or production Inspection dependency is needed. |
+| T2105–T2107 | The only public addition is `TerminalScreenOutputTransaction.SetCursorVisibilityForCommit(TerminalCursorVisibility)`. A state-composition and presentation reservation precedes the existing frame output gate; tests cover lease-owned and ordinary returns, missing capabilities, stale and pre-cancelled frames, failed entry/frame/return, concurrent lease acquisition, synchronized hyperlink composition, and uncertain-state cleanup after a failed flush. The first failed-return test demonstrated missing disposal retry on all three Linux frameworks in [workflow 36353946489](https://github.com/uniblab/Icod.Terminal/actions/runs/36353946489); `0cfb34799034bcb1a75a217338df98b3a2c962d6` added the retry and bounded-frame drain. An unrelated lease transition cannot establish the outcome of a failed temporary cursor return. |
+| T2108 | The screen-output sample accepts `r` for input-driven refresh with temporary cursor visibility, and falls back when entry/return capabilities are missing. Its actual routine runs in source and fresh-package harnesses, including failed entry cleanup and interactive refresh with missing visibility capabilities. README, input, presentation, modern-keyboard, screen, and sample guides explain limits and recovery. |
+| T2109 | The 1.21 public API is additive over the preserved 1.20 baseline. The generated all-framework fingerprint is `939649e1d5c110039cfb3e5057561f8ef7fcb4de20af2de2152f9ec6ab357824`; the 1.21 file and XML gate pin the new method. The candidate and all package shards passed at [workflow 36357002885](https://github.com/uniblab/Icod.Terminal/actions/runs/36357002885), including the Terminal-only editor state, screen sample fallback, and failed-entry cleanup witnesses. |
+| T2110 earlier candidate | Stable `1.21.0` metadata, curated release notes, changelog, and README are present. Candidate source `020b82215410c603c590c3ae624170a8a41ef594` passed all nine jobs in [workflow 36354755815](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815): Windows, Linux, and macOS each passed 2,484 unit and 15 TermInfo integration tests per `net8.0`/`net9.0`/`net10.0`; candidate, foundation, presentation, semantic/hardening, stable 1.x, and validated-artifact jobs all succeeded. The candidate artifact is [10943590769](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815/artifacts/10943590769); its `Icod.Terminal.1.21.0.nupkg` SHA-256 is `61ce77d4deefad2987ceced40ba16e09d781bfd5f670d2d50b0936de74263fbe`, and its `.snupkg` SHA-256 is `905f31f4acc68217bab4312b92f5dfb79f9e0536d1e7ed3f72cab0addec97e39`. These are candidate bytes, not assertions about a later published package. |
+| T2110 final implementation | Source `67bce975c9d4b2af6af8ab4a8e70876f6d04ab9e` passed the [nine-job matrix, attempt 2](https://github.com/uniblab/Icod.Terminal/actions/runs/36357002885): 2,487 unit and 15 TermInfo integration tests per .NET 8/9/10 runtime on Windows, Linux, and macOS, plus candidate, foundation, presentation, semantic/hardening, stable 1.x, and validated-artifact jobs. Attempt 1 had one Linux net8 raster-query timeout in an existing scripted test with a one-second production query deadline; the same source passed Linux on retry. [Candidate artifact 10944715306](https://github.com/uniblab/Icod.Terminal/actions/runs/36357002885/artifacts/10944715306) contains package SHA-256 `400d9004aec2856904790fad0db701a6d5e883397540c0dc973ad4c47e03362e` and symbols SHA-256 `018436d8561efa937046f946bfec8c0872717bf52a0d0cf6db5917ba9b0608ab`. API fingerprint remains `939649e1d5c110039cfb3e5057561f8ef7fcb4de20af2de2152f9ec6ab357824`. This is pre-merge candidate evidence; the documentation-only reconciliation commit must also pass its own PR gates. |
 
 The user-visible phase form and cursor API were frozen before production code. The package harness executes the actual sample from a fresh package and retains the published DCurses 1.6.0 and 2.2.0 plus Terminal-only renderer witnesses. The tests use scripted transports; they are not a physical-emulator or performance certification. Merge, tagging, GitHub release creation, and publication remain maintainer actions.
 
