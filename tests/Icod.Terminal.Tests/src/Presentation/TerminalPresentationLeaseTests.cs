@@ -305,7 +305,9 @@ public sealed class TerminalPresentationLeaseTests {
 		await session.DisposeAsync();
 
 		Assert.Equal( new[] { "<C0>", "frame", "<C1>", "<C1>" }, output.WriteAttempts );
-		Assert.Equal( 2, output.FlushCount );
+		// Session disposal flushes once before presentation cleanup, then flushes
+		// the retried ordinary cursor capability.
+		Assert.Equal( 3, output.FlushCount );
 	}
 
 	[Fact]
