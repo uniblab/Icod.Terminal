@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-	Icod.Terminal.TermInfoPersistentRaster.Sample
-	Sample application demonstrating Icod.Terminal TermInfoPersistentRaster features.
+	Icod.Terminal.ScreenOutput.Sample
+	Sample application demonstrating Icod.Terminal ScreenOutput features.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 -->
 
@@ -27,18 +27,18 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-		<AssemblyName>Icod.Terminal.TermInfoPersistentRaster.Sample</AssemblyName>
-		<RootNamespace>Icod.Terminal.TermInfoPersistentRaster.Sample</RootNamespace>
+		<AssemblyName>Icod.Terminal.ScreenOutput.Sample</AssemblyName>
+		<RootNamespace>Icod.Terminal.ScreenOutput.Sample</RootNamespace>
 		<IsPackable>false</IsPackable>
 		<Configurations>Debug;Staging;Release</Configurations>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<Compile Include="Program.cs" />
+		<Compile Include="ScreenOutputExample.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Icod.TermInfo.Inspection" Version="1.16.0" />
 		<ProjectReference Include="..\..\Icod.Terminal.csproj" />
 	</ItemGroup>
 </Project>

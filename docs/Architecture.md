@@ -75,7 +75,7 @@ Planning is side-effect free. A plan identifies its semantic operation, resolved
 
 This contract does not transfer cells, windows, pads, layout, clipping, Unicode display width, damage, desired-versus-physical comparison, or repaint policy into Terminal.
 
-The downstream boundary is qualified by two independent package consumers. Published stable `Icod.DCurses 1.6.0` exercises unchanged 1.x compatibility against the candidate Terminal package. A separate future-renderer consumer has only a direct `Icod.Terminal` package reference and uses Terminal-owned dimensions, profile, planner, operation plans, and screen-output transactions without direct TermInfo source use.
+The downstream boundary is qualified by independent package consumers. Published `Icod.DCurses 1.6.0` exercises unchanged 1.x compatibility against the candidate Terminal package. The controlled renderer consumer has only a direct `Icod.Terminal` package reference and uses Terminal-owned dimensions, profile, planner, operation plans, and screen-output transactions without direct TermInfo source use. A separate synthetic host executes that renderer, the screen-output sample frame, and published DCurses 2.2.0 refresh/resize/recovery workloads. Only the test host uses transitive TermInfo types for synthetic descriptions and the legacy control-provider fixture; it never references the Terminal source project.
 
 ### 2.2 Advanced transport/provider API
 
@@ -353,7 +353,7 @@ Persistent source cropping and virtual-placeholder rendering operate on already-
 
 ## 14. Optional TermInfo 1.14 backend planning boundary
 
-The active 1.18 repository uses `Icod.TermInfo 1.15.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.15.0`.
+The active 1.19 repository uses `Icod.TermInfo 1.16.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.16.0`.
 
 Inspection 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. That planner remains a **consumer/application policy layer**; it is not invoked by `Icod.Terminal` production routing.
 
@@ -379,7 +379,7 @@ A conclusive live `PersistentRasterGraphics` result may be mapped by the caller 
 
 TermInfo planning does not replace Terminal's live capability checks, routing, commitment, identity ownership, or cleanup. Production `Icod.Terminal` retains no dependency on `Icod.TermInfo.Inspection` or `Icod.TermInfo.Source`.
 
-## 15. Stable exclusions after 1.18
+## 15. Stable exclusions after 1.19
 
 Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 
@@ -403,14 +403,14 @@ Relative placement, lifecycle observation, virtual placeholders, and resource-ow
 
 ## 16. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.18 production graph is:
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.19 production graph is:
 
 ```text
-Icod.TermInfo 1.15.0
+Icod.TermInfo 1.16.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.15.0`. Inspection and Source remain absent from the production dependency graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.16.0`. Inspection and Source remain absent from the production dependency graph.
 
 Historical release documents retain the dependency versions shipped by those releases; advancing the active development dependency does not rewrite those records.
 

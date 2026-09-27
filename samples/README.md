@@ -9,6 +9,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Goal | Sample |
 | --- | --- |
 | Open a session and read an event | `Icod.Terminal.Sample` |
+| Plan/commit a screen frame and demonstrate stale-work recovery | [`Icod.Terminal.ScreenOutput.Sample`](Icod.Terminal.ScreenOutput.Sample/README.md), [consumer guide](../docs/Screen-Output.md) |
 | Inspect rich input, lifecycle, and semantic events | `Icod.Terminal.RichInput.Sample` |
 | Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
 | Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
@@ -48,6 +49,18 @@ Minimal session construction, endpoint/identity observation, application text, o
 ```text
 dotnet run --project samples/Icod.Terminal.Sample/Icod.Terminal.Sample.csproj -f net10.0
 ```
+
+### `Icod.Terminal.ScreenOutput.Sample`
+
+An interactive alternate-screen demonstration of baseline planning, cursor positioning, normalized rendition, and one serialized frame commitment. The optional recovery mode rejects deliberately stale work and draws a newly planned frame. Press q or Escape to exit; presentation ownership is released on exit or failure.
+
+```sh
+dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0 -- --help
+dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0
+dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0 -- --recovery
+```
+
+Normal execution needs interactive input/output and alternate-screen/cursor/rendition support. Missing mandatory operations produce a diagnostic; transport failures are surfaced without automatic replay. The fixed-origin frame does not require dimensions or implement width/clipping/layout. The [sample walkthrough](Icod.Terminal.ScreenOutput.Sample/README.md) explains expected output, exit codes, cancellation, and noninteractive package verification.
 
 ### `Icod.Terminal.RichInput.Sample`
 
@@ -136,7 +149,7 @@ Demonstrates the 1.15 virtual-placement and semantic placeholder-cell abstractio
 dotnet run --project samples/Icod.Terminal.RasterPlaceholder.Sample/Icod.Terminal.RasterPlaceholder.Sample.csproj -f net10.0
 ```
 
-The sample verifies persistent raster ownership, inspects `UnicodeRasterPlaceholders` without inventing a probe, creates an opaque resource and placeholder, then uses `GetCell(...)`, typed single/bulk placeholder output, and ordinary TermInfo `CursorAddress` expansion to render a complete 4x2 grid. It then performs a sparse one-cell redraw, emits a deliberately reordered cell sequence, and creates a physical placement relative to the virtual placeholder.
+The sample verifies persistent raster ownership, inspects `UnicodeRasterPlaceholders` without inventing a probe, creates an opaque resource and placeholder, then uses `GetCell(...)`, semantic cursor plans, and transaction-owned single/bulk placeholder output to render a complete 4x2 grid. It then performs a sparse one-cell redraw, emits a deliberately reordered cell sequence, and creates a physical placement relative to the virtual placeholder. Cursor movement and its associated cells share a commit; no direct TermInfo expansion or raw terminal-string output is used.
 
 The distinction is intentional: placeholder row/column coordinates identify cells inside the virtual raster, while terminal screen coordinates, cursor movement, clipping, redraw ordering, and layout remain application responsibilities. Successful placeholder creation publishes live semantic evidence for that transaction; the sample does not fabricate stronger support knowledge beforehand.
 
@@ -146,7 +159,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
-The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.15.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and exercises the advisory raster-backend planner introduced in TermInfo 1.14.
+The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.16.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and exercises the advisory raster-backend planner introduced in TermInfo 1.14.
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0

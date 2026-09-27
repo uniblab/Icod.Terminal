@@ -9,15 +9,17 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.18.0`.
+Current stable release: `Icod.Terminal 1.19.0`.
+
+Version 1.19 adds safe home/relative and carriage-return/relative cursor routes, executable downstream screen-output qualification, and a [screen-output guide](docs/Screen-Output.md) with a [runnable sample](samples/Icod.Terminal.ScreenOutput.Sample/Program.cs). Malformed optional routes cannot displace an independently valid route. The public API remains compatible with 1.18.
 
 Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
 
-Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary required for a later `Icod.DCurses 2.0` release to remove its direct `Icod.TermInfo` dependency.
+Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.18 retains the complete 1.17 screen-planning/transaction surface, 1.16 animation, 1.15 virtual-placeholder, and every earlier stable 1.x contract. The 1.18 public API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.19 retains the complete 1.18 rendition-baseline, 1.17 screen-planning/transaction, 1.16 animation, 1.15 virtual-placeholder, and every earlier stable 1.x contract. The unchanged 1.19 public API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
-See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.19.0 release notes](docs/releases/1.19.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -29,7 +31,7 @@ See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELO
 
 ## Architecture
 
-`Icod.Terminal` is the live-session layer of the Icod terminal stack. The intended `Icod.DCurses 2.0` dependency direction is:
+`Icod.Terminal` is the live-session layer of the Icod terminal stack. The `Icod.DCurses 2.x` dependency direction is:
 
 ```text
 higher-level terminal applications
@@ -48,26 +50,26 @@ higher-level terminal applications
 - `Icod.DCurses` owns higher-level cells, windows, pads, retained presentation state, layout, clipping, scrolling, refresh/diff policy, damage, and curses-style interaction abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-Published `Icod.DCurses 1.6.0` is the compatibility baseline and still directly references both `Icod.Terminal` and `Icod.TermInfo`. The planned 2.0 migration removes only the direct DCurses-to-TermInfo edge; `Icod.Terminal` continues to use TermInfo internally.
+Published `Icod.DCurses 1.6.0` remains the compatibility baseline and directly references both `Icod.Terminal` and `Icod.TermInfo`. Published `Icod.DCurses 2.2.0` is also qualified and depends directly only on `Icod.Terminal`; Terminal continues to use TermInfo internally.
 
 The direct production dependency graph is intentionally small:
 
 ```text
 Icod.Terminal
-├── Icod.TermInfo 1.15.0
+├── Icod.TermInfo 1.16.0
 └── Icod.Timing   1.0.0
 ```
 
-`Icod.TermInfo.Inspection 1.15.0` is used only by optional integration tests and samples. It is not a production dependency of `Icod.Terminal`. Its raster-backend planner remains caller-side advisory policy rather than part of Terminal's production router.
+`Icod.TermInfo.Inspection 1.16.0` is used only by optional integration tests and samples. It is not a production dependency of `Icod.Terminal`. Its raster-backend planner remains caller-side advisory policy rather than part of Terminal's production router.
 
 See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architecture contract.
 
 ## Quick Start
 
-Install the currently published package:
+Install this version:
 
 ```text
-dotnet add package Icod.Terminal --version 1.18.0
+dotnet add package Icod.Terminal --version 1.19.0
 ```
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
@@ -93,41 +95,30 @@ A live `TerminalSession` owns the authoritative input reader for its transport. 
 
 For curses-style cells, windows, layout, clipping, scrolling, and refresh/damage policy, prefer `Icod.DCurses` rather than rebuilding those responsibilities directly over `TerminalSession`.
 
-Version 1.17 screen operations are planned without output and then committed through one session-bound transaction:
+For a screen frame, establish a safe rendition baseline and plan the cursor position before creating one session-bound transaction:
 
 ```csharp
-TerminalProfile profile = session.Profile;
-TerminalControlResult<TerminalDimensions> dimensions = session.GetDimensions();
-
-TerminalScreenOperationPlan? home = session.Screen.PlanCursorMove(
+TerminalScreenOperationPlan? baseline = session.Screen.PlanRenditionBaseline();
+TerminalScreenOperationPlan? cursor = session.Screen.PlanCursorMove(
 	null,
 	new TerminalScreenPosition( 0, 0 )
 );
 
-if ( home is TerminalScreenOperationPlan plan ) {
-	TerminalScreenOutputTransaction output =
-		session.CreateScreenOutputTransaction();
-	output.Add( plan );
-	output.WriteText( "Ready" );
-	await output.CommitAsync();
+if ( !baseline.HasValue || !cursor.HasValue ) {
+	// Report that this rendering mode is unavailable, or select a fallback.
+	return;
 }
+
+TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+frame.Add( baseline.Value );
+frame.Add( cursor.Value );
+frame.WriteText( "Ready" );
+await frame.CommitAsync();
 ```
 
-When a renderer cannot trust its current physical rendition, version 1.18 can establish a safe baseline before emitting retained content:
+A null baseline means at least one rendition axis exposed by the selected profile cannot be restored unconditionally from unknown state; callers must not substitute a claimed known default. A null cursor plan means the requested movement is unavailable. A valid zero-byte plan is still usable.
 
-```csharp
-TerminalScreenOperationPlan? baseline =
-	session.Screen.PlanRenditionBaseline();
-
-if ( baseline is TerminalScreenOperationPlan plan ) {
-	TerminalScreenOutputTransaction output =
-		session.CreateScreenOutputTransaction();
-	output.Add( plan );
-	await output.CommitAsync();
-}
-```
-
-A `null` result means at least one rendition axis exposed by the selected profile cannot be restored unconditionally from unknown state; callers must not substitute a claimed known default.
+Each transaction is single-use, and intervening output can invalidate it before commitment. After a committed failure, output may be partial: discard physical-state assumptions and let the application choose recovery. See the [screen-output guide](docs/Screen-Output.md) and [interactive sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the complete flow, presentation cleanup, and an executable stale-transaction recovery example.
 
 `Profile` contains immutable selected-profile facts, while `GetDimensions()` reports the current Terminal-owned size result. A plan is opaque and session-bound; creating it emits nothing, and the transaction preserves ordering under one output gate and flush boundary. Retained cells, layout, Unicode width, clipping, damage, and repaint policy remain caller-owned.
 
@@ -220,13 +211,13 @@ Security and privacy details are maintained in [`docs/Security-and-Privacy.md`](
 
 ## Samples and Documentation
 
-The [`samples`](samples/README.md) directory contains focused examples for session construction, rich input, bounded queries, semantic capability planning, terminal colors and reversible state, notifications and metadata, backend-neutral raster display, persistent raster ownership, Unicode raster placeholders, persistent raster animation, and optional TermInfo planning integration.
+The [`samples`](samples/README.md) directory contains focused examples for session construction, semantic screen frames and explicit recovery, rich input, bounded queries, semantic capability planning, terminal colors and reversible state, notifications and metadata, backend-neutral raster display, persistent raster ownership, Unicode raster placeholders, persistent raster animation, and optional TermInfo planning integration.
 
 Recommended documentation entry points:
 
-- [`docs/releases/1.17.1.md`](docs/releases/1.17.1.md) — 1.17 packaged-README and metadata correction;
-- [`docs/releases/1.17.0.md`](docs/releases/1.17.0.md) — Terminal-owned screen-planning and output-transaction release notes;
-- [`docs/releases/1.17.0-alpha.1.md`](docs/releases/1.17.0-alpha.1.md) — historical 1.17 prerelease notes;
+- [`docs/releases/1.19.0.md`](docs/releases/1.19.0.md) — current screen-output planning and hardening release notes;
+- [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
+- [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
@@ -238,8 +229,7 @@ Recommended documentation entry points:
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md) — trust, disclosure, and protocol-security boundary;
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
-- [`docs/Public-API-Baseline-1.16.md`](docs/Public-API-Baseline-1.16.md) — final 1.16 API additions and fingerprint;
-- [`docs/Public-API-Baseline-1.17.md`](docs/Public-API-Baseline-1.17.md) — final 1.17 API additions and fingerprint;
+- [`docs/Public-API-Baseline-1.19.md`](docs/Public-API-Baseline-1.19.md) — current frozen API and unchanged 1.18/1.19 fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
@@ -248,10 +238,10 @@ Release notes, public-API baselines, tranche records, implementation plans, and 
 
 Stable `1.0.0` remains the compatibility floor. The package supports `net8.0`, `net9.0`, and `net10.0`; compatible 1.x releases add semantic capabilities and public members without silently repurposing established signatures, enum values, lifecycle guarantees, or protocol-neutral behavior.
 
-The final 1.17 public API fingerprint is:
+The frozen 1.19 public API fingerprint, unchanged from 1.18, is:
 
 ```text
-c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9
+48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d
 ```
 
 Public API, package, target-framework, release-qualification, and compatibility policy is maintained in [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).
@@ -260,7 +250,7 @@ This README is maintained as a current product and contributor entry point. Rele
 
 ## Authors
 
-Inspired by original work from Bill Joy, author of the original `termcap`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and `ncurses`.
+Inspired by original work from Bill Joy, author of the original `termcap`; Ken Arnold, for his work on `termcap` and `curses`; Mary Ann (born Mark) Horton, author of `terminfo`; Pavel Curtis, author of `pcurses`; and Zeyd Ben-Halim, Eric S. Raymond, and Thomas Dickey, whose work developed and maintained `libtinfo` and `ncurses`.
 
 Managed .NET implementation by Timothy J. Bruce <uniblab@hotmail.com>.
 

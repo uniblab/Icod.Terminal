@@ -4,10 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.17.0` — Terminal-owned Screen Output Contracts
-- **Current patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.17.1 published; 1.18.0 stable candidate qualified on PR #63
-- **Active development target:** `1.18.0` — Unknown-rendition baseline recovery for Terminal-only screen consumers
+- **Current published feature line:** `1.18.0` — Unknown-rendition baseline recovery
+- **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
+- **Development status:** 1.18.0 released; 1.19.0 stable candidate qualified through T190-T199 with all nine CI jobs passed on PR #64; ready for maintainer release action
+- **Active development target:** `1.19.0` — Downstream screen-output hardening and semantic planner expansion
+- **Selected scope:** Option 1 + Option 2 + Option 4 + Option 10
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -20,11 +21,13 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.17.0` was published from annotated tag `v1.17.0` at exact merge commit `ce2d76dda3f7d455a891d4268f453c99112cae8e` on 2026-09-18. The final dependency-refresh evidence head `af6ef4bfc53603302597c927b3058854edd95ebd` passed all nine jobs in pull-request workflow #1984 / run `35297012969` before merge.
 
-The published feature line uses production `Icod.TermInfo 1.15.0` and optional test/sample `Icod.TermInfo.Inspection 1.15.0`. It retains identical public API snapshots across `net8.0`, `net9.0`, and `net10.0` with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
+The published 1.17.0 checkpoint uses production `Icod.TermInfo 1.15.0` and optional test/sample `Icod.TermInfo.Inspection 1.15.0`. It retains identical public API snapshots across `net8.0`, `net9.0`, and `net10.0` with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
 
 Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
 
-Version 1.18.0 is a qualified stable source candidate on PR #63. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete. Merge, tag, release creation, and publication remain maintainer actions.
+Version 1.18.0 was merged through PR #63 at `3e150377db990141aa6903631a8b95cb2c41116e` and tagged `v1.18.0`. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete.
+
+Version 1.19.0 is the qualified stable candidate on [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64). Source head `d7e2906e574f6d1b8024626828a46718d52c749b` passed all nine jobs in [workflow 36290312908](https://github.com/uniblab/Icod.Terminal/actions/runs/36290312908), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. The [1.19 roadmap](Icod.Terminal-1.19.0-Development-Roadmap.md#stable-candidate-qualification) records exact jobs, artifacts, hashes, accepted scope, and qualification limits. This accepts T190-T199 as a development candidate; merge, tagging, release creation, and publication remain separate maintainer actions.
 
 ## Current architecture
 
@@ -46,16 +49,16 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph remains:
+The production dependency graph for the 1.19.0 target is:
 
 ```text
-Icod.TermInfo 1.15.0
+Icod.TermInfo 1.16.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; Inspection and Source remain outside the production package graph.
+Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production package graph.
 
-## Qualified stable sequence through 1.17.0
+## Qualified stable sequence through 1.18.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -74,7 +77,8 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; In
 1.16.0  persistent raster animation and frame lifecycle             PUBLISHED
 1.17.0  Terminal-owned dimensions, screen planning, and transactions PUBLISHED
 1.17.1  packaged README and release metadata correction             PATCH
-1.18.0  unknown-rendition baseline recovery                         CANDIDATE
+1.18.0  unknown-rendition baseline recovery                         PUBLISHED
+1.19.0  downstream/planner/transaction hardening and docs/samples    CANDIDATE
 ```
 
 The 1.18 public API fingerprint is:
@@ -216,7 +220,7 @@ Authorities:
 - [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
 - [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
 
-## 1.18 development line — Unknown-rendition Baseline Recovery
+## 1.18 stable line — Unknown-rendition Baseline Recovery
 
 Version 1.18 is a focused additive release that closes the sole blocking Terminal contract found by the DCurses 2.0 readiness gate.
 
@@ -232,7 +236,7 @@ public TerminalScreenOperationPlan? PlanRenditionBaseline();
 
 The plan represents unknown physical rendition state, restores attributes before original colors in a safe deterministic order, retains Terminal-owned expansion/padding/cost and same-session transaction ownership, and returns a valid zero-byte plan only when the selected profile exposes no enterable attribute and no selectable color axis. Existing known-state reset and transition behavior remains unchanged.
 
-T180-T185 are accepted. The stable candidate at `56bbc011325e5c88e67f243a9b882b97bae9aac7` passed the complete Windows/Linux/macOS, package, API/XML, downstream, and artifact matrix in workflow run `35382158657`. Publication remains a separate maintainer action.
+T180-T185 are accepted. The stable candidate at `56bbc011325e5c88e67f243a9b882b97bae9aac7` passed the complete Windows/Linux/macOS, package, API/XML, downstream, and artifact matrix in workflow run `35382158657`. PR #63 is merged and the release is tagged `v1.18.0`; the versioned roadmap preserves the original candidate-qualification evidence.
 
 The tranche sequence is:
 
@@ -252,8 +256,42 @@ Authorities:
 - [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
 - [`Icod.DCurses 2.0 PR #32`](https://github.com/uniblab/Icod.DCurses/pull/32)
 
+## 1.19 development line — Downstream Screen-output Hardening and Planner Expansion
+
+The selected release scope is **Option 1 + Option 2 + Option 4 + Option 10**:
+
+| Option | Selected area | Intended result |
+| --- | --- | --- |
+| 1 | Downstream hardening | Execute representative Terminal-only renderer workloads against the candidate package and preserve DCurses compatibility. |
+| 2 | Semantic planner expansion | Broaden safe capability-backed screen planning, with deterministic cost selection and explicit unavailable results. |
+| 4 | Transaction model hardening | Qualify output epochs, bounded retention, cancellation, serialization, mixed-output cleanup, and failure reporting. |
+| 10 | Documentation and samples | Provide a runnable screen-output sample and a practical consumer guide covering planning, commitment, and recovery. |
+
+The governing rule is:
+
+> Terminal owns capability interpretation, opaque semantic plans, and serialized output commitment; consumers own physical-state assumptions, retained cells, layout, damage, and refresh policy.
+
+The implementation sequence is:
+
+```text
+T190  baseline, downstream gap inventory, contract/API review, development identity
+T191  executable package-only downstream screen-output witness
+T192  capability-backed planner expansion and deterministic fallback selection
+T193  planner safety, rendition, padding, cost, and bound qualification
+T194  transaction admission, lifetime, output-epoch, and capacity hardening
+T195  mixed-output cancellation, serialization, cleanup, and failure qualification
+T196  screen-output consumer guide and runnable sample
+T197  package/API/XML/dependency and downstream qualification
+T198  cross-platform regression, bounded soak, and independent review
+T199  stable 1.19.0 release closure and evidence record
+```
+
+The alpha checkpoint passed all nine CI jobs. Independent review fixes are locally qualified with 2,402 unit tests on each framework, and the stable `1.19.0` candidate is undergoing final qualification. The planner admits home-plus-relative and same-row carriage-return-plus-relative routes without public API additions; malformed optional routes cannot displace valid alternatives. Cursor-visibility composition is deferred to preserve presentation-lease ownership. The executed package harness covers the Terminal-only renderer, the screen-output sample, and published DCurses 2.2.0 while retaining the separate 1.6.0 compatibility witness. Publication remains a maintainer action.
+
+Authority: [`Icod.Terminal-1.19.0-Development-Roadmap.md`](Icod.Terminal-1.19.0-Development-Roadmap.md).
+
 ## Later development candidates
 
-After 1.18, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting.
+Beyond the selected 1.19 scope, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Broader terminal-profile refinement, rich-input/keyboard expansion, query/response changes, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

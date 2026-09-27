@@ -59,8 +59,8 @@ static void Require(
 	}
 }
 
-internal static class FutureDcursesRenderer {
-	internal static async ValueTask RefreshAsync(
+public static class FutureDcursesRenderer {
+	public static async ValueTask RefreshAsync(
 		TerminalSession session,
 		CancellationToken cancellationToken = default
 	) {
@@ -84,7 +84,10 @@ internal static class FutureDcursesRenderer {
 		) ?? throw new InvalidOperationException(
 			"The selected terminal cannot position the retained-screen cursor."
 		);
-		TerminalScreenOperationPlan? renditionBaseline = planner.PlanRenditionBaseline();
+		TerminalScreenOperationPlan renditionBaseline = planner.PlanRenditionBaseline()
+			?? throw new InvalidOperationException(
+				"The selected terminal cannot establish a known rendition baseline."
+			);
 
 		TerminalScreenRendition requested = new(
 			TerminalScreenColor.Indexed( 2 ),

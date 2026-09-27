@@ -2,6 +2,18 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.19.0
+
+- Adds bounded home-plus-relative and same-row carriage-return-plus-relative cursor planning, comparing complete costs and preserving existing preference on ties.
+- Rejects malformed, oversized, or unevaluable optional routes without losing independently usable candidates.
+- Executes the Terminal-only package renderer, including missing-baseline rejection and stale-output recovery, with synthetic TermInfo setup isolated in a separate test host.
+- Adds published DCurses 2.2.0 refresh/rendition/resize/recovery qualification while retaining the 1.6.0 compatibility witness.
+- Qualifies pending screen transactions across actual resize, external resume, and suspend/resume restoration without changing transaction ownership or cleanup semantics.
+- Adds a runnable screen-output sample, package-hosted execution of its frame routine, and a consumer guide for planning, commitment, and caller-owned recovery.
+- Expands the sample with alternate-screen ownership, q/Escape exit, help, and deliberate stale-frame recovery; migrates raster-placeholder drawing to semantic cursor-and-cell transactions.
+- Refreshes current README/API links and adds Ken Arnold's attribution for his work on `termcap` and `curses`.
+- Updates production `Icod.TermInfo` and optional test/sample `Icod.TermInfo.Inspection` to 1.16.0 while retaining `Icod.Timing 1.0.0`, the complete public API, and all target frameworks. See [1.19.0 release notes](docs/releases/1.19.0.md).
+
 ## 1.18.0
 
 ### Unknown-rendition baseline recovery

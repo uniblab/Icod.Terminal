@@ -24,6 +24,8 @@ A stable release must qualify the public package/runtime graph on all supported 
 
 ## 3. Public API baselines
 
+The 1.19 line retains the complete 1.18 surface and fingerprint; see [Public-API-Baseline-1.19.md](Public-API-Baseline-1.19.md). Cursor movement may select a newly available cheaper complete route, while equal-cost routes preserve existing preference. Invalid optional routes are unavailable without displacing independently valid candidates. Transaction ownership, limits, cancellation, and failure behavior remain unchanged.
+
 Every API-bearing stable minor release records a deterministic reflection snapshot and SHA-256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
 
 Relevant fingerprints include:
@@ -181,14 +183,14 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.15 optional integration compatibility
 
-The active 1.18 direct production dependency graph remains:
+The active 1.19 direct production dependency graph remains:
 
 ```text
-Icod.TermInfo 1.15.0
+Icod.TermInfo 1.16.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.15.0`; Inspection and Source remain outside the production graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production graph.
 
 Inspection 1.14 adds advisory raster-backend evidence/candidate/selection planning. Icod.Terminal qualifies that API at the consumer boundary but does **not** use `RasterBackendPlanner` in its production router.
 
@@ -230,7 +232,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.18
+## 11. Deliberate non-promises after 1.19
 
 Stable 1.x does not promise:
 

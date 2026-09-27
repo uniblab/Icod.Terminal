@@ -30,6 +30,61 @@ using Xunit;
 /// signal handlers or mutating the process terminal.
 /// </summary>
 public sealed class TerminalSessionLifecycleTests {
+	[Fact]
+	public async Task ResizeSignalWithoutOutputPreservesPendingScreenTransaction() {
+		RecordingTerminalControlProvider provider = new();
+		TestTerminalLifecycleSource lifecycle = new();
+		TestTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( provider, lifecycle, output );
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+		TerminalScreenOutputTransaction pending = session.CreateScreenOutputTransaction();
+		pending.WriteText( "pending" );
+		provider.Size = new TerminalSize( 100, 40 );
+		lifecycle.Publish( TerminalLifecycleSignalKind.Resize );
+		TerminalLifecycleEvent resized = await session.ReadLifecycleEventAsync( timeout.Token );
+		Assert.Equal( TerminalLifecycleEventKind.Resize, resized.Kind );
+		Assert.Equal( new TerminalDimensions( 100, 40 ), resized.Dimensions );
+		Assert.Empty( output.Bytes );
+		await pending.CommitAsync( timeout.Token );
+		Assert.Equal( "pending", System.Text.Encoding.UTF8.GetString( output.Bytes.ToArray() ) );
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public async Task LifecyclePresentationRestorationInvalidatesPendingScreenTransaction( bool suspendFirst ) {
+		RecordingTerminalControlProvider provider = new();
+		TestTerminalLifecycleSource lifecycle = new() { AutoResume = true };
+		TestTerminalOutput output = new();
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "screen-epoch-lifecycle" )
+			.SetString( StringCapability.EnterCursorAddressingMode, "<enter>" )
+			.SetString( StringCapability.ExitCursorAddressingMode, "<exit>" )
+			.Build();
+		await using TerminalSession session = await OpenSessionAsync( provider, lifecycle, output, terminal );
+		await using TerminalPresentationLease lease = ( await session.AcquirePresentationAsync(
+			new TerminalPresentationOptions { AlternateScreen = true }
+		) ).GetRequiredValue();
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+		TerminalScreenOutputTransaction pending = session.CreateScreenOutputTransaction();
+		pending.WriteText( "stale" );
+		output.Bytes.Clear();
+		lifecycle.Publish( suspendFirst ? TerminalLifecycleSignalKind.Suspend : TerminalLifecycleSignalKind.Resume );
+		if ( suspendFirst ) {
+			Assert.Equal( TerminalLifecycleEventKind.Suspending,
+				( await session.ReadLifecycleEventAsync( timeout.Token ) ).Kind );
+		}
+		Assert.Equal( TerminalLifecycleEventKind.Resumed,
+			( await session.ReadLifecycleEventAsync( timeout.Token ) ).Kind );
+		Assert.Contains( "<enter>", System.Text.Encoding.UTF8.GetString( output.Bytes.ToArray() ), StringComparison.Ordinal );
+		output.Bytes.Clear();
+		await Assert.ThrowsAsync<InvalidOperationException>( () => pending.CommitAsync( timeout.Token ).AsTask() );
+		Assert.Empty( output.Bytes );
+		TerminalScreenOutputTransaction recovery = session.CreateScreenOutputTransaction();
+		recovery.WriteText( "recovered" );
+		await recovery.CommitAsync( timeout.Token );
+		Assert.Equal( "recovered", System.Text.Encoding.UTF8.GetString( output.Bytes.ToArray() ) );
+	}
+
 	/// <summary>Verifies that live size prefers the observed output endpoint.</summary>
 	[Fact]
 	public async Task GetsLiveSizeFromObservedOutputEndpoint() {
@@ -180,7 +235,8 @@ public sealed class TerminalSessionLifecycleTests {
 	private static async ValueTask<TerminalSession> OpenSessionAsync(
 		RecordingTerminalControlProvider provider,
 		TestTerminalLifecycleSource? lifecycle = null,
-		TestTerminalOutput? output = null
+		TestTerminalOutput? output = null,
+		TerminalDescription? terminal = null
 	) {
 		ArgumentNullException.ThrowIfNull( provider );
 
@@ -191,7 +247,7 @@ public sealed class TerminalSessionLifecycleTests {
 			new TestTerminalInput(),
 			output ?? new TestTerminalOutput(),
 			new TerminalSessionOptions {
-				TerminalOverride = TerminalProfiles.Dumb,
+				TerminalOverride = terminal ?? TerminalProfiles.Dumb,
 				ConfigureOutput = false,
 				LifecycleSource = lifecycle
 			}
@@ -220,6 +276,7 @@ public sealed class TerminalSessionLifecycleTests {
 	}
 
 	private sealed class TestTerminalOutput : ITerminalOutput {
+		internal List<byte> Bytes { get; } = [];
 		internal int FlushCount {
 			get;
 			private set;
@@ -230,6 +287,7 @@ public sealed class TerminalSessionLifecycleTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			this.Bytes.AddRange( buffer.ToArray() );
 			return ValueTask.CompletedTask;
 		}
 

@@ -142,7 +142,58 @@ public sealed class TerminalScreenPlanner {
 			}
 		}
 
+		// Append complete routes after existing candidates so equal costs retain
+		// their historical discovery order. Prefixes establish the required origin.
+		TerminalScreenOperationPlan? home = this.PlanAnchoredCursorMove(
+			StringCapability.CursorHome, target.Row, target.Column
+		);
+		if ( home.HasValue ) {
+			ChooseBetter( ref best, home.Value );
+		}
+		if ( current.HasValue && current.Value.Row == target.Row ) {
+			TerminalScreenOperationPlan? carriageReturn = this.PlanAnchoredCursorMove(
+				StringCapability.CarriageReturn, 0, target.Column
+			);
+			if ( carriageReturn.HasValue ) {
+				ChooseBetter( ref best, carriageReturn.Value );
+			}
+		}
+
 		return best;
+	}
+
+	private TerminalScreenOperationPlan? PlanAnchoredCursorMove(
+		StringCapability anchorCapability,
+		int rows,
+		int columns
+	) {
+		try {
+			TerminalScreenOperationPlan? anchor = this.CreateLiteral(
+				TerminalScreenOperationKind.CursorMove, anchorCapability, 1
+			);
+			if ( !anchor.HasValue ) {
+				return null;
+			}
+			TerminalScreenOperationPlan? vertical = this.PlanRelativeAxis(
+				rows, StringCapability.CursorUp, StringCapability.CursorUpOne,
+				StringCapability.CursorDown, StringCapability.CursorDownOne
+			);
+			if ( !vertical.HasValue ) {
+				return null;
+			}
+			TerminalScreenOperationPlan? horizontal = this.PlanRelativeAxis(
+				columns, StringCapability.CursorLeft, StringCapability.CursorLeftOne,
+				StringCapability.CursorRight, StringCapability.CursorRightOne
+			);
+			return horizontal.HasValue
+				? Combine( Combine( anchor.Value, vertical.Value ), horizontal.Value )
+				: null;
+		} catch ( Exception exception ) when ( exception is TermInfoFormatException
+			or TermInfoEvaluationException or TermInfoPaddingFormatException ) {
+			// Bad optional capability data invalidates this route, not an
+			// independently usable candidate already found by the planner.
+			return null;
+		}
 	}
 
 	/// <summary>Normalizes a rendition request to a safe reversible representation.</summary>
