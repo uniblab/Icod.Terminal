@@ -10,4 +10,4 @@ The CI-generated API snapshots for `net8.0`, `net9.0`, and `net10.0` are identic
 939649e1d5c110039cfb3e5057561f8ef7fcb4de20af2de2152f9ec6ab357824
 ```
 
-The machine-readable fingerprint is `docs/Public-API-Baseline-1.21.sha256`. The [1.20 baseline](Public-API-Baseline-1.20.md) remains frozen. Requalify the fingerprint at the final source head before stable release closure.
+The machine-readable fingerprint is `docs/Public-API-Baseline-1.21.sha256`. The [1.20 baseline](Public-API-Baseline-1.20.md) remains frozen. The stable candidate at `020b82215410c603c590c3ae624170a8a41ef594` requalified the fingerprint and all three generated XML assemblies in [workflow 36354755815](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815).

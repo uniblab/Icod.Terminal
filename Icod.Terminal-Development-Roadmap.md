@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.20.0` — Profile and capability decisions
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.20.0 merged and published; 1.21.0 stable release preparation in PR #66
+- **Development status:** 1.20.0 merged and published; 1.21.0 stable candidate qualified in PR #66
 - **Active development target:** `1.21.0` — Rich input and cursor visibility
 - **Selected scope:** Rich input and keyboard expansion + Cursor-visibility composition with screen transactions
 - **Stable compatibility floor:** `1.0.0`
@@ -21,7 +21,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.20.0` was merged through [PR #65](https://github.com/uniblab/Icod.Terminal/pull/65) at `8aa6d0543a3d48d6ec28c84f930da35282703b4a`, tagged `v1.20.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.20.0) on 2026-09-27. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification) records its qualified pre-merge source, nine-job CI checkpoint, candidate package hashes, and three-framework API baseline; those candidate hashes are not asserted as the published artifact's hashes. Its selected 3 + focused 6 + 10 scope is complete.
 
-Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110 and records the Kitty functional-key fixture, frame visibility ownership and cleanup, and package/downstream acceptance. The stable candidate is under qualification in PR #66; it has not been merged or published.
+Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110 and records the Kitty functional-key fixture, frame visibility ownership and cleanup, package/downstream acceptance, and the [nine-job stable candidate](https://github.com/uniblab/Icod.Terminal/actions/runs/36354755815). The candidate has not been merged or published.
 
 ### Earlier checkpoints
 
@@ -365,7 +365,7 @@ T2109  package/API/XML/dependency/downstream qualification
 T2110  cross-platform review, stable 1.21.0 closure and evidence
 ```
 
-The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) specifies acceptance per task, package checks, failure semantics, and deferred work. Its implementation evidence identifies the red fixtures and the exact-head runtime/package checkpoints. Stable closure requires the final Windows/Linux/macOS and package matrix in PR #66.
+The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) specifies acceptance per task, package checks, failure semantics, and deferred work. Its implementation evidence identifies the red fixtures, exact-head Windows/Linux/macOS runtime and package qualification, and candidate package/symbol hashes in PR #66.
 
 ## Later development candidates
 
