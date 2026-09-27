@@ -9,7 +9,9 @@
 
 ## Status
 
-This source tree documents the `Icod.Terminal 1.21.0` release line. NuGet publication follows the repository merge; check the published package version before installing.
+Current stable release: `Icod.Terminal 1.21.0`.
+
+The package is published separately after the repository merge. If you are reading this page on a pull-request branch, confirm that version 1.21.0 is available on NuGet before using the install command below.
 
 Version 1.21 adds Kitty functional-key phase reporting and temporary cursor visibility for one screen transaction, restoring the presentation lease owner or ordinary cursor afterward. See the [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) and [screen-output sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the implementation and an input-driven refresh.
 
@@ -68,13 +70,13 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install the latest published version:
+Install version 1.21.0 after it is published:
 
 ```text
-dotnet add package Icod.Terminal
+dotnet add package Icod.Terminal --version 1.21.0
 ```
 
-The temporary cursor-visibility API shown below requires `Icod.Terminal 1.21.0` or later. Before publication, use the source tree or the PR's verified package candidate to try that API.
+The temporary cursor-visibility API shown below requires `Icod.Terminal 1.21.0` or later. While the pull request is open, use the source tree or its verified package artifact to try that API.
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
 
