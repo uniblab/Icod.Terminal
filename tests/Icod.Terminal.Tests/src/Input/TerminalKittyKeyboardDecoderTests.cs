@@ -99,8 +99,8 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 	public async Task OversizedPhaseBearingFunctionKeyDrainsBeforeNextText() {
 		string oversized = "\u001b[1;1:3" + new string( '0', 4096 ) + "DZ";
 		byte[] bytes = Encoding.ASCII.GetBytes( oversized );
-		byte[][] chunks = Enumerable.Range( 0, ( bytes.Length + 511 ) / 512 )
-			.Select( index => bytes[ ( index * 512 )..Math.Min( bytes.Length, ( index + 1 ) * 512 ) ] )
+		byte[][] chunks = Enumerable.Range( 0, ( bytes.Length + 127 ) / 128 )
+			.Select( index => bytes[ ( index * 128 )..Math.Min( bytes.Length, ( index + 1 ) * 128 ) ] )
 			.ToArray();
 		TerminalInputEvent recovered = await CreateDecoder(
 			new ScriptedTerminalInput( chunks )

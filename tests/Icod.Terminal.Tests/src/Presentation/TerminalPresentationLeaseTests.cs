@@ -221,6 +221,41 @@ public sealed class TerminalPresentationLeaseTests {
 	}
 
 	[Fact]
+	public async Task FailedCursorEntryStillRestoresOrdinaryCursor() {
+		RecordingTerminalOutput output = new() { FailOnValue = "<C0>" };
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+
+		await Assert.ThrowsAsync<IOException>( () => frame.CommitAsync().AsTask() );
+		Assert.Equal( new[] { "<C0>", "<C1>" }, output.WriteAttempts );
+		Assert.Equal( new[] { "<C1>" }, output.SuccessfulWrites );
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task PreCancelledVisibilityCommitWritesNothing() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+		using CancellationTokenSource cancelled = new();
+		cancelled.Cancel();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => frame.CommitAsync( cancelled.Token ).AsTask()
+		);
+		Assert.Empty( output.WriteAttempts );
+		Assert.Equal( 0, output.FlushCount );
+	}
+
+	[Fact]
 	public async Task StaleVisibilityTransactionCannotHideCursor() {
 		RecordingTerminalOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync(
