@@ -186,11 +186,11 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 The active 1.19 direct production dependency graph remains:
 
 ```text
-Icod.TermInfo 1.15.0
+Icod.TermInfo 1.16.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.15.0`; Inspection and Source remain outside the production graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production graph.
 
 Inspection 1.14 adds advisory raster-backend evidence/candidate/selection planning. Icod.Terminal qualifies that API at the consumer boundary but does **not** use `RasterBackendPlanner` in its production router.
 

@@ -31,7 +31,7 @@ This release improves the existing screen-output contract. It does not establish
 
 - Language: C# 13. Target frameworks: `net8.0`; `net9.0`; `net10.0`.
 - Stable compatibility floor: `1.0.0`. Preserve existing public signatures, enum values, and documented ownership semantics.
-- Production dependencies remain `Icod.TermInfo 1.15.0` and `Icod.Timing 1.0.0`; optional integration fixtures may use `Icod.TermInfo.Inspection 1.15.0`. Any dependency change needs its own evidence and review.
+- Production dependencies are `Icod.TermInfo 1.16.0` and `Icod.Timing 1.0.0`; optional integration fixtures may use `Icod.TermInfo.Inspection 1.16.0`. The maintainer approved this TermInfo/Inspection update from 1.15.0 on 2026-09-27. Earlier qualification records below describe the preceding dependency graph; PR #64 records the refreshed dependency qualification.
 - No TermInfo types, raw capability identifiers, expansion programs, or control strings in new public screen contracts. No direct TermInfo reference in the Terminal-only downstream consumer.
 - Planning is side-effect free. Plans stay opaque and session-bound; unsupported operations return unavailable results rather than guessed escape sequences.
 - A single session retains input/query/event authority and serialized output authority. No second renderer-owned output path.

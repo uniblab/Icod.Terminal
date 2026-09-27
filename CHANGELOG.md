@@ -12,7 +12,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Adds a runnable screen-output sample, package-hosted execution of its frame routine, and a consumer guide for planning, commitment, and caller-owned recovery.
 - Expands the sample with alternate-screen ownership, q/Escape exit, help, and deliberate stale-frame recovery; migrates raster-placeholder drawing to semantic cursor-and-cell transactions.
 - Refreshes current README/API links and adds Ken Arnold's attribution for his work on `termcap` and `curses`.
-- Preserves the complete public API, all target frameworks, and production dependency versions. See [1.19.0 release notes](docs/releases/1.19.0.md).
+- Updates production `Icod.TermInfo` and optional test/sample `Icod.TermInfo.Inspection` to 1.16.0 while retaining `Icod.Timing 1.0.0`, the complete public API, and all target frameworks. See [1.19.0 release notes](docs/releases/1.19.0.md).
 
 ## 1.18.0
 
