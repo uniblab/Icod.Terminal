@@ -207,6 +207,7 @@ try {
 
         Copy-Item -LiteralPath 'tools/package-smoke/Icod.Terminal.PackageSmoke.csproj' -Destination (Join-Path $generalSmokeRoot 'Icod.Terminal.PackageSmoke.csproj')
         Copy-Item -LiteralPath 'tools/package-smoke/Program.cs' -Destination (Join-Path $generalSmokeRoot 'Program.cs')
+        Copy-Item -LiteralPath 'samples/Icod.Terminal.RichInput.Sample/EditorKeyState.cs' -Destination (Join-Path $generalSmokeRoot 'EditorKeyState.cs')
         Copy-Item -LiteralPath 'tools/package-title-smoke/Icod.Terminal.PackageTitleSmoke.csproj' -Destination (Join-Path $titleSmokeRoot 'Icod.Terminal.PackageTitleSmoke.csproj')
         Copy-Item -LiteralPath 'tools/package-title-smoke/Program.cs' -Destination (Join-Path $titleSmokeRoot 'Program.cs')
         Copy-Item -LiteralPath 'tools/package-location-smoke/Icod.Terminal.PackageLocationSmoke.csproj' -Destination (Join-Path $locationSmokeRoot 'Icod.Terminal.PackageLocationSmoke.csproj')
