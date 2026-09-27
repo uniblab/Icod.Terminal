@@ -190,6 +190,58 @@ public sealed class TerminalPresentationLeaseTests {
 	}
 
 	[Fact]
+	public async Task PresentationAcquisitionWaitsUntilTemporaryCursorFrameRestores() {
+		RecordingTerminalOutput output = new() { BlockOnValue = "frame" };
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+		Task commit = frame.CommitAsync().AsTask();
+		Task<TerminalControlResult<TerminalPresentationLease>>? acquiring = null;
+		try {
+			await output.HeldWriteStarted.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+			acquiring = session.AcquirePresentationAsync(
+				new TerminalPresentationOptions {
+					CursorVisibility = TerminalCursorVisibility.VeryVisible
+				}
+			).AsTask();
+			Assert.False( acquiring.IsCompleted );
+			Assert.False( commit.IsCompleted );
+		} finally {
+			output.ReleaseHeldWrite();
+		}
+		await commit.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		await using TerminalPresentationLease lease = (
+			await acquiring!.WaitAsync( TimeSpan.FromSeconds( 5 ) )
+		).GetRequiredValue();
+		Assert.Equal( new[] { "<C0>", "frame", "<C1>", "<C2>" }, output.SuccessfulWrites );
+	}
+
+	[Fact]
+	public async Task VisibilityWrapsSynchronizedHyperlinkFrame() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteHyperlink( "link", "https://example.com/" );
+
+		await frame.CommitAsync();
+
+		Assert.Equal( "<C0>", output.SuccessfulWrites[ 0 ] );
+		Assert.Equal( "\u001b[?2026h", output.SuccessfulWrites[ 1 ] );
+		Assert.Equal( "link", output.SuccessfulWrites[ 3 ] );
+		Assert.Equal( "\u001b[?2026l", output.SuccessfulWrites[ ^2 ] );
+		Assert.Equal( "<C1>", output.SuccessfulWrites[ ^1 ] );
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
 	public async Task UnsupportedTransactionVisibilityFailsBeforeWriting() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "no-cursor-return" )
 			.SetString( StringCapability.CursorInvisible, "<C0>" )
@@ -234,6 +286,26 @@ public sealed class TerminalPresentationLeaseTests {
 		Assert.Equal( new[] { "<C0>", "<C1>" }, output.WriteAttempts );
 		Assert.Equal( new[] { "<C1>" }, output.SuccessfulWrites );
 		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task FailedFlushLeavesCursorUncertainUntilSessionCleanup() {
+		RecordingTerminalOutput output = new() { FailNextFlush = true };
+		TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+
+		await Assert.ThrowsAsync<IOException>( () => frame.CommitAsync().AsTask() );
+		TerminalScreenOutputTransaction next = session.CreateScreenOutputTransaction();
+		next.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		await Assert.ThrowsAsync<InvalidOperationException>( () => next.CommitAsync().AsTask() );
+		await session.DisposeAsync();
+
+		Assert.Equal( new[] { "<C0>", "frame", "<C1>", "<C1>" }, output.WriteAttempts );
+		Assert.Equal( 2, output.FlushCount );
 	}
 
 	[Fact]
@@ -550,6 +622,16 @@ public sealed class TerminalPresentationLeaseTests {
 	private sealed class RecordingTerminalOutput : ITerminalOutput {
 		private bool failureUsed;
 		private string? failOnValue;
+		private readonly TaskCompletionSource<bool> heldWriteStarted =
+			new( TaskCreationOptions.RunContinuationsAsynchronously );
+		private readonly TaskCompletionSource<bool> releaseHeldWrite =
+			new( TaskCreationOptions.RunContinuationsAsynchronously );
+		private bool blockedOnce;
+
+		internal string? BlockOnValue { get; init; }
+		internal Task HeldWriteStarted => this.heldWriteStarted.Task;
+		internal void ReleaseHeldWrite() => this.releaseHeldWrite.TrySetResult( true );
+		internal bool FailNextFlush { get; set; }
 
 		internal string? FailOnValue {
 			get {
@@ -580,7 +662,7 @@ public sealed class TerminalPresentationLeaseTests {
 			this.FlushCount = 0;
 		}
 
-		public ValueTask WriteAsync(
+		public async ValueTask WriteAsync(
 			ReadOnlyMemory<byte> buffer,
 			CancellationToken cancellationToken = default
 		) {
@@ -597,9 +679,15 @@ public sealed class TerminalPresentationLeaseTests {
 				this.failureUsed = true;
 				throw new IOException( "Injected presentation output failure." );
 			}
+			if ( !this.blockedOnce && string.Equals(
+				this.BlockOnValue, value, StringComparison.Ordinal
+			) ) {
+				this.blockedOnce = true;
+				this.heldWriteStarted.TrySetResult( true );
+				await this.releaseHeldWrite.Task;
+			}
 
 			this.SuccessfulWrites.Add( value );
-			return ValueTask.CompletedTask;
 		}
 
 		public ValueTask FlushAsync(
@@ -607,6 +695,10 @@ public sealed class TerminalPresentationLeaseTests {
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
 			++this.FlushCount;
+			if ( this.FailNextFlush ) {
+				this.FailNextFlush = false;
+				throw new IOException( "Injected presentation flush failure." );
+			}
 			return ValueTask.CompletedTask;
 		}
 	}
