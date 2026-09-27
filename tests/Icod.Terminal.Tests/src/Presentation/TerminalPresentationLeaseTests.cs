@@ -143,6 +143,67 @@ public sealed class TerminalPresentationLeaseTests {
 		await session.DisposeAsync();
 	}
 
+	[Fact]
+	public async Task ScreenTransactionTemporarilyOverridesAndRestoresNewestCursorOwner() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		await using TerminalPresentationLease outer = (
+			await session.AcquirePresentationAsync(
+				new TerminalPresentationOptions { CursorVisibility = TerminalCursorVisibility.Hidden }
+			)
+		).GetRequiredValue();
+		await using TerminalPresentationLease inner = (
+			await session.AcquirePresentationAsync(
+				new TerminalPresentationOptions { CursorVisibility = TerminalCursorVisibility.VeryVisible }
+			)
+		).GetRequiredValue();
+		output.Clear();
+
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+		Assert.Empty( output.SuccessfulWrites );
+		await frame.CommitAsync();
+
+		Assert.Equal( new[] { "<C0>", "frame", "<C2>" }, output.SuccessfulWrites );
+		Assert.Equal( 1, output.FlushCount );
+		await inner.DisposeAsync();
+		Assert.Equal( "<C0>", output.SuccessfulWrites[ ^1 ] );
+	}
+
+	[Fact]
+	public async Task ScreenTransactionRestoresOrdinaryCursorWhenNoLeaseExists() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+
+		await frame.CommitAsync();
+
+		Assert.Equal( new[] { "<C0>", "frame", "<C1>" }, output.SuccessfulWrites );
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task UnsupportedTransactionVisibilityFailsBeforeWriting() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "no-cursor-return" )
+			.SetString( StringCapability.CursorInvisible, "<C0>" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( terminal, output );
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+
+		await Assert.ThrowsAsync<InvalidOperationException>( () => frame.CommitAsync().AsTask() );
+		Assert.Empty( output.WriteAttempts );
+	}
+
 	/// <summary>Verifies missing TermInfo transitions are controlled rather than guessed.</summary>
 	[Fact]
 	public async Task MissingCapabilityReturnsUnavailableWithoutAnsiFallback() {
