@@ -33,6 +33,7 @@ internal sealed class TerminalPresentationManager {
 	private PresentationState appliedState = PresentationState.Baseline;
 	private long nextLeaseId;
 	private bool appliedKnown = true;
+	private bool frameCursorUncertain;
 	private bool suspended;
 	private bool closed;
 	private int invalidated;
@@ -102,6 +103,7 @@ internal sealed class TerminalPresentationManager {
 			TerminalPresentationManager manager = this.owner
 				?? throw new ObjectDisposedException( nameof( FrameCursorVisibilityReservation ) );
 			manager.appliedKnown = false;
+			manager.frameCursorUncertain = true;
 			manager.MarkInvalidated();
 		}
 
@@ -262,6 +264,7 @@ internal sealed class TerminalPresentationManager {
 			if ( exception is null ) {
 				this.appliedState = PresentationState.Baseline;
 				this.appliedKnown = true;
+				this.frameCursorUncertain = false;
 				this.ClearInvalidated();
 				return;
 			}
@@ -340,8 +343,13 @@ internal sealed class TerminalPresentationManager {
 			this.closed = true;
 			this.suspended = true;
 			this.appliedState = PresentationState.Baseline;
-			this.appliedKnown = true;
-			this.ClearInvalidated();
+			this.appliedKnown = exception is null;
+			if ( exception is null ) {
+				this.frameCursorUncertain = false;
+				this.ClearInvalidated();
+			} else {
+				this.MarkInvalidated();
+			}
 
 			foreach ( LeaseEntry entry in this.leases.Values ) {
 				entry.Lease.MarkReleasedByOwner();
@@ -640,7 +648,7 @@ internal sealed class TerminalPresentationManager {
 		List<Exception> exceptions = [];
 		bool wrote = false;
 
-		if ( from.CursorVisibility.HasValue ) {
+		if ( from.CursorVisibility.HasValue || this.frameCursorUncertain ) {
 			wrote |= await this.TryWriteAsync(
 				this.GetBaselineCursorCapability(),
 				exceptions

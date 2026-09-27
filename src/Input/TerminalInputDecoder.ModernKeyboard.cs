@@ -42,6 +42,10 @@ internal sealed partial class TerminalInputDecoder {
 		while ( true ) {
 			int finalIndex = FindCsiFinalIndex( this.bufferedBytes );
 			if ( 0 <= finalIndex ) {
+				if ( finalIndex + 1 > MaximumModernKeyboardFrameBytes ) {
+					this.Consume( finalIndex + 1 );
+					return null;
+				}
 				byte finalByte = this.bufferedBytes[ finalIndex ];
 				bool legacyFunctional = finalByte is (byte)'A' or (byte)'B'
 					or (byte)'C' or (byte)'D' or (byte)'E' or (byte)'F'
@@ -110,7 +114,9 @@ internal sealed partial class TerminalInputDecoder {
 			}
 
 			if ( this.bufferedBytes.Count >= MaximumModernKeyboardFrameBytes ) {
-				this.Consume( Math.Min( this.bufferedBytes.Count, MaximumModernKeyboardFrameBytes ) );
+				await this.DrainOversizedModernKeyboardFrameAsync(
+					cancellationToken
+				).ConfigureAwait( false );
 				return null;
 			}
 
@@ -122,6 +128,32 @@ internal sealed partial class TerminalInputDecoder {
 				cancellationToken
 			).ConfigureAwait( false ) ) {
 				return null;
+			}
+		}
+	}
+
+	private async ValueTask DrainOversizedModernKeyboardFrameAsync(
+		CancellationToken cancellationToken
+	) {
+		while ( true ) {
+			int finalIndex = FindCsiFinalIndex( this.bufferedBytes );
+			if ( 0 <= finalIndex ) {
+				this.Consume( finalIndex + 1 );
+				return;
+			}
+			this.Consume( this.bufferedBytes.Count );
+			if ( !await this.ReadMoreWithinEscapeWindowAsync(
+				cancellationToken
+			).ConfigureAwait( false ) ) {
+				return;
+			}
+			// The CSI introducer has already been discarded. A final byte in the
+			// next read terminates the oversized frame without consuming later text.
+			for ( int index = 0; index < this.bufferedBytes.Count; ++index ) {
+				if ( this.bufferedBytes[ index ] is >= 0x40 and <= 0x7e ) {
+					this.Consume( index + 1 );
+					return;
+				}
 			}
 		}
 	}

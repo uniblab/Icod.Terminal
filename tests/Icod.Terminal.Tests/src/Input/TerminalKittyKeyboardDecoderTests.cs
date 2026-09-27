@@ -96,6 +96,20 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 	}
 
 	[Fact]
+	public async Task OversizedPhaseBearingFunctionKeyDrainsBeforeNextText() {
+		string oversized = "\u001b[1;1:3" + new string( '0', 4096 ) + "DZ";
+		byte[] bytes = Encoding.ASCII.GetBytes( oversized );
+		byte[][] chunks = Enumerable.Range( 0, ( bytes.Length + 511 ) / 512 )
+			.Select( index => bytes[ ( index * 512 )..Math.Min( bytes.Length, ( index + 1 ) * 512 ) ] )
+			.ToArray();
+		TerminalInputEvent recovered = await CreateDecoder(
+			new ScriptedTerminalInput( chunks )
+		).ReadAsync();
+		Assert.Equal( TerminalInputEventKind.Text, recovered.Kind );
+		Assert.Equal( new Rune( 'Z' ), recovered.Character );
+	}
+
+	[Fact]
 	public async Task KittyModifierBitsMapToSemanticModifierValues() {
 		TerminalInputDecoder decoder = CreateDecoder(
 			"\u001b[97;256:2u"
