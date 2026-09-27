@@ -80,12 +80,12 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** reviewed profile signatures/source mapping, twelve-capability/three-probe truth table, verification timing/error contract, and `1.20.0-alpha.1` development identity.
 
-- [ ] Inventory existing tests for every design obligation, naming the proving test or a specific uncovered scenario. Preserve valid existing coverage.
-- [ ] Freeze the design's nine new advertisement properties and three enum-parameter methods, including absence/present-empty/malformed semantics, default values, invalid enum handling, and value equality. Record exact existing planner sources and alternatives for each fact; do not invent new routes.
-- [ ] Freeze the current twelve capability values and which three can probe. Trace the keyboard, Kitty, and Sixel paths through actual per-query deadlines, sequencing, late-response ownership, errors, and generation recording. Distinguish a per-query deadline from total operation duration.
-- [ ] Review API compatibility and scope against the design. Resolve naming or behavioral changes in the documents before dependent code starts; explicitly defer anything requiring another state owner or protocol family.
-- [ ] Run the baseline runtime/package/API gates from the command section or record matching exact-head CI evidence. Record failures before changing code.
-- [ ] Set `Directory.Build.props` to `VersionPrefix=1.20.0`, `VersionSuffix=alpha.1` when implementation starts; keep released README/version claims accurate. Commit the reviewed contract and development identity.
+- [x] Inventory existing tests for every design obligation, naming the proving test or a specific uncovered scenario. Preserve valid existing coverage.
+- [x] Freeze the design's nine new advertisement properties and three enum-parameter methods, including absence/present-empty/malformed semantics, default values, invalid enum handling, and value equality. Record exact existing planner sources and alternatives for each fact; do not invent new routes.
+- [x] Freeze the current twelve capability values and which three can probe. Trace the keyboard, Kitty, and Sixel paths through actual per-query deadlines, sequencing, late-response ownership, errors, and generation recording. Distinguish a per-query deadline from total operation duration.
+- [x] Review API compatibility and scope against the design. Resolve naming or behavioral changes in the documents before dependent code starts; explicitly defer anything requiring another state owner or protocol family.
+- [x] Run the baseline runtime/package/API gates from the command section or record matching exact-head CI evidence. Record failures before changing code.
+- [x] Set `Directory.Build.props` to `VersionPrefix=1.20.0`, `VersionSuffix=alpha.1` when implementation starts; keep released README/version claims accurate. Commit the reviewed contract and development identity.
 
 **Acceptance:** The profile schema and verification contract are precise enough to implement; baseline evidence is recorded. A planning PR alone does not complete T200.
 
@@ -99,10 +99,10 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** exactly the reviewed `AdvertisesCursor...`, `AdvertisesCarriageReturn`, `AdvertisesScrollRegion`, `AdvertisesErase(kind)`, `AdvertisesCharacterShift(kind)`, and `AdvertisesLineShift(kind)` surface in the design. Existing members retain their behavior.
 
-- [ ] Add table-driven tests for every new member: absent, present-empty, present-valid, parameterized-only, single-step-only where supported, and unrelated capabilities. Assert default capabilities advertise none and invalid enum arguments throw `ArgumentOutOfRangeException`.
-- [ ] Add immutability, equality/hash, dependency-neutral public signature, and zero-output assertions. Verify identical descriptions do not compare differently because of backing collection identity.
-- [ ] Run the focused tests and observe failure for missing additions; implement bounded presence projection with no expansion, probing, or planner duplication.
-- [ ] Run the profile and existing screen-contract tests on all frameworks, then commit.
+- [x] Add table-driven tests for every new member: absent, present-empty, present-valid, parameterized-only, single-step-only where supported, and unrelated capabilities. Assert default capabilities advertise none and invalid enum arguments throw `ArgumentOutOfRangeException`.
+- [x] Add immutability, equality/hash, dependency-neutral public signature, and zero-output assertions. Verify identical descriptions do not compare differently because of backing collection identity.
+- [x] Run the focused tests and observe failure for missing additions; implement bounded presence projection with no expansion, probing, or planner duplication.
+- [x] Run the profile and existing screen-contract tests on all frameworks, then commit.
 
 **Acceptance:** All mappings and old profile behavior are qualified; profile construction emits no traffic and retains no mutable caller-owned state.
 
@@ -114,10 +114,10 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** executable decision-table evidence, with no new planner route or transaction API.
 
-- [ ] Add missing tests for home/relative and row/column paths with absolute addressing absent; assert an actual existing plan can be available despite the absolute flag being false.
-- [ ] Pin present-empty/zero-byte behavior, parameter/count-sensitive failure, malformed-source rejection, and unrelated valid alternatives using the planner's established null/exception contract. Do not convert all planner errors into `null` merely for the sample.
-- [ ] Assert advertisement and planning both emit no bytes; constructing either must not acquire a lease, mutate evidence, or invalidate a pending transaction.
-- [ ] Run focused tests, reproduce any defect before correcting it, then run the screen suite on all frameworks and commit.
+- [x] Add missing tests for home/relative and row/column paths with absolute addressing absent; assert an actual existing plan can be available despite the absolute flag being false.
+- [x] Pin present-empty/zero-byte behavior, parameter/count-sensitive failure, malformed-source rejection, and unrelated valid alternatives using the planner's established null/exception contract. Do not convert all planner errors into `null` merely for the sample.
+- [x] Assert advertisement and planning both emit no bytes; constructing either must not acquire a lease, mutate evidence, or invalidate a pending transaction.
+- [x] Run focused tests, reproduce any defect before correcting it, then run the screen suite on all frameworks and commit.
 
 **Acceptance:** Consumers have executable examples proving that advertisement, a concrete plan, and physical execution are different claims.
 
@@ -127,11 +127,11 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Consumes/produces:** unchanged `InspectCapability(TerminalCapability)` and `VerifyCapabilityAsync(TerminalCapability, CancellationToken)` signatures; existing `TerminalCapabilityStatus` dimensions.
 
-- [ ] Parameterize inspection/no-probe tests over all twelve current capability values. Assert zero traffic for inspection and for verification values outside the three approved paths.
-- [ ] Qualify each active path from unknown/static evidence through valid positive, authoritative negative where defined, and inconclusive outcomes. Assert support, endpoint, evidence kind, and usability separately.
-- [ ] Verify aggregate raster success with one usable backend and persistent-raster rejection of Sixel-only evidence. Do not infer placeholder/animation support from a generic graphics observation.
-- [ ] Assert decisive current evidence and unavailable endpoints skip probe traffic, and pre-cancellation/invalid enum handling retain their existing precedence and errors.
-- [ ] Run the matrix, fix only reproduced dispatch/projection defects, run related existing tests on all frameworks, and commit.
+- [x] Parameterize inspection/no-probe tests over all twelve current capability values. Assert zero traffic for inspection and for verification values outside the three approved paths.
+- [x] Qualify each active path from unknown/static evidence through valid positive, authoritative negative where defined, and inconclusive outcomes. Assert support, endpoint, evidence kind, and usability separately.
+- [x] Verify aggregate raster success with one usable backend and persistent-raster rejection of Sixel-only evidence. Do not infer placeholder/animation support from a generic graphics observation.
+- [x] Assert decisive current evidence and unavailable endpoints skip probe traffic, and pre-cancellation/invalid enum handling retain their existing precedence and errors.
+- [x] Run the matrix, fix only reproduced dispatch/projection defects, run related existing tests on all frameworks, and commit.
 
 **Acceptance:** Exact expected query traffic and truthful status results are documented and tested for the complete current capability vocabulary.
 
@@ -145,11 +145,11 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** bounded verification and correct response ownership after uncertainty/failure, without a new scheduler or public timeout API.
 
-- [ ] Add missing silent-peer, truncated/correlated-malformed, oversized, unrelated-response, and fragmented-response cases for the included paths. Assert timeout alone creates no permanent unsupported result; preserve reviewed format/transport exceptions.
-- [ ] Qualify cancellation before admission and after request commitment. Assert framing remains intact, probe registrations are cleaned up, and subsequent independent input/query work succeeds.
-- [ ] Inject late replies after timeout/cancellation, followed by another query. Assert the old reply cannot satisfy the new request and ordinary input remains available through the authoritative event path.
-- [ ] Use deterministic scripted transport/release signals for ordering. Exercise production timeout behavior with an outer test timeout; avoid scheduler-speed assertions or long sleep-based races.
-- [ ] Observe regression failure before each production correction, then run related query/input and capability suites on all frameworks and commit.
+- [x] Add missing silent-peer, truncated/correlated-malformed, oversized, unrelated-response, and fragmented-response cases for the included paths. Assert timeout alone creates no permanent unsupported result; preserve reviewed format/transport exceptions.
+- [x] Qualify cancellation before admission and after request commitment. Assert framing remains intact, probe registrations are cleaned up, and subsequent independent input/query work succeeds.
+- [x] Inject late replies after timeout/cancellation, followed by another query. Assert the old reply cannot satisfy the new request and ordinary input remains available through the authoritative event path.
+- [x] Use deterministic scripted transport/release signals for ordering. Exercise production timeout behavior with an outer test timeout; avoid scheduler-speed assertions or long sleep-based races.
+- [x] Observe regression failure before each production correction, then run related query/input and capability suites on all frameworks and commit.
 
 **Acceptance:** Failures terminate within existing bounds, keep uncertainty truthful, and leave unrelated input/query ownership usable.
 
@@ -163,10 +163,10 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** generation-correct evidence with existing session lifecycle and query ownership.
 
-- [ ] Qualify static facts and immutable snapshots across explicit invalidation and actual managed suspend/resume; assert re-inspection drops stale live evidence while retaining static evidence.
-- [ ] Invalidate or resume with a response pending, then deliver the old response. Assert it cannot establish support for the new generation; verify a fresh request can succeed.
-- [ ] Qualify redirected/unavailable endpoints, suspended ownership, concurrent inspection/verification, and disposal during an active probe. Assert no reopened disposed session, second reader, leaked registration, or cross-capability evidence contamination.
-- [ ] Assert bounded correctness under concurrency; do not require coalesced probes or a new cache. Fix only demonstrated ownership defects, run lifecycle/query regressions on all frameworks, and commit.
+- [x] Qualify static facts and immutable snapshots across explicit invalidation and actual managed suspend/resume; assert re-inspection drops stale live evidence while retaining static evidence.
+- [x] Invalidate or resume with a response pending, then deliver the old response. Assert it cannot establish support for the new generation; verify a fresh request can succeed.
+- [x] Qualify redirected/unavailable endpoints, suspended ownership, concurrent inspection/verification, and disposal during an active probe. Assert no reopened disposed session, second reader, leaked registration, or cross-capability evidence contamination.
+- [x] Assert bounded correctness under concurrency; do not require coalesced probes or a new cache. Fix only demonstrated ownership defects, run lifecycle/query regressions on all frameworks, and commit.
 
 **Acceptance:** Static description and current live knowledge remain distinct and truthful across lifecycle/concurrency boundaries.
 
@@ -180,12 +180,12 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 
 **Produces:** the design's default/`--verify`/`--help`/`-h` modes; exits 0/1/2/130 as specified. The extracted routine accepts a caller-provided session, report writer, verification selection, and cancellation token; freeze its internal signature with its tests in this tranche.
 
-- [ ] Test help and invalid arguments without opening a terminal; test the actual report routine against deterministic sessions for all twelve status rows, profile facts, concrete plan availability, and unknown/unavailable output.
-- [ ] Test that default reporting performs no explicit verification and `--verify` uses only the three included paths. Assert no mode acquisition, persistent upload, clipboard mutation, raw output, or second reader.
-- [ ] Implement the source-linkable routine and CLI with cancellation/cleanup; execute the same routine in tests. Run headless help in the sample verifier on all frameworks.
-- [ ] Write the advertisement/planning/live-evidence decision guide and current twelve/three matrix, including no-probe values, per-query timing limits, snapshots, and examples of application fallback.
-- [ ] Update current documentation links and sample catalog; retain Ken Arnold attribution and accurate released/development version wording. Keep historical evidence unchanged.
-- [ ] Build/run sample checks on all frameworks, check local Markdown links, and commit.
+- [x] Test help and invalid arguments without opening a terminal; test the actual report routine against deterministic sessions for all twelve status rows, profile facts, concrete plan availability, and unknown/unavailable output.
+- [x] Test that default reporting performs no explicit verification and `--verify` uses only the three included paths. Assert no mode acquisition, persistent upload, clipboard mutation, raw output, or second reader.
+- [x] Implement the source-linkable routine and CLI with cancellation/cleanup; execute the same routine in tests. Run headless help in the sample verifier on all frameworks.
+- [x] Write the advertisement/planning/live-evidence decision guide and current twelve/three matrix, including no-probe values, per-query timing limits, snapshots, and examples of application fallback.
+- [x] Update current documentation links and sample catalog; retain Ken Arnold attribution and accurate released/development version wording. Keep historical evidence unchanged.
+- [x] Build/run sample checks on all frameworks, check local Markdown links, and commit.
 
 **Acceptance:** Documentation teaches the tested contract, and the sample's real paths execute without live-terminal dependence in automated tests.
 
@@ -277,3 +277,13 @@ T201 contract tests first failed 35/35 for missing members. The generation regre
 The 1.19 published-package reflection snapshot reproduces its recorded fingerprint `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`. Comparing it with 1.20 yields exactly nine new read-only Boolean properties and three Boolean methods on `TerminalScreenCapabilities`, with no removed or changed old signatures/enum values. All three new framework snapshots have fingerprint `d308fb6ead5bd24c564d159297e6d08793c08eb4db21418eca6a5563aa5c4cbf`.
 
 The maintainer requested no subagents. Implementation and final review are inline; the briefly started review agent was stopped before completion and provides no review evidence. The final review checks mappings, API compatibility, generation recording, parser/correlation reuse, dependency neutrality, and sample side effects directly.
+
+### Inline review follow-up
+
+The first implementation CI checkpoint (`929318eef2a6dc26c701678e9b54ddbd68bc5a89`, workflow `36301482348`) exposed a syntax error in the expanded sample verifier. Its runtime tests passed 2,464 unit tests and 15 integration tests per framework on macOS before the script failed. The verifier was corrected to build and run headless help once per framework.
+
+Inline review also added `LateKeyboardFlagsCannotVerifyQueuedRequestAfterCancellation`. The test reproduced stale positive keyboard evidence when old flags arrived during the previous cancelled request's late-response ownership and a new probe was already queued. Keyboard flags are now drained but recorded only after the new request's emission begins, using the existing transaction emission delegate and lifecycle admission checks. A negative Kitty backend leaves the independent modifyOtherKeys backend unknown; the regression asserts both backend evidence and aggregate public status. No query scheduler or public contract was added.
+
+The additional three `DisposalTerminatesActivePublicVerification` cases cover concurrent inspection during a pending query, bounded disposal, and failure to restart verification after disposal. A deliberately wrong temporary API fingerprint was rejected as expected. All four local alpha package shards passed against one artifact: package SHA-256 `26494f68880a226058151465b216973bcd8dca03175a16af9cea35beb2a2a477`; symbols `ff8eeb5c1459e48164d6c37f8410c1808f8a22f49221966c8a2647dad64b1bc5`. Those bytes precede the late-keyboard fix and are an intermediate checkpoint, not the final release artifact.
+
+The corrected full local unit suite passes 2,465/2,465 on each of .NET 8, 9, and 10. The corrected sample verifier builds and runs headless help on all three frameworks. T200-T206 are accepted; final package and cross-platform qualification must use the corrected source head.

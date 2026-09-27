@@ -99,6 +99,35 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		await Assert.ThrowsAsync<ObjectDisposedException>( async () => await session.VerifyCapabilityAsync( capability ) );
 	}
 	[Fact]
+	public async Task LateKeyboardFlagsCannotVerifyQueuedRequestAfterCancellation() {
+		ProbeTransport transport = new();
+		ManualMonotonicClock clock = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		using CancellationTokenSource cancellation = new();
+		Task<TerminalCapabilityStatus> first = session.VerifyCapabilityAsync( TerminalCapability.KeyboardReporting, cancellation.Token ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		cancellation.Cancel();
+		await Assert.ThrowsAnyAsync<OperationCanceledException>( () => first );
+		session.InvalidateState();
+		transport.ResetRequest();
+		Task<TerminalCapabilityStatus> fresh = session.VerifyCapabilityAsync( TerminalCapability.KeyboardReporting ).AsTask();
+		// These flags and barrier belong to the cancelled, already-emitted request.
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?1u\u001b[?64;4c" ) );
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( "\u001b[?u\u001b[c", Encoding.ASCII.GetString( transport.GetRequest() ) );
+		// The fresh request gets a barrier without a positive keyboard response.
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?64;4c" ) );
+		TerminalCapabilityStatus result = await fresh.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		// The Kitty backend is negative; the independent modifyOtherKeys backend remains unknown.
+		Assert.Equal( TerminalCapabilitySupport.Unknown, result.Support );
+		TerminalCapabilityResolution kitty = session.GetSemanticCapabilityEvidence().Resolve(
+			TerminalCapabilitySubject.ForProtocolBackend( TerminalProtocolBackend.CsiKittyKeyboard )
+		);
+		Assert.Equal( TerminalCapabilitySupportState.Unsupported, kitty.State );
+		Assert.Equal( TerminalCapabilityEvidenceSource.ProtocolResponse, kitty.EvidenceSource );
+		Assert.False( result.IsUsable );
+	}
+	[Fact]
 	public async Task OkResponseBeforePrimaryDaVerifiesKittyGraphics() {
 		ProbeTransport transport = new();
 		ManualMonotonicClock clock = new();

@@ -139,6 +139,11 @@ internal sealed partial class TerminalInputDecoder {
 }
 
 internal sealed class KittyKeyboardFlagsProbe {
+	private int armed;
+
+	internal bool IsArmed => 0 != Volatile.Read( ref this.armed );
+
+	internal void Arm() => Volatile.Write( ref this.armed, 1 );
 	private int flags = -1;
 
 	internal int? Flags {
@@ -157,6 +162,9 @@ internal sealed class KittyKeyboardFlagsProbe {
 		if ( value is < 0 or > 31 ) {
 			throw new ArgumentOutOfRangeException( nameof( value ) );
 		}
-		Volatile.Write( ref this.flags, value );
+		// Drain flags for the active wire owner, but observe support only after our own emission.
+		if ( this.IsArmed ) {
+			Volatile.Write( ref this.flags, value );
+		}
 	}
 }

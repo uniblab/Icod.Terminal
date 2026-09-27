@@ -77,20 +77,21 @@ public sealed partial class TerminalSession {
 			primaryDa.Span.CopyTo( request.AsSpan( kittyQuery.Length ) );
 
 			try {
-				_ = lifecycleObservation
-					? await this.ExecuteLifecycleObservationQueryAsync(
-						request,
-						TerminalCsiQueryProtocol.PrimaryDeviceAttributesMatcher,
-						KittyKeyboardProbeTimeout,
-						cancellationToken
-					).ConfigureAwait( false )
-					: await this.ExecuteQueryAsync(
-						request,
-						TerminalCsiQueryProtocol.PrimaryDeviceAttributesMatcher,
-						KittyKeyboardProbeTimeout,
-						cancellationToken
-					).ConfigureAwait( false )
-					;
+				TerminalQueryTransactionManager manager = lifecycleObservation
+					? this.GetLifecycleObservationQueryTransactionManager()
+					: this.GetQueryTransactionManager();
+				_ = await manager.ExecuteAsync(
+					async emissionCancellation => {
+						// A queued observer must not consume flags belonging to an older wire owner.
+						probe.Arm();
+						await this.Output.WriteAsync( request, emissionCancellation ).ConfigureAwait( false );
+						await this.Output.FlushAsync( emissionCancellation ).ConfigureAwait( false );
+					},
+					TerminalQueryResponsePlan.ForCompletion( TerminalCsiQueryProtocol.PrimaryDeviceAttributesMatcher ),
+					KittyKeyboardProbeTimeout,
+					TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+					cancellationToken
+				).ConfigureAwait( false );
 			} catch ( TimeoutException ) {
 				this.RecordSemanticBackendEvidence(
 					TerminalProtocolBackend.CsiKittyKeyboard,

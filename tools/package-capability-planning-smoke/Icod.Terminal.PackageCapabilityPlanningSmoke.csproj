@@ -32,5 +32,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Icod.Terminal" Version="$(IcodTerminalPackageVersion)" />
+        <Compile Include="../../samples/Icod.Terminal.CapabilityPlanning.Sample/CapabilityPlanningExample.cs"
+                 Link="CapabilityPlanningExample.cs"
+                 Condition="Exists('../../samples/Icod.Terminal.CapabilityPlanning.Sample/CapabilityPlanningExample.cs')" />
 	</ItemGroup>
 </Project>
