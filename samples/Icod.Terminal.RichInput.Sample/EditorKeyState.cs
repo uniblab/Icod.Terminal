@@ -20,14 +20,36 @@
 */
 namespace Icod.Terminal.RichInput.Sample;
 
+using Icod.Terminal;
+
 /// <summary>Tracks the reported editor keys from one terminal input stream.</summary>
 public sealed class EditorKeyState {
 	public bool LeftHeld { get; private set; }
 	public int ControlInsertRepeats { get; private set; }
 
-	/// <summary>Applies a reported input event and returns whether it changed editor state.</summary>
+	/// <summary>Applies a key with an explicit phase from an active reporting lease.</summary>
+	/// <returns>True when the editor consumed a phased Left or Control+Insert event.</returns>
 	public bool Observe( TerminalInputEvent input ) {
 		ArgumentNullException.ThrowIfNull( input );
+		if ( input.Kind != TerminalInputEventKind.Key ) {
+			return false;
+		}
+		if ( input.Key == TerminalKey.Left ) {
+			if ( input.KeyPhase == TerminalKeyEventPhase.Press ) {
+				this.LeftHeld = true;
+				return true;
+			}
+			if ( input.KeyPhase == TerminalKeyEventPhase.Release ) {
+				this.LeftHeld = false;
+				return true;
+			}
+		}
+		if ( input.Key == TerminalKey.Insert
+			&& input.KeyPhase == TerminalKeyEventPhase.Repeat
+			&& ( input.Modifiers & TerminalKeyModifiers.Control ) == TerminalKeyModifiers.Control ) {
+			this.ControlInsertRepeats = checked( this.ControlInsertRepeats + 1 );
+			return true;
+		}
 		return false;
 	}
 }

@@ -21,6 +21,7 @@
 using System.Globalization;
 using System.Text;
 using Icod.Terminal;
+using Icod.Terminal.RichInput.Sample;
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
 	new TerminalSessionOptions {
@@ -92,6 +93,10 @@ try {
 	);
 	await WriteLineAsync( session, string.Empty );
 
+	// A traditional key can look like a press without reporting a release.
+	// Track held keys only while this session owns modern reporting.
+	EditorKeyState? editor = protocols?.KeyboardReportingMode is not null
+		? new EditorKeyState() : null;
 	bool running = true;
 	while ( running ) {
 		TerminalEvent terminalEvent = await session.ReadEventAsync();
@@ -108,6 +113,11 @@ try {
 					break;
 				}
 				await WriteLineAsync( session, FormatInput( input ) );
+				if ( editor is not null && editor.Observe( input ) ) {
+					await WriteLineAsync( session,
+						$"Editor Left held={editor.LeftHeld}; Control+Insert repeats={editor.ControlInsertRepeats}."
+					);
+				}
 				if ( TerminalInputEventKind.EndOfInput == input.Kind ) {
 					running = false;
 				}
