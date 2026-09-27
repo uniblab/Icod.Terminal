@@ -24,11 +24,16 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using Icod.TermInfo;
+using Icod.Timing;
 using Icod.Terminal.CapabilityPlanning.Sample;
 
 // Test-host fixture only. The linked sample consumes Terminal-owned APIs exclusively.
 internal static class CapabilityPlanningScenario {
-	internal static async Task RunAsync( bool outputAvailable ) {
+	internal static Task RunAsync( bool outputAvailable ) =>
+		RunCoreAsync( outputAvailable ).WaitAsync( TimeSpan.FromSeconds( 30 ) );
+
+	private static async Task RunCoreAsync( bool outputAvailable ) {
+		using CancellationTokenSource deadline = new( TimeSpan.FromSeconds( 20 ) );
 		Transport transport = new();
 		Control control = new( outputAvailable );
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "capability-sample" )
@@ -39,11 +44,11 @@ internal static class CapabilityPlanningScenario {
 		await using TerminalSession session = await TerminalSession.OpenAsync(
 			control, TerminalEndpoint.StandardInput, TerminalEndpoint.StandardOutput, transport, transport,
 			new TerminalSessionOptions { TerminalOverride = terminal, ConfigureOutput = false,
-				ObserveLifecycleEvents = false, RequireInteractiveOutput = false }
+				ObserveLifecycleEvents = false, RequireInteractiveOutput = false, MonotonicClock = new ScriptedClock() }
 		);
 		int modesAfterOpen = control.ModeWrites;
 		using StringWriter report = new();
-		await CapabilityPlanningExample.WriteReportAsync( session, report, false );
+		await CapabilityPlanningExample.WriteReportAsync( session, report, false, deadline.Token );
 		string initial = report.ToString();
 		Require( Enum.GetValues<TerminalCapability>().Length == 12, "Expected twelve capabilities." );
 		foreach ( TerminalCapability capability in Enum.GetValues<TerminalCapability>() ) {
@@ -60,12 +65,12 @@ internal static class CapabilityPlanningScenario {
 		foreach ( TerminalCapability capability in Enum.GetValues<TerminalCapability>() ) {
 			if ( capability is TerminalCapability.KeyboardReporting or TerminalCapability.RasterGraphics or TerminalCapability.PersistentRasterGraphics ) continue;
 			TerminalCapabilityStatus before = session.InspectCapability( capability );
-			TerminalCapabilityStatus after = await session.VerifyCapabilityAsync( capability );
+			TerminalCapabilityStatus after = await session.VerifyCapabilityAsync( capability, deadline.Token );
 			Require( before.Equals( after ), "Inspection-only capability changed: " + capability );
 		}
 		Require( transport.Writes == 0 && transport.Reads == 0, "Inspection-only verification caused I/O." );
 		report.GetStringBuilder().Clear();
-		await CapabilityPlanningExample.WriteReportAsync( session, report, true );
+		await CapabilityPlanningExample.WriteReportAsync( session, report, true, deadline.Token );
 		string verified = report.ToString();
 		Require( verified.Split('\n').Count( line => line.StartsWith( "Verified result:", StringComparison.Ordinal ) ) == 3, "Wrong verification selection." );
 		Require( control.ModeWrites == modesAfterOpen, "Verification enabled a reporting mode." );
@@ -86,6 +91,20 @@ internal static class CapabilityPlanningScenario {
 
 	private static void Require( bool condition, string message ) {
 		if ( !condition ) throw new InvalidOperationException( message );
+	}
+
+	// Canned response tests qualify results, not whether a busy runner meets real-time deadlines.
+	// Production timeout behavior is covered separately with explicitly advanced clocks.
+	private sealed class ScriptedClock : IMonotonicClock {
+		public long GetTimestamp() => 0;
+		public TimeSpan GetElapsedTime( long startingTimestamp, long endingTimestamp ) =>
+			TimeSpan.FromTicks( endingTimestamp - startingTimestamp );
+		public ValueTask DelayAsync( TimeSpan delay, CancellationToken cancellationToken = default ) {
+			if ( delay < TimeSpan.Zero ) throw new ArgumentOutOfRangeException( nameof( delay ) );
+			cancellationToken.ThrowIfCancellationRequested();
+			return delay == TimeSpan.Zero ? ValueTask.CompletedTask
+				: new ValueTask( Task.Delay( Timeout.InfiniteTimeSpan, cancellationToken ) );
+		}
 	}
 
 	private sealed class Transport : ITerminalInput, ITerminalOutput {
