@@ -12,7 +12,7 @@
 
 **Selected scope:** **3 + focused 6 + 10**.
 
-**Status:** T200-T208 accepted. Stable 1.20.0 metadata is prepared; T209 final artifact qualification and maintainer presentation are in progress. The selected scope is complete with no deferred Option 3 deliverable.
+**Status:** T200-T209 complete. Stable 1.20.0 is qualified and ready for maintainer review in PR #65. The selected scope is complete; merge, tag, release creation, and publication remain maintainer actions.
 
 ## Global constraints
 
@@ -224,15 +224,15 @@ Dependencies: T200 precedes implementation. T201 precedes T202. T203 precedes T2
 **Files:** `Directory.Build.props`; root/current documentation; this roadmap; the main roadmap; `CHANGELOG.md`; `docs/releases/1.20.0.md`; the new 1.20 API baseline.
 
 - [x] Set stable `1.20.0` metadata only after T200-T208 acceptance; synchronize README, changelog, release notes, and roadmap status.
-- [ ] Rebuild and qualify the final stable candidate; record exact source/merge identities, CI jobs, package/symbol hashes, and each framework's API fingerprint.
-- [ ] Confirm package contents and public compatibility against 1.19; distinguish historical checkpoints from final artifacts.
-- [ ] Present the completed PR for maintainer review. Merge, tag, GitHub Release, and publication are separate maintainer actions.
+- [x] Rebuild and qualify the final stable candidate; record exact source/merge identities, CI jobs, package/symbol hashes, and each framework's API fingerprint.
+- [x] Confirm package contents and public compatibility against 1.19; distinguish historical checkpoints from final artifacts.
+- [x] Present the completed PR for maintainer review. Merge, tag, GitHub Release, and publication are separate maintainer actions.
 
 **Acceptance:** Reviewable stable release candidate with complete evidence; no claim of publication before it occurs.
 
 ## Verification commands
 
-Run from the repository root using the repository's supported .NET SDK and PowerShell. These are implementation gates, not claims that the planning-only PR ran or passed them.
+Run from the repository root using the repository's supported .NET SDK and PowerShell. These commands reproduce the qualification gates; the evidence below identifies the accepted source heads and artifacts.
 
 ```powershell
 # Focused profile/planner and capability/query suites; dotnet test covers all project TFMs.
@@ -309,3 +309,25 @@ T200-T208 are accepted at head `af48b77f4506c70fd000d927c296aa96af8a81d6`, synth
 | Validated artifact | `108572895640` |
 
 Candidate artifact `10926096794` contains package SHA-256 `dc0d77c6fd0b3c4fc484f81d2b5e3a3b102c8d22a285a4a762dcaf81a26a2f14`, symbol-package SHA-256 `53edeb32b080e599df01c0a96d87cb994eb55439099c4fd8cb50609d0391c330`, and three equal API snapshots (`d308fb6ead5bd24c564d159297e6d08793c08eb4db21418eca6a5563aa5c4cbf`). These are the accepted alpha implementation bytes, explicitly distinct from the forthcoming stable 1.20.0 artifact. Inline review findings are resolved; no requirement was silently deferred. Stable metadata changes below do not change runtime behavior or public signatures.
+
+## Stable candidate qualification
+
+T209 is accepted at stable source head `8f54183780fa19c8b87148174e0c127d0ff62b23`, synthetic PR merge `c7dbbe09e92b45073a62da3abb334c329d17b14f`. All nine jobs in [workflow 36302907074 / #2016](https://github.com/uniblab/Icod.Terminal/actions/runs/36302907074) passed. Windows, Linux, and macOS each pass 2,465 unit tests and 15 optional integration tests per framework, together with the source sample builds/help and retained downstream checks.
+
+| Gate | Job | Result |
+| --- | --- | --- |
+| Package candidate | `108573827063` | success |
+| Runtime macOS | `108573827161` | success |
+| Runtime Linux | `108573827187` | success |
+| Runtime Windows | `108573827195` | success |
+| Package Presentation | `108573973459` | success |
+| Package Semantic and hardening | `108573973480` | success |
+| Package Stable 1.x release line | `108573973503` | success |
+| Package Foundation | `108573973508` | success |
+| Validated package artifact | `108574217461` | success |
+
+Candidate artifact `10926168477` and validated artifact `10926630056` identify the same qualified package/API payload. The extracted stable `Icod.Terminal.1.20.0.nupkg` has SHA-256 `15fa3213d0af3807d02a109d185b07aefbb3c7fcf2f8f65ec9914c491737395b`; `Icod.Terminal.1.20.0.snupkg` has SHA-256 `35abb3ebfba99e774ee24c0b99e5363719152e1affee3027ef104f6e967a4690`. Each API snapshot is `d308fb6ead5bd24c564d159297e6d08793c08eb4db21418eca6a5563aa5c4cbf`.
+
+The stable release-line gate checked the packed README, stable version/install command, curated release notes, changelog, dependencies, symbols, and compatibility. The other three shards retain every existing package gate; the release shard retains DCurses 1.6.0, DCurses 2.2.0, the Terminal-only renderer, and executed screen-sample acceptance. The profile/sample consumer also runs the actual capability helper against the fresh stable package. Historical API baselines are unchanged.
+
+This documentation closure records the accepted stable checkpoint and changes no runtime or package contract. The current documentation head is still subject to the same nine CI jobs before merge; [PR #65](https://github.com/uniblab/Icod.Terminal/pull/65) records its exact final head and artifact hashes after validation. The hashes above are this named checkpoint's bytes, not a claim about a later merge or publication. All selected requirements are complete; review was inline, and no Option 3 deliverable was deferred.

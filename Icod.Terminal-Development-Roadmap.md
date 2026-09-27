@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.19.0` — Screen-output planning and downstream hardening
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.20 implementation accepted; stable 1.20.0 release qualification in PR #65; merge and publication remain maintainer actions
+- **Development status:** 1.20.0 implementation and stable qualification complete in PR #65; ready for maintainer merge and publication
 - **Active development target:** `1.20.0` — Profile and capability decisions
 - **Selected scope:** 3 + focused 6 + 10 — terminal-profile refinement, existing capability-verification hardening, and documentation/samples
 - **Stable compatibility floor:** `1.0.0`
@@ -326,7 +326,7 @@ T208  cross-platform regression, review, and scope reconciliation
 T209  stable 1.20.0 release closure and exact evidence
 ```
 
-T200-T209 are pending. The planning PR keeps production code, package version, and released API baselines unchanged. The first implementation tranche reviews the proposed additive profile API and establishes `1.20.0-alpha.1`; final 1.20 API evidence is generated after implementation. Existing no-probe capability cases remain no-probe: this selection does not authorize a new query family, router redesign, or background discovery.
+T200-T209 are complete. The stable 1.20.0 package passed the Windows/Linux/macOS runtime matrix and all four package shards. The additive API, generation and late-response fixes, actual capability sample, documentation, and exact source/artifact evidence are recorded in the [accepted release checkpoint](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification). Existing no-probe capability cases remain no-probe: this selection does not authorize a new query family, router redesign, or background discovery.
 
 Authorities:
 
