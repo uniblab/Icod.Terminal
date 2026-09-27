@@ -44,6 +44,83 @@ internal sealed class TerminalPresentationManager {
 		this.session = session;
 	}
 
+	/// <summary>Reserves the lease-owned cursor state for one screen transaction.</summary>
+	internal async ValueTask<FrameCursorVisibilityReservation> ReserveFrameCursorVisibilityAsync(
+		TerminalCursorVisibility visibility,
+		CancellationToken cancellationToken
+	) {
+		if ( !Enum.IsDefined( visibility ) ) {
+			throw new ArgumentOutOfRangeException( nameof( visibility ) );
+		}
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			this.ThrowIfClosed();
+			if ( this.suspended || !this.appliedKnown || this.IsInvalidated ) {
+				throw new InvalidOperationException(
+					"The current cursor presentation is not known or the session is suspended."
+				);
+			}
+
+			string? enter = this.GetCursorCapability( visibility );
+			TerminalCursorVisibility? effective = this.appliedState.CursorVisibility;
+			string? restore = effective.HasValue
+				? this.GetCursorCapability( effective.Value )
+				: this.GetBaselineCursorCapability();
+			if ( enter is null || restore is null ) {
+				throw new InvalidOperationException(
+					"The terminal does not advertise both cursor entry and restoration capabilities."
+				);
+			}
+			return new FrameCursorVisibilityReservation( this, enter, restore );
+		} catch {
+			this.gate.Release();
+			throw;
+		}
+	}
+
+	/// <summary>Holds the presentation gate until cursor cleanup has completed.</summary>
+	internal sealed class FrameCursorVisibilityReservation : IDisposable {
+		private TerminalPresentationManager? owner;
+		private readonly string enter;
+		private readonly string restore;
+
+		internal FrameCursorVisibilityReservation(
+			TerminalPresentationManager owner,
+			string enter,
+			string restore
+		) {
+			this.owner = owner;
+			this.enter = enter;
+			this.restore = restore;
+		}
+
+		internal ValueTask EnterAsync() => this.WriteAsync( this.enter );
+
+		internal ValueTask RestoreAsync() => this.WriteAsync( this.restore );
+
+		internal void Invalidate() {
+			TerminalPresentationManager manager = this.owner
+				?? throw new ObjectDisposedException( nameof( FrameCursorVisibilityReservation ) );
+			manager.appliedKnown = false;
+			manager.MarkInvalidated();
+		}
+
+		private ValueTask WriteAsync( string capability ) {
+			TerminalPresentationManager manager = this.owner
+				?? throw new ObjectDisposedException( nameof( FrameCursorVisibilityReservation ) );
+			// CommitAsync already holds the sole output gate. A manager write that
+			// reacquires it would deadlock against this reservation.
+			return manager.session.WriteTerminalStringCoreAsync(
+				capability, 1, CancellationToken.None
+			);
+		}
+
+		public void Dispose() {
+			TerminalPresentationManager? manager = Interlocked.Exchange( ref this.owner, null );
+			manager?.gate.Release();
+		}
+	}
+
 	internal async ValueTask<TerminalControlResult<TerminalPresentationLease>> AcquireAsync(
 		TerminalPresentationOptions options,
 		CancellationToken cancellationToken

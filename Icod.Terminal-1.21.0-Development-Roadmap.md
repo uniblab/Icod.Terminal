@@ -2,7 +2,7 @@
 
 **Goal:** Close demonstrated keyboard/rich-input consumer gaps and let a screen-output transaction temporarily compose cursor visibility with a frame while preserving presentation-lease ownership.
 
-**Status:** Planning in PR for 1.21.0. No 1.21 implementation or release qualification is claimed. The released baseline is 1.20.0.
+**Status:** Implementation under way in PR #66. No 1.21 release qualification is claimed. The released baseline is 1.20.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible packaging scripts and cmd/sh. No new tooling dependency.
 
@@ -40,6 +40,21 @@ For keyboard expansion, T2100 must produce a concrete fixture and downstream con
 - [ ] Update the task inventory if evidence changes spelling or file placement, preserving both selected outcomes. Set prerelease metadata only when implementation begins.
 
 **Acceptance:** Reviewed input fixture and visibility state/ordering table, additive API proposal, and no guessed baseline or duplicate current feature.
+
+**Contract decision (implementation checkpoint):** The input increment is Kitty's legacy-functional CSI forms with event-type suffixes, for example `CSI 1;1:3 D` (Left release) and `CSI 2;5:2 ~` (Control+Insert repeat). These forms carry semantic phases in the existing `TerminalInputEvent` shape; the 1.20 decoder only recognizes `CSI u` and xterm modifyOtherKeys `CSI ~` and otherwise falls through to terminfo. A text editor needs the release/hold distinction for navigation. Decode the fixed Kitty functional-key alphabet `A B C D E F H P Q S` and the standard numeric `~` keys with an explicit `modifier:phase`; exclude `R` (cursor-position reply ambiguity), unknown keys, and frames without a phase suffix. The existing 4,096-byte frame limit and `TerminalKey`/`TerminalKeyEventPhase` are sufficient; there is no new public input type or protocol mutation. Canonical CSI-u and traditional terminfo keys retain their current paths. The upstream [Kitty keyboard grammar](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) is the wire reference; tests must show failing bytes and recover after invalid frames.
+
+**Visibility decision:** Add a single optional transaction builder request `SetCursorVisibilityForCommit(TerminalCursorVisibility visibility)`. Its setting is side-effect-free and one request surrounds all existing frame items. `CommitAsync` rejects unsupported entry or return capabilities with `InvalidOperationException` before writing, matching existing transaction conventions. The effective prior cursor value comes from the presentation manager, never from a guessed physical read. Acquire the shared state-composition reservation and presentation manager's gate before the hyperlink and synchronized-output reservations and the screen output epoch gate. The manager reservation must never reacquire its own gate or the output gate while writing under the screen output lease. For a known presentation state, enter the requested capability; restore the manager's effective cursor owner or ordinary capability after the frame. On failure, attempt uncancelled restoration, report both frame and cleanup failures, and invalidate manager certainty if restoration cannot be established. Persistent cursor requests stay lease-owned. This design does not claim physical-terminal rollback.
+
+**Environment:** The planning workspace has no local `dotnet` or PowerShell executable. Record focused RED/GREEN evidence and full matrix from the repository's GitHub Actions workflow at exact commit heads. Do not mark a gate complete merely because source review predicts it.
+
+**T2100 baseline:** Parent `main` is `8aa6d0543a3d48d6ec28c84f930da35282703b4a` (merged PR #65); `v1.20.0` is published. Existing input includes terminfo navigation/function/modifier decoding, Kitty CSI-u press/repeat/release and associated text, xterm modifyOtherKeys decode-only, SGR mouse, focus, and bracketed paste. Existing screen transactions are single-use, epoch-bound, and capped at 65,536 items/64 MiB. Current release matrix is net8/net9/net10 on Windows/Linux/macOS plus the four package shards. No input enum or new protocol negotiation is required for the chosen gap.
+
+| Owner or gate | Existing lock/order | 1.21 visibility obligation |
+| --- | --- | --- |
+| Shared state composition | Serializes input lease and presentation changes, including screen-local Kitty handoff. | Hold across an opt-in frame; never acquire it from a manager method already under the gate. |
+| Presentation manager | Its gate protects the lease set, effective cursor owner, and known/invalidated state. | Reserve before output; validate request and restoration from advertised capabilities; update certainty only after truthful cleanup. |
+| Hyperlink and synchronized managers | Their reservations are acquired before the output gate and retained through cleanup. | Keep the existing relative order after the presentation reservation. |
+| Session output epoch/gate | Rejects stale frame before writing, then serializes committed bytes. | Emit visibility entry/body/return while holding exactly this output lease; never acquire another output lease within it. |
 
 ### T2101 — Input contract and adversarial fixtures
 

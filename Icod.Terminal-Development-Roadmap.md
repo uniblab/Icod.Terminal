@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.20.0` — Profile and capability decisions
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.20.0 merged and published; 1.21.0 scope and implementation roadmap proposed in a planning PR
+- **Development status:** 1.20.0 merged and published; 1.21.0 implementation in progress in PR #66
 - **Active development target:** `1.21.0` — Rich input and cursor visibility
 - **Selected scope:** Rich input and keyboard expansion + Cursor-visibility composition with screen transactions
 - **Stable compatibility floor:** `1.0.0`

@@ -204,6 +204,37 @@ public sealed class TerminalPresentationLeaseTests {
 		Assert.Empty( output.WriteAttempts );
 	}
 
+	[Fact]
+	public async Task FailedFrameRestoresVisibilityAndSurfacesOriginalFailure() {
+		RecordingTerminalOutput output = new() { FailOnValue = "frame" };
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "frame" );
+
+		await Assert.ThrowsAsync<IOException>( () => frame.CommitAsync().AsTask() );
+		Assert.Equal( new[] { "<C0>", "frame", "<C1>" }, output.WriteAttempts );
+		Assert.Equal( new[] { "<C0>", "<C1>" }, output.SuccessfulWrites );
+		Assert.Equal( 1, output.FlushCount );
+	}
+
+	[Fact]
+	public async Task StaleVisibilityTransactionCannotHideCursor() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			CreatePresentationTerminal(), output
+		);
+		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		frame.WriteText( "stale" );
+		await session.WriteTextAsync( "prior" );
+
+		await Assert.ThrowsAsync<InvalidOperationException>( () => frame.CommitAsync().AsTask() );
+		Assert.Equal( new[] { "prior" }, output.SuccessfulWrites );
+	}
+
 	/// <summary>Verifies missing TermInfo transitions are controlled rather than guessed.</summary>
 	[Fact]
 	public async Task MissingCapabilityReturnsUnavailableWithoutAnsiFallback() {

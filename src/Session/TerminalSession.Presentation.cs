@@ -26,6 +26,14 @@ namespace Icod.Terminal;
 public sealed partial class TerminalSession {
 	private readonly TerminalPresentationManager presentationManager;
 
+	internal ValueTask<TerminalPresentationManager.FrameCursorVisibilityReservation>
+		ReserveScreenCursorVisibilityAsync(
+			TerminalCursorVisibility visibility,
+			CancellationToken cancellationToken
+		) => this.presentationManager.ReserveFrameCursorVisibilityAsync(
+			visibility, cancellationToken
+		);
+
 	/// <summary>
 	/// Acquires one reversible set of terminal presentation-state requirements.
 	/// </summary>
