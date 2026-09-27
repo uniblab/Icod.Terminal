@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.18.0` — Unknown-rendition baseline recovery
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.18.0 released; 1.19.0 alpha checkpoint passed all nine CI jobs; review fixes locally qualified; stable-candidate validation in progress on PR #64
+- **Development status:** 1.18.0 released; 1.19.0 stable candidate qualified through T190-T199 with all nine CI jobs passed on PR #64; ready for maintainer release action
 - **Active development target:** `1.19.0` — Downstream screen-output hardening and semantic planner expansion
 - **Selected scope:** Option 1 + Option 2 + Option 4 + Option 10
 - **Stable compatibility floor:** `1.0.0`
@@ -25,7 +25,9 @@ The published feature line uses production `Icod.TermInfo 1.15.0` and optional t
 
 Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
 
-Version 1.18.0 was merged through PR #63 at `3e150377db990141aa6903631a8b95cb2c41116e` and tagged `v1.18.0`. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete. The active development target is now 1.19.0; PR #64 contains the stable candidate, with release qualification still in progress.
+Version 1.18.0 was merged through PR #63 at `3e150377db990141aa6903631a8b95cb2c41116e` and tagged `v1.18.0`. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete.
+
+Version 1.19.0 is the qualified stable candidate on [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64). Source head `d7e2906e574f6d1b8024626828a46718d52c749b` passed all nine jobs in [workflow 36290312908](https://github.com/uniblab/Icod.Terminal/actions/runs/36290312908), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. The [1.19 roadmap](Icod.Terminal-1.19.0-Development-Roadmap.md#stable-candidate-qualification) records exact jobs, artifacts, hashes, accepted scope, and qualification limits. This accepts T190-T199 as a development candidate; merge, tagging, release creation, and publication remain separate maintainer actions.
 
 ## Current architecture
 

@@ -10,7 +10,7 @@
 
 **Spec:** [Selected 1.19 scope in the main roadmap](Icod.Terminal-Development-Roadmap.md#119-development-line--downstream-screen-output-hardening-and-planner-expansion), together with the scope and constraints below.
 
-**Status:** T190-T198 implementation/review locally qualified and alpha checkpoint accepted; T199 stable-candidate qualification in progress. Candidate identity: `1.19.0`; not published.
+**Status:** T190-T199 accepted for the qualified stable candidate recorded below. Candidate identity: `1.19.0`; ready for maintainer release action, not published.
 
 **Baseline:** Released `1.18.0`, tag `v1.18.0`, merge commit `3e150377db990141aa6903631a8b95cb2c41116e`.
 
@@ -64,7 +64,35 @@ This release improves the existing screen-output contract. It does not establish
 - The sample smoke path is hosted by the package verifier rather than a sample `--smoke` switch, preserving the Terminal-only sample source boundary. The sample demonstrates a single frame and unsupported mandatory plans; exceptions propagate to the host. A larger sample-owned recovery loop remains deferred; the guide and downstream harness cover caller-driven recovery.
 - Local package scripts use a temporary single-process invocation wrapper because this environment restricts multi-node MSBuild IPC. CI runs the repository scripts normally. Local staging package hashes are not represented as CI artifact hashes. The PR matrix covers Windows/Linux/macOS; this checkpoint does not claim a new six-runner x64/ARM64 distribution run.
 
-The final stable-candidate workflow and artifact identities must be recorded before T199 acceptance. No merge, tag, GitHub Release, or package publication is part of this development checkpoint.
+### Stable candidate qualification
+
+The stable source head is `d7e2906e574f6d1b8024626828a46718d52c749b`. [PR workflow #2007 / run 36290312908](https://github.com/uniblab/Icod.Terminal/actions/runs/36290312908) passed all nine jobs against GitHub's PR merge commit `12b451af8d4220db300ba7d6fb08b4c3045d1079`, also recorded in the package's repository metadata. Windows, Linux, and macOS each passed 2,402 unit tests and 15 integration tests on each of `net8.0`, `net9.0`, and `net10.0`, with zero failures or skips. This record is a later documentation update and does not describe its own head as the source of these artifacts.
+
+| Job | Identifier | Result |
+| --- | --- | --- |
+| Package candidate | `108539002665` | Passed |
+| Runtime Linux | `108539002789` | Passed |
+| Runtime macOS | `108539002806` | Passed |
+| Runtime Windows | `108539002838` | Passed |
+| Package Foundation | `108539116345` | Passed |
+| Package Presentation | `108539116411` | Passed |
+| Package Semantic and hardening | `108539116351` | Passed |
+| Package Stable 1.x release line | `108539116322` | Passed |
+| Validated package artifact | `108539371285` | Passed |
+
+The candidate artifact is `10921924232` (`icod-terminal-pr-package-candidate`, archive SHA-256 `20d6acd4f4865a2c7bb036e9d6571b2124b41a8cf90c90998beac60ac002e1d8`). The validated copy is `10922345401` (`icod-terminal-pr-packages`, archive SHA-256 `f8566e05c35f6377949e73c15d6777c92a1fe72e09bd7616856612701b380abe`). The archives contain the same package files and API snapshots; archive hashes differ because the upload steps create separate ZIPs. These CI artifacts have seven-day retention.
+
+Hashes measured from the downloaded CI candidate, not a local rebuild:
+
+| File | SHA-256 |
+| --- | --- |
+| `Icod.Terminal.1.19.0.nupkg` | `1a4bb19b9ef2ece83200e14d05b65effdb7c8adbb19f6ce8f05b632f56dbfed1` |
+| `Icod.Terminal.1.19.0.snupkg` | `8527f3755970343b47ffc81fc389230f9308d906bdfd4ef00ce1b7de294166c3` |
+| Each of the three public API snapshots | `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d` |
+
+All four package shards consume the same candidate artifact. The semantic shard runs isolated restores of DCurses 1.6.0, the controlled Terminal-only renderer, DCurses 2.2.0, and the actual sample frame on all three frameworks. The legacy witness checks eight complete ownership cycles, exact mode apply/restore counts, ordered cleanup, and inert disposal of stale leases. The new renderer witness checks 16 resize/repaint iterations, with committed transport failure and recovery every fourth iteration. Existing transaction tests separately cover cancellation before admission and after commitment, noninterleaving, reservation release, and primary/cleanup failure ordering; concurrency/recovery waits in the hardening tests use five-second bounds. The downstream loops have fixed iteration counts and remain subject to the enclosing CI job timeout rather than a new per-loop wall-clock deadline. This is bounded ownership/recovery evidence, not a heap-growth benchmark or long-duration soak.
+
+The qualification covers the existing three-OS PR matrix. A fresh six-runner x64/ARM64 distribution workflow, physical-terminal emulator certification, and performance benchmarking are not claimed. Cursor-visibility composition and a sample-owned automatic recovery loop remain deferred as described above. No merge, tag, GitHub Release, or package publication is part of this checkpoint.
 
 T190 baseline: planning head `8d47c06a3a4260c0b0ad8c9ac7c1b5923fccd99c` passed the full PR workflow [36288163471](https://github.com/uniblab/Icod.Terminal/actions/runs/36288163471). Local Linux baseline execution passed 2,383 unit tests and 15 integration tests on each of net8.0, net9.0, and net10.0; a three-framework baseline package was built. Local multi-node MSBuild is restricted by the execution environment, so local commands use single-process builds; CI retains authority for cross-platform and package gates. The unchanged 1.18 API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
@@ -195,8 +223,8 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 - [x] Review the API diff against 1.18; preserve all existing members and enum values. Freeze matching snapshots for all three frameworks, even if the resulting API is unchanged, and update the active baseline selector.
 - [x] Prove the verifier rejects a deliberately mismatched fingerprint in a temporary fixture; restore the accepted baseline before committing.
-- [ ] Build one candidate package and run every existing contract shard against that artifact. Verify XML documentation, package metadata, license, symbols, and production dependency graph.
-- [ ] Run all T191 consumers from isolated package restores against the exact candidate version, plus the new sample smoke path. Record framework, package SHA-256, source SHA, and consumer versions; commit acceptance evidence.
+- [x] Build one candidate package and run every existing contract shard against that artifact. Verify XML documentation, package metadata, license, symbols, and production dependency graph.
+- [x] Run all T191 consumers from isolated package restores against the exact candidate version, plus the new sample smoke path. Record framework, package SHA-256, source SHA, and consumer versions; commit acceptance evidence.
 
 **Exit:** Source, public API, documented API, and fresh-package consumers agree; no project-reference success substitutes for package evidence.
 
@@ -204,10 +232,10 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Files:** `.github/workflows/pull-request.yaml` and relevant packaging verifiers only where required to include the new evidence; this roadmap for accepted results.
 
-- [ ] Pass the full unit and TermInfo integration suites for all three frameworks on Windows, Linux, and macOS through the existing PR matrix.
-- [ ] Run bounded repeated refresh/recovery/close workloads with cancellation and transport failures. Assert no retained ownership growth, deadlock, or output interleaving; record iteration limits and timeouts.
+- [x] Pass the full unit and TermInfo integration suites for all three frameworks on Windows, Linux, and macOS through the existing PR matrix.
+- [x] Run bounded repeated refresh/recovery/close workloads, supplemented by deterministic cancellation and transport-failure tests. Assert balanced ownership/cleanup and no deadlock or output interleaving; record iteration limits, timeouts, and the limits of the soak evidence.
 - [x] Obtain independent review of planner fallback assumptions, presentation ownership if changed, commitment/cleanup rules, and package witness execution. Resolve material findings with focused regression evidence.
-- [ ] Record the exact tested head and workflow/job/artifact identifiers; qualify the existing x64/ARM64 distribution matrix before claiming that release coverage. Commit the qualification record without describing an untested later head as tested.
+- [x] Record the exact tested head and workflow/job/artifact identifiers, limiting the claim to the exercised PR matrix. A fresh six-runner x64/ARM64 distribution run remains a prerequisite to claiming that additional coverage. Commit the qualification record without describing an untested later head as tested.
 
 **Exit:** All required gates are green with traceable artifacts and no unresolved release-blocking findings.
 
@@ -216,9 +244,9 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 **Files:** `Directory.Build.props`; `Icod.Terminal.csproj`; `README.md`; `CHANGELOG.md`; `docs/Compatibility-and-Versioning.md`; create `docs/releases/1.19.0.md`; update both roadmaps.
 
 - [x] Synchronize release notes, packaged README, compatibility guidance, sample links, accepted/deferred scope, and final API/dependency evidence.
-- [ ] Remove the prerelease suffix only after implementation qualification; build and validate the resulting stable candidate, including the final metadata changes.
-- [ ] Record source commit, API fingerprint, package/symbol hashes, workflow runs, artifacts, test results, consumer versions, and remaining limitations. Advance roadmap status only to the stage actually reached.
-- [ ] Present the qualified stable candidate for maintainer release action. Merge, tag, GitHub Release, and publication are distinct actions from this planning PR.
+- [x] Remove the prerelease suffix only after implementation qualification; build and validate the resulting stable candidate, including the final metadata changes.
+- [x] Record source commit, API fingerprint, package/symbol hashes, workflow runs, artifacts, test results, consumer versions, and remaining limitations. Advance roadmap status only to the stage actually reached.
+- [x] Present the qualified stable candidate for maintainer release action. Merge, tag, GitHub Release, and publication are distinct actions from this planning PR.
 
 **Exit:** A reviewable, reproducibly qualified 1.19.0 candidate with accurate release-facing documentation.
 
