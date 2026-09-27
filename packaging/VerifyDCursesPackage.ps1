@@ -145,10 +145,19 @@ New-Item -ItemType Directory -Path $acceptanceRoot -Force | Out-Null
 $primaryError = $null
 try {
 	$stableRoot = Join-Path $acceptanceRoot 'stable'
-	$futureRoot = Join-Path $acceptanceRoot 'future'
+	$futureRoot = Join-Path $acceptanceRoot 'dcurses-screen-contracts-acceptance'
+	$screenOutputRoot = Join-Path $acceptanceRoot 'dcurses-screen-output-acceptance'
 	$futureSourceRoot = Join-Path $repositoryRoot 'tools/dcurses-screen-contracts-acceptance'
 	New-Item -ItemType Directory -Path $stableRoot -Force | Out-Null
 	New-Item -ItemType Directory -Path $futureRoot -Force | Out-Null
+	New-Item -ItemType Directory -Path $screenOutputRoot -Force | Out-Null
+	foreach ( $file in @('Icod.Terminal.DCursesScreenOutputAcceptance.csproj', 'Program.cs') ) {
+		Copy-Item -LiteralPath ( Join-Path $repositoryRoot "tools/dcurses-screen-output-acceptance/$file" ) `
+			-Destination ( Join-Path $screenOutputRoot $file )
+	}
+	$sampleSource = Join-Path $screenOutputRoot 'ScreenOutputExample.cs'
+	Copy-Item -LiteralPath ( Join-Path $repositoryRoot 'samples/Icod.Terminal.ScreenOutput.Sample/ScreenOutputExample.cs' ) `
+		-Destination $sampleSource
 
 	Copy-Item `
 		-LiteralPath ( Join-Path $repositoryRoot 'tools/dcurses-package-acceptance/Icod.Terminal.DCursesPackageAcceptance.csproj' ) `
@@ -184,6 +193,7 @@ try {
 
 	$stableProject = Join-Path $stableRoot 'Icod.Terminal.DCursesPackageAcceptance.csproj'
 	$futureProject = Join-Path $futureRoot 'Icod.Terminal.DCursesScreenContractsAcceptance.csproj'
+	$screenOutputProject = Join-Path $screenOutputRoot 'Icod.Terminal.DCursesScreenOutputAcceptance.csproj'
 	Assert-FutureConsumerBoundary `
 		-ProjectPath $futureProject `
 		-SourceRoot ( Join-Path $futureRoot 'Source' ) `
@@ -192,7 +202,7 @@ try {
 	$oldNuGetPackages = $env:NUGET_PACKAGES
 	$env:NUGET_PACKAGES = Join-Path $acceptanceRoot 'packages'
 	try {
-		foreach ( $project in @($stableProject, $futureProject) ) {
+		foreach ( $project in @($stableProject, $futureProject, $screenOutputProject) ) {
 			Invoke-DotNet -Arguments @(
 				'restore',
 				$project,
@@ -200,6 +210,7 @@ try {
 				'--configfile',
 				$nugetConfig,
 				"-p:IcodTerminalPackageVersion=$ExpectedVersion",
+				"-p:ScreenOutputSampleSource=$sampleSource",
 				"-p:Configuration=$Configuration"
 			)
 		}
@@ -232,6 +243,13 @@ try {
 				'--no-restore',
 				"-p:IcodTerminalPackageVersion=$ExpectedVersion"
 			)
+
+			Write-Host "=== Executed screen output and published DCurses 2.2.0: $framework ==="
+			Invoke-DotNet -Arguments @(
+				'run', '--project', $screenOutputProject, '-c', $Configuration,
+				'-f', $framework, '--no-restore', "-p:IcodTerminalPackageVersion=$ExpectedVersion",
+				"-p:ScreenOutputSampleSource=$sampleSource"
+			)
 		}
 	} finally {
 		$env:NUGET_PACKAGES = $oldNuGetPackages
@@ -256,4 +274,4 @@ if ( $null -ne $primaryError ) {
 	throw $primaryError
 }
 
-Write-Host "Stable Icod.DCurses 1.6.0 and future screen-contract package acceptance completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Icod.DCurses 1.6.0/2.2.0 and executed Terminal-only screen-contract acceptance completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

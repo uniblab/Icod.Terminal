@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.18.0 adds safe unknown-rendition baseline planning for Terminal-only screen consumers. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.18.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.19.0-alpha.1 develops downstream screen-output hardening, semantic planner expansion, transaction qualification, and consumer documentation. Development roadmap: https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-1.19.0-Development-Roadmap.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

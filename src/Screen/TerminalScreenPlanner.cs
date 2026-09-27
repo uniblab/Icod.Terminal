@@ -142,6 +142,40 @@ public sealed class TerminalScreenPlanner {
 			}
 		}
 
+		// Append complete routes after existing candidates so equal costs retain
+		// their historical discovery order. Prefixes establish the required origin.
+		TerminalScreenOperationPlan? home = this.CreateLiteral(
+			TerminalScreenOperationKind.CursorMove, StringCapability.CursorHome, 1
+		);
+		TerminalScreenOperationPlan? carriageReturn = current.HasValue
+			&& current.Value.Row == target.Row
+			? this.CreateLiteral( TerminalScreenOperationKind.CursorMove, StringCapability.CarriageReturn, 1 )
+			: null;
+		if ( home.HasValue || carriageReturn.HasValue ) {
+			TerminalScreenOperationPlan? fromColumnZero = this.PlanRelativeAxis(
+				target.Column,
+				StringCapability.CursorLeft, StringCapability.CursorLeftOne,
+				StringCapability.CursorRight, StringCapability.CursorRightOne
+			);
+			if ( fromColumnZero.HasValue ) {
+				if ( home.HasValue ) {
+					TerminalScreenOperationPlan? fromRowZero = this.PlanRelativeAxis(
+						target.Row,
+						StringCapability.CursorUp, StringCapability.CursorUpOne,
+						StringCapability.CursorDown, StringCapability.CursorDownOne
+					);
+					if ( fromRowZero.HasValue ) {
+						ChooseBetter( ref best, Combine(
+							Combine( home.Value, fromRowZero.Value ), fromColumnZero.Value
+						) );
+					}
+				}
+				if ( carriageReturn.HasValue ) {
+					ChooseBetter( ref best, Combine( carriageReturn.Value, fromColumnZero.Value ) );
+				}
+			}
+		}
+
 		return best;
 	}
 

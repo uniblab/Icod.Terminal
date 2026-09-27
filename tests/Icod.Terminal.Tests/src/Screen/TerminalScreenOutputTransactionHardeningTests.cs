@@ -27,6 +27,24 @@ using Xunit;
 
 /// <summary>Hardens the bounded T176 screen-output transaction foundation.</summary>
 public sealed class TerminalScreenOutputTransactionHardeningTests {
+	[Fact]
+	public async Task DimensionObservationPreservesPendingComposedPlanTransaction() {
+		RecordingTerminalOutput output = new();
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "dimension-observation" )
+			.SetString( StringCapability.CursorHome, "H" )
+			.SetString( StringCapability.CursorRight, "R%p1%d" )
+			.Build();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal, liveSize: true );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.Add( session.Screen.PlanCursorMove( null, new TerminalScreenPosition( 0, 2 ) )
+			?? throw new InvalidOperationException() );
+		transaction.WriteText( "X" );
+		Assert.True( session.GetDimensions().GetRequiredValue().Columns > 0 );
+		Assert.Empty( output.GetCombinedWrites() );
+		await transaction.CommitAsync();
+		Assert.Equal( Encoding.Latin1.GetBytes( "HR2X" ), output.GetCombinedWrites() );
+	}
+
 	private const int MaximumItemCount = 65_536;
 
 	[Fact]
@@ -688,14 +706,15 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		RecordingTerminalOutput output,
-		TerminalDescription? terminalOverride = null
+		TerminalDescription? terminalOverride = null,
+		bool liveSize = false
 	) {
 		ArgumentNullException.ThrowIfNull( output );
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "screen-output-hardening" )
 			.SetString( StringCapability.Bell, "<bell>" )
 			.Build();
 		return TerminalSession.OpenAsync(
-			new TestTerminalControlProvider(),
+			new TestTerminalControlProvider( liveSize ),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			new TestTerminalInput(),
@@ -848,7 +867,7 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 		}
 	}
 
-	private sealed class TestTerminalControlProvider : ITerminalControlProvider {
+	private sealed class TestTerminalControlProvider( bool liveSize ) : ITerminalControlProvider {
 		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
 			0,
 			0,
@@ -874,6 +893,7 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 					TerminalControlCapabilities.Attachment
 						| TerminalControlCapabilities.ModeRead
 						| TerminalControlCapabilities.ModeWrite
+						| ( liveSize ? TerminalControlCapabilities.LiveSize : TerminalControlCapabilities.None )
 				)
 			);
 		}
@@ -882,9 +902,9 @@ public sealed class TerminalScreenOutputTransactionHardeningTests {
 			TerminalEndpoint endpoint
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
-			return TerminalControlResult<TerminalSize>.Unavailable(
-				"No scripted live size."
-			);
+			return liveSize
+				? TerminalControlResult<TerminalSize>.Available( new TerminalSize( 80, 24 ) )
+				: TerminalControlResult<TerminalSize>.Unavailable( "No scripted live size." );
 		}
 
 		public TerminalControlResult<TerminalModeSnapshot> GetMode(

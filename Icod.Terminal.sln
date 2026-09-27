@@ -40,6 +40,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.Color.Sample"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.TermInfoPersistentRaster.Sample", "samples\Icod.Terminal.TermInfoPersistentRaster.Sample\Icod.Terminal.TermInfoPersistentRaster.Sample.csproj", "{1DB62325-AE22-4F5F-AD13-FF30E60BF8B4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Icod.Terminal.ScreenOutput.Sample", "samples\Icod.Terminal.ScreenOutput.Sample\Icod.Terminal.ScreenOutput.Sample.csproj", "{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -149,6 +151,12 @@ Global
 		{1DB62325-AE22-4F5F-AD13-FF30E60BF8B4}.Staging|Any CPU.Build.0 = Staging|Any CPU
 		{1DB62325-AE22-4F5F-AD13-FF30E60BF8B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1DB62325-AE22-4F5F-AD13-FF30E60BF8B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}.Staging|Any CPU.ActiveCfg = Staging|Any CPU
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}.Staging|Any CPU.Build.0 = Staging|Any CPU
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -170,5 +178,6 @@ Global
 		{F3D40A5B-9C76-4A8F-BE11-247A6E5C933D} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{A74D6D0E-3AC2-46F0-9F89-2A86E1C4B713} = {4C994810-850E-4753-82E5-4BD346EF574C}
 		{1DB62325-AE22-4F5F-AD13-FF30E60BF8B4} = {4C994810-850E-4753-82E5-4BD346EF574C}
+		{A0145D39-20D5-48F8-AC77-AE9D3CE82DDA} = {4C994810-850E-4753-82E5-4BD346EF574C}
 	EndGlobalSection
 EndGlobal

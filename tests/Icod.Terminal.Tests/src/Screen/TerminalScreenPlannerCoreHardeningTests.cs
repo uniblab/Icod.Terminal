@@ -27,6 +27,104 @@ using Xunit;
 
 /// <summary>Hardens literal cost and exact output for core screen-planner candidates.</summary>
 public sealed class TerminalScreenPlannerCoreHardeningTests {
+	[Theory]
+	[InlineData( 2, 3, "HD2R3", 5 )]
+	[InlineData( 0, 3, "HR3", 3 )]
+	[InlineData( 2, 0, "HD2", 3 )]
+	public async Task HomeRelativeRouteEstablishesUnknownPosition(
+		int row, int column, string expected, int byteCount
+	) {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "home-relative" )
+			.SetString( StringCapability.CursorHome, "H$<1>" )
+			.SetString( StringCapability.CursorDown, "D%p1%d$<2*>" )
+			.SetString( StringCapability.CursorRight, "R%p1%d" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			null, new TerminalScreenPosition( row, column )
+		) ?? throw new InvalidOperationException( "Home-relative route is unavailable." );
+		Assert.Equal( byteCount, plan.ByteCount );
+		Assert.Equal( 1, plan.AffectedLines );
+		Assert.Empty( output.Bytes );
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.Latin1.GetBytes( expected ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task CarriageReturnRelativeRouteBeatsLongKnownRowMovement() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "carriage-relative" )
+			.SetString( StringCapability.CarriageReturn, "C" )
+			.SetString( StringCapability.CursorRight, "R%p1%d" )
+			.SetString( StringCapability.CursorLeftOne, "L" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			new TerminalScreenPosition( 3, 8 ), new TerminalScreenPosition( 3, 2 )
+		) ?? throw new InvalidOperationException();
+		Assert.Equal( 3, plan.ByteCount );
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.Latin1.GetBytes( "CR2" ), output.Bytes );
+	}
+
+	[Theory]
+	[InlineData( "AAAAA", "AAAAA" )]
+	[InlineData( "A", "A" )]
+	[InlineData( "AAAAAAAA", "HD2R3" )]
+	public async Task CompleteRouteCostPreservesExistingCandidatesOnTies(
+		string absolute, string expected
+	) {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "complete-route-cost" )
+			.SetString( StringCapability.CursorAddress, absolute )
+			.SetString( StringCapability.CursorHome, "H" )
+			.SetString( StringCapability.CursorDown, "D%p1%d" )
+			.SetString( StringCapability.CursorRight, "R%p1%d" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			null, new TerminalScreenPosition( 2, 3 )
+		) ?? throw new InvalidOperationException();
+		Assert.Equal( expected.Length, plan.ByteCount );
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.Latin1.GetBytes( expected ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task IncompleteHomeRouteAndUnknownCarriageReturnRowAreUnavailable() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "incomplete-routes" )
+			.SetString( StringCapability.CursorHome, "H" )
+			.SetString( StringCapability.CarriageReturn, "C" )
+			.SetString( StringCapability.CursorRight, "R%p1%d" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		Assert.Null( session.Screen.PlanCursorMove( null, new TerminalScreenPosition( 2, 3 ) ) );
+		Assert.Null( session.Screen.PlanCursorMove(
+			new TerminalScreenPosition( 1, 8 ), new TerminalScreenPosition( 2, 3 )
+		) );
+		Assert.Empty( output.Bytes );
+	}
+
+	[Fact]
+	public async Task OversizedHomeRelativeFallbackRetainsIndependentAbsoluteRoute() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "bounded-home-route" )
+			.SetString( StringCapability.CursorAddress, "A" )
+			.SetString( StringCapability.CursorHome, "H" )
+			.SetString( StringCapability.CursorDownOne, "D" )
+			.SetString( StringCapability.CursorRightOne, "R" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			null, new TerminalScreenPosition( int.MaxValue, int.MaxValue )
+		) ?? throw new InvalidOperationException();
+		Assert.Equal( 1, plan.ByteCount );
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.Latin1.GetBytes( "A" ), output.Bytes );
+	}
+
 	[Fact]
 	public async Task AbsoluteCursorCandidateHasLiteralCostAndExactOutput() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "absolute-cursor" )

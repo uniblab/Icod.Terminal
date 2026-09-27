@@ -11,6 +11,8 @@
 
 Current stable release: `Icod.Terminal 1.18.0`.
 
+Development line: `1.19.0-alpha.1` adds safe home/relative and carriage-return/relative cursor routes, executable downstream screen-output qualification, and a [screen-output guide](docs/Screen-Output.md) with a [runnable sample](samples/Icod.Terminal.ScreenOutput.Sample/Program.cs). See the [1.19 roadmap](Icod.Terminal-1.19.0-Development-Roadmap.md) for acceptance status. The public API remains compatible with 1.18.
+
 Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary required for a later `Icod.DCurses 2.0` release to remove its direct `Icod.TermInfo` dependency.

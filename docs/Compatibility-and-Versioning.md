@@ -24,6 +24,8 @@ A stable release must qualify the public package/runtime graph on all supported 
 
 ## 3. Public API baselines
 
+The 1.19 development line retains the complete 1.18 surface and fingerprint; see [Public-API-Baseline-1.19.md](Public-API-Baseline-1.19.md). Cursor movement may select a newly available cheaper complete route, while equal-cost routes preserve existing preference. Transaction ownership, limits, cancellation, and failure behavior remain unchanged.
+
 Every API-bearing stable minor release records a deterministic reflection snapshot and SHA-256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
 
 Relevant fingerprints include:

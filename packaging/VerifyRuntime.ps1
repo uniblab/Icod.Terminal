@@ -44,6 +44,7 @@ try {
         'VerifyRasterPlaceholderSample.ps1',
         'VerifyRasterAnimationSample.ps1',
         'VerifyCapabilityPlanningSample.ps1',
+        'VerifyScreenOutputSample.ps1',
         'VerifyDCursesSynchronizedOutput.ps1',
         'VerifyDCursesProgress.ps1',
         'VerifyDCursesPointerShape.ps1',

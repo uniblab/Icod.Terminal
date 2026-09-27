@@ -10,7 +10,7 @@
 
 **Spec:** [Selected 1.19 scope in the main roadmap](Icod.Terminal-Development-Roadmap.md#119-development-line--downstream-screen-output-hardening-and-planner-expansion), together with the scope and constraints below.
 
-**Status:** Scope selected; T190-T199 pending. This is a planning PR, with no implementation acceptance claims.
+**Status:** T190 complete; T191 in development; T192-T199 pending. Development identity: `1.19.0-alpha.1`.
 
 **Baseline:** Released `1.18.0`, tag `v1.18.0`, merge commit `3e150377db990141aa6903631a8b95cb2c41116e`.
 
@@ -52,6 +52,10 @@ This release improves the existing screen-output contract. It does not establish
 | Compile-only consumers or samples that assume unsupported features | Execute the renderer path; demonstrate graceful unavailable handling and recovery without raw TermInfo access. | T191, T196-T197 |
 
 ## Starting evidence and design decisions
+
+T190 baseline: planning head `8d47c06a3a4260c0b0ad8c9ac7c1b5923fccd99c` passed the full PR workflow [36288163471](https://github.com/uniblab/Icod.Terminal/actions/runs/36288163471). Local Linux baseline execution passed 2,383 unit tests and 15 integration tests on each of net8.0, net9.0, and net10.0; a three-framework baseline package was built. Local multi-node MSBuild is restricted by the execution environment, so local commands use single-process builds; CI retains authority for cross-platform and package gates. The unchanged 1.18 API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
+
+The [T190 design record](docs/superpowers/specs/2026-09-26-1.19.0-screen-output-hardening-design.md) admits the two cursor routes and defers cursor visibility to preserve presentation-lease ownership. The decoupled consumer version is pinned to DCurses 2.2.0, whose source declares Terminal 1.18.0 as its sole production dependency; DCurses 1.6.0 remains a separate compatibility gate. A separate synthetic test harness supplies the legacy TermInfo-bearing provider setup while the controlled renderer consumer retains its source/reference boundary checks.
 
 The existing `tools/dcurses-screen-contracts-acceptance/Source/Program.cs` exercises value contracts at entry, but its `FutureDcursesRenderer.RefreshAsync(...)` method is only compile-bound. Executing a representative refresh is therefore a concrete Option 1 deliverable. Its baseline handling also needs to demonstrate that a missing rendition baseline cannot establish known physical state.
 

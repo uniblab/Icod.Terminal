@@ -9,6 +9,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Goal | Sample |
 | --- | --- |
 | Open a session and read an event | `Icod.Terminal.Sample` |
+| Plan and commit a screen frame with safe rendition recovery | [`Icod.Terminal.ScreenOutput.Sample`](Icod.Terminal.ScreenOutput.Sample/Program.cs), [consumer guide](../docs/Screen-Output.md) |
 | Inspect rich input, lifecycle, and semantic events | `Icod.Terminal.RichInput.Sample` |
 | Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
 | Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
