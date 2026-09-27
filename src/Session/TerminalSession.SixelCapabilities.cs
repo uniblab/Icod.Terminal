@@ -34,6 +34,7 @@ public sealed partial class TerminalSession {
 		CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 
 		try {
 			TerminalPrimaryDeviceAttributes attributes =
@@ -41,19 +42,22 @@ public sealed partial class TerminalSession {
 					SixelProbeTimeout,
 					cancellationToken
 				).ConfigureAwait( false );
-			return attributes.HasAttribute( SixelPrimaryDeviceAttribute );
+			return evidenceGeneration == this.GetSemanticCapabilityEvidence().LiveGeneration
+				&& attributes.HasAttribute( SixelPrimaryDeviceAttribute );
 		} catch ( TimeoutException ) {
 			this.RecordSemanticBackendEvidence(
 				TerminalProtocolBackend.DcsSixel,
 				TerminalCapabilitySupportState.Unknown,
-				TerminalCapabilityEvidenceSource.LiveProbe
+				TerminalCapabilityEvidenceSource.LiveProbe,
+				evidenceGeneration
 			);
 			return false;
 		}
 	}
 
 	private void RecordPrimaryDeviceAttributesCapabilityEvidence(
-		TerminalPrimaryDeviceAttributes attributes
+		TerminalPrimaryDeviceAttributes attributes,
+		long evidenceGeneration
 	) {
 		ArgumentNullException.ThrowIfNull( attributes );
 
@@ -62,7 +66,8 @@ public sealed partial class TerminalSession {
 			attributes.HasAttribute( SixelPrimaryDeviceAttribute )
 				? TerminalCapabilitySupportState.Verified
 				: TerminalCapabilitySupportState.Unknown,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
 		);
 	}
 }

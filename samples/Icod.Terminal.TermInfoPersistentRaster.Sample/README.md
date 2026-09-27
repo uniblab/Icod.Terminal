@@ -2,7 +2,7 @@
 
 This sample demonstrates the current loose-coupling integration contract between `Icod.TermInfo.Inspection 1.16.0` and `Icod.Terminal` persistent-raster execution.
 
-The integration pattern was introduced in Icod.Terminal 1.11.1 for lifecycle planning. The current sample retains that boundary, continues to demonstrate the advanced-placement planner introduced in Icod.TermInfo 1.12 for source rectangles and signed z-order, and now also consumes the Icod.TermInfo 1.14 advisory raster-backend evidence and selection layer.
+The integration pattern was introduced in Icod.Terminal 1.11.1 for lifecycle planning. The current sample retains that boundary and uses Inspection 1.16.0 to demonstrate the advanced-placement planner introduced in Icod.TermInfo 1.12 for source rectangles and signed z-order, together with the advisory raster-backend evidence and selection layer introduced in 1.14.
 
 The responsibilities remain separate:
 
@@ -42,7 +42,7 @@ The backend-planning step is also deliberately caller-owned. A live `PersistentR
 
 TermInfo's backend planner is advisory. It does not replace Icod.Terminal's production routing layer or perform terminal I/O. Explicit preference belongs to the application, so the sample names Kitty-first policy openly rather than introducing hidden ranking inside either library.
 
-TermInfo never carries the concrete source rectangle or signed z-order value. Those execution values remain application/Terminal-owned. The current Icod.TermInfo 1.14 integration still does **not** plan Terminal's relative-placement parent graph or Unicode-placeholder semantics; immutable parentage, signed relative cell offsets, subtree lifetime, lifecycle observation, virtual placement ownership, and placeholder-cell encoding remain Terminal runtime concerns.
+TermInfo never carries the concrete source rectangle or signed z-order value. Those execution values remain application/Terminal-owned. This sample's Inspection integration does **not** plan Terminal's relative-placement parent graph or Unicode-placeholder semantics; immutable parentage, signed relative cell offsets, subtree lifetime, lifecycle observation, virtual placement ownership, and placeholder-cell encoding remain Terminal runtime concerns.
 
 Run the sample with, for example:
 

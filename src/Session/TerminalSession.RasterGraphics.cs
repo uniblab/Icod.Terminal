@@ -117,6 +117,7 @@ public sealed partial class TerminalSession {
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 		TerminalCapabilityResolution kittyEvidence = this.ResolveRasterBackendEvidence(
 			TerminalProtocolBackend.ApcKittyGraphics
 		);
@@ -128,6 +129,9 @@ public sealed partial class TerminalSession {
 			cancellationToken.ThrowIfCancellationRequested();
 		}
 
+		if ( evidenceGeneration != this.GetSemanticCapabilityEvidence().LiveGeneration ) {
+			return;
+		}
 		TerminalSemanticBackendResolution resolution = this.ResolveSemanticBackend(
 			TerminalSemanticOperation.RasterGraphics
 		);

@@ -120,7 +120,12 @@ public sealed partial class TerminalSession {
 		CancellationToken cancellationToken = default
 	) {
 		ArgumentNullException.ThrowIfNull( matcher );
+		return this.GetLifecycleObservationQueryTransactionManager().ExecuteAsync(
+			request, matcher, timeout, lateResponseOwnership, cancellationToken
+		);
+	}
 
+	private TerminalQueryTransactionManager GetLifecycleObservationQueryTransactionManager() {
 		TerminalQueryTransactionManager manager;
 		lock ( this.queryTransactionSync ) {
 			if ( this.queryTransactionsClosed ) {
@@ -136,13 +141,7 @@ public sealed partial class TerminalSession {
 			manager = this.queryTransactionManager;
 		}
 
-		return manager.ExecuteAsync(
-			request,
-			matcher,
-			timeout,
-			lateResponseOwnership,
-			cancellationToken
-		);
+		return manager;
 	}
 
 	internal void SuspendQueryTransactions() {

@@ -353,7 +353,7 @@ Persistent source cropping and virtual-placeholder rendering operate on already-
 
 ## 14. Optional TermInfo 1.14 backend planning boundary
 
-The active 1.19 repository uses `Icod.TermInfo 1.16.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.16.0`.
+The active 1.20 repository uses `Icod.TermInfo 1.16.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.16.0`.
 
 Inspection 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. That planner remains a **consumer/application policy layer**; it is not invoked by `Icod.Terminal` production routing.
 
@@ -379,7 +379,7 @@ A conclusive live `PersistentRasterGraphics` result may be mapped by the caller 
 
 TermInfo planning does not replace Terminal's live capability checks, routing, commitment, identity ownership, or cleanup. Production `Icod.Terminal` retains no dependency on `Icod.TermInfo.Inspection` or `Icod.TermInfo.Source`.
 
-## 15. Stable exclusions after 1.19
+## 15. Stable exclusions after 1.20
 
 Stable 1.x still does not treat the following as ordinary `Icod.Terminal` responsibilities:
 
@@ -403,7 +403,7 @@ Relative placement, lifecycle observation, virtual placeholders, and resource-ow
 
 ## 16. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.19 production graph is:
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.20 production graph is:
 
 ```text
 Icod.TermInfo 1.16.0
@@ -429,3 +429,9 @@ Related 1.x authorities include:
 - `Compatibility-and-Versioning.md`.
 
 Historical tranche records remain design evidence; these permanent documents define the current supported architecture.
+
+## 1.20 static advertisement and live observation ownership
+
+`TerminalProfile.Create` projects existing screen representations once into immutable `TerminalScreenCapabilities` facts. Advertisement is a presence check, not capability expansion or live verification. The existing planner remains the parameter-specific authority; even absent absolute addressing permits independent routes. The public additions expose no TermInfo types or raw representations.
+
+The evidence ledger accepts the originating generation with the existing keyboard, Kitty graphics, and Sixel support observations. Under its existing lock it discards records for an obsolete generation. Primary DA observations follow the same boundary, and aggregate raster verification stops its fallback sequence across invalidation. Query admission, parsing, deadlines, cancellation, and late-response ownership retain the existing coordinator. The [capability guide](Capability-Inspection-and-Planning.md) defines all twelve inspected values and three live paths.

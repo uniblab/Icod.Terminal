@@ -68,7 +68,8 @@ public sealed partial class TerminalSession {
 	internal void RecordSemanticBackendEvidence(
 		TerminalProtocolBackend backend,
 		TerminalCapabilitySupportState state,
-		TerminalCapabilityEvidenceSource source
+		TerminalCapabilityEvidenceSource source,
+		long? expectedGeneration = null
 	) {
 		if ( !Enum.IsDefined( backend ) ) {
 			throw new ArgumentOutOfRangeException(
@@ -95,7 +96,8 @@ public sealed partial class TerminalSession {
 		this.GetSemanticCapabilityEvidence().Record(
 			TerminalCapabilitySubject.ForProtocolBackend( backend ),
 			state,
-			source
+			source,
+			expectedGeneration
 		);
 	}
 

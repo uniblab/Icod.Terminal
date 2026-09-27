@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.18.0` — Unknown-rendition baseline recovery
+- **Current published feature line:** `1.19.0` — Screen-output planning and downstream hardening
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.18.0 released; 1.19.0 stable candidate qualified through T190-T199 with all nine CI jobs passed on PR #64; ready for maintainer release action
-- **Active development target:** `1.19.0` — Downstream screen-output hardening and semantic planner expansion
-- **Selected scope:** Option 1 + Option 2 + Option 4 + Option 10
+- **Development status:** 1.20.0 implementation and stable qualification complete in PR #65; ready for maintainer merge and publication
+- **Active development target:** `1.20.0` — Profile and capability decisions
+- **Selected scope:** 3 + focused 6 + 10 — terminal-profile refinement, existing capability-verification hardening, and documentation/samples
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -19,6 +19,12 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
+`Icod.Terminal 1.19.0` was merged through [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64) at `b3f7adf929d36ea654f2116ad6132781edc3fb3b`, tagged `v1.19.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.19.0) on 2026-09-27. The final pre-merge head `5849ec717ba59a37ec7395d11f5c892ef3f380b2` passed all nine jobs in [workflow 36296373936](https://github.com/uniblab/Icod.Terminal/actions/runs/36296373936), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. Its production dependencies are `Icod.TermInfo 1.16.0` and `Icod.Timing 1.0.0`; optional integration uses `Icod.TermInfo.Inspection 1.16.0`.
+
+Version 1.20.0 selects **3 + focused 6 + 10**. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md) defines T200-T209 and the [design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md) bounds the profile additions and the three existing verification paths. The additive profile API and generation-bound verification fix are implemented; the versioned roadmap records the executable sample, API comparison, and package qualification progress.
+
+### Earlier checkpoints
+
 `Icod.Terminal 1.17.0` was published from annotated tag `v1.17.0` at exact merge commit `ce2d76dda3f7d455a891d4268f453c99112cae8e` on 2026-09-18. The final dependency-refresh evidence head `af6ef4bfc53603302597c927b3058854edd95ebd` passed all nine jobs in pull-request workflow #1984 / run `35297012969` before merge.
 
 The published 1.17.0 checkpoint uses production `Icod.TermInfo 1.15.0` and optional test/sample `Icod.TermInfo.Inspection 1.15.0`. It retains identical public API snapshots across `net8.0`, `net9.0`, and `net10.0` with fingerprint `c0a051a925d551e526343ef59d8c47d75e41868d84235fa30bfa7debe1b3ceb9`.
@@ -27,7 +33,7 @@ Version 1.17.1 is a documentation-only patch that corrects the README embedded i
 
 Version 1.18.0 was merged through PR #63 at `3e150377db990141aa6903631a8b95cb2c41116e` and tagged `v1.18.0`. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete.
 
-Version 1.19.0 is the qualified stable candidate on [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64). Source head `d7e2906e574f6d1b8024626828a46718d52c749b` passed all nine jobs in [workflow 36290312908](https://github.com/uniblab/Icod.Terminal/actions/runs/36290312908), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. The [1.19 roadmap](Icod.Terminal-1.19.0-Development-Roadmap.md#stable-candidate-qualification) records exact jobs, artifacts, hashes, accepted scope, and qualification limits. This accepts T190-T199 as a development candidate; merge, tagging, release creation, and publication remain separate maintainer actions.
+The [1.19 roadmap](Icod.Terminal-1.19.0-Development-Roadmap.md#stable-candidate-qualification) preserves earlier qualification checkpoints and their exact source/artifact identities. The final dependency-refresh evidence and merged release identity are recorded above; those earlier hashes are not the final published package hashes.
 
 ## Current architecture
 
@@ -49,7 +55,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph for the 1.19.0 target is:
+The production dependency graph retained for the 1.20.0 target is:
 
 ```text
 Icod.TermInfo 1.16.0
@@ -58,7 +64,7 @@ Icod.Timing   1.0.0
 
 Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production package graph.
 
-## Qualified stable sequence through 1.18.0
+## Qualified stable sequence through 1.19.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -78,10 +84,11 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; In
 1.17.0  Terminal-owned dimensions, screen planning, and transactions PUBLISHED
 1.17.1  packaged README and release metadata correction             PATCH
 1.18.0  unknown-rendition baseline recovery                         PUBLISHED
-1.19.0  downstream/planner/transaction hardening and docs/samples    CANDIDATE
+1.19.0  downstream/planner/transaction hardening and docs/samples    PUBLISHED
+1.20.0  profile and capability decisions                           PLANNED
 ```
 
-The 1.18 public API fingerprint is:
+The unchanged 1.18–1.19 public API fingerprint is:
 
 ```text
 48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d
@@ -256,9 +263,9 @@ Authorities:
 - [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
 - [`Icod.DCurses 2.0 PR #32`](https://github.com/uniblab/Icod.DCurses/pull/32)
 
-## 1.19 development line — Downstream Screen-output Hardening and Planner Expansion
+## 1.19 released line — Downstream Screen-output Hardening and Planner Expansion
 
-The selected release scope is **Option 1 + Option 2 + Option 4 + Option 10**:
+The completed 1.19 release scope was **Option 1 + Option 2 + Option 4 + Option 10**:
 
 | Option | Selected area | Intended result |
 | --- | --- | --- |
@@ -286,12 +293,48 @@ T198  cross-platform regression, bounded soak, and independent review
 T199  stable 1.19.0 release closure and evidence record
 ```
 
-The alpha checkpoint passed all nine CI jobs. Independent review fixes are locally qualified with 2,402 unit tests on each framework, and the stable `1.19.0` candidate is undergoing final qualification. The planner admits home-plus-relative and same-row carriage-return-plus-relative routes without public API additions; malformed optional routes cannot displace valid alternatives. Cursor-visibility composition is deferred to preserve presentation-lease ownership. The executed package harness covers the Terminal-only renderer, the screen-output sample, and published DCurses 2.2.0 while retaining the separate 1.6.0 compatibility witness. Publication remains a maintainer action.
+T190-T199 are complete and 1.19.0 is released. The final pre-merge head passed all nine CI jobs, including 2,402 unit tests and 15 integration tests per framework on each supported PR platform. The planner admits home-plus-relative and same-row carriage-return-plus-relative routes without public API additions; malformed optional routes cannot displace valid alternatives. Cursor-visibility composition is deferred to preserve presentation-lease ownership. The executed package harness covers the Terminal-only renderer, the screen-output sample, and published DCurses 2.2.0 while retaining the separate 1.6.0 compatibility witness. The release also includes the expanded samples, Ken Arnold attribution, and TermInfo/Inspection 1.16.0 dependency refresh.
 
 Authority: [`Icod.Terminal-1.19.0-Development-Roadmap.md`](Icod.Terminal-1.19.0-Development-Roadmap.md).
 
+## 1.20 development line — Profile and Capability Decisions
+
+The selected scope is **3 + focused 6 + 10**:
+
+| Option | Selected area | Intended result |
+| --- | --- | --- |
+| 3 | Terminal-profile refinement | Add immutable semantic advertisement facts for existing cursor, erase, character/line-shift, and scroll-region planning without exposing TermInfo or promising parameter-independent plan success. |
+| focused 6 | Existing capability-verification paths | Qualify `KeyboardReporting`, `RasterGraphics`, and `PersistentRasterGraphics` through the current bounded query/input authority, preserving uncertainty, endpoint separation, and lifecycle evidence. |
+| 10 | Documentation and samples | Reconcile the twelve-capability/three-probe inventory and execute the actual capability sample, including static facts, concrete planning, explicit verification, and headless help. |
+
+The governing rule is:
+
+> A profile describes static advertisement; a planner answers a particular request; a session reports current evidence and endpoint availability. None of those alone guarantees physical terminal execution.
+
+The implementation sequence is:
+
+```text
+T200  baseline, contract/source mapping, API review, development identity
+T201  immutable screen-profile advertisement surface
+T202  advertisement/planning distinction and partial-profile qualification
+T203  existing verification-path and no-probe contract matrix
+T204  deadlines, cancellation, malformed and late-response qualification
+T205  lifecycle generations, endpoint availability, concurrent ownership
+T206  consumer guide and executed capability sample
+T207  fresh-package/API/XML/dependency and downstream acceptance
+T208  cross-platform regression, review, and scope reconciliation
+T209  stable 1.20.0 release closure and exact evidence
+```
+
+T200-T209 are complete. The stable 1.20.0 package passed the Windows/Linux/macOS runtime matrix and all four package shards. The additive API, generation and late-response fixes, actual capability sample, documentation, and exact source/artifact evidence are recorded in the [accepted release checkpoint](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification). Existing no-probe capability cases remain no-probe: this selection does not authorize a new query family, router redesign, or background discovery.
+
+Authorities:
+
+- [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md)
+- [1.20 profile/capability design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md)
+
 ## Later development candidates
 
-Beyond the selected 1.19 scope, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Broader terminal-profile refinement, rich-input/keyboard expansion, query/response changes, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
+Beyond the selected 1.20 scope, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, rich-input/keyboard expansion, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

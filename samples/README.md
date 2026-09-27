@@ -12,7 +12,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Plan/commit a screen frame and demonstrate stale-work recovery | [`Icod.Terminal.ScreenOutput.Sample`](Icod.Terminal.ScreenOutput.Sample/README.md), [consumer guide](../docs/Screen-Output.md) |
 | Inspect rich input, lifecycle, and semantic events | `Icod.Terminal.RichInput.Sample` |
 | Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
-| Plan from semantic capability knowledge | `Icod.Terminal.CapabilityPlanning.Sample` |
+| Compare static advertisement, concrete plans, and live capability knowledge | [`Icod.Terminal.CapabilityPlanning.Sample`](Icod.Terminal.CapabilityPlanning.Sample/README.md) |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
@@ -23,6 +23,16 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Publish title/location/prompt/shell metadata | focused metadata samples |
 | Emit notifications and observe interactive semantic events | `Icod.Terminal.Notification.Sample` |
 | Emit hyperlinks or clipboard operations | focused output samples |
+
+## Prerequisites and running samples
+
+Run the commands below from the repository root with the .NET 10 SDK installed. The repository includes `net10.0` projects and uses C# 13; selecting `-f net8.0` does not make an older SDK sufficient to build the repository. To run a sample with `-f net8.0` or `-f net9.0`, also install the matching .NET runtime. The three-framework verification scripts require all three runtimes.
+
+The samples use project references to the checked-out library. Installing the NuGet package alone does not install these sample projects. `dotnet run` restores and builds the selected project unless instructed otherwise.
+
+Use an interactive terminal for live demonstrations. Redirected input/output and IDE output panes can lack the endpoints a sample requires. Successful session creation still does not guarantee every feature; follow each sample's diagnostics and requirements. Capability and screen-output samples provide `--help` without opening a terminal session.
+
+Repository verification scripts support Windows PowerShell 5.1 and PowerShell 7. Commands using `pwsh` require PowerShell 7; on Windows PowerShell 5.1, use `powershell` in its place. The [capability walkthrough](Icod.Terminal.CapabilityPlanning.Sample/README.md#noninteractive-verification) provides commands for both source-sample and fresh-package checks.
 
 ## Sample rules
 
@@ -82,7 +92,7 @@ Timeout is not treated as proof that a terminal lacks support.
 
 ### `Icod.Terminal.CapabilityPlanning.Sample`
 
-Demonstrates protocol-neutral capability inspection and optional explicit verification.
+Reports static screen advertisement, concrete plans, and all twelve capability snapshots. Default reporting performs no explicit support probes; `--verify` uses only the three existing reviewed paths. `--help` and `-h` work without a terminal. See the [walkthrough](Icod.Terminal.CapabilityPlanning.Sample/README.md) for exit codes, cancellation, and interpretation.
 
 ```text
 dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Terminal.CapabilityPlanning.Sample.csproj -f net10.0
@@ -133,7 +143,7 @@ The sample:
 
 `OwnershipState` is a synchronous immutable snapshot. `Current` means Terminal still has local ownership certainty; it is not proof that the terminal has independently retained the object. `Stale` records lost terminal certainty, `Released` records placement lifetime ended by another owner, and `Disposed` records explicit disposal of that public wrapper. The reason travels in the same snapshot so status/reason cannot tear across concurrent reads.
 
-These options do not turn `Icod.Terminal` into a scene-layout engine. Version 1.14 does not add reparenting, passive terminal-side existence probes, absolute screen-coordinate layout, Unicode placeholder placements, animation/frame ownership, automatic composition policy, or replay/re-upload caching.
+This sample focuses on physical placement and ownership observation. Unicode placeholders and animation are demonstrated by their dedicated samples below. Reparenting, passive terminal-side existence probes, absolute screen-coordinate layout, automatic composition policy, and replay/re-upload caching remain outside this sample's contract.
 
 The sample does not mention Kitty, Sixel, image ids, image numbers, placement ids, session generation ids, or terminal brand. It also does not imply that resources are replayed after lifecycle invalidation.
 
@@ -171,7 +181,7 @@ After lifecycle success, the sample requires both source-rectangle and signed-z-
 
 The 1.14 step then keeps separate backend contexts. Sixel retains its own static availability plus the original unstrengthened lifecycle/placement profiles. A conclusive live `PersistentRasterGraphics` result is caller-mapped to Kitty Graphics availability because Icod.Terminal's reviewed persistent-raster route is Kitty-based, and only the Kitty candidate receives the strengthened lifecycle/placement evidence. The sample plans first without ranking and then supplies explicit Kitty-first caller preference. TermInfo remains advisory; Icod.Terminal still owns actual routing and protocol commitment.
 
-This distinction is intentional: ordinary `RasterGraphics` does not identify Kitty versus Sixel, `PersistentRasterGraphics` is not misrepresented as a source-rectangle or z-order probe, and `UnicodeRasterPlaceholders` is not fed into TermInfo 1.14 as persistent lifecycle/placement evidence. The current TermInfo 1.14 integration does not plan Terminal's relative-placement or virtual-placeholder graphs.
+This distinction is intentional: ordinary `RasterGraphics` does not identify Kitty versus Sixel, `PersistentRasterGraphics` is not misrepresented as a source-rectangle or z-order probe, and `UnicodeRasterPlaceholders` is not fed into Inspection as persistent lifecycle/placement evidence. This integration uses the planner introduced in TermInfo 1.14, with the current 1.16.0 package reference; it does not plan Terminal's relative-placement or virtual-placeholder graphs.
 
 `Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency. The sample uses Inspection's semantic Sixel/Kitty backend identities only for explicit application planning and never exposes raw graphics commands, terminal-brand heuristics, caller-supplied protocol-private numeric identities, or direct protocol dispatch.
 

@@ -6,7 +6,7 @@ The public model deliberately describes **what a live `TerminalSession` currentl
 
 ## 1. Public vocabulary
 
-Version 1.10 introduces the curated semantic capability set:
+The current curated semantic capability set contains twelve values:
 
 ```text
 ClipboardRead
@@ -18,6 +18,9 @@ MouseReporting
 FocusReporting
 BracketedPaste
 RasterGraphics
+PersistentRasterGraphics
+UnicodeRasterPlaceholders
+PersistentRasterAnimation
 ```
 
 This enum is intentionally smaller than the internal semantic-routing vocabulary. Internal operations are not automatically public capabilities merely because the implementation can route or emit them.
@@ -115,11 +118,12 @@ TerminalCapabilityStatus status = await session.VerifyCapabilityAsync(
 
 Verification is explicit because it may emit terminal query traffic.
 
-Version 1.10 performs live verification only where an already-reviewed bounded support probe exists:
+Live verification uses only these three existing reviewed support paths:
 
 ```text
 KeyboardReporting
 RasterGraphics
+PersistentRasterGraphics
 ```
 
 For capabilities without a reviewed support probe, verification returns the current inspection result unchanged. The library does not invent protocol traffic merely to make every enum value probeable.
@@ -247,7 +251,7 @@ A live `Verified` result means the reviewed terminal protocol observation establ
 
 ## 12. Deliberate exclusions
 
-Version 1.10 does not expose:
+The public capability contract does not expose:
 
 - the internal semantic-backend registry;
 - backend preference scores;
@@ -261,3 +265,40 @@ Version 1.10 does not expose:
 - a requirement that every semantic capability have a live probe.
 
 These exclusions preserve the ability to evolve routing and evidence internals without turning them into public compatibility obligations.
+
+## 13. Static screen advertisement and concrete plans — 1.20
+
+`session.Profile.Screen` is an immutable projection of the selected terminal description. Its `Advertises...` members describe the presence of representations for home/row/column/carriage-return and directional cursor movement, erase, character/line shifts, and scroll-region selection. Existing `Supports...` members keep their meaning and remain static profile facts.
+
+Advertisement does not expand a capability or validate all possible arguments. A present empty or malformed representation is still advertised; the planner determines whether a particular request yields a plan, a valid zero-byte plan, or its documented rejection. Profile absence does not establish terminal-wide unsupported truth, and a missing absolute cursor route does not rule out home/relative or row/column alternatives.
+
+```csharp
+TerminalScreenCapabilities screen = session.Profile.Screen;
+bool advertised = screen.AdvertisesErase(TerminalScreenEraseKind.ToEndOfLine);
+TerminalScreenOperationPlan? plan = session.Screen.PlanErase(
+    TerminalScreenEraseKind.ToEndOfLine);
+// Report both facts. Commit only a concrete plan using the existing session transaction.
+```
+
+Do not guard all cursor planning with `SupportsAbsoluteCursorAddressing`: call `PlanCursorMove` with the actual current-state knowledge and target. A plan remains opaque/session-owned and does not guarantee physical execution. Endpoint availability and output failure are separate concerns. Inspection and planning do not emit terminal traffic or acquire presentation/input leases.
+
+## 14. Verification paths, deadlines, and generation ownership
+
+| Capability | Existing live path | Meaning |
+| --- | --- | --- |
+| `KeyboardReporting` | Kitty keyboard support query and Primary DA barrier | Support observation only; verification does not enable reporting. |
+| `RasterGraphics` | Kitty graphics query/barrier, with Sixel Primary DA observation when needed | One verified usable backend can establish aggregate raster support. |
+| `PersistentRasterGraphics` | Kitty graphics query/barrier | Sixel support alone does not establish persistent-resource support. |
+| All nine other current values | No live support probe | Return current inspection status under the normal validation/cancellation rules; do not invent traffic. |
+
+`UnicodeRasterPlaceholders` and `PersistentRasterAnimation` are included in inspection, but verification does not upload resources, append frames, or perform a passive existence query. Clipboard, cursor style, synchronized output, mouse, focus, and paste capabilities also remain inspection-only through this entry point.
+
+The existing keyboard, Kitty graphics, and Sixel support queries each use a one-second query deadline. Aggregate raster verification may make sequential queries; admission, transport completion, and existing response ownership also affect total duration. This is not a one-second end-to-end promise. Pass a caller-controlled `CancellationToken` when needed; cancellation after request commitment retains the existing framing and late-response ownership rules.
+
+A silent peer remains unknown unless independent evidence is available. A correlated malformed reply can raise the existing format error, and transport errors propagate; they are not converted into generic unsupported statuses. A Primary DA barrier can supply the reviewed negative evidence for Kitty while leaving independent Sixel/static evidence intact.
+
+Every included live observation records against the evidence generation in which it started. If `InvalidateState()` or managed lifecycle re-entry changes the generation while a response is pending, that old observation cannot update current support. Aggregate verification does not silently start another backend probe after detecting that generation change. Re-inspect and explicitly verify again if stronger current knowledge is required. Previously returned statuses remain immutable snapshots.
+
+See the [capability sample walkthrough](../samples/Icod.Terminal.CapabilityPlanning.Sample/README.md) for default inspection, concrete plan reporting, opt-in verification, and headless help.
+
+Keyboard support flags are observed only after that request begins emission. While an older cancelled request still owns its response, a queued request may drain the old flags but cannot treat them as its own positive evidence. The existing Primary DA barrier and transaction coordinator still determine response ownership. A negative Kitty result does not establish unsupported truth for an independent keyboard backend.

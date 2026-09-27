@@ -38,7 +38,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Include="src\**\*.cs" />
+		<Compile Include="src\**\*.cs" /><Compile Include="../../tools/package-capability-planning-smoke/CapabilityPlanningScenario.cs" Link="Samples/CapabilityPlanningScenario.cs" /><Compile Include="../../samples/Icod.Terminal.CapabilityPlanning.Sample/CapabilityPlanningExample.cs" Link="Samples/CapabilityPlanningExample.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

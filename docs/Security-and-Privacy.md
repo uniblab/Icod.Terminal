@@ -191,7 +191,7 @@ The stable semantic surface intentionally does not expose:
 
 ## 14. TermInfo 1.14 advisory backend planning
 
-The active 1.19 repository directly depends on `Icod.TermInfo 1.16.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.16.0`.
+The active 1.20 repository directly depends on `Icod.TermInfo 1.16.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.16.0`.
 
 Inspection's `RasterBackendPlanner` classifies advisory Sixel/Kitty availability and applies explicit caller preference. This is **not** production Terminal routing and is not a security/authentication oracle.
 
@@ -228,7 +228,7 @@ TermInfo backend planning does not justify extra probes by itself; runtime verif
 
 ## 18. Dependency boundary
 
-The active 1.19 production package graph is:
+The active 1.20 production package graph is:
 
 ```text
 Icod.TermInfo 1.16.0
@@ -293,3 +293,9 @@ Security/privacy behavior does not include promises for:
 - PTY/ConPTY process hosting.
 
 Relative placement, lifecycle observation, Unicode placeholder virtual placement, and resource-owned animation are bounded semantic ownership/presentation features; they do not weaken these exclusions.
+
+## 1.20 inspection and generation boundaries
+
+Static screen advertisement neither probes a terminal nor authenticates its implementation. It checks representation presence; consumers must separately request concrete plans and account for endpoint availability. The capability sample does not commit demonstration plans or mutate clipboard, persistent resources, or reporting modes. Its opt-in verification uses only the existing three support paths, not a new fingerprinting mechanism.
+
+Replies to included support queries carry the generation in which observation began. A ledger update from an expired generation is ignored, preventing an old reply from establishing support in the current state. This is evidence hygiene, not peer authentication. Cancellation still respects committed response ownership; it does not promise that terminal traffic can be recalled.

@@ -1,6 +1,6 @@
 # Icod.Terminal.PersistentRaster.Sample
 
-This sample demonstrates the backend-neutral persistent-raster ownership model in `Icod.Terminal 1.14.0`. It combines the opaque resource/placement ownership introduced in 1.11, the source-pixel cropping and signed z-order added in 1.12, immutable-parent relative placement ownership from 1.13, and the side-effect-free lifecycle observability added in 1.14.
+This sample demonstrates the current backend-neutral persistent-raster ownership model. It combines the opaque resource/placement ownership introduced in 1.11, the source-pixel cropping and signed z-order added in 1.12, immutable-parent relative placement ownership from 1.13, and the side-effect-free lifecycle observability added in 1.14.
 
 Run the sample with, for example:
 
@@ -63,6 +63,8 @@ The sample deliberately does **not** demonstrate or expose:
 - Unicode placeholder placements;
 - animation/frame lifecycle;
 - hidden source-image replay or automatic re-upload after generation invalidation.
+
+The current library also supports [Unicode placeholders](../Icod.Terminal.RasterPlaceholder.Sample/README.md) and [persistent animation](../Icod.Terminal.RasterAnimation.Sample/README.md), demonstrated separately. Their omission here describes this sample's scope.
 
 Persistent resources and placements remain session-generation scoped. `await using` / `DisposeAsync()` provides deterministic cleanup while identity remains current; loss of terminal certainty publishes stale ownership rather than reviving or replaying it.
 

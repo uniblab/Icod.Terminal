@@ -21,7 +21,7 @@ Icod.Terminal
 
 The executable flow:
 
-1. verifies the semantic `PersistentRasterAnimation` capability;
+1. obtains the current `PersistentRasterAnimation` status through `VerifyCapabilityAsync` and checks `IsUsable`; this capability is inspection-only, so the call emits no live support probe;
 2. creates one persistent resource from an in-memory RGB24 root image;
 3. obtains the resource-owned animation controller and opaque root-frame token without I/O;
 4. assigns the root frame a positive duration;
@@ -32,6 +32,8 @@ The executable flow:
 9. runs normal playback with one additional traversal;
 10. runs normal playback indefinitely, then stops it explicitly;
 11. releases placement and resource ownership deterministically with `await using`.
+
+`PersistentRasterAnimation` has no reviewed passive support query. The initial call returns current inspection knowledge; it does not upload a test frame or establish live animation support. An unknown or unavailable result causes the sample to report that animation is not currently usable and exit nonzero. Even when `IsUsable` is true, subsequent resource and animation operations can fail and are checked separately. Verifying ordinary or persistent raster graphics alone does not verify animation. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the three capabilities with live support paths.
 
 The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame replay cache, image-file decoder, or screen-layout policy. A failed or ambiguous operation is reported and is never automatically retried.
 

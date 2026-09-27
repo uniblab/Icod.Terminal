@@ -24,7 +24,7 @@ A stable release must qualify the public package/runtime graph on all supported 
 
 ## 3. Public API baselines
 
-The 1.19 line retains the complete 1.18 surface and fingerprint; see [Public-API-Baseline-1.19.md](Public-API-Baseline-1.19.md). Cursor movement may select a newly available cheaper complete route, while equal-cost routes preserve existing preference. Invalid optional routes are unavailable without displacing independently valid candidates. Transaction ownership, limits, cancellation, and failure behavior remain unchanged.
+The 1.20 line retains every 1.19 signature and enum value with twelve additive static screen-advertisement members; see [Public-API-Baseline-1.20.md](Public-API-Baseline-1.20.md). Cursor movement may select a newly available cheaper complete route, while equal-cost routes preserve existing preference. Invalid optional routes are unavailable without displacing independently valid candidates. Transaction ownership, limits, cancellation, and failure behavior remain unchanged.
 
 Every API-bearing stable minor release records a deterministic reflection snapshot and SHA-256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
 
@@ -183,7 +183,7 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.15 optional integration compatibility
 
-The active 1.19 direct production dependency graph remains:
+The active 1.20 direct production dependency graph remains:
 
 ```text
 Icod.TermInfo 1.16.0
@@ -232,7 +232,7 @@ The following remain implementation details rather than compatibility promises:
 
 The optional `Icod.TermInfo.Inspection` backend vocabulary is a separate consumer planning API. Its presence in a sample/test does not expose a caller-selected raw backend switch in `Icod.Terminal` production API.
 
-## 11. Deliberate non-promises after 1.19
+## 11. Deliberate non-promises after 1.20
 
 Stable 1.x does not promise:
 
@@ -285,3 +285,9 @@ For each stable or patch release, the maintainer/release workflow remains respon
 2. validating the mainline Release workflow;
 3. creating/pushing `v<version>` only after mainline validation succeeds;
 4. creating the GitHub Release and publishing NuGet through the established release workflow.
+
+## 1.20 additive screen advertisement
+
+The [1.20 API baseline](Public-API-Baseline-1.20.md) adds nine read-only advertisement properties and three kind-based queries to `TerminalScreenCapabilities`. Every 1.19 public signature and enum value is retained. Default values advertise nothing; unknown operation enum values throw `ArgumentOutOfRangeException`. Existing `Supports...` members keep their meaning. Advertisement includes present empty/malformed representations and does not promise a concrete plan.
+
+Live support observations now remain in their originating evidence generation. A pending old reply cannot promote current support after invalidation. Existing per-query deadlines, exception contracts, and the twelve-capability/three-probe boundary are retained. Dependencies remain TermInfo 1.16.0 and Timing 1.0.0; optional Inspection remains 1.16.0.

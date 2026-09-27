@@ -27,6 +27,44 @@ using Xunit;
 
 /// <summary>Hardens literal cost and exact output for core screen-planner candidates.</summary>
 public sealed class TerminalScreenPlannerCoreHardeningTests {
+	[Fact]
+	public async Task AdvertisementDoesNotRequireAbsoluteAddressingOrConsumeOutputEpoch() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "advertisement-fallback" )
+			.SetString( StringCapability.CursorHome, "H" )
+			.SetString( StringCapability.CursorDownOne, "D" )
+			.SetString( StringCapability.CursorRightOne, "R" ).Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOutputTransaction pending = session.CreateScreenOutputTransaction();
+		Assert.False( session.Profile.Screen.SupportsAbsoluteCursorAddressing );
+		Assert.True( session.Profile.Screen.AdvertisesCursorHome );
+		Assert.True( session.Profile.Screen.AdvertisesCursorDown );
+		Assert.True( session.Profile.Screen.AdvertisesCursorRight );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			null, new TerminalScreenPosition( 2, 3 )
+		) ?? throw new InvalidOperationException();
+		Assert.Equal( 6, plan.ByteCount );
+		Assert.Empty( output.Bytes );
+		pending.Add( plan );
+		await pending.CommitAsync();
+		Assert.Equal( Encoding.ASCII.GetBytes( "HDDRRR" ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task AdvertisementDistinguishesEmptyRepresentationFromMissingOperation() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "empty-advertisement" )
+			.SetString( StringCapability.ClearScreen, string.Empty ).Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		Assert.True( session.Profile.Screen.AdvertisesErase( TerminalScreenEraseKind.Screen ) );
+		Assert.False( session.Profile.Screen.AdvertisesErase( TerminalScreenEraseKind.ToEndOfLine ) );
+		TerminalScreenOperationPlan? empty = session.Screen.PlanErase( TerminalScreenEraseKind.Screen );
+		Assert.NotNull( empty );
+		Assert.Equal( 0, empty.Value.ByteCount );
+		Assert.Null( session.Screen.PlanErase( TerminalScreenEraseKind.ToEndOfLine ) );
+		Assert.Empty( output.Bytes );
+	}
+
 	[Theory]
 	[InlineData( 0 )]
 	[InlineData( 1 )]
