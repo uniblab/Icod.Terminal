@@ -188,7 +188,8 @@ internal sealed class TerminalCapabilityEvidenceLedger {
 	internal void Record(
 		TerminalCapabilitySubject subject,
 		TerminalCapabilitySupportState state,
-		TerminalCapabilityEvidenceSource source
+		TerminalCapabilityEvidenceSource source,
+		long? expectedGeneration = null
 	) {
 		subject.Validate();
 		ValidateEvidence(
@@ -197,6 +198,10 @@ internal sealed class TerminalCapabilityEvidenceLedger {
 		);
 
 		lock ( this.sync ) {
+			// A reply belongs to the generation in which its observation started.
+			if ( expectedGeneration.HasValue && expectedGeneration.Value != this.liveGeneration ) {
+				return;
+			}
 			long nextSequence = checked( this.sequence + 1 );
 			this.sequence = nextSequence;
 			if ( !this.buckets.TryGetValue(

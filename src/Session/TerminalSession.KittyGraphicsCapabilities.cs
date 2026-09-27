@@ -53,6 +53,7 @@ public sealed partial class TerminalSession {
 		}
 		cancellationToken.ThrowIfCancellationRequested();
 
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 		TerminalInputCoordinator coordinator = this.GetInputCoordinator();
 		KittyGraphicsSupportProbe probe =
 			coordinator.RegisterKittyGraphicsSupportProbe( imageId );
@@ -74,9 +75,10 @@ public sealed partial class TerminalSession {
 					this.RecordSemanticBackendEvidence(
 						TerminalProtocolBackend.ApcKittyGraphics,
 						TerminalCapabilitySupportState.Verified,
-						TerminalCapabilityEvidenceSource.ProtocolResponse
+						TerminalCapabilityEvidenceSource.ProtocolResponse,
+						evidenceGeneration
 					);
-					return true;
+					return evidenceGeneration == this.GetSemanticCapabilityEvidence().LiveGeneration;
 				}
 				if ( probe.CorrelationObserved ) {
 					throw new FormatException(
@@ -87,14 +89,15 @@ public sealed partial class TerminalSession {
 				this.RecordSemanticBackendEvidence(
 					TerminalProtocolBackend.ApcKittyGraphics,
 					TerminalCapabilitySupportState.Unknown,
-					TerminalCapabilityEvidenceSource.LiveProbe
+					TerminalCapabilityEvidenceSource.LiveProbe,
+					evidenceGeneration
 				);
 				return false;
 			}
 
 			TerminalPrimaryDeviceAttributes attributes =
 				TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( primaryDaFrame );
-			this.RecordPrimaryDeviceAttributesCapabilityEvidence( attributes );
+			this.RecordPrimaryDeviceAttributesCapabilityEvidence( attributes, evidenceGeneration );
 
 			if ( probe.Failure is not null ) {
 				throw probe.Failure;
@@ -103,15 +106,17 @@ public sealed partial class TerminalSession {
 				this.RecordSemanticBackendEvidence(
 					TerminalProtocolBackend.ApcKittyGraphics,
 					TerminalCapabilitySupportState.Verified,
-					TerminalCapabilityEvidenceSource.ProtocolResponse
+					TerminalCapabilityEvidenceSource.ProtocolResponse,
+					evidenceGeneration
 				);
-				return true;
+				return evidenceGeneration == this.GetSemanticCapabilityEvidence().LiveGeneration;
 			}
 
 			this.RecordSemanticBackendEvidence(
 				TerminalProtocolBackend.ApcKittyGraphics,
 				TerminalCapabilitySupportState.Unsupported,
-				TerminalCapabilityEvidenceSource.ProtocolResponse
+				TerminalCapabilityEvidenceSource.ProtocolResponse,
+				evidenceGeneration
 			);
 			return false;
 		} finally {

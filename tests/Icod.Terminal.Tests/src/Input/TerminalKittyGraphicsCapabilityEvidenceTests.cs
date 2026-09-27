@@ -35,6 +35,51 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 	private const string ExpectedProbeRequest =
 		"\u001b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\u001b\\\u001b[c";
 
+	[Theory]
+	[InlineData( TerminalCapability.KeyboardReporting )]
+	[InlineData( TerminalCapability.RasterGraphics )]
+	[InlineData( TerminalCapability.PersistentRasterGraphics )]
+	public async Task PublicVerificationCannotPromoteReplyFromInvalidatedGeneration( TerminalCapability capability ) {
+		ProbeTransport transport = new();
+		ManualMonotonicClock clock = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		Task<TerminalCapabilityStatus> verification = session.VerifyCapabilityAsync( capability ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		string request = Encoding.ASCII.GetString( transport.GetRequest() );
+		session.InvalidateState();
+		if ( TerminalCapability.KeyboardReporting == capability ) {
+			Assert.Equal( "\u001b[?u\u001b[c", request );
+			transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?1u\u001b[?64;4c" ) );
+		} else {
+			System.Text.RegularExpressions.Match id = System.Text.RegularExpressions.Regex.Match( request, "i=([0-9]+)," );
+			Assert.True( id.Success );
+			transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=" + id.Groups[ 1 ].Value + ";OK\u001b\\\u001b[?64;4c" ) );
+		}
+		TerminalCapabilityStatus result = await verification.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( TerminalCapabilitySupport.Unknown, result.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.None, result.EvidenceKind );
+		Assert.False( result.IsUsable );
+		Assert.Equal( TerminalCapabilitySupport.Unknown, session.InspectCapability( TerminalCapability.RasterGraphics ).Support );
+		// A fresh request in the new generation must still be usable.
+		transport.ResetRequest();
+		Task<TerminalCapabilityStatus> fresh = session.VerifyCapabilityAsync( capability ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		string freshRequest = Encoding.ASCII.GetString( transport.GetRequest() );
+		if ( TerminalCapability.KeyboardReporting == capability ) {
+			Assert.Equal( "\u001b[?u\u001b[c", freshRequest );
+			transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?1u\u001b[?64;4c" ) );
+		} else {
+			System.Text.RegularExpressions.Match freshId = System.Text.RegularExpressions.Regex.Match( freshRequest, "i=([0-9]+)," );
+			Assert.True( freshId.Success );
+			Assert.NotEqual( request, freshRequest );
+			transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=" + freshId.Groups[ 1 ].Value + ";OK\u001b\\\u001b[?64;4c" ) );
+		}
+		TerminalCapabilityStatus renewed = await fresh.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( TerminalCapabilitySupport.Verified, renewed.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.LiveObservation, renewed.EvidenceKind );
+		Assert.True( renewed.IsUsable );
+	}
+
 	[Fact]
 	public async Task OkResponseBeforePrimaryDaVerifiesKittyGraphics() {
 		ProbeTransport transport = new();
@@ -283,6 +328,35 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		Assert.Null( evidence.EvidenceSource );
 	}
 
+	[Fact]
+	public async Task PrimaryDaObservationCannotWriteEvidenceIntoNewGeneration() {
+		ProbeTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, new ManualMonotonicClock() );
+		Task<TerminalPrimaryDeviceAttributes> query = session.QueryPrimaryDeviceAttributesAsync( TimeSpan.FromSeconds( 1 ) ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		session.InvalidateState();
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?64;4c" ) );
+		Assert.True( ( await query.WaitAsync( TimeSpan.FromSeconds( 5 ) ) ).HasAttribute( 4 ) );
+		Assert.Equal( TerminalCapabilitySupportState.Unknown, ResolveSixelEvidence( session ).State );
+	}
+
+	[Theory]
+	[InlineData( TerminalCapability.RasterGraphics, TerminalCapabilitySupport.Verified )]
+	[InlineData( TerminalCapability.PersistentRasterGraphics, TerminalCapabilitySupport.Unsupported )]
+	public async Task PublicVerificationKeepsSixelAndPersistentSupportSeparate(
+		TerminalCapability capability, TerminalCapabilitySupport expected
+	) {
+		ProbeTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, new ManualMonotonicClock() );
+		Task<TerminalCapabilityStatus> query = session.VerifyCapabilityAsync( capability ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?64;4c" ) );
+		TerminalCapabilityStatus result = await query.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( expected, result.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.LiveObservation, result.EvidenceKind );
+		Assert.Equal( TerminalCapabilitySupport.Verified, session.InspectCapability( TerminalCapability.RasterGraphics ).Support );
+		Assert.Equal( TerminalCapabilitySupport.Unsupported, session.InspectCapability( TerminalCapability.PersistentRasterGraphics ).Support );
+	}
 	private static TerminalCapabilityResolution ResolveKittyEvidence(
 		TerminalSession session
 	) {
@@ -338,7 +412,7 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 			}
 		);
 		private readonly object sync = new();
-		private readonly TaskCompletionSource requestObserved = new(
+		private TaskCompletionSource requestObserved = new(
 			TaskCreationOptions.RunContinuationsAsynchronously
 		);
 		private readonly SemaphoreSlim readSignal = new( 0 );
@@ -396,6 +470,13 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 				throw new InvalidOperationException(
 					"The scripted terminal input channel is closed."
 				);
+			}
+		}
+
+		internal void ResetRequest() {
+			lock ( this.sync ) {
+				this.request = null;
+				this.requestObserved = new( TaskCreationOptions.RunContinuationsAsynchronously );
 			}
 		}
 

@@ -61,6 +61,7 @@ public sealed partial class TerminalSession {
 		CancellationToken cancellationToken
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 		TerminalInputCoordinator coordinator = this.GetInputCoordinator();
 		KittyKeyboardFlagsProbe probe = coordinator.RegisterKittyKeyboardFlagsProbe();
 
@@ -94,7 +95,8 @@ public sealed partial class TerminalSession {
 				this.RecordSemanticBackendEvidence(
 					TerminalProtocolBackend.CsiKittyKeyboard,
 					TerminalCapabilitySupportState.Unknown,
-					TerminalCapabilityEvidenceSource.LiveProbe
+					TerminalCapabilityEvidenceSource.LiveProbe,
+					evidenceGeneration
 				);
 				return false;
 			}
@@ -105,9 +107,10 @@ public sealed partial class TerminalSession {
 				supported
 					? TerminalCapabilitySupportState.Verified
 					: TerminalCapabilitySupportState.Unsupported,
-				TerminalCapabilityEvidenceSource.ProtocolResponse
+				TerminalCapabilityEvidenceSource.ProtocolResponse,
+				evidenceGeneration
 			);
-			return supported;
+			return supported && evidenceGeneration == this.GetSemanticCapabilityEvidence().LiveGeneration;
 		} finally {
 			coordinator.RemoveKittyKeyboardFlagsProbe( probe );
 		}

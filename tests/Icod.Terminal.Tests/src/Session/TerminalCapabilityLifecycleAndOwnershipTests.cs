@@ -57,6 +57,7 @@ public sealed class TerminalCapabilityLifecycleAndOwnershipTests {
 			TerminalCapability.RasterGraphics
 		);
 		Assert.Equal( TerminalCapabilitySupport.Unknown, after.Support );
+		Assert.Equal( TerminalCapabilitySupport.Verified, before.Support );
 		Assert.Equal( TerminalCapabilityEvidenceKind.None, after.EvidenceKind );
 		Assert.Empty( output.Bytes );
 	}
@@ -186,8 +187,11 @@ public sealed class TerminalCapabilityLifecycleAndOwnershipTests {
 		Assert.Empty( output.Bytes );
 	}
 
-	[Fact]
-	public async Task UnavailableEndpointDoesNotTriggerRasterProbeTraffic() {
+	[Theory]
+	[InlineData( TerminalCapability.KeyboardReporting )]
+	[InlineData( TerminalCapability.RasterGraphics )]
+	[InlineData( TerminalCapability.PersistentRasterGraphics )]
+	public async Task UnavailableEndpointDoesNotTriggerRasterProbeTraffic( TerminalCapability capability ) {
 		RecordingOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync(
 			TerminalProfiles.Dumb,
@@ -196,7 +200,7 @@ public sealed class TerminalCapabilityLifecycleAndOwnershipTests {
 		);
 
 		TerminalCapabilityStatus status = await session.VerifyCapabilityAsync(
-			TerminalCapability.RasterGraphics
+			capability
 		);
 
 		Assert.Equal(
@@ -207,8 +211,17 @@ public sealed class TerminalCapabilityLifecycleAndOwnershipTests {
 		Assert.Empty( output.Bytes );
 	}
 
-	[Fact]
-	public async Task CapabilityWithoutReviewedProbeRemainsInspectionOnly() {
+	[Theory]
+	[InlineData( TerminalCapability.ClipboardRead )]
+	[InlineData( TerminalCapability.ClipboardWrite )]
+	[InlineData( TerminalCapability.CursorStyle )]
+	[InlineData( TerminalCapability.SynchronizedOutput )]
+	[InlineData( TerminalCapability.MouseReporting )]
+	[InlineData( TerminalCapability.FocusReporting )]
+	[InlineData( TerminalCapability.BracketedPaste )]
+	[InlineData( TerminalCapability.UnicodeRasterPlaceholders )]
+	[InlineData( TerminalCapability.PersistentRasterAnimation )]
+	public async Task CapabilityWithoutReviewedProbeRemainsInspectionOnly( TerminalCapability capability ) {
 		RecordingOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync(
 			TerminalProfiles.Dumb,
@@ -217,10 +230,10 @@ public sealed class TerminalCapabilityLifecycleAndOwnershipTests {
 		);
 
 		TerminalCapabilityStatus before = session.InspectCapability(
-			TerminalCapability.ClipboardWrite
+			capability
 		);
 		TerminalCapabilityStatus after = await session.VerifyCapabilityAsync(
-			TerminalCapability.ClipboardWrite
+			capability
 		);
 
 		Assert.Equal( before.Support, after.Support );

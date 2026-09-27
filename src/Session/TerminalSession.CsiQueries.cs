@@ -42,6 +42,7 @@ public sealed partial class TerminalSession {
 		ValidateCsiQueryTimeout( timeout );
 		cancellationToken.ThrowIfCancellationRequested();
 
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 		TerminalResponseFrame frame = await this.ExecuteQueryAsync(
 			TerminalCsiQueryProtocol.PrimaryDeviceAttributesRequest,
 			TerminalCsiQueryProtocol.PrimaryDeviceAttributesMatcher,
@@ -50,7 +51,7 @@ public sealed partial class TerminalSession {
 		).ConfigureAwait( false );
 		TerminalPrimaryDeviceAttributes attributes =
 			TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( frame );
-		this.RecordPrimaryDeviceAttributesCapabilityEvidence( attributes );
+		this.RecordPrimaryDeviceAttributesCapabilityEvidence( attributes, evidenceGeneration );
 		return attributes;
 	}
 
