@@ -56,7 +56,8 @@ internal sealed class TerminalPresentationManager {
 		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
 		try {
 			this.ThrowIfClosed();
-			if ( this.suspended || !this.appliedKnown || this.IsInvalidated ) {
+			if ( this.suspended || !this.appliedKnown
+				|| this.IsInvalidated || this.frameCursorUncertain ) {
 				throw new InvalidOperationException(
 					"The current cursor presentation is not known or the session is suspended."
 				);

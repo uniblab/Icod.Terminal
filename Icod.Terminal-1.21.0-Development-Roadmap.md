@@ -2,7 +2,7 @@
 
 **Goal:** Close demonstrated keyboard/rich-input consumer gaps and let a screen-output transaction temporarily compose cursor visibility with a frame while preserving presentation-lease ownership.
 
-**Status:** Implementation under way in PR #66. No 1.21 release qualification is claimed. The released baseline is 1.20.0.
+**Status:** Implementation and stable-candidate qualification under way in PR #66. The released baseline is 1.20.0 until the maintainer merges and publishes 1.21.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible packaging scripts and cmd/sh. No new tooling dependency.
 
@@ -166,6 +166,19 @@ foreach ($shard in @('foundation', 'presentation', 'semantic', 'release')) {
     ./packaging/VerifyPackageContractShard.ps1 -ArtifactDirectory artifacts/1.21-package -Configuration Staging -Shard $shard
 }
 ```
+
+## Implementation evidence
+
+| Tranche | Evidence and decision |
+| --- | --- |
+| T2100–T2102 | The 1.20 decoder lost Kitty phase-bearing functional-key CSI forms. The original fixture failed on all three Linux target frameworks in [workflow 36352906230](https://github.com/uniblab/Icod.Terminal/actions/runs/36352906230), then the bounded semantic decoder landed in `3ad23dd72d0bff7ca40944e0fc7e41be5aa7f916`. Invalid forms drain, and the later oversized-frame fixture exercises recovery into text without expanding the retained frame limit. No public input enum/type or new reporting protocol was added. |
+| T2103–T2104 | Existing reporting leases and the authoritative `ReadEventAsync` path own negotiation, fallback, and query ordering. The new functional-key fixture also runs through the fresh-package input consumer alongside traditional, CSI-u, paste, mouse, and focus assertions. No second reader or production Inspection dependency is needed. |
+| T2105–T2107 | The only public addition is `TerminalScreenOutputTransaction.SetCursorVisibilityForCommit(TerminalCursorVisibility)`. A state-composition and presentation reservation precedes the existing frame output gate; tests cover lease-owned and ordinary returns, missing capabilities, stale and pre-cancelled frames, failed entry/frame/return, and uncertain-state cleanup. The first failed-return test demonstrated missing disposal retry on all three Linux frameworks in [workflow 36353946489](https://github.com/uniblab/Icod.Terminal/actions/runs/36353946489); `0cfb34799034bcb1a75a217338df98b3a2c962d6` added the retry and bounded-frame drain. An unrelated lease transition cannot establish the outcome of a failed temporary cursor return. |
+| T2108 | The screen-output sample now accepts `r` for input-driven refresh with temporary cursor visibility, and falls back when entry/return capabilities are missing. Its actual routine runs in source and fresh-package harnesses. README, input, presentation, modern-keyboard, screen, and sample guides explain limits and recovery. |
+| T2109 | The 1.21 public API is additive over the preserved 1.20 baseline. The generated all-framework fingerprint is `939649e1d5c110039cfb3e5057561f8ef7fcb4de20af2de2152f9ec6ab357824`; the 1.21 file and XML gate pin the new method. The candidate and all package shards passed at the preceding [workflow 36354217590](https://github.com/uniblab/Icod.Terminal/actions/runs/36354217590); subsequent final-head qualification is required before closure. |
+| T2110 | Stable `1.21.0` metadata, curated release notes, changelog, and README are prepared for final candidate qualification. Record the last exact source head, Windows/Linux/macOS runtime matrix, package-artifact hashes, and all package shards here after they pass; do not infer these from an earlier build. |
+
+The user-visible phase form and cursor API were frozen before production code. The package harness executes the actual sample from a fresh package and retains the published DCurses 1.6.0 and 2.2.0 plus Terminal-only renderer witnesses. The tests use scripted transports; they are not a physical-emulator or performance certification. Merge, tagging, GitHub release creation, and publication remain maintainer actions.
 
 ## Deferred work and release boundary
 

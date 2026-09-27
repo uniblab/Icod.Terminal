@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.21.0 development adds semantic Kitty functional-key event phases and transaction-scoped cursor visibility with presentation-lease restoration. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.21.0 adds semantic Kitty functional-key event phases and transaction-scoped cursor visibility with presentation-lease restoration. Release details: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.21.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

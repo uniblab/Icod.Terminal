@@ -285,10 +285,22 @@ public sealed class TerminalPresentationLeaseTests {
 		next.WriteText( "unsafe" );
 		await Assert.ThrowsAsync<InvalidOperationException>( () => next.CommitAsync().AsTask() );
 		Assert.DoesNotContain( "unsafe", output.WriteAttempts );
+		TerminalPresentationLease unrelated = (
+			await session.AcquirePresentationAsync(
+				new TerminalPresentationOptions { AlternateScreen = true }
+			)
+		).GetRequiredValue();
+		TerminalScreenOutputTransaction afterLeaseChange = session.CreateScreenOutputTransaction();
+		afterLeaseChange.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() => afterLeaseChange.CommitAsync().AsTask()
+		);
+		Assert.DoesNotContain( "unsafe", output.WriteAttempts );
 
 		await session.DisposeAsync();
-		Assert.Equal( "<C1>", output.WriteAttempts[ ^1 ] );
-		Assert.Equal( "<C1>", output.SuccessfulWrites[ ^1 ] );
+		await unrelated.DisposeAsync();
+		Assert.Equal( new[] { "<C1>", "<A->" }, output.WriteAttempts.TakeLast( 2 ) );
+		Assert.Contains( "<C1>", output.SuccessfulWrites );
 	}
 
 	/// <summary>Verifies missing TermInfo transitions are controlled rather than guessed.</summary>

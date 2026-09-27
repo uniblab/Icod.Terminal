@@ -9,9 +9,9 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.20.0`.
+Current stable release: `Icod.Terminal 1.21.0`.
 
-Version 1.21.0 is in development in [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66). Its [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) covers phase-bearing Kitty functional keys and temporary cursor visibility around a screen transaction. The source branch is not a published stable package; the install command below remains at 1.20.0.
+Version 1.21 adds Kitty functional-key phase reporting and temporary cursor visibility for one screen transaction, restoring the presentation lease owner or ordinary cursor afterward. See the [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) and [screen-output sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the implementation and an input-driven refresh.
 
 Version 1.20 adds immutable screen-advertisement facts, fixes generation and late-response ownership in existing support verification, and expands the [capability guide](docs/Capability-Inspection-and-Planning.md) and [runnable sample](samples/Icod.Terminal.CapabilityPlanning.Sample/README.md). Static advertisement, concrete plans, live support evidence, and endpoint availability remain separate decisions.
 
@@ -19,9 +19,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.20 retains every 1.19 public signature and enum value, adding nine read-only advertisement properties and three kind-based queries. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.21 retains every 1.20 public signature and enum value, adding one screen transaction method. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
 
-See the [1.20.0 release notes](docs/releases/1.20.0.md) and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.21.0 release notes](docs/releases/1.21.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -71,7 +71,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install this version:
 
 ```text
-dotnet add package Icod.Terminal --version 1.20.0
+dotnet add package Icod.Terminal --version 1.21.0
 ```
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
@@ -248,7 +248,7 @@ The [`samples`](samples/README.md) directory contains focused examples for sessi
 
 Recommended documentation entry points:
 
-- [`docs/releases/1.20.0.md`](docs/releases/1.20.0.md) — current profile and capability release notes;
+- [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — current input and cursor visibility release notes;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
 - [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
@@ -263,7 +263,7 @@ Recommended documentation entry points:
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md) — trust, disclosure, and protocol-security boundary;
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
-- [`docs/Public-API-Baseline-1.20.md`](docs/Public-API-Baseline-1.20.md) — current frozen API and additive 1.20 fingerprint;
+- [`docs/Public-API-Baseline-1.21.md`](docs/Public-API-Baseline-1.21.md) — current frozen API and additive 1.21 fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
@@ -272,10 +272,10 @@ Release notes, public-API baselines, tranche records, implementation plans, and 
 
 Stable `1.0.0` remains the compatibility floor. The package supports `net8.0`, `net9.0`, and `net10.0`; compatible 1.x releases add semantic capabilities and public members without silently repurposing established signatures, enum values, lifecycle guarantees, or protocol-neutral behavior.
 
-The frozen 1.20 public API fingerprint is:
+The frozen 1.21 public API fingerprint is:
 
 ```text
-d308fb6ead5bd24c564d159297e6d08793c08eb4db21418eca6a5563aa5c4cbf
+939649e1d5c110039cfb3e5057561f8ef7fcb4de20af2de2152f9ec6ab357824
 ```
 
 Public API, package, target-framework, release-qualification, and compatibility policy is maintained in [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).

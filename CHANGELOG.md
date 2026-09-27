@@ -2,6 +2,13 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.21.0
+
+- Decodes Kitty phase-bearing legacy functional keys, including navigation and insert/delete/page/function keys, into existing semantic key events with modifier and press/repeat/release identity. Malformed and oversized frames recover into subsequent input; traditional terminfo and CSI-u input remain available.
+- Adds `TerminalScreenOutputTransaction.SetCursorVisibilityForCommit(...)` to select cursor visibility for a single committed frame and restore the effective presentation lease owner or ordinary cursor capability afterward.
+- Preserves output ordering and cleanup on frame failure; rejects unsupported capabilities and stale frames before output, and retries baseline restoration at session cleanup after an uncertain cursor return.
+- Extends the input-driven screen-output example and fresh-package consumers, and freezes the additive .NET 8/9/10 public API fingerprint. Production dependencies remain `Icod.TermInfo 1.16.0` and `Icod.Timing 1.0.0`. See [1.21.0 release notes](docs/releases/1.21.0.md).
+
 ## 1.20.0
 
 - Adds immutable static advertisement for existing cursor routes, erase, character/line shifts, and scroll regions; presence includes empty/malformed sources and remains separate from concrete planning.
