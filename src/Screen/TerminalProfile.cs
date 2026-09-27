@@ -94,11 +94,43 @@ public sealed class TerminalProfile {
 				alternateCharacterSet,
 				null != terminal.GetString( StringCapability.CursorInvisible ),
 				null != terminal.GetString( StringCapability.CursorNormal ),
-				null != terminal.GetString( StringCapability.CursorVeryVisible )
+				null != terminal.GetString( StringCapability.CursorVeryVisible ),
+				GetAdvertisement( terminal )
 			)
 		);
 	}
 
+	private static TerminalScreenAdvertisement GetAdvertisement( TerminalDescription terminal ) {
+		TerminalScreenAdvertisement result = TerminalScreenAdvertisement.None;
+		Add( TerminalScreenAdvertisement.CursorHome, StringCapability.CursorHome );
+		Add( TerminalScreenAdvertisement.CursorRowAddressing, StringCapability.RowAddress );
+		Add( TerminalScreenAdvertisement.CursorColumnAddressing, StringCapability.ColumnAddress );
+		Add( TerminalScreenAdvertisement.CarriageReturn, StringCapability.CarriageReturn );
+		Add( TerminalScreenAdvertisement.CursorUp, StringCapability.CursorUp, StringCapability.CursorUpOne );
+		Add( TerminalScreenAdvertisement.CursorDown, StringCapability.CursorDown, StringCapability.CursorDownOne );
+		Add( TerminalScreenAdvertisement.CursorLeft, StringCapability.CursorLeft, StringCapability.CursorLeftOne );
+		Add( TerminalScreenAdvertisement.CursorRight, StringCapability.CursorRight, StringCapability.CursorRightOne );
+		Add( TerminalScreenAdvertisement.ScrollRegion, StringCapability.ChangeScrollRegion );
+		Add( TerminalScreenAdvertisement.EraseToEndOfLine, StringCapability.ClearToEndOfLine );
+		Add( TerminalScreenAdvertisement.EraseToBeginningOfLine, StringCapability.ClearToBeginningOfLine );
+		Add( TerminalScreenAdvertisement.EraseToEndOfScreen, StringCapability.ClearToEndOfScreen );
+		Add( TerminalScreenAdvertisement.EraseScreen, StringCapability.ClearScreen );
+		Add( TerminalScreenAdvertisement.InsertCharacters, StringCapability.InsertCharacters, StringCapability.InsertCharacter );
+		Add( TerminalScreenAdvertisement.DeleteCharacters, StringCapability.DeleteCharacters, StringCapability.DeleteCharacter );
+		Add( TerminalScreenAdvertisement.EraseCharacters, StringCapability.EraseCharacters );
+		Add( TerminalScreenAdvertisement.InsertLines, StringCapability.InsertLines, StringCapability.InsertLine );
+		Add( TerminalScreenAdvertisement.DeleteLines, StringCapability.DeleteLines, StringCapability.DeleteLine );
+		Add( TerminalScreenAdvertisement.ScrollForward, StringCapability.ScrollForwardLines, StringCapability.ScrollForward );
+		Add( TerminalScreenAdvertisement.ScrollReverse, StringCapability.ScrollReverseLines, StringCapability.ScrollReverse );
+		return result;
+
+		void Add( TerminalScreenAdvertisement operation, StringCapability primary, StringCapability? alternate = null ) {
+			if ( null != terminal.GetString( primary )
+				|| ( alternate.HasValue && null != terminal.GetString( alternate.Value ) ) ) {
+				result |= operation;
+			}
+		}
+	}
 	private static TerminalTextAttributes GetSupportedAttributes(
 		TerminalDescription terminal
 	) {
