@@ -28,6 +28,56 @@ using Xunit;
 /// <summary>Hardens literal cost and exact output for core screen-planner candidates.</summary>
 public sealed class TerminalScreenPlannerCoreHardeningTests {
 	[Theory]
+	[InlineData( 0 )]
+	[InlineData( 1 )]
+	[InlineData( 2 )]
+	[InlineData( 3 )]
+	[InlineData( 4 )]
+	public async Task InvalidOptionalCursorRoutePreservesAbsolutePlan( int invalidRoute ) {
+		TerminalDescriptionBuilder builder = new( "invalid-optional-cursor-route" );
+		builder.SetString( StringCapability.CursorAddress, "A" );
+		builder.SetString( StringCapability.CursorHome, invalidRoute switch {
+			0 => "H$<",
+			1 => new string( 'H', 1_048_577 ),
+			_ => "H"
+		} );
+		builder.SetString( StringCapability.CursorRight, invalidRoute switch {
+			2 => "%p1%q",
+			4 => "%{1}%{0}%/%d",
+			_ => "R%p1%d"
+		} );
+		if ( 3 == invalidRoute ) {
+			builder.SetString( StringCapability.CarriageReturn, "C$<" );
+		}
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, builder.Build() );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			3 == invalidRoute ? new TerminalScreenPosition( 0, 8 ) : null,
+			new TerminalScreenPosition( 0, 2 )
+		) ?? throw new InvalidOperationException();
+		Assert.Equal( 1, plan.ByteCount );
+		Assert.Empty( output.Bytes );
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.Latin1.GetBytes( "A" ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task MalformedHomeDoesNotHideIndependentCarriageReturnRoute() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "invalid-home-valid-carriage" )
+			.SetString( StringCapability.CursorHome, "H$<" )
+			.SetString( StringCapability.CarriageReturn, "C" )
+			.SetString( StringCapability.CursorRight, "R%p1%d" )
+			.Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			new TerminalScreenPosition( 0, 8 ), new TerminalScreenPosition( 0, 2 )
+		) ?? throw new InvalidOperationException();
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.Latin1.GetBytes( "CR2" ), output.Bytes );
+	}
+
+	[Theory]
 	[InlineData( 2, 3, "HD2R3", 5 )]
 	[InlineData( 0, 3, "HR3", 3 )]
 	[InlineData( 2, 0, "HD2", 3 )]

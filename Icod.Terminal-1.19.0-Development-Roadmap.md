@@ -10,7 +10,7 @@
 
 **Spec:** [Selected 1.19 scope in the main roadmap](Icod.Terminal-Development-Roadmap.md#119-development-line--downstream-screen-output-hardening-and-planner-expansion), together with the scope and constraints below.
 
-**Status:** T190 complete; T191 in development; T192-T199 pending. Development identity: `1.19.0-alpha.1`.
+**Status:** T190-T198 implementation/review locally qualified and alpha checkpoint accepted; T199 stable-candidate qualification in progress. Candidate identity: `1.19.0`; not published.
 
 **Baseline:** Released `1.18.0`, tag `v1.18.0`, merge commit `3e150377db990141aa6903631a8b95cb2c41116e`.
 
@@ -53,6 +53,19 @@ This release improves the existing screen-output contract. It does not establish
 
 ## Starting evidence and design decisions
 
+### Implementation and review checkpoint
+
+- Alpha source head `aa94ab15a81c6b2d67d74db50ce42ce3a5513273` passed all nine jobs in [workflow 36289477943](https://github.com/uniblab/Icod.Terminal/actions/runs/36289477943): Windows/Linux/macOS runtime, candidate package, all four package shards, and validated artifact. This is the alpha checkpoint, not evidence for later review fixes or final stable metadata.
+- The original new cursor tests produced five expected failures, then passed with the route expansion. The downstream example's missing-baseline assertion and sample's frame-output assertion were both observed failing before their corrections.
+- Independent review found invalid optional capability data could discard a valid route. Six regression cases reproduced padding, source-length, parameter-format/evaluation, and independent-route failures; candidate-local handling now preserves valid alternatives. Full unit suites passed 2,402 tests on each framework after the fix.
+- Actual resize signals preserve a pending transaction when no output ownership is acquired. External resume and suspend/resume presentation restoration invalidate pending transactions; fresh transactions then succeed. These three new qualification cases pass without changing production transaction code.
+- Fresh-package downstream checks exercise the controlled renderer, sample frame, DCurses 1.6.0 ownership soak, and DCurses 2.2.0 text/rendition/resize/repaint. The 2.2.0 witness runs 16 resize/repaint iterations and injects committed write failure every fourth iteration, then explicitly recovers.
+- The API fingerprint remains unchanged on all frameworks. A temporary all-zero fingerprint was correctly rejected by the real verifier. Production dependencies remain unchanged; license verification passes.
+- The sample smoke path is hosted by the package verifier rather than a sample `--smoke` switch, preserving the Terminal-only sample source boundary. The sample demonstrates a single frame and unsupported mandatory plans; exceptions propagate to the host. A larger sample-owned recovery loop remains deferred; the guide and downstream harness cover caller-driven recovery.
+- Local package scripts use a temporary single-process invocation wrapper because this environment restricts multi-node MSBuild IPC. CI runs the repository scripts normally. Local staging package hashes are not represented as CI artifact hashes. The PR matrix covers Windows/Linux/macOS; this checkpoint does not claim a new six-runner x64/ARM64 distribution run.
+
+The final stable-candidate workflow and artifact identities must be recorded before T199 acceptance. No merge, tag, GitHub Release, or package publication is part of this development checkpoint.
+
 T190 baseline: planning head `8d47c06a3a4260c0b0ad8c9ac7c1b5923fccd99c` passed the full PR workflow [36288163471](https://github.com/uniblab/Icod.Terminal/actions/runs/36288163471). Local Linux baseline execution passed 2,383 unit tests and 15 integration tests on each of net8.0, net9.0, and net10.0; a three-framework baseline package was built. Local multi-node MSBuild is restricted by the execution environment, so local commands use single-process builds; CI retains authority for cross-platform and package gates. The unchanged 1.18 API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
 The [T190 design record](docs/superpowers/specs/2026-09-26-1.19.0-screen-output-hardening-design.md) admits the two cursor routes and defers cursor visibility to preserve presentation-lease ownership. The decoupled consumer version is pinned to DCurses 2.2.0, whose source declares Terminal 1.18.0 as its sole production dependency; DCurses 1.6.0 remains a separate compatibility gate. A separate synthetic test harness supplies the legacy TermInfo-bearing provider setup while the controlled renderer consumer retains its source/reference boundary checks.
@@ -88,11 +101,11 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Freeze the continued use of `TerminalSession.Screen`, `TerminalSession.CreateScreenOutputTransaction(...)`, opaque operation plans, and `CommitAsync(CancellationToken)`. Review any additive signature separately before implementation.
 
-- [ ] Record the baseline source SHA, three-framework API fingerprint, test counts, and existing package/CI evidence; run the current validation ladder before behavioral changes.
-- [ ] Build a matrix of real downstream refresh operations against existing tests, including baseline recovery, sparse capabilities, scrolling, glyph/rendition changes, hyperlinks, resize/resume, and cleanup. Pin the published DCurses version used for the new witness and record why it represents the decoupled consumer; retain the existing 1.6.0 compatibility check separately.
-- [ ] Specify exact output, unsupported behavior, cost/tie rules, bounds, and session ownership for the new cursor routes. Audit home and carriage-return semantics against the capability data and existing contracts; exclude routes whose preconditions cannot be proved.
-- [ ] Resolve the cursor-visibility candidate against presentation leases, restoration, and lock ordering. Record either a complete additive contract and tests or an explicit deferral; do not create a competing state owner.
-- [ ] Record the accepted design and API review, then begin implementation with `VersionPrefix=1.19.0` and `VersionSuffix=alpha.1`. Keep package metadata consistent with the development identity.
+- [x] Record the baseline source SHA, three-framework API fingerprint, test counts, and existing package/CI evidence; run the current validation ladder before behavioral changes.
+- [x] Build a matrix of real downstream refresh operations against existing tests, including baseline recovery, sparse capabilities, scrolling, glyph/rendition changes, hyperlinks, resize/resume, and cleanup. Pin the published DCurses version used for the new witness and record why it represents the decoupled consumer; retain the existing 1.6.0 compatibility check separately.
+- [x] Specify exact output, unsupported behavior, cost/tie rules, bounds, and session ownership for the new cursor routes. Audit home and carriage-return semantics against the capability data and existing contracts; exclude routes whose preconditions cannot be proved.
+- [x] Resolve the cursor-visibility candidate against presentation leases, restoration, and lock ordering. Record either a complete additive contract and tests or an explicit deferral; do not create a competing state owner.
+- [x] Record the accepted design and API review, then begin implementation with `VersionPrefix=1.19.0` and `VersionSuffix=alpha.1`. Keep package metadata consistent with the development identity.
 
 **Exit:** Reproducible baseline, finite gap list, reviewed expansion contract, and development identity. Scope expansion beyond the four options is a separate release decision.
 
@@ -102,11 +115,11 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Consume the packaged `TerminalSession`, `TerminalProfile`, planner, and transaction APIs. Produce an invoked deterministic refresh/recovery witness with a nonzero exit code on assertion failure.
 
-- [ ] Replace compile-only acceptance with an invoked synthetic-session refresh using a recording transport and public Terminal APIs. Verify cursor/rendition/text/erase ordering and a second refresh after a deliberate state-invalidating event.
-- [ ] Add sparse-profile cases: missing baseline must stop a transition that assumes default state; unavailable optional erase or glyph operations must use an explicit consumer fallback. Assert exact bytes and no output on rejected work.
-- [ ] Restore and run the witness from the candidate NuGet package in the existing isolated temporary consumer directory on all three frameworks. Retain the guard against source-project and direct TermInfo references.
-- [ ] Add the pinned decoupled DCurses workload from T190 as a separate package acceptance path, covering initial presentation, text/rendition changes, resize, and close/recovery without removing the 1.6.0 compatibility witness.
-- [ ] Record baseline failures as specific regression cases for T192-T195; commit the executable witness and its verifier changes.
+- [x] Replace compile-only acceptance with an invoked synthetic-session refresh using a recording transport and public Terminal APIs. Verify cursor/rendition/text/erase ordering and a second refresh after a deliberate state-invalidating event.
+- [x] Add sparse-profile cases: missing baseline must stop a transition that assumes default state; unavailable optional erase or glyph operations must use an explicit consumer fallback. Assert exact bytes and no output on rejected work.
+- [x] Restore and run the witness from the candidate NuGet package in the existing isolated temporary consumer directory on all three frameworks. Retain the guard against source-project and direct TermInfo references.
+- [x] Add the pinned decoupled DCurses workload from T190 as a separate package acceptance path, covering initial presentation, text/rendition changes, resize, and close/recovery without removing the 1.6.0 compatibility witness.
+- [x] Record baseline failures as specific regression cases for T192-T195; commit the executable witness and its verifier changes.
 
 **Exit:** The test entry point executes the refresh path, and package evidence distinguishes the legacy consumer, decoupled DCurses workload, and Terminal-only witness.
 
@@ -116,11 +129,11 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Extend the existing `PlanCursorMove(TerminalScreenPosition? current, TerminalScreenPosition target)` without changing its signature; return the existing `TerminalScreenOperationPlan?`.
 
-- [ ] Add failing tests for an unknown current position where home plus relative movement reaches the target, and a known same-row position where carriage return plus horizontal movement is the cheapest safe route. Use synthetic capability markers to assert exact segment order and full `ByteCount`.
-- [ ] Test a missing required segment, zero-distance axes, a more expensive fallback, and an equal-cost tie. Assert unavailable results where no complete safe route exists, and preservation of existing-route preference on ties.
-- [ ] Run the focused tests and record the expected failures before implementing the bounded candidate composition with existing expansion/cost helpers.
-- [ ] If admitted in T190, implement the reviewed visibility contract with exact-byte, missing-capability, foreign-session, presentation-lease conflict, and cleanup/restoration tests. Otherwise retain the explicit deferral.
-- [ ] Run the planner tests and T191 witness, review the public API diff, and commit the expansion.
+- [x] Add failing tests for an unknown current position where home plus relative movement reaches the target, and a known same-row position where carriage return plus horizontal movement is the cheapest safe route. Use synthetic capability markers to assert exact segment order and full `ByteCount`.
+- [x] Test a missing required segment, zero-distance axes, a more expensive fallback, and an equal-cost tie. Assert unavailable results where no complete safe route exists, and preservation of existing-route preference on ties.
+- [x] Run the focused tests and record the expected failures before implementing the bounded candidate composition with existing expansion/cost helpers.
+- [x] If admitted in T190, implement the reviewed visibility contract with exact-byte, missing-capability, foreign-session, presentation-lease conflict, and cleanup/restoration tests. Otherwise retain the explicit deferral.
+- [x] Run the planner tests and T191 witness, review the public API diff, and commit the expansion.
 
 **Exit:** New routes are useful on capability-limited profiles, deterministic, side-effect free, bounded, and compatible with existing ownership.
 
@@ -130,10 +143,10 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Preserve `NormalizeRendition(...)`, `PlanRenditionBaseline()`, known-state transition/reset, erase/shift/scroll planners, `ByteCount`, and `AffectedLines`.
 
-- [ ] Extend the existing capability matrix with absent/partial capabilities, padding-sensitive routes, non-ASCII encoded output, invalid counts/regions, and maximum-coordinate or expansion-bound cases for the new paths.
-- [ ] Verify cost against emitted bytes, stable candidate ordering, correct affected-line accounting, and repeated-call stability. Assert that rejected candidates produce no writes, flushes, output epochs, or lifecycle changes.
-- [ ] Retain and extend the 1.18 baseline matrix: attribute-only, color-only, complete specific exits, incomplete recovery, and valid zero-byte plans. Add combined downstream cases only where current tests leave a gap.
-- [ ] For each demonstrated defect, record a failing focused test, make the smallest correction, and run the screen suites plus TermInfo integration tests. Commit the qualified planner changes.
+- [x] Extend the existing capability matrix with absent/partial capabilities, padding-sensitive routes, non-ASCII encoded output, invalid counts/regions, and maximum-coordinate or expansion-bound cases for the new paths.
+- [x] Verify cost against emitted bytes, stable candidate ordering, correct affected-line accounting, and repeated-call stability. Assert that rejected candidates produce no writes, flushes, output epochs, or lifecycle changes.
+- [x] Retain and extend the 1.18 baseline matrix: attribute-only, color-only, complete specific exits, incomplete recovery, and valid zero-byte plans. Add combined downstream cases only where current tests leave a gap.
+- [x] For each demonstrated defect, record a failing focused test, make the smallest correction, and run the screen suites plus TermInfo integration tests. Commit the qualified planner changes.
 
 **Exit:** Every admitted planner route has truthful availability, safe recovery semantics, and bounded expansion/cost evidence.
 
@@ -143,10 +156,10 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Preserve `Add(...)`, `WriteText(...)`, `WriteHyperlink(...)`, raster-placeholder writes, and single-use `CommitAsync(CancellationToken)`.
 
-- [ ] Audit existing tests before adding missing cases for default/foreign plans, disposal, intervening ordinary output, resize, suspend/resume, and multiple same-epoch transactions. Pin each event to its documented epoch behavior; do not assume every dimension observation invalidates an epoch.
-- [ ] Verify rejected mutation leaves counts and retained payload unchanged, including mixed items near the 65,536-item and 64 MiB boundaries. Cover exact limit and limit-plus-one with multibyte text and expanded plans without repeatedly allocating oversized buffers.
-- [ ] Assert pre-commit rejection emits nothing; preserve consumed-commit behavior after cancellation and the existing empty-commit flush/epoch behavior. Treat transaction construction as single-caller use unless the reviewed contract says otherwise.
-- [ ] Add red tests only for uncovered behavior, fix demonstrated defects, run transaction and planner regression suites, and commit.
+- [x] Audit existing tests before adding missing cases for default/foreign plans, disposal, intervening ordinary output, resize, suspend/resume, and multiple same-epoch transactions. Pin each event to its documented epoch behavior; do not assume every dimension observation invalidates an epoch.
+- [x] Verify rejected mutation leaves counts and retained payload unchanged, including mixed items near the 65,536-item and 64 MiB boundaries. Cover exact limit and limit-plus-one with multibyte text and expanded plans without repeatedly allocating oversized buffers.
+- [x] Assert pre-commit rejection emits nothing; preserve consumed-commit behavior after cancellation and the existing empty-commit flush/epoch behavior. Treat transaction construction as single-caller use unless the reviewed contract says otherwise.
+- [x] Add red tests only for uncovered behavior, fix demonstrated defects, run transaction and planner regression suites, and commit.
 
 **Exit:** Admission is atomic, resource retention remains bounded, and lifetime/epoch rejection is observable before unsafe output.
 
@@ -156,10 +169,10 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Interfaces:** Retain the existing hyperlink, synchronized-output, and session output reservations, commitment boundary, and ordered failure aggregation.
 
-- [ ] Extend deterministic barrier-based tests across reservation wait, output-gate wait, first write, body write, cleanup, and flush. Cancellation before commitment emits nothing; cancellation after commitment must not truncate required framing/cleanup.
-- [ ] Combine plans, text, hyperlinks, and raster placeholder cells with an ordinary concurrent session writer. Assert no interleaving, stale/foreign raster ownership rejection, and released reservations after success or failure.
-- [ ] Inject primary, hyperlink-close, synchronized-end, and flush failures individually and in combinations. Assert deterministic primary/cleanup failure order, required cleanup attempts, and truthful recovery on the next operation.
-- [ ] Use bounded waits and explicit test barriers instead of timing sleeps. Fix proven defects, run composition/hardening suites and T191, and commit.
+- [x] Extend deterministic barrier-based tests across reservation wait, output-gate wait, first write, body write, cleanup, and flush. Cancellation before commitment emits nothing; cancellation after commitment must not truncate required framing/cleanup.
+- [x] Combine plans, text, hyperlinks, and raster placeholder cells with an ordinary concurrent session writer. Assert no interleaving, stale/foreign raster ownership rejection, and released reservations after success or failure.
+- [x] Inject primary, hyperlink-close, synchronized-end, and flush failures individually and in combinations. Assert deterministic primary/cleanup failure order, required cleanup attempts, and truthful recovery on the next operation.
+- [x] Use bounded waits and explicit test barriers instead of timing sleeps. Fix proven defects, run composition/hardening suites and T191, and commit.
 
 **Exit:** Mixed-output failure cannot silently discard cleanup evidence, leak reservations, or claim rollback of bytes already emitted.
 
@@ -167,12 +180,12 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Files:** create `docs/Screen-Output.md`, `samples/Icod.Terminal.ScreenOutput.Sample/Icod.Terminal.ScreenOutput.Sample.csproj`, `samples/Icod.Terminal.ScreenOutput.Sample/Program.cs`, and `packaging/VerifyScreenOutputSample.ps1`; update `samples/README.md`, `README.md`, `Icod.Terminal.sln`, and `packaging/VerifyRuntime.ps1`.
 
-**Interfaces:** Use the same public planner/transaction flow as T191. Provide an automated `--smoke` path that requires no interactive terminal and exits nonzero on a failed assertion.
+**Interfaces:** Use the same public planner/transaction flow as T191. Execute the same sample frame routine from the package harness without an interactive terminal; assertion failures terminate the harness with a nonzero exit code.
 
-- [ ] Implement a small sample that reads dimensions/profile, establishes a valid rendition baseline, plans cursor/rendition/text output, commits, and demonstrates caller-driven recovery. Show optional synchronized output only when its existing contract permits it.
-- [ ] Make unavailable plans, baseline failure, stale transactions, and post-commit uncertainty visible in the sample's control flow. Use semantic APIs without raw escape strings or a direct TermInfo dependency.
-- [ ] Write the guide around those executable steps, including zero-byte versus unavailable plans, single-use transactions, capacity, cancellation, disposal, and the division of screen-state ownership.
-- [ ] Add the verifier to the runtime gate; compile and execute smoke mode on all three frameworks. Link the guide/sample from both READMEs, review XML comments for changed APIs, and commit.
+- [x] Implement a small sample that reads dimensions/profile, establishes a valid rendition baseline, plans cursor/rendition/text output, and commits. Document caller-driven recovery and execute it in the downstream harness. Show optional synchronized output only when its existing contract permits it.
+- [x] Make unavailable plans and baseline failure visible in the sample's control flow; propagate stale-transaction and committed-output failures for the host to handle as documented. Use semantic APIs without raw escape strings or a direct TermInfo dependency.
+- [x] Write the guide around those executable steps, including zero-byte versus unavailable plans, single-use transactions, capacity, cancellation, disposal, and the division of screen-state ownership.
+- [x] Add the verifier to the runtime gate; compile the sample on all three frameworks and execute its frame routine in the package harness. Link the guide/sample from both READMEs, review XML comments for changed APIs, and commit.
 
 **Exit:** Users can run the documented flow, and CI executes its noninteractive path.
 
@@ -180,8 +193,8 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Files:** `packaging/VerifyPublicApiBaseline.ps1`; `packaging/VerifyReleaseLinePackage.ps1`; `packaging/VerifyDCursesPackage.ps1`; `tools/package-release-line-smoke/Program.cs`; create `docs/Public-API-Baseline-1.19.md` and `docs/Public-API-Baseline-1.19.sha256` when the contract is frozen.
 
-- [ ] Review the API diff against 1.18; preserve all existing members and enum values. Freeze matching snapshots for all three frameworks, even if the resulting API is unchanged, and update the active baseline selector.
-- [ ] Prove the verifier rejects a deliberately mismatched fingerprint in a temporary fixture; restore the accepted baseline before committing.
+- [x] Review the API diff against 1.18; preserve all existing members and enum values. Freeze matching snapshots for all three frameworks, even if the resulting API is unchanged, and update the active baseline selector.
+- [x] Prove the verifier rejects a deliberately mismatched fingerprint in a temporary fixture; restore the accepted baseline before committing.
 - [ ] Build one candidate package and run every existing contract shard against that artifact. Verify XML documentation, package metadata, license, symbols, and production dependency graph.
 - [ ] Run all T191 consumers from isolated package restores against the exact candidate version, plus the new sample smoke path. Record framework, package SHA-256, source SHA, and consumer versions; commit acceptance evidence.
 
@@ -193,7 +206,7 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 - [ ] Pass the full unit and TermInfo integration suites for all three frameworks on Windows, Linux, and macOS through the existing PR matrix.
 - [ ] Run bounded repeated refresh/recovery/close workloads with cancellation and transport failures. Assert no retained ownership growth, deadlock, or output interleaving; record iteration limits and timeouts.
-- [ ] Obtain independent review of planner fallback assumptions, presentation ownership if changed, commitment/cleanup rules, and package witness execution. Resolve material findings with focused regression evidence.
+- [x] Obtain independent review of planner fallback assumptions, presentation ownership if changed, commitment/cleanup rules, and package witness execution. Resolve material findings with focused regression evidence.
 - [ ] Record the exact tested head and workflow/job/artifact identifiers; qualify the existing x64/ARM64 distribution matrix before claiming that release coverage. Commit the qualification record without describing an untested later head as tested.
 
 **Exit:** All required gates are green with traceable artifacts and no unresolved release-blocking findings.
@@ -202,7 +215,7 @@ T194 can proceed independently of T192-T193 after the shared contract and witnes
 
 **Files:** `Directory.Build.props`; `Icod.Terminal.csproj`; `README.md`; `CHANGELOG.md`; `docs/Compatibility-and-Versioning.md`; create `docs/releases/1.19.0.md`; update both roadmaps.
 
-- [ ] Synchronize release notes, packaged README, compatibility guidance, sample links, accepted/deferred scope, and final API/dependency evidence.
+- [x] Synchronize release notes, packaged README, compatibility guidance, sample links, accepted/deferred scope, and final API/dependency evidence.
 - [ ] Remove the prerelease suffix only after implementation qualification; build and validate the resulting stable candidate, including the final metadata changes.
 - [ ] Record source commit, API fingerprint, package/symbol hashes, workflow runs, artifacts, test results, consumer versions, and remaining limitations. Advance roadmap status only to the stage actually reached.
 - [ ] Present the qualified stable candidate for maintainer release action. Merge, tag, GitHub Release, and publication are distinct actions from this planning PR.

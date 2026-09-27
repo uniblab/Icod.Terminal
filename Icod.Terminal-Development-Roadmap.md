@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.18.0` — Unknown-rendition baseline recovery
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.18.0 released; 1.19.0 scope selected and implementation roadmap prepared
+- **Development status:** 1.18.0 released; 1.19.0 alpha checkpoint passed all nine CI jobs; review fixes locally qualified; stable-candidate validation in progress on PR #64
 - **Active development target:** `1.19.0` — Downstream screen-output hardening and semantic planner expansion
 - **Selected scope:** Option 1 + Option 2 + Option 4 + Option 10
 - **Stable compatibility floor:** `1.0.0`
@@ -25,7 +25,7 @@ The published feature line uses production `Icod.TermInfo 1.15.0` and optional t
 
 Version 1.17.1 is a documentation-only patch that corrects the README embedded in 1.17.0 and synchronizes release metadata. It makes no runtime or public-API change.
 
-Version 1.18.0 was merged through PR #63 at `3e150377db990141aa6903631a8b95cb2c41116e` and tagged `v1.18.0`. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete. The active planning target is now 1.19.0; its implementation tranches remain pending.
+Version 1.18.0 was merged through PR #63 at `3e150377db990141aa6903631a8b95cb2c41116e` and tagged `v1.18.0`. T180-T185 are accepted: the additive unknown-rendition baseline API, hardening/ownership tests, identical three-framework API fingerprint, package/XML gates, published DCurses 1.6.0 soak, TermInfo-free future-renderer package witness, and nine-job stable-candidate workflow are complete. The active development target is now 1.19.0; PR #64 contains the stable candidate, with release qualification still in progress.
 
 ## Current architecture
 
@@ -76,7 +76,7 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.15.0`; In
 1.17.0  Terminal-owned dimensions, screen planning, and transactions PUBLISHED
 1.17.1  packaged README and release metadata correction             PATCH
 1.18.0  unknown-rendition baseline recovery                         PUBLISHED
-1.19.0  downstream/planner/transaction hardening and docs/samples    PLANNED
+1.19.0  downstream/planner/transaction hardening and docs/samples    CANDIDATE
 ```
 
 The 1.18 public API fingerprint is:
@@ -284,7 +284,7 @@ T198  cross-platform regression, bounded soak, and independent review
 T199  stable 1.19.0 release closure and evidence record
 ```
 
-Scope selection does not imply that implementation or release qualification has completed. Public additions are subject to T190's ownership/API gate. Package version changes begin with implementation; this planning change retains the released 1.18.0 package identity.
+The alpha checkpoint passed all nine CI jobs. Independent review fixes are locally qualified with 2,402 unit tests on each framework, and the stable `1.19.0` candidate is undergoing final qualification. The planner admits home-plus-relative and same-row carriage-return-plus-relative routes without public API additions; malformed optional routes cannot displace valid alternatives. Cursor-visibility composition is deferred to preserve presentation-lease ownership. The executed package harness covers the Terminal-only renderer, the screen-output sample, and published DCurses 2.2.0 while retaining the separate 1.6.0 compatibility witness. Publication remains a maintainer action.
 
 Authority: [`Icod.Terminal-1.19.0-Development-Roadmap.md`](Icod.Terminal-1.19.0-Development-Roadmap.md).
 

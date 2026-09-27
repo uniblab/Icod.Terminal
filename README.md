@@ -9,17 +9,17 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.18.0`.
+Current stable release: `Icod.Terminal 1.19.0`.
 
-Development line: `1.19.0-alpha.1` adds safe home/relative and carriage-return/relative cursor routes, executable downstream screen-output qualification, and a [screen-output guide](docs/Screen-Output.md) with a [runnable sample](samples/Icod.Terminal.ScreenOutput.Sample/Program.cs). See the [1.19 roadmap](Icod.Terminal-1.19.0-Development-Roadmap.md) for acceptance status. The public API remains compatible with 1.18.
+Version 1.19 adds safe home/relative and carriage-return/relative cursor routes, executable downstream screen-output qualification, and a [screen-output guide](docs/Screen-Output.md) with a [runnable sample](samples/Icod.Terminal.ScreenOutput.Sample/Program.cs). Malformed optional routes cannot displace an independently valid route. The public API remains compatible with 1.18.
 
 Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
 
-Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary required for a later `Icod.DCurses 2.0` release to remove its direct `Icod.TermInfo` dependency.
+Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.18 retains the complete 1.17 screen-planning/transaction surface, 1.16 animation, 1.15 virtual-placeholder, and every earlier stable 1.x contract. The 1.18 public API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.19 retains the complete 1.18 rendition-baseline, 1.17 screen-planning/transaction, 1.16 animation, 1.15 virtual-placeholder, and every earlier stable 1.x contract. The unchanged 1.19 public API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
-See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.19.0 release notes](docs/releases/1.19.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -31,7 +31,7 @@ See the [1.18.0 release notes](docs/releases/1.18.0.md) and [changelog](CHANGELO
 
 ## Architecture
 
-`Icod.Terminal` is the live-session layer of the Icod terminal stack. The intended `Icod.DCurses 2.0` dependency direction is:
+`Icod.Terminal` is the live-session layer of the Icod terminal stack. The `Icod.DCurses 2.x` dependency direction is:
 
 ```text
 higher-level terminal applications
@@ -50,7 +50,7 @@ higher-level terminal applications
 - `Icod.DCurses` owns higher-level cells, windows, pads, retained presentation state, layout, clipping, scrolling, refresh/diff policy, damage, and curses-style interaction abstractions.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-Published `Icod.DCurses 1.6.0` is the compatibility baseline and still directly references both `Icod.Terminal` and `Icod.TermInfo`. The planned 2.0 migration removes only the direct DCurses-to-TermInfo edge; `Icod.Terminal` continues to use TermInfo internally.
+Published `Icod.DCurses 1.6.0` remains the compatibility baseline and directly references both `Icod.Terminal` and `Icod.TermInfo`. Published `Icod.DCurses 2.2.0` is also qualified and depends directly only on `Icod.Terminal`; Terminal continues to use TermInfo internally.
 
 The direct production dependency graph is intentionally small:
 
@@ -66,10 +66,10 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install the currently published package:
+Install this version:
 
 ```text
-dotnet add package Icod.Terminal --version 1.18.0
+dotnet add package Icod.Terminal --version 1.19.0
 ```
 
 Open a managed terminal session, write application text, and read through the authoritative event path:

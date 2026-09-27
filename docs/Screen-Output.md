@@ -38,7 +38,7 @@ Normalize desired rendition through `NormalizeRendition(...)` before retaining i
 - Home, relative down, and relative right, including an unknown starting position.
 - Carriage return and relative right when the caller knows the cursor is already on the target row.
 
-Every required movement must be available. Padding is handled by Terminal, complete byte costs are compared, and existing candidates retain preference on equal-cost ties. Repeated fallback sources remain bounded. The caller must supply coordinates appropriate to the terminal's current coordinate/mode context; Terminal does not invent a screen layout or clamp the target.
+Every required movement must be available. Padding is handled by Terminal, complete byte costs are compared, and existing candidates retain preference on equal-cost ties. Malformed, oversized, or unevaluable optional routes are discarded without losing an independently usable candidate. Repeated fallback sources remain bounded. The caller must supply coordinates appropriate to the terminal's current coordinate/mode context; Terminal does not invent a screen layout or clamp the target.
 
 Cursor visibility remains owned by presentation leases. It is not a new screen-plan operation in 1.19.
 
@@ -58,7 +58,7 @@ Synchronized output is optional and must respect its existing capability and own
 
 Cancellation before output commitment prevents emission. After commitment begins, caller cancellation does not intentionally truncate the logical output or its required cleanup. Hyperlink closes, synchronized end frames, and flushes are attempted under the existing cleanup rules; independent failures are surfaced in attempt order.
 
-A failed committed transaction may have emitted a prefix. It is not a rollback operation. Mark your retained physical-state assumptions unknown, resolve the cause, and choose a fresh repaint or fallback. Never retry the consumed builder or automatically replay the failed byte stream. Even a fresh baseline is usable only when `PlanRenditionBaseline()` supplies one; Terminal cannot repair an unavailable transport or guarantee recovery from arbitrary terminal parser corruption.
+A failed committed transaction may have emitted a prefix. It is not a rollback operation. Mark your retained physical-state assumptions unknown, resolve the cause, and choose a fresh repaint or fallback. Never retry the consumed builder or automatically replay the failed byte stream. Even a fresh baseline is usable only when `PlanRenditionBaseline()` supplies one; Terminal cannot repair an unavailable transport or guarantee recovery from arbitrary terminal parser corruption. The small sample deliberately propagates these failures to its host; the package harness separately demonstrates a host choosing fresh recovery after resolving an injected failure.
 
 Dispose the session/presentation leases through `await using` to attempt owned cleanup. Cleanup failures remain observable and should be reported by the host application.
 
