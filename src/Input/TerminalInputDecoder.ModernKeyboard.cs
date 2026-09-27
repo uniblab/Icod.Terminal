@@ -43,7 +43,11 @@ internal sealed partial class TerminalInputDecoder {
 			int finalIndex = FindCsiFinalIndex( this.bufferedBytes );
 			if ( 0 <= finalIndex ) {
 				byte finalByte = this.bufferedBytes[ finalIndex ];
-				if ( finalByte is not (byte)'u' and not (byte)'~' ) {
+				bool legacyFunctional = finalByte is (byte)'A' or (byte)'B'
+					or (byte)'C' or (byte)'D' or (byte)'E' or (byte)'F'
+					or (byte)'H' or (byte)'P' or (byte)'Q' or (byte)'S';
+				if ( finalByte is not (byte)'u' and not (byte)'~'
+					&& !legacyFunctional ) {
 					return null;
 				}
 
@@ -52,7 +56,7 @@ internal sealed partial class TerminalInputDecoder {
 					finalIndex + 1
 				).ToArray();
 
-				TerminalInputEvent? inputEvent;
+				TerminalInputEvent? inputEvent = null;
 				IReadOnlyList<TerminalInputEvent>? additionalEvents = null;
 				bool decoded;
 				if ( (byte)'u' == finalByte ) {
@@ -66,10 +70,21 @@ internal sealed partial class TerminalInputDecoder {
 						return null;
 					}
 				} else {
-					decoded = TryDecodeXtermModifyOtherKeysFrame(
-						frame,
-						out inputEvent
-					);
+					decoded = finalByte == (byte)'~'
+						&& TryDecodeXtermModifyOtherKeysFrame( frame, out inputEvent );
+					if ( !decoded && Array.IndexOf( frame, (byte)':' ) >= 0 ) {
+						decoded = TryDecodeKittyLegacyFunctionalFrame(
+							frame,
+							out inputEvent
+						);
+						// A malformed phase-bearing frame cannot become a series of
+						// unrelated Escape/text events.
+						this.Consume( frame.Length );
+						if ( !decoded ) {
+							return null;
+						}
+						return inputEvent;
+					}
 					if ( !decoded ) {
 						return null;
 					}
@@ -109,6 +124,81 @@ internal sealed partial class TerminalInputDecoder {
 				return null;
 			}
 		}
+	}
+
+	private static bool TryDecodeKittyLegacyFunctionalFrame(
+		ReadOnlySpan<byte> frame,
+		out TerminalInputEvent? inputEvent
+	) {
+		inputEvent = null;
+		if ( frame.Length < 8 || frame[ 0 ] != EscapeByte
+			|| frame[ 1 ] != (byte)'[' ) {
+			return false;
+		}
+
+		string[] parameters = Encoding.ASCII.GetString( frame[ 2..^1 ] ).Split( ';' );
+		if ( parameters.Length != 2
+			|| !TryParsePositiveInteger( parameters[ 0 ], out int number ) ) {
+			return false;
+		}
+		string[] eventParts = parameters[ 1 ].Split( ':' );
+		if ( eventParts.Length != 2
+			|| !TryParsePositiveInteger( eventParts[ 0 ], out int bits )
+			|| !TryMapKittyModifiers( bits, out TerminalKeyModifiers modifiers )
+			|| !TryParsePositiveInteger( eventParts[ 1 ], out int eventType )
+			|| !TryMapKittyEventPhase( eventType, out TerminalKeyEventPhase phase ) ) {
+			return false;
+		}
+
+		int? functionKeyNumber = null;
+		TerminalKey key;
+		if ( frame[ ^1 ] == (byte)'~' ) {
+			key = number switch {
+				2 => TerminalKey.Insert,
+				3 => TerminalKey.Delete,
+				5 => TerminalKey.PageUp,
+				6 => TerminalKey.PageDown,
+				7 => TerminalKey.Home,
+				8 => TerminalKey.End,
+				11 or 12 or 13 or 14 or 15 or 17 or 18 or 19
+					or 20 or 21 or 23 or 24 => TerminalKey.Function,
+				_ => TerminalKey.None
+			};
+			functionKeyNumber = number switch {
+				11 => 1, 12 => 2, 13 => 3, 14 => 4,
+				15 => 5, 17 => 6, 18 => 7, 19 => 8,
+				20 => 9, 21 => 10, 23 => 11, 24 => 12,
+				_ => null
+			};
+		} else if ( number == 1 ) {
+			key = frame[ ^1 ] switch {
+				(byte)'A' => TerminalKey.Up,
+				(byte)'B' => TerminalKey.Down,
+				(byte)'C' => TerminalKey.Right,
+				(byte)'D' => TerminalKey.Left,
+				(byte)'E' => TerminalKey.KeypadBegin,
+				(byte)'F' => TerminalKey.End,
+				(byte)'H' => TerminalKey.Home,
+				(byte)'P' or (byte)'Q' or (byte)'S' => TerminalKey.Function,
+				_ => TerminalKey.None
+			};
+			functionKeyNumber = frame[ ^1 ] switch {
+				(byte)'P' => 1, (byte)'Q' => 2, (byte)'S' => 4,
+				_ => null
+			};
+		} else {
+			return false;
+		}
+		if ( key == TerminalKey.None ) {
+			return false;
+		}
+		inputEvent = TerminalInputEvent.FromKey(
+			key,
+			modifiers,
+			functionKeyNumber: functionKeyNumber,
+			keyPhase: phase
+		);
+		return true;
 	}
 
 	private static bool TryDecodeXtermModifyOtherKeysFrame(
