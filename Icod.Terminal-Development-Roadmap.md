@@ -21,7 +21,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.20.0` was merged through [PR #65](https://github.com/uniblab/Icod.Terminal/pull/65) at `8aa6d0543a3d48d6ec28c84f930da35282703b4a`, tagged `v1.20.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.20.0) on 2026-09-27. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification) records its qualified pre-merge source, nine-job CI checkpoint, candidate package hashes, and three-framework API baseline; those candidate hashes are not asserted as the published artifact's hashes. Its selected 3 + focused 6 + 10 scope is complete.
 
-Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T210-T220, input-gap evidence and API freeze, transaction-scoped visibility ownership and cleanup, and package/downstream acceptance. This is a plan, not an implementation or qualified release.
+Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110, input-gap evidence and API freeze, transaction-scoped visibility ownership and cleanup, and package/downstream acceptance. This is a plan, not an implementation or qualified release.
 
 ### Earlier checkpoints
 
@@ -352,20 +352,20 @@ The governing rule is:
 The implementation sequence is:
 
 ```text
-T210  baseline, input consumer gap, output ownership map, API freeze
-T211  input contract and failing adversarial fixtures
-T212  bounded decoding and semantic normalization
-T213  reporting leases, lifecycle, fallback, and input ownership
-T214  package-backed downstream input witness
-T215  temporary visibility contract and precommit validation
-T216  visibility commitment, presentation composition, cleanup
-T217  lease/transaction/lifecycle adversarial matrix
-T218  guides and executed input-driven screen-output example
-T219  package/API/XML/dependency/downstream qualification
-T220  cross-platform review, stable 1.21.0 closure and evidence
+T2100  baseline, input consumer gap, output ownership map, API freeze
+T2101  input contract and failing adversarial fixtures
+T2102  bounded decoding and semantic normalization
+T2103  reporting leases, lifecycle, fallback, and input ownership
+T2104  package-backed downstream input witness
+T2105  temporary visibility contract and precommit validation
+T2106  visibility commitment, presentation composition, cleanup
+T2107  lease/transaction/lifecycle adversarial matrix
+T2108  guides and executed input-driven screen-output example
+T2109  package/API/XML/dependency/downstream qualification
+T2110  cross-platform review, stable 1.21.0 closure and evidence
 ```
 
-The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) specifies acceptance per task, package checks, failure semantics, and deferred work. No T210-T220 task is marked complete in this planning PR.
+The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) specifies acceptance per task, package checks, failure semantics, and deferred work. No T2100-T2110 task is marked complete in this planning PR.
 
 ## Later development candidates
 

@@ -20,17 +20,17 @@
 
 | Track | Concrete outcome | Acceptance evidence |
 | --- | --- | --- |
-| Rich input and keyboard | At least one audited downstream keyboard/rich-input gap gains a semantic, bounded event or normalization path through the existing reader. Existing reported fields, paste framing, and traditional fallback remain correct. | A before/after failing consumer case, byte-level decoder tests, package-only consumer, and lease/lifecycle tests. T210 freezes the exact gap and public spelling before implementation. |
+| Rich input and keyboard | At least one audited downstream keyboard/rich-input gap gains a semantic, bounded event or normalization path through the existing reader. Existing reported fields, paste framing, and traditional fallback remain correct. | A before/after failing consumer case, byte-level decoder tests, package-only consumer, and lease/lifecycle tests. T2100 freezes the exact gap and public spelling before implementation. |
 | Cursor visibility and transactions | An opt-in transaction-scoped visibility request hides or otherwise selects the cursor presentation for one frame and restores the presentation manager's effective owner after commitment or failure. Persistent visibility still uses leases. | Ordered recording-output tests with overlapping leases, stale epoch, cancellation, transport failure, cleanup failure, and lifecycle races. |
 | Consumer guidance | A runnable example combines input-driven refresh with transaction-scoped visibility and states when to use a persistent presentation lease. | Headless tests execute the actual example from a fresh package; README/docs and public API/XML gates pass. |
 
-The visibility contract is **one temporary visibility scope around a transaction's output**: enter before the first frame item, leave after the last item, including failure cleanup. This is not an unrestricted raw cursor plan or a permanent lease mutation. T215 freezes the minimal public API and exactly which enum values can be requested; unsupported entry or restoration yields a controlled result before output. If full `VeryVisible` composition cannot be made reversible for a selected profile, limit the request to the capability-backed subset rather than guessing terminal state.
+The visibility contract is **one temporary visibility scope around a transaction's output**: enter before the first frame item, leave after the last item, including failure cleanup. This is not an unrestricted raw cursor plan or a permanent lease mutation. T2105 freezes the minimal public API and exactly which enum values can be requested; unsupported entry or restoration yields a controlled result before output. If full `VeryVisible` composition cannot be made reversible for a selected profile, limit the request to the capability-backed subset rather than guessing terminal state.
 
-For keyboard expansion, T210 must produce a concrete fixture and downstream consumer before API freeze. Priorities are: previously lost semantic key distinctions in supported traditional/modern forms; bounded handling of associated text and phase combinations in a real editor/game input loop; and a demonstrated rich-input framing gap if the keyboard inventory is complete. Specify the chosen wire forms, public event projection, and fallback in that task. Do not create a generic vendor payload or enable an un-restorable protocol to meet a feature count.
+For keyboard expansion, T2100 must produce a concrete fixture and downstream consumer before API freeze. Priorities are: previously lost semantic key distinctions in supported traditional/modern forms; bounded handling of associated text and phase combinations in a real editor/game input loop; and a demonstrated rich-input framing gap if the keyboard inventory is complete. Specify the chosen wire forms, public event projection, and fallback in that task. Do not create a generic vendor payload or enable an un-restorable protocol to meet a feature count.
 
 ## Sequence and acceptance
 
-### T210 — Baseline, consumer gap, and contract freeze
+### T2100 — Baseline, consumer gap, and contract freeze
 
 **Inspect:** `docs/Input-and-Events.md`, `docs/Modern-Keyboard-Security-and-Compatibility.md`, `docs/Presentation-and-Reversible-State.md`, `docs/Screen-Output.md`; `src/Input/TerminalInputEvent.cs`, `TerminalInputDecoder.ModernKeyboard.cs`, `TerminalInputDecoder.TraditionalKeys.cs`, `TerminalInputProtocolManager.cs`; `src/Presentation/TerminalPresentationManager.cs`; `src/Screen/TerminalScreenOutputTransaction.cs`; existing DCurses acceptance harness and samples.
 
@@ -41,7 +41,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Reviewed input fixture and visibility state/ordering table, additive API proposal, and no guessed baseline or duplicate current feature.
 
-### T211 — Input contract and adversarial fixtures
+### T2101 — Input contract and adversarial fixtures
 
 **Likely files:** `src/Input/TerminalInputEvent.cs`, `TerminalRichInputContracts.cs`, relevant decoder contract tests and downstream modern-keyboard witness.
 
@@ -51,7 +51,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Tests explain the addition and fail against 1.20 before production changes.
 
-### T212 — Bounded decoder and normalization
+### T2102 — Bounded decoder and normalization
 
 **Likely files:** `src/Input/TerminalInputDecoder.*.cs`, `TerminalInputCoordinator.cs` only if a reproduced routing defect needs it, and `tests/Icod.Terminal.Tests/src/Input/*`.
 
@@ -61,7 +61,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** New fixtures pass without changing an unrelated query, introducing a second reader, or silently mislabeling ordinary text.
 
-### T213 — Negotiation, lifecycle, and input ownership
+### T2103 — Negotiation, lifecycle, and input ownership
 
 **Likely files:** `src/Input/TerminalInputProtocolManager.cs`, `src/Session/TerminalSession.KittyKeyboard.cs`, existing keyboard composition/lifecycle tests.
 
@@ -71,7 +71,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** One-reader ordering and reversible state ownership hold on all three target frameworks; unsupported negotiation falls back to traditional input.
 
-### T214 — Package-backed input witness
+### T2104 — Package-backed input witness
 
 **Likely files:** `samples/Icod.Terminal.RichInput.Sample/Program.cs`, `tools/dcurses-modern-keyboard-acceptance/`, `tools/package-modern-keyboard-smoke/`, associated package verifier and tests.
 
@@ -80,7 +80,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** The chosen input increment is useful to a real consumer and survives package resolution.
 
-### T215 — Cursor visibility contract and precommit validation
+### T2105 — Cursor visibility contract and precommit validation
 
 **Likely files:** `src/Screen/TerminalScreenOutputTransaction.cs`, `src/Presentation/TerminalPresentationManager.cs`, `src/Presentation/TerminalPresentationContracts.cs`, related screen/presentation tests.
 
@@ -91,7 +91,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Unsupported or stale work cannot change visibility or leak a synthetic public lease.
 
-### T216 — Transactional visibility commitment and cleanup
+### T2106 — Transactional visibility commitment and cleanup
 
 **Likely files:** `src/Presentation/TerminalPresentationManager.cs`, `src/Session/TerminalSession.Presentation.cs`, `src/Screen/TerminalScreenOutputTransaction.cs`.
 
@@ -101,7 +101,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Temporary visibility is owned and cleaned up with the same correctness standard as presentation leases and screen transactions.
 
-### T217 — Adversarial composition and cross-feature tests
+### T2107 — Adversarial composition and cross-feature tests
 
 **Likely files:** `tests/Icod.Terminal.Tests/src/Screen/TerminalScreenOutputCompositionTests.cs`, `TerminalScreenOutputTransactionHardeningTests.cs`, `tests/Icod.Terminal.Tests/src/Presentation/*`, `tests/Icod.Terminal.Tests/src/Input/TerminalKeyboardCompositionConcurrencyTests.cs`.
 
@@ -111,7 +111,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Ownership and output are coherent under failure and concurrent lifecycle activity.
 
-### T218 — Documentation and executed example
+### T2108 — Documentation and executed example
 
 **Likely files:** `README.md`, `docs/Input-and-Events.md`, `docs/Presentation-and-Reversible-State.md`, `docs/Screen-Output.md`, `docs/Modern-Keyboard-Security-and-Compatibility.md`, `samples/README.md`, screen-output and rich-input samples.
 
@@ -121,7 +121,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Guide and sample teach the exercised public contract, including truthful restoration and recovery limits.
 
-### T219 — Package, API, and downstream qualification
+### T2109 — Package, API, and downstream qualification
 
 **Likely files:** `docs/Public-API-Baseline-1.21.md`, corresponding fingerprint file; package contract tools; `docs/releases/1.21.0.md` and changelog when implementation is ready.
 
@@ -131,7 +131,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 **Acceptance:** Additive, documented package surface with retained downstream compatibility.
 
-### T220 — Cross-platform review and stable closure
+### T2110 — Cross-platform review and stable closure
 
 - [ ] Pass full Windows, Linux, and macOS runtime/integration/sample matrix for .NET 8/9/10 at the final implementation head; inspect input routing, manager/output lock ordering, cancellation, and failure reporting inline.
 - [ ] Reconcile both selected outcomes against a completed task and named evidence; record scripted-test limits and any explicit deferral.
@@ -141,7 +141,7 @@ For keyboard expansion, T210 must produce a concrete fixture and downstream cons
 
 ## Verification commands
 
-Run from the repository root with the supported .NET SDK and PowerShell. Existing CI remains the authority for the three-platform result; exact command arguments may be updated when the T210 API and fixture are frozen.
+Run from the repository root with the supported .NET SDK and PowerShell. Existing CI remains the authority for the three-platform result; exact command arguments may be updated when the T2100 API and fixture are frozen.
 
 ```powershell
 dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging --filter 'FullyQualifiedName~TerminalKittyKeyboard|FullyQualifiedName~TerminalRichInput|FullyQualifiedName~TerminalScreenOutput|FullyQualifiedName~TerminalPresentation'
