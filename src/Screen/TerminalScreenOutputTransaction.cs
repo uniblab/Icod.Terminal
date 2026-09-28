@@ -34,6 +34,7 @@ public sealed class TerminalScreenOutputTransaction {
 	private int payloadByteCount;
 	private int retainedItemCount;
 	private int commitStarted;
+	private TerminalCursorVisibility? cursorVisibilityForCommit;
 
 	internal TerminalScreenOutputTransaction(
 		TerminalSession session,
@@ -70,6 +71,24 @@ public sealed class TerminalScreenOutputTransaction {
 		byte[] bytes = this.session.EncodeApplicationText( value );
 		this.AddPayloadBytes( bytes.Length );
 		this.AddItem( OutputItem.ForBytes( bytes ) );
+	}
+
+	/// <summary>Requests a temporary cursor presentation for this frame only.</summary>
+	/// <param name="visibility">The cursor presentation during the committed frame.</param>
+	/// <remarks>
+	/// The presentation manager restores the effective lease owner, or the terminal's
+	/// ordinary cursor capability when no owner exists. This request emits no output
+	/// until commitment and does not modify persistent presentation leases.
+	/// Unsupported entry or restoration rejects the commit before any frame output.
+	/// </remarks>
+	public void SetCursorVisibilityForCommit(
+		TerminalCursorVisibility visibility
+	) {
+		this.ThrowIfCommitStarted();
+		if ( !Enum.IsDefined( visibility ) ) {
+			throw new ArgumentOutOfRangeException( nameof( visibility ) );
+		}
+		this.cursorVisibilityForCommit = visibility;
 	}
 
 	/// <summary>Adds one bounded strict OSC 8 hyperlink and its application text.</summary>
@@ -134,8 +153,19 @@ public sealed class TerminalScreenOutputTransaction {
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ValidateRetainedItems();
 
-		// Manager gates precede the output gate everywhere. Reserve in hyperlink,
-		// synchronized-output, output order and retain reservations through cleanup.
+		// All manager gates precede the output gate and remain reserved through
+		// visibility and framing cleanup. Presentation changes also reserve the
+		// shared input/presentation state-composition domain.
+		using IDisposable? stateComposition = this.cursorVisibilityForCommit.HasValue
+			? await this.session.AcquireStateCompositionAsync( cancellationToken ).ConfigureAwait( false )
+			: null;
+		using TerminalPresentationManager.FrameCursorVisibilityReservation? cursorReservation =
+			this.cursorVisibilityForCommit.HasValue
+				? await this.session.ReserveScreenCursorVisibilityAsync(
+					this.cursorVisibilityForCommit.Value,
+					cancellationToken
+				).ConfigureAwait( false )
+				: null;
 		using IDisposable? hyperlinkReservation = this.items.Any(
 			static item => OutputItemKind.Hyperlink == item.Kind
 		) ? await this.session.ReserveScreenHyperlinkOutputAsync( cancellationToken ).ConfigureAwait( false ) : null;
@@ -152,7 +182,12 @@ public sealed class TerminalScreenOutputTransaction {
 
 		List<Exception> failures = [];
 		bool synchronizedCleanupRequired = false;
+		bool cursorCleanupRequired = false;
 		try {
+			if ( cursorReservation is not null ) {
+				cursorCleanupRequired = true;
+				await cursorReservation.EnterAsync().ConfigureAwait( false );
+			}
 			if ( this.useSynchronizedOutput ) {
 				synchronizedCleanupRequired = true;
 				await this.session.Output.WriteAsync(
@@ -193,10 +228,24 @@ public sealed class TerminalScreenOutputTransaction {
 			}
 		}
 
+		bool cursorRestored = !cursorCleanupRequired;
+		if ( cursorCleanupRequired ) {
+			try {
+				await cursorReservation!.RestoreAsync().ConfigureAwait( false );
+				cursorRestored = true;
+			} catch ( Exception exception ) {
+				failures.Add( exception );
+			}
+		}
+
 		try {
 			await this.session.Output.FlushAsync( CancellationToken.None ).ConfigureAwait( false );
 		} catch ( Exception exception ) {
 			failures.Add( exception );
+			cursorRestored = false;
+		}
+		if ( cursorCleanupRequired && !cursorRestored ) {
+			cursorReservation!.Invalidate();
 		}
 
 		ThrowFailures( failures );

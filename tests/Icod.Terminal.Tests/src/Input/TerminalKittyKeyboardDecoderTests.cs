@@ -45,6 +45,70 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 		Assert.Equal( TerminalKeyEventPhase.Press, inputEvent.KeyPhase );
 	}
 
+	[Theory]
+	[InlineData( "\u001b[1;1:3D", TerminalKey.Left, TerminalKeyModifiers.None, TerminalKeyEventPhase.Release )]
+	[InlineData( "\u001b[1;6:2A", TerminalKey.Up, TerminalKeyModifiers.Shift | TerminalKeyModifiers.Control, TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[1;1:2H", TerminalKey.Home, TerminalKeyModifiers.None, TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[1;1:3P", TerminalKey.Function, TerminalKeyModifiers.None, TerminalKeyEventPhase.Release )]
+	[InlineData( "\u001b[2;5:2~", TerminalKey.Insert, TerminalKeyModifiers.Control, TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[6;1:3~", TerminalKey.PageDown, TerminalKeyModifiers.None, TerminalKeyEventPhase.Release )]
+	public async Task KittyLegacyFunctionalKeyFormsPreservePhase(
+		string bytes,
+		TerminalKey key,
+		TerminalKeyModifiers modifiers,
+		TerminalKeyEventPhase phase
+	) {
+		TerminalInputEvent inputEvent = await CreateDecoder( bytes ).ReadAsync();
+
+		Assert.Equal( TerminalInputEventKind.Key, inputEvent.Kind );
+		Assert.Equal( key, inputEvent.Key );
+		Assert.Equal( modifiers, inputEvent.Modifiers );
+		Assert.Equal( phase, inputEvent.KeyPhase );
+		if ( TerminalKey.Function == key ) {
+			Assert.Equal( 1, inputEvent.FunctionKeyNumber );
+		}
+	}
+
+	[Fact]
+	public async Task KittyFunctionalReleaseSurvivesEveryFrameSplit() {
+		byte[] bytes = Encoding.ASCII.GetBytes( "\u001b[1;5:3DZ" );
+		for ( int split = 1; split < bytes.Length - 1; ++split ) {
+			TerminalInputDecoder decoder = CreateDecoder( new ScriptedTerminalInput(
+				[ bytes[ ..split ], bytes[ split.. ] ]
+			) );
+			TerminalInputEvent key = await decoder.ReadAsync();
+			TerminalInputEvent text = await decoder.ReadAsync();
+			Assert.Equal( TerminalKey.Left, key.Key );
+			Assert.Equal( TerminalKeyModifiers.Control, key.Modifiers );
+			Assert.Equal( TerminalKeyEventPhase.Release, key.KeyPhase );
+			Assert.Equal( new Rune( 'Z' ), text.Character );
+		}
+	}
+
+	[Theory]
+	[InlineData( "\u001b[1;1:9DZ" )]
+	[InlineData( "\u001b[999;1:2AZ" )]
+	[InlineData( "\u001b[2;0:2~Z" )]
+	public async Task InvalidPhaseBearingFunctionKeyRecoversAtFollowingText( string bytes ) {
+		TerminalInputEvent recovered = await CreateDecoder( bytes ).ReadAsync();
+		Assert.Equal( TerminalInputEventKind.Text, recovered.Kind );
+		Assert.Equal( new Rune( 'Z' ), recovered.Character );
+	}
+
+	[Fact]
+	public async Task OversizedPhaseBearingFunctionKeyDrainsBeforeNextText() {
+		string oversized = "\u001b[1;1:3" + new string( '0', 4096 ) + "DZ";
+		byte[] bytes = Encoding.ASCII.GetBytes( oversized );
+		byte[][] chunks = Enumerable.Range( 0, ( bytes.Length + 127 ) / 128 )
+			.Select( index => bytes[ ( index * 128 )..Math.Min( bytes.Length, ( index + 1 ) * 128 ) ] )
+			.ToArray();
+		TerminalInputEvent recovered = await CreateDecoder(
+			new ScriptedTerminalInput( chunks )
+		).ReadAsync();
+		Assert.Equal( TerminalInputEventKind.Text, recovered.Kind );
+		Assert.Equal( new Rune( 'Z' ), recovered.Character );
+	}
+
 	[Fact]
 	public async Task KittyModifierBitsMapToSemanticModifierValues() {
 		TerminalInputDecoder decoder = CreateDecoder(

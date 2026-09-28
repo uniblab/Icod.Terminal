@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.19.0` — Screen-output planning and downstream hardening
+- **Current published feature line:** `1.20.0` — Profile and capability decisions
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.20.0 implementation and stable qualification complete in PR #65; ready for maintainer merge and publication
-- **Active development target:** `1.20.0` — Profile and capability decisions
-- **Selected scope:** 3 + focused 6 + 10 — terminal-profile refinement, existing capability-verification hardening, and documentation/samples
+- **Development status:** 1.20.0 merged and published; 1.21.0 stable candidate qualified in PR #66
+- **Active development target:** `1.21.0` — Rich input and cursor visibility
+- **Selected scope:** Rich input and keyboard expansion + Cursor-visibility composition with screen transactions
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -19,11 +19,13 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-`Icod.Terminal 1.19.0` was merged through [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64) at `b3f7adf929d36ea654f2116ad6132781edc3fb3b`, tagged `v1.19.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.19.0) on 2026-09-27. The final pre-merge head `5849ec717ba59a37ec7395d11f5c892ef3f380b2` passed all nine jobs in [workflow 36296373936](https://github.com/uniblab/Icod.Terminal/actions/runs/36296373936), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. Its production dependencies are `Icod.TermInfo 1.16.0` and `Icod.Timing 1.0.0`; optional integration uses `Icod.TermInfo.Inspection 1.16.0`.
+`Icod.Terminal 1.20.0` was merged through [PR #65](https://github.com/uniblab/Icod.Terminal/pull/65) at `8aa6d0543a3d48d6ec28c84f930da35282703b4a`, tagged `v1.20.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.20.0) on 2026-09-27. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification) records its qualified pre-merge source, nine-job CI checkpoint, candidate package hashes, and three-framework API baseline; those candidate hashes are not asserted as the published artifact's hashes. Its selected 3 + focused 6 + 10 scope is complete.
 
-Version 1.20.0 selects **3 + focused 6 + 10**. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md) defines T200-T209 and the [design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md) bounds the profile additions and the three existing verification paths. The additive profile API and generation-bound verification fix are implemented; the versioned roadmap records the executable sample, API comparison, and package qualification progress.
+Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110 and records the Kitty functional-key fixture, frame visibility ownership and cleanup, package/downstream acceptance, and the [nine-job final implementation candidate](https://github.com/uniblab/Icod.Terminal/actions/runs/36357002885) (Linux passed on its same-source retry). The candidate has not been merged or published.
 
 ### Earlier checkpoints
+
+`Icod.Terminal 1.19.0` was merged through [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64) at `b3f7adf929d36ea654f2116ad6132781edc3fb3b`, tagged `v1.19.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.19.0) on 2026-09-27. The final pre-merge head `5849ec717ba59a37ec7395d11f5c892ef3f380b2` passed all nine jobs in [workflow 36296373936](https://github.com/uniblab/Icod.Terminal/actions/runs/36296373936), including 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. Its production dependencies are `Icod.TermInfo 1.16.0` and `Icod.Timing 1.0.0`; optional integration uses `Icod.TermInfo.Inspection 1.16.0`.
 
 `Icod.Terminal 1.17.0` was published from annotated tag `v1.17.0` at exact merge commit `ce2d76dda3f7d455a891d4268f453c99112cae8e` on 2026-09-18. The final dependency-refresh evidence head `af6ef4bfc53603302597c927b3058854edd95ebd` passed all nine jobs in pull-request workflow #1984 / run `35297012969` before merge.
 
@@ -55,7 +57,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph retained for the 1.20.0 target is:
+The production dependency graph retained from 1.20.0 for the planned 1.21.0 target is:
 
 ```text
 Icod.TermInfo 1.16.0
@@ -64,7 +66,7 @@ Icod.Timing   1.0.0
 
 Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production package graph.
 
-## Qualified stable sequence through 1.19.0
+## Qualified stable sequence through 1.20.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -85,7 +87,8 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; In
 1.17.1  packaged README and release metadata correction             PATCH
 1.18.0  unknown-rendition baseline recovery                         PUBLISHED
 1.19.0  downstream/planner/transaction hardening and docs/samples    PUBLISHED
-1.20.0  profile and capability decisions                           PLANNED
+1.20.0  profile and capability decisions                           PUBLISHED
+1.21.0  rich input/keyboard and cursor visibility composition     CANDIDATE
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -297,7 +300,7 @@ T190-T199 are complete and 1.19.0 is released. The final pre-merge head passed a
 
 Authority: [`Icod.Terminal-1.19.0-Development-Roadmap.md`](Icod.Terminal-1.19.0-Development-Roadmap.md).
 
-## 1.20 development line — Profile and Capability Decisions
+## 1.20 released line — Profile and Capability Decisions
 
 The selected scope is **3 + focused 6 + 10**:
 
@@ -326,15 +329,46 @@ T208  cross-platform regression, review, and scope reconciliation
 T209  stable 1.20.0 release closure and exact evidence
 ```
 
-T200-T209 are complete. The stable 1.20.0 package passed the Windows/Linux/macOS runtime matrix and all four package shards. The additive API, generation and late-response fixes, actual capability sample, documentation, and exact source/artifact evidence are recorded in the [accepted release checkpoint](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification). Existing no-probe capability cases remain no-probe: this selection does not authorize a new query family, router redesign, or background discovery.
+T200-T209 are complete; PR #65 has been merged and 1.20.0 published. The stable 1.20.0 candidate package passed the Windows/Linux/macOS runtime matrix and all four package shards. The additive API, generation and late-response fixes, actual capability sample, documentation, and exact source/artifact evidence are recorded in the [accepted release checkpoint](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification). Existing no-probe capability cases remain no-probe: this selection does not authorize a new query family, router redesign, or background discovery.
 
 Authorities:
 
 - [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md)
 - [1.20 profile/capability design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md)
 
+## 1.21 development line — Rich Input and Cursor Visibility
+
+The selected scope is **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**:
+
+| Area | Intended result |
+| --- | --- |
+| Rich input and keyboard expansion | Close at least one demonstrated consumer gap in semantic input decoding or event projection, with bounded framing, traditional fallback, and the existing single-reader/query authority. Freeze the precise addition against a failing downstream fixture before implementation; existing Kitty phases, associated text, mouse, focus, and paste are the baseline. |
+| Cursor-visibility composition with screen transactions | Add an opt-in temporary visibility scope around one committed screen frame; restore the presentation manager's effective lease owner or ordinary capability, including best-effort cleanup after failure. Persistent visibility remains lease-owned. |
+
+The governing rule is:
+
+> The session owns a single input stream and truthful terminal state; a transaction may temporarily present a cursor for one output frame but cannot claim a permanent visibility owner or undo emitted bytes.
+
+The implementation sequence is:
+
+```text
+T2100  baseline, input consumer gap, output ownership map, API freeze
+T2101  input contract and failing adversarial fixtures
+T2102  bounded decoding and semantic normalization
+T2103  reporting leases, lifecycle, fallback, and input ownership
+T2104  package-backed downstream input witness
+T2105  temporary visibility contract and precommit validation
+T2106  visibility commitment, presentation composition, cleanup
+T2107  lease/transaction/lifecycle adversarial matrix
+T2108  guides and executed input-driven screen-output example
+T2109  package/API/XML/dependency/downstream qualification
+T2110  cross-platform review, stable 1.21.0 closure and evidence
+```
+
+The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) specifies acceptance per task, package checks, failure semantics, and deferred work. Its implementation evidence identifies the red fixtures, exact-head Windows/Linux/macOS runtime and package qualification, and candidate package/symbol hashes in PR #66.
+
 ## Later development candidates
 
-Beyond the selected 1.20 scope, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, rich-input/keyboard expansion, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
+Beyond the selected 1.21 scope, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

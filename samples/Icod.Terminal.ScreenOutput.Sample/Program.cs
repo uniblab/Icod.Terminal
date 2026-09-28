@@ -22,11 +22,11 @@ namespace Icod.Terminal.ScreenOutput.Sample;
 
 /// <summary>Runs a semantic screen-frame demonstration in an owned alternate screen.</summary>
 internal static class Program {
-	/// <summary>Accepts --help or --recovery; q or Escape ends the interactive demonstration.</summary>
+	/// <summary>Accepts --help or --recovery; r redraws, q or Escape exits.</summary>
 	private static async Task<int> Main( string[] args ) {
 		if ( args.Length == 1 && args[ 0 ] is "--help" or "-h" ) {
 			Console.WriteLine( "Usage: Icod.Terminal.ScreenOutput.Sample [--recovery]" );
-			Console.WriteLine( "Requires interactive input/output and alternate-screen support. Press q or Escape to exit." );
+			Console.WriteLine( "Requires interactive input/output and alternate-screen support. Press r to refresh, q or Escape to exit." );
 			Console.WriteLine( "--recovery demonstrates stale-frame rejection followed by one freshly planned frame." );
 			return 0;
 		}

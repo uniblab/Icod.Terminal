@@ -16,7 +16,7 @@ dotnet run --project samples/Icod.Terminal.ScreenOutput.Sample -f net10.0 -- --r
 
 ## What you should see
 
-The normal mode enters an alternate screen, writes **Terminal-owned screen output** at row 0, column 0 (bold when safely supported), and displays an exit instruction. Press **q**, **Q**, or **Escape** to finish. End of input also ends the demonstration. Other events are ignored, including unfamiliar future event kinds.
+The normal mode enters an alternate screen, writes **Terminal-owned screen output** at row 0, column 0 (bold when safely supported), and displays an exit instruction. Press **r** or **R** to refresh **Input-driven frame** with a temporary hidden cursor, restoring the currently effective presentation owner afterward. If the terminal does not advertise both hide and return capabilities, the refresh uses the ordinary frame path. Press **q**, **Q**, or **Escape** to finish. End of input also ends the demonstration. Other events are ignored, including unfamiliar future event kinds.
 
 The recovery mode deliberately creates pending work, emits an intervening coordinated write, and attempts the now-stale transaction. Its old payload must never appear. After rejection, a newly planned frame displays **Fresh frame after stale rejection.** The same exit keys apply.
 
@@ -29,6 +29,8 @@ Presentation ownership is released on normal exit, cancellation, or failure. Ses
 
 `DrawFrameAsync(...)` plans baseline, cursor, normalized bold entry, and rendition reset before constructing the transaction. Missing mandatory plans return `false` without frame output. A valid zero-byte plan remains usable. Erase-to-end-of-line is added only when available.
 
+`DrawFrameWithHiddenCursorAsync(...)` uses the same plans, then calls `SetCursorVisibilityForCommit(Hidden)` on the one-shot frame builder. This setting emits no bytes until commitment, and Terminal restores the latest active presentation lease request or the ordinary cursor capability after all frame items. The method returns `false` before constructing a frame when advertised entry/return capabilities are absent. Concurrent state changes, a stale output epoch, and output failure can still reject the commit or make physical state uncertain; the sample reports those failures instead of guessing a repaint. For an editor that wants the cursor hidden for the entire editing session, acquire a cursor-visibility presentation lease.
+
 This fixed-origin example does not need dimensions. It leaves text width, clipping, wrapping, and resize-driven layout to the caller; it does not promise the frame fits every terminal. A renderer that needs dimensions must inspect `GetDimensions().IsAvailable` before using its value. For retained cells, windows, layout, and damage tracking, use Icod.DCurses.
 
 `RunInteractiveAsync(...)` requires an alternate-screen lease so it can refuse unsupported presentation instead of drawing over the shell. A missing frame plan can still require releasing an already acquired presentation lease; the no-output guarantee belongs specifically to `DrawFrameAsync(...)`.
@@ -39,6 +41,8 @@ This fixed-origin example does not need dimensions. It leaves text width, clippi
 | --- | --- |
 | Missing required presentation or frame operation | Exit 1 with a diagnostic; release any acquired presentation scope. |
 | Deliberately stale transaction in `--recovery` | Reject before emitting its payload; discard the consumed builder; construct one fresh frame. |
+| Press r with cursor-hide/return support | Commit one temporarily hidden frame, then restore the effective presentation owner; do not change the lease order. |
+| Press r without cursor-hide/return support | Draw the same input-driven content using the ordinary frame path. |
 | Cancellation before frame commitment | No frame emission; cancellation propagates. The host returns 130 for an observed `OperationCanceledException`. |
 | Cancellation after commitment starts | The committed output and required cleanup are not intentionally truncated; later cancellable work can stop. |
 | Transport or cleanup failure | Output may be partial. Surface the error and exit 1; do not replay or retry automatically. |

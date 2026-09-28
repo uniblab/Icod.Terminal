@@ -33,6 +33,8 @@ foreach ( bool recoverable in new[] { false, true } ) {
 	builder.SetString( StringCapability.EnterBoldMode, "<bold>" );
 	if ( recoverable ) {
 		builder.SetString( StringCapability.ExitAttributeMode, "<reset>" );
+		builder.SetString( StringCapability.CursorInvisible, "<hide>" );
+		builder.SetString( StringCapability.CursorNormal, "<normal>" );
 	}
 	await using TerminalSession session = await TerminalSession.OpenAsync(
 		provider, TerminalEndpoint.StandardInput,
@@ -81,6 +83,20 @@ foreach ( bool recoverable in new[] { false, true } ) {
 	Require( output.Text == "<reset><cup:0,0><bold>sample<reset>" && output.FlushCount == 1,
 		"Sample must emit baseline, cursor, rendition, text, and reset in one commit." );
 	output.Clear();
+	Require( await ScreenOutputExample.DrawFrameWithHiddenCursorAsync( session, "input frame" ),
+		"The sample must draw with supported transaction cursor visibility." );
+	Require( output.Text == "<hide><reset><cup:0,0><bold>input frame<reset><normal>"
+		&& output.FlushCount == 1, "The package sample must restore ordinary cursor ownership." );
+	output.Clear();
+	output.FailNextWrite = true;
+	try {
+		await ScreenOutputExample.DrawFrameWithHiddenCursorAsync( session, "failed frame" );
+		throw new InvalidOperationException( "A failed cursor entry must propagate." );
+	} catch ( IOException ) {
+		Require( output.Text == "<hide><normal>" && output.FlushCount == 1,
+			"The sample must attempt an ordinary cursor return after failed entry." );
+	}
+	output.Clear();
 	Require( await ScreenOutputExample.DemonstrateStaleRecoveryAsync( session ), "Sample must recover using fresh work." );
 	Require( output.Text == "Intervening output.\r\n<reset><cup:0,0><bold>Fresh frame after stale rejection.<reset>",
 		"Recovery must omit the stale payload and emit one freshly planned frame." );
@@ -103,7 +119,7 @@ foreach ( bool recoverable in new[] { false, true } ) {
 }
 
 // Execute the sample's real presentation and event path, including cleanup on failure.
-foreach ( string scenario in new[] { "q", "escape", "eof", "no-presentation", "no-baseline", "failure", "cancel" } ) {
+foreach ( string scenario in new[] { "q", "escape", "eof", "refresh", "refresh-fallback", "no-presentation", "no-baseline", "failure", "cancel" } ) {
 	Console.WriteLine( $"Screen sample host: {scenario}" );
 	RecordingOutput output = new();
 	TerminalDescriptionBuilder builder = new( "sample-host" );
@@ -116,18 +132,22 @@ foreach ( string scenario in new[] { "q", "escape", "eof", "no-presentation", "n
 		builder.SetString( StringCapability.EnterCursorAddressingMode, "<enter>" );
 		builder.SetString( StringCapability.ExitCursorAddressingMode, "<leave>" );
 	}
+	if ( scenario == "refresh" ) {
+		builder.SetString( StringCapability.CursorInvisible, "<hide>" );
+		builder.SetString( StringCapability.CursorNormal, "<normal>" );
+	}
 	using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
 	using CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource( timeout.Token );
 	if ( scenario == "failure" ) {
 		output.FailOnText = "Terminal-owned screen output";
 	}
 	if ( scenario == "cancel" ) {
-		output.AfterWrite = text => { if ( text.Contains( "Press q", StringComparison.Ordinal ) ) cancellation.Cancel(); };
+		output.AfterWrite = text => { if ( text.Contains( "Press r to refresh", StringComparison.Ordinal ) ) cancellation.Cancel(); };
 	}
 	await using TerminalSession session = await TerminalSession.OpenAsync(
 		new TestControlProvider { SizeAvailable = false }, TerminalEndpoint.StandardInput,
 		TerminalEndpoint.StandardOutput,
-		new SampleInput( scenario == "escape" ? "\u001b" : scenario == "q" ? "q" : "" ), output,
+		new SampleInput( scenario == "escape" ? "\u001b" : scenario is "refresh" or "refresh-fallback" ? "rq" : scenario == "q" ? "q" : "" ), output,
 		new TerminalSessionOptions { TerminalOverride = builder.Build(), ConfigureOutput = false, ObserveLifecycleEvents = false }
 	);
 	bool expectedFailure = false;
@@ -148,6 +168,15 @@ foreach ( string scenario in new[] { "q", "escape", "eof", "no-presentation", "n
 		Require( !output.Text.Contains( "This stale frame", StringComparison.Ordinal ), "Stale sample payload leaked." );
 		if ( scenario == "no-baseline" ) {
 			Require( output.Text == "<enter><leave>", "Missing baseline must not emit a frame inside the presentation scope." );
+		}
+		if ( scenario == "refresh" ) {
+			Require( output.Text.Contains( "<hide><reset><cup:0,0><bold>Input-driven frame<reset><normal>", StringComparison.Ordinal ),
+				"The package sample must refresh on input inside its temporary cursor scope." );
+		}
+		if ( scenario == "refresh-fallback" ) {
+			Require( output.Text.Contains( "<reset><cup:0,0><bold>Input-driven frame<reset>", StringComparison.Ordinal )
+				&& !output.Text.Contains( "<hide>", StringComparison.Ordinal ),
+				"The package sample must refresh without hiding when cursor capabilities are unavailable." );
 		}
 	}
 }

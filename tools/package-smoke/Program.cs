@@ -21,6 +21,7 @@
 using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
+using Icod.Terminal.RichInput.Sample;
 using Icod.TermInfo;
 
 static void Require(
@@ -60,6 +61,9 @@ string scriptedText =
 		+ "\u001b[200~hello\u001b[201~"
 		+ "\u001b[<0;3;4M"
 		+ "\u001b[1;5A"
+		+ "\u001b[1;5:1D"
+		+ "\u001b[1;5:3D"
+		+ "\u001b[2;5:2~"
 ;
 var input = new ScriptedTerminalInput(
 	Encoding.UTF8.GetBytes( scriptedText )
@@ -266,6 +270,32 @@ try {
 			&& TerminalKeyModifiers.Control == modifiedKey.Modifiers,
 		"The package consumer did not normalize Control+Up correctly."
 	);
+	EditorKeyState editor = new();
+	Require( !editor.Observe( modifiedKey ),
+		"A traditional Up key must not fabricate a held Left key." );
+	TerminalInputEvent pressed = await ReadInputAsync( session, "a Kitty Left press" );
+	Require( editor.Observe( pressed ) && editor.LeftHeld,
+		"The editor must retain a reported Left press." );
+	TerminalInputEvent released = await ReadInputAsync( session, "a Kitty Left release" );
+	Require(
+		TerminalInputEventKind.Key == released.Kind
+			&& TerminalKey.Left == released.Key
+			&& TerminalKeyModifiers.Control == released.Modifiers
+			&& TerminalKeyEventPhase.Release == released.KeyPhase,
+		"The package consumer lost a functional-key release event."
+	);
+	Require( editor.Observe( released ) && !editor.LeftHeld,
+		"The editor must clear its held Left key on release." );
+	TerminalInputEvent repeated = await ReadInputAsync( session, "a Kitty Insert repeat" );
+	Require(
+		TerminalInputEventKind.Key == repeated.Kind
+			&& TerminalKey.Insert == repeated.Key
+			&& TerminalKeyModifiers.Control == repeated.Modifiers
+			&& TerminalKeyEventPhase.Repeat == repeated.KeyPhase,
+		"The package consumer lost a functional-key repeat event."
+	);
+	Require( editor.Observe( repeated ) && 1 == editor.ControlInsertRepeats,
+		"The editor must count a reported Control+Insert repeat." );
 
 	await protocolLease.DisposeAsync();
 

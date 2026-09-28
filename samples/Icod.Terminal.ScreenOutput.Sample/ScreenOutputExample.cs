@@ -25,10 +25,26 @@ public static class ScreenOutputExample {
 	/// <summary>Draws a frame, returning false without output if mandatory plans are unavailable.</summary>
 	public static async ValueTask<bool> DrawFrameAsync(
 		TerminalSession session, string text, CancellationToken cancellationToken = default
+	) => await DrawFrameCoreAsync( session, text, false, cancellationToken );
+
+	/// <summary>Draws one frame with a temporary hidden cursor and restores its lease owner.</summary>
+	/// <returns>False if required plans or cursor capabilities are unavailable.</returns>
+	public static async ValueTask<bool> DrawFrameWithHiddenCursorAsync(
+		TerminalSession session, string text, CancellationToken cancellationToken = default
+	) => await DrawFrameCoreAsync( session, text, true, cancellationToken );
+
+	private static async ValueTask<bool> DrawFrameCoreAsync(
+		TerminalSession session, string text, bool hideCursor,
+		CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull( session );
 		ArgumentNullException.ThrowIfNull( text );
 		cancellationToken.ThrowIfCancellationRequested();
+		if ( hideCursor && ( !session.Profile.Screen.SupportsCursorHidden
+			|| ( !session.Profile.Screen.SupportsCursorNormal
+				&& !session.Profile.Screen.SupportsCursorVeryVisible ) ) ) {
+			return false;
+		}
 		// This example leaves wrapping/layout to its caller, including text width.
 		TerminalScreenPlanner planner = session.Screen;
 		TerminalScreenOperationPlan? baseline = planner.PlanRenditionBaseline();
@@ -42,6 +58,9 @@ public static class ScreenOutputExample {
 			return false;
 		}
 		TerminalScreenOutputTransaction frame = session.CreateScreenOutputTransaction();
+		if ( hideCursor ) {
+			frame.SetCursorVisibilityForCommit( TerminalCursorVisibility.Hidden );
+		}
 		frame.Add( baseline.Value );
 		frame.Add( home.Value );
 		TerminalScreenOperationPlan? erase = planner.PlanErase( TerminalScreenEraseKind.ToEndOfLine );
@@ -78,7 +97,7 @@ public static class ScreenOutputExample {
 		throw new InvalidOperationException( "The demonstration expected stale work to be rejected." );
 	}
 
-	/// <summary>Owns an alternate-screen scope, draws the demonstration, and waits for q, Escape, or EOF.</summary>
+	/// <summary>Owns an alternate-screen scope; r refreshes the frame, q/Escape/EOF exit.</summary>
 	/// <returns>False if presentation or required screen operations are unavailable.</returns>
 	public static async ValueTask<bool> RunInteractiveAsync(
 		TerminalSession session, bool demonstrateRecovery = false,
@@ -98,7 +117,7 @@ public static class ScreenOutputExample {
 		if ( !drawn ) {
 			return false;
 		}
-		await session.WriteTextAsync( "\r\nPress q or Escape to exit.\r\n", cancellationToken );
+		await session.WriteTextAsync( "\r\nPress r to refresh, q or Escape to exit.\r\n", cancellationToken );
 		while ( true ) {
 			TerminalEvent terminalEvent = await session.ReadEventAsync( cancellationToken );
 			// Event waits report cancellation as an event, rather than throwing.
@@ -113,6 +132,17 @@ public static class ScreenOutputExample {
 				|| ( ( input.Kind is TerminalInputEventKind.Text or TerminalInputEventKind.Key )
 					&& input.Character is { Value: 'q' or 'Q' } ) ) {
 				return true;
+			}
+			if ( ( input.Kind is TerminalInputEventKind.Text or TerminalInputEventKind.Key )
+				&& input.Character is { Value: 'r' or 'R' }
+				&& input.KeyPhase is not TerminalKeyEventPhase.Release ) {
+				// The application owns its frame content and fallback policy. A scoped
+				// visibility request leaves any long-lived presentation lease intact.
+				if ( !await DrawFrameWithHiddenCursorAsync(
+					session, "Input-driven frame", cancellationToken
+				) ) {
+					await DrawFrameAsync( session, "Input-driven frame", cancellationToken );
+				}
 			}
 		}
 	}

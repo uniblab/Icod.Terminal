@@ -81,6 +81,8 @@ The composition rules are:
 - cursor visibility uses acquisition order, with the most recently acquired active cursor request controlling physical presentation;
 - releasing the controlling cursor request restores the next-most-recent active request, or the terminal's ordinary cursor-visibility capability when no owner remains.
 
+An opt-in screen transaction can temporarily select a cursor visibility for one frame through `SetCursorVisibilityForCommit(...)`. The presentation manager reserves the effective lease owner, emits the temporary setting under the frame's output gate, and attempts restoration after the frame. This does not add a persistent lease, change acquisition order, or claim to observe the terminal's exact starting cursor value. An unsupported entry/return path rejects commitment before writing. A partial frame or failed restoration can leave physical state uncertain; the caller must choose a new frame or fallback rather than replaying the consumed transaction.
+
 Lease disposal is asynchronous because release can require terminal output.
 
 ### 2.2 Failure and rollback
