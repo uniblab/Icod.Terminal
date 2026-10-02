@@ -170,15 +170,28 @@ internal static class PersistentRasterCompositionScenario {
 			"A bounded region must transfer fewer measured wire bytes than the full frame."
 		);
 		Console.WriteLine(
-			FormattableString.Invariant(
-				$"Partial-frame measurement {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}: "
-				+ $"full={frameWidth}x{frameHeight}, partial={partialWidth}x{partialHeight}, iterations={iterations}; "
-				+ $"full wire={fullMeasurement.WireBytes} B/op, first={fullMeasurement.FirstLatency.TotalMicroseconds:F1} us, "
-				+ $"total={fullMeasurement.TotalLatency.TotalMilliseconds:F3} ms, cpu={fullMeasurement.CpuTime.TotalMilliseconds:F3} ms, "
-				+ $"allocated={fullMeasurement.AllocatedBytes} B; "
-				+ $"partial wire={partialMeasurement.WireBytes} B/op, first={partialMeasurement.FirstLatency.TotalMicroseconds:F1} us, "
-				+ $"total={partialMeasurement.TotalLatency.TotalMilliseconds:F3} ms, cpu={partialMeasurement.CpuTime.TotalMilliseconds:F3} ms, "
-				+ $"allocated={partialMeasurement.AllocatedBytes} B."
+			string.Concat(
+				FormattableString.Invariant(
+					$"Partial-frame measurement {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}: "
+				),
+				FormattableString.Invariant(
+					$"full={frameWidth}x{frameHeight}, partial={partialWidth}x{partialHeight}, iterations={iterations}; "
+				),
+				FormattableString.Invariant(
+					$"full wire={fullMeasurement.WireBytes} B/op, first={fullMeasurement.FirstLatency.TotalMicroseconds:F1} us, "
+				),
+				FormattableString.Invariant(
+					$"total={fullMeasurement.TotalLatency.TotalMilliseconds:F3} ms, cpu={fullMeasurement.CpuTime.TotalMilliseconds:F3} ms, "
+				),
+				FormattableString.Invariant(
+					$"allocated={fullMeasurement.AllocatedBytes} B; partial wire={partialMeasurement.WireBytes} B/op, "
+				),
+				FormattableString.Invariant(
+					$"first={partialMeasurement.FirstLatency.TotalMicroseconds:F1} us, total={partialMeasurement.TotalLatency.TotalMilliseconds:F3} ms, "
+				),
+				FormattableString.Invariant(
+					$"cpu={partialMeasurement.CpuTime.TotalMilliseconds:F3} ms, allocated={partialMeasurement.AllocatedBytes} B."
+				)
 			)
 		);
 	}
