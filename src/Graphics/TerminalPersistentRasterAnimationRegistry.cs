@@ -50,6 +50,15 @@ internal sealed class TerminalPersistentRasterAnimationRegistry {
 		}
 	}
 
+	internal int AllocatedFrameCount {
+		get {
+			lock ( this.synchronization ) {
+				this.PruneInactiveAnimationsUnsafe();
+				return this.GetAllocatedFrameCountUnsafe();
+			}
+		}
+	}
+
 	internal bool TryGetOrCreate(
 		TerminalPersistentRasterResourceState resource,
 		out TerminalPersistentRasterAnimationState? animation

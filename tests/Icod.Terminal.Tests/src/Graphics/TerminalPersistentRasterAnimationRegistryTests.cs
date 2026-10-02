@@ -64,10 +64,12 @@ public sealed class TerminalPersistentRasterAnimationRegistryTests {
 		Assert.NotNull( firstReservation );
 		Assert.Equal( 2u, firstReservation.FrameNumber );
 		Assert.Equal( 1, animation.KnownFrameCount );
+		Assert.Equal( 1, registry.AllocatedFrameCount );
 		Assert.False( registry.TryReserveAppend( animation, out _ ) );
 
 		Assert.True( registry.TryRollbackAppend( firstReservation ) );
 		Assert.Equal( 1, animation.KnownFrameCount );
+		Assert.Equal( 1, registry.AllocatedFrameCount );
 
 		Assert.True(
 			registry.TryReserveAppend(
@@ -77,6 +79,7 @@ public sealed class TerminalPersistentRasterAnimationRegistryTests {
 		);
 		Assert.NotNull( retriedReservation );
 		Assert.Equal( 2u, retriedReservation.FrameNumber );
+		Assert.Equal( 2, registry.AllocatedFrameCount );
 		Assert.True(
 			registry.TryPublishAppend(
 				retriedReservation,
@@ -86,6 +89,7 @@ public sealed class TerminalPersistentRasterAnimationRegistryTests {
 		Assert.NotNull( frame2 );
 		Assert.Equal( 2u, frame2.FrameNumber );
 		Assert.Equal( 2, animation.KnownFrameCount );
+		Assert.Equal( 2, registry.AllocatedFrameCount );
 
 		Assert.True(
 			registry.TryReserveAppend(
@@ -95,6 +99,7 @@ public sealed class TerminalPersistentRasterAnimationRegistryTests {
 		);
 		Assert.NotNull( thirdReservation );
 		Assert.Equal( 3u, thirdReservation.FrameNumber );
+		Assert.Equal( 3, registry.AllocatedFrameCount );
 	}
 
 	[Fact]

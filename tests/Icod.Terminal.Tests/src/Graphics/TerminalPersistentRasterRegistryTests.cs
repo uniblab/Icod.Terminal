@@ -170,6 +170,20 @@ public sealed class TerminalPersistentRasterRegistryTests {
 	}
 
 	[Fact]
+	public void PlanningCountsCaptureResourcesAndCombinedPlacementsUnderOneLock() {
+		TerminalPersistentRasterRegistry registry = new();
+		Assert.Equal( ( 0, 0 ), registry.CapturePlanningCounts() );
+		Assert.True( registry.TryReserveResource( out TerminalPersistentRasterResourceState? resource ) );
+		Assert.NotNull( resource );
+		Assert.True( registry.TryReservePlacement( resource, out _ ) );
+		Assert.True( registry.TryReservePlaceholder( resource, 2, 3, out _ ) );
+
+		Assert.Equal( ( 1, 2 ), registry.CapturePlanningCounts() );
+		Assert.True( registry.TryReleaseResource( resource ) );
+		Assert.Equal( ( 0, 0 ), registry.CapturePlanningCounts() );
+	}
+
+	[Fact]
 	public void ResourceReleaseIsIdempotentAndBlocksNewChildren() {
 		TerminalPersistentRasterRegistry registry = new();
 		Assert.True(
