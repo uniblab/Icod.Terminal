@@ -194,6 +194,34 @@ Func<
 Func<
 	TerminalRasterAnimation,
 	TerminalRasterAnimationFrame,
+	TerminalRasterAnimationFrame,
+	TerminalRasterSourceRectangle,
+	int,
+	int,
+	TerminalRasterFrameCompositionMode,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> composeAnimationFrame = static (
+	TerminalRasterAnimation animation,
+	TerminalRasterAnimationFrame source,
+	TerminalRasterAnimationFrame destination,
+	TerminalRasterSourceRectangle sourceRectangle,
+	int destinationX,
+	int destinationY,
+	TerminalRasterFrameCompositionMode mode,
+	CancellationToken cancellationToken
+) => animation.ComposeFrameAsync(
+	source,
+	destination,
+	sourceRectangle,
+	destinationX,
+	destinationY,
+	mode,
+	cancellationToken
+);
+Func<
+	TerminalRasterAnimation,
+	TerminalRasterAnimationFrame,
 	TimeSpan,
 	CancellationToken,
 	ValueTask<TerminalControlMutationResult>
@@ -260,6 +288,7 @@ _ = getPlaceholderCell;
 _ = writePlaceholderCell;
 _ = writePlaceholderCells;
 _ = addAnimationFrame;
+_ = composeAnimationFrame;
 _ = setAnimationFrameDuration;
 _ = selectAnimationFrame;
 _ = stopAnimation;
@@ -509,6 +538,7 @@ AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderOptions ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholder ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderCell ) );
+await PersistentRasterCompositionScenario.RunAsync();
 Require(
 	typeof( TerminalRasterPlacement ).GetProperty(
 		"Parent",

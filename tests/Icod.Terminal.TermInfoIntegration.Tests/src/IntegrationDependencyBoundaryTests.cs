@@ -57,13 +57,13 @@ public sealed class IntegrationDependencyBoundaryTests {
 	}
 
 	[Fact]
-	public void CurrentReleaseUsesTermInfo116AcrossProductionAndInspectionConsumers() {
+	public void CurrentDevelopmentUsesTermInfo117AcrossProductionAndInspectionConsumers() {
 		string root = FindRepositoryRoot();
 
 		AssertPackageReferenceVersion(
 			Path.Combine( root, "Icod.Terminal.csproj" ),
 			"Icod.TermInfo",
-			"1.16.0"
+			"1.17.0"
 		);
 		AssertPackageReferenceVersion(
 			Path.Combine(
@@ -73,7 +73,7 @@ public sealed class IntegrationDependencyBoundaryTests {
 				"Icod.Terminal.TermInfoIntegration.Tests.csproj"
 			),
 			"Icod.TermInfo.Inspection",
-			"1.16.0"
+			"1.17.0"
 		);
 		AssertPackageReferenceVersion(
 			Path.Combine(
@@ -83,7 +83,7 @@ public sealed class IntegrationDependencyBoundaryTests {
 				"Icod.Terminal.TermInfoPersistentRaster.Sample.csproj"
 			),
 			"Icod.TermInfo.Inspection",
-			"1.16.0"
+			"1.17.0"
 		);
 	}
 

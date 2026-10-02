@@ -80,6 +80,44 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 		);
 	}
 
+	internal static ReadOnlyMemory<byte> EncodeCompositionPayload(
+		uint imageId,
+		uint sourceFrameNumber,
+		uint destinationFrameNumber,
+		TerminalRasterSourceRectangle sourceRectangle,
+		int destinationX,
+		int destinationY,
+		TerminalRasterFrameCompositionMode mode
+	) {
+		ValidateImageId( imageId );
+		ValidateFrameNumber( sourceFrameNumber );
+		ValidateFrameNumber( destinationFrameNumber );
+		sourceRectangle.Validate();
+		if ( destinationX is < 0 or >= TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException( nameof( destinationX ) );
+		}
+		if ( destinationY is < 0 or >= TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException( nameof( destinationY ) );
+		}
+		if ( mode is not TerminalRasterFrameCompositionMode.AlphaBlend
+			and not TerminalRasterFrameCompositionMode.Replace ) {
+			throw new ArgumentOutOfRangeException( nameof( mode ) );
+		}
+
+		return Encoding.ASCII.GetBytes(
+			"Ga=c,i=" + imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",r=" + sourceFrameNumber.ToString( CultureInfo.InvariantCulture )
+			+ ",c=" + destinationFrameNumber.ToString( CultureInfo.InvariantCulture )
+			+ ",w=" + sourceRectangle.Width.ToString( CultureInfo.InvariantCulture )
+			+ ",h=" + sourceRectangle.Height.ToString( CultureInfo.InvariantCulture )
+			+ ",X=" + sourceRectangle.X.ToString( CultureInfo.InvariantCulture )
+			+ ",Y=" + sourceRectangle.Y.ToString( CultureInfo.InvariantCulture )
+			+ ",x=" + destinationX.ToString( CultureInfo.InvariantCulture )
+			+ ",y=" + destinationY.ToString( CultureInfo.InvariantCulture )
+			+ ( mode == TerminalRasterFrameCompositionMode.Replace ? ",C=1" : "" )
+		);
+	}
+
 	internal static ReadOnlyMemory<byte> EncodeStopPayload(
 		uint imageId
 	) {

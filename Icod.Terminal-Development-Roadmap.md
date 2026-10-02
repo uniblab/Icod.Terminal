@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.20.0` — Profile and capability decisions
+- **Current published feature line:** `1.21.0` — Rich input and cursor visibility
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.20.0 merged and published; 1.21.0 stable candidate qualified in PR #66
-- **Active development target:** `1.21.0` — Rich input and cursor visibility
-- **Selected scope:** Rich input and keyboard expansion + Cursor-visibility composition with screen transactions
+- **Development status:** 1.21.0 merged and published; 1.22.0 implementation candidate passed nine-job CI in PR #67, final documentation-head qualification and review pending
+- **Active development target:** `1.22.0` — Bounded animation frame composition
+- **Selected scope:** Bounded composition of known frames on one persistent raster resource + executable sample and downstream acceptance
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -19,9 +19,9 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-`Icod.Terminal 1.20.0` was merged through [PR #65](https://github.com/uniblab/Icod.Terminal/pull/65) at `8aa6d0543a3d48d6ec28c84f930da35282703b4a`, tagged `v1.20.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.20.0) on 2026-09-27. The [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md#stable-candidate-qualification) records its qualified pre-merge source, nine-job CI checkpoint, candidate package hashes, and three-framework API baseline; those candidate hashes are not asserted as the published artifact's hashes. Its selected 3 + focused 6 + 10 scope is complete.
+`Icod.Terminal 1.21.0` was merged through [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66) at `24295f83153ce18f731dd2eced83d19ccf70b972`, tagged `v1.21.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.21.0) on 2026-09-28. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) records T2100–T2110 and the pre-merge qualification; the final PR head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36358713525). Its input and cursor-visibility scope is complete.
 
-Version 1.21.0 selects **Rich input and keyboard expansion + Cursor-visibility composition with screen transactions**. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) defines T2100-T2110 and records the Kitty functional-key fixture, frame visibility ownership and cleanup, package/downstream acceptance, and the [nine-job final implementation candidate](https://github.com/uniblab/Icod.Terminal/actions/runs/36357002885) (Linux passed on its same-source retry). The candidate has not been merged or published.
+Version 1.22.0 selects **bounded animation frame composition** with an executable sample and downstream acceptance. [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67) contains the semantic API, private encoder, acknowledgement path, sample, and a fresh-package runtime witness. The implementation head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36982553507); the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) records source and artifact identities. The final documentation head needs qualification and maintainer review before merge or publication.
 
 ### Earlier checkpoints
 
@@ -57,16 +57,16 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph retained from 1.20.0 for the planned 1.21.0 target is:
+The production dependency graph for the 1.22.0 development branch is:
 
 ```text
-Icod.TermInfo 1.16.0
+Icod.TermInfo 1.17.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production package graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspection and Source remain outside the production package graph.
 
-## Qualified stable sequence through 1.20.0
+## Qualified stable sequence through 1.21.0
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -88,7 +88,8 @@ Optional integration tests/samples may use `Icod.TermInfo.Inspection 1.16.0`; In
 1.18.0  unknown-rendition baseline recovery                         PUBLISHED
 1.19.0  downstream/planner/transaction hardening and docs/samples    PUBLISHED
 1.20.0  profile and capability decisions                           PUBLISHED
-1.21.0  rich input/keyboard and cursor visibility composition     CANDIDATE
+1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
+1.22.0  bounded animation frame composition                     STABLE CANDIDATE
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -367,8 +368,18 @@ T2110  cross-platform review, stable 1.21.0 closure and evidence
 
 The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) specifies acceptance per task, package checks, failure semantics, and deferred work. Its implementation evidence identifies the red fixtures, exact-head Windows/Linux/macOS runtime and package qualification, and candidate package/symbol hashes in PR #66.
 
+## 1.22 development line — Bounded Animation Frame Composition
+
+The selected scope is **Option 1 + Option 10**: compose a rectangular pixel region from one known animation frame into another known frame belonging to the same current persistent raster resource, then demonstrate it through an executable sample and a downstream consumer witness. The existing `TerminalRasterAnimation` controller and opaque frame tokens remain the public ownership boundary. The protocol-specific Kitty `a=c` operation remains private.
+
+The governing rule is:
+
+> Terminal owns frame identity, bounded pixel geometry validation, protocol commitment, acknowledgement, and lifecycle certainty; callers own source art, screen placement, timing decisions, and scene composition.
+
+T2200–T2210 cover the protocol/API review, TermInfo 1.17.0 dependency qualification, failing fixtures, semantic composition contract, private encoding and query correlation, failure/lifecycle hardening, sample and downstream acceptance, package/API/XML/security checks, and exact-head stable release closure. The implementation is under test in [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67); see the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) for acceptance criteria and evidence. Publication remains separate.
+
 ## Later development candidates
 
-Beyond the selected 1.21 scope, independent candidates still include animation-frame composition, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
+Beyond the selected 1.22 scope, independent candidates still include partial frame transfer/delta editing, gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

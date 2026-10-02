@@ -19,6 +19,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using Icod.Terminal;
+using Icod.Terminal.RasterAnimation.Sample;
 
 TerminalRasterImage rootImage = CreateFrame(
 	255, 72, 72,
@@ -59,14 +60,19 @@ await session.WriteTextAsync(
 	"The application supplies frames and presentation intent; Terminal owns opaque frame identity, sequence certainty, acknowledged control, and cleanup.\r\n"
 );
 
-TerminalCapabilityStatus capability = await session.VerifyCapabilityAsync(
-	TerminalCapability.PersistentRasterAnimation
-);
-if ( !capability.IsUsable ) {
+if ( !await RasterAnimationCompositionExample.VerifyPrerequisiteAsync( session ) ) {
+	TerminalCapabilityStatus graphics = session.InspectCapability(
+		TerminalCapability.PersistentRasterGraphics
+	);
+	TerminalCapabilityStatus animationCapability = session.InspectCapability(
+		TerminalCapability.PersistentRasterAnimation
+	);
 	await session.WriteTextAsync(
 		string.Concat(
-			"Persistent raster animation is not currently usable: ",
-			capability.Support.ToString(),
+			"Persistent raster prerequisites are not currently usable: graphics ",
+			graphics.Support.ToString(),
+			", animation=",
+			animationCapability.Support.ToString(),
 			".\r\n"
 		)
 	);
@@ -130,6 +136,14 @@ if ( TerminalControlStatus.Available != thirdResult.Status
 		thirdResult.Status,
 		thirdResult.Message
 	);
+	return 1;
+}
+TerminalRasterAnimationFrame thirdFrame = thirdResult.Value;
+if ( !await RequireSuccessAsync(
+	session,
+	"Frame composition",
+	await RasterAnimationCompositionExample.ComposeAsync( animation, thirdFrame )
+) ) {
 	return 1;
 }
 

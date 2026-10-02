@@ -155,11 +155,14 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			session,
 			transport
 		);
-		TerminalRasterAnimationFrame frame = await AppendFrameAsync(
-			resource,
-			transport,
-			expectedWriteCount: 2
-		);
+		// Reply at the flush boundary so runner scheduling cannot consume the
+		// one-second protocol deadline between the write signal and test continuation.
+		transport.ReplyToNextFlush = true;
+		TerminalControlResult<TerminalRasterAnimationFrame> append = await resource.Animation
+			.AddFrameAsync( CreateFrameImage( 0 ), TimeSpan.FromMilliseconds( 40 ) );
+		Assert.Equal( TerminalControlStatus.Available, append.Status );
+		TerminalRasterAnimationFrame frame = Assert.IsType<TerminalRasterAnimationFrame>( append.Value );
+		Assert.Equal( 2, transport.Writes.Count );
 
 		await resource.DisposeAsync();
 		int writesBeforeRejectedControls = transport.Writes.Count;
@@ -239,6 +242,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
 			}
@@ -272,6 +276,11 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		private readonly object synchronization = new();
 		private readonly SemaphoreSlim writeSignal = new( 0 );
 		private readonly List<byte[]> writes = [];
+
+		internal bool ReplyToNextFlush {
+			get;
+			set;
+		}
 
 		internal IReadOnlyList<byte[]> Writes {
 			get {
@@ -315,6 +324,10 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( this.ReplyToNextFlush ) {
+				this.ReplyToNextFlush = false;
+				this.Publish( OkResponse() );
+			}
 			return ValueTask.CompletedTask;
 		}
 

@@ -62,7 +62,11 @@ $requiredMembers = @(
 	'T:Icod.Terminal.TerminalRasterAnimation',
 	'P:Icod.Terminal.TerminalRasterAnimation.RootFrame',
 	'P:Icod.Terminal.TerminalRasterAnimation.State',
+	'T:Icod.Terminal.TerminalRasterFrameCompositionMode',
+	'F:Icod.Terminal.TerminalRasterFrameCompositionMode.AlphaBlend',
+	'F:Icod.Terminal.TerminalRasterFrameCompositionMode.Replace',
 	'M:Icod.Terminal.TerminalRasterAnimation.AddFrameAsync(Icod.Terminal.TerminalRasterImage,System.TimeSpan,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalRasterAnimation.ComposeFrameAsync(Icod.Terminal.TerminalRasterAnimationFrame,Icod.Terminal.TerminalRasterAnimationFrame,Icod.Terminal.TerminalRasterSourceRectangle,System.Int32,System.Int32,Icod.Terminal.TerminalRasterFrameCompositionMode,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.SetFrameDurationAsync(Icod.Terminal.TerminalRasterAnimationFrame,System.TimeSpan,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.SelectFrameAsync(Icod.Terminal.TerminalRasterAnimationFrame,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.StopAsync(System.Threading.CancellationToken)',
@@ -162,6 +166,8 @@ New-Item -ItemType Directory -Path $smokeRoot -Force | Out-Null
 try {
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/Icod.Terminal.PackagePersistentRasterSmoke.csproj') -Destination (Join-Path $smokeRoot 'Icod.Terminal.PackagePersistentRasterSmoke.csproj')
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/Program.cs') -Destination (Join-Path $smokeRoot 'Program.cs')
+	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/PersistentRasterCompositionScenario.cs') -Destination (Join-Path $smokeRoot 'PersistentRasterCompositionScenario.cs')
+	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'samples/Icod.Terminal.RasterAnimation.Sample/RasterAnimationCompositionExample.cs') -Destination (Join-Path $smokeRoot 'RasterAnimationCompositionExample.cs')
 
 	$nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
 	$artifactUri = [System.Security.SecurityElement]::Escape($ArtifactDirectory)
@@ -207,4 +213,4 @@ try {
 	}
 }
 
-Write-Host "1.16 persistent-raster animation and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Persistent-raster animation, 1.22 composition, and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

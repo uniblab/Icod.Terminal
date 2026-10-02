@@ -191,7 +191,7 @@ The stable semantic surface intentionally does not expose:
 
 ## 14. TermInfo 1.14 advisory backend planning
 
-The active 1.20 repository directly depends on `Icod.TermInfo 1.16.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.16.0`.
+The 1.22 development branch directly depends on `Icod.TermInfo 1.17.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.17.0`.
 
 Inspection's `RasterBackendPlanner` classifies advisory Sixel/Kitty availability and applies explicit caller preference. This is **not** production Terminal routing and is not a security/authentication oracle.
 
@@ -228,14 +228,14 @@ TermInfo backend planning does not justify extra probes by itself; runtime verif
 
 ## 18. Dependency boundary
 
-The active 1.20 production package graph is:
+The 1.22 development branch production package graph is:
 
 ```text
-Icod.TermInfo 1.16.0
+Icod.TermInfo 1.17.0
 Icod.Timing   1.0.0
 ```
 
-`Icod.TermInfo.Inspection 1.16.0` is test/sample-only where used. Inspection, Source, image decoders, scene/layout libraries, and graphics toolkits are not added to the production graph.
+`Icod.TermInfo.Inspection 1.17.0` is test/sample-only where used. Inspection, Source, image decoders, scene/layout libraries, and graphics toolkits are not added to the production graph.
 
 Historical release records retain the dependency versions they actually shipped.
 
@@ -259,6 +259,8 @@ Animation acknowledgements remain untrusted terminal input. Correlation routes o
 `InspectCapability(PersistentRasterAnimation)` is side-effect free. Explicit verification does not manufacture a durable-state probe merely to fingerprint support. A successful real frame append can establish current-generation live evidence for the completed semantic operation.
 
 Applications must not treat animation state, selected frame, timing, looping, placement, or visual coverage as a security boundary. The terminal controls final rendering and may ignore, evict, reinterpret, record, or externally compose output.
+
+Version 1.22 composes a bounded pixel rectangle between two known frames of the same resource. Both source and destination bounds, same-frame nonoverlap, mode, and ownership are checked before output. The serialized query path correlates the reply; it cannot prove pixels on screen after a lost acknowledgement. No user-controlled protocol identity, path, decoder, or additional frame storage is introduced. An `ENOENT` response may name either a missing image or frame, so the resource is conservatively invalidated. Callers cannot use `Animation.State` as proof of destination pixel contents after an ambiguous committed mutation.
 
 ## 20. Semantic screen planning and output commitment — 1.17 and 1.18
 
@@ -285,7 +287,7 @@ Security/privacy behavior does not include promises for:
 - terminal-owned absolute screen/layout policy;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or screen-position tracking;
-- partial-frame animation updates, frame composition, and delta editing;
+- partial-frame animation transmission and delta editing beyond bounded composition between known frames;
 - automatic persistent-raster replay/re-upload;
 - Sixel persistent/placeholder emulation;
 - hidden image caches;

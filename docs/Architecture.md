@@ -289,6 +289,8 @@ Animation frame transfer and control reuse the session output gate, authoritativ
 
 Session bookkeeping admits at most 4096 known animation frames across resources, including roots, with one pending append reservation per animation. Stale, released, and owner-disposed animations release their capacity; sequence-uncertain animations retain acknowledged tokens and their capacity.
 
+The 1.22 composition operation resolves two known tokens of this same controller, checks intrinsic source and destination pixel bounds, and enqueues a private graphics control mutation through the authoritative query transaction. The query path serializes composition with append and playback commands. It publishes no new token and does not change frame-sequence certainty when destination pixels are ambiguous after commitment. An unambiguous resource-missing reply invalidates the resource and descendants conservatively; the terminal protocol does not distinguish missing image from missing frame in that reply.
+
 ## 8. One authoritative input conversation
 
 A live session owns one incremental byte stream containing ordinary input, lifecycle traffic, active query responses, unsolicited semantic reports, graphics probe replies, persistent graphics acknowledgements, placeholder acknowledgements, and animation frame/control acknowledgements.
@@ -353,7 +355,7 @@ Persistent source cropping and virtual-placeholder rendering operate on already-
 
 ## 14. Optional TermInfo 1.14 backend planning boundary
 
-The active 1.20 repository uses `Icod.TermInfo 1.16.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.16.0`.
+The 1.22 development branch uses `Icod.TermInfo 1.17.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.17.0`.
 
 Inspection 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. That planner remains a **consumer/application policy layer**; it is not invoked by `Icod.Terminal` production routing.
 
@@ -395,7 +397,7 @@ Stable 1.x still does not treat the following as ordinary `Icod.Terminal` respon
 - absolute screen-coordinate placement / Terminal-owned layout;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or emitted-screen-position tracking;
-- partial-frame animation updates, frame composition, and delta editing;
+- partial-frame animation transmission and delta editing beyond bounded composition between known frames;
 - PTY/ConPTY process hosting;
 - cells, windows, layout, damage, or scene-graph ownership.
 
@@ -403,14 +405,14 @@ Relative placement, lifecycle observation, virtual placeholders, and resource-ow
 
 ## 16. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.20 production graph is:
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The 1.22 development branch production graph is:
 
 ```text
-Icod.TermInfo 1.16.0
+Icod.TermInfo 1.17.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.16.0`. Inspection and Source remain absent from the production dependency graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`. Inspection and Source remain absent from the production dependency graph.
 
 Historical release documents retain the dependency versions shipped by those releases; advancing the active development dependency does not rewrite those records.
 
