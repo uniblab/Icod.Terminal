@@ -21,7 +21,7 @@ Icod.Terminal
 
 The executable flow:
 
-1. obtains the current `PersistentRasterAnimation` status through `VerifyCapabilityAsync` and checks `IsUsable`; this capability is inspection-only, so the call emits no live support probe;
+1. verifies `PersistentRasterGraphics` with its reviewed live probe, inspects `PersistentRasterAnimation`, and proceeds when graphics is usable and animation is not known unsupported; the animation capability has no passive probe, so an initially unknown status is expected;
 2. creates one persistent resource from an in-memory RGB24 root image;
 3. obtains the resource-owned animation controller and opaque root-frame token without I/O;
 4. assigns the root frame a positive duration;
@@ -36,7 +36,7 @@ The executable flow:
 
 The composition step lives in `RasterAnimationCompositionExample.ComposeAsync`. The automated scripted-terminal test invokes this same sample step with a two-by-two resource, verifies the emitted control frame, and withholds the acknowledgement until the operation is waiting. A failure reports its status and exits without guessing whether a committed composition changed the destination pixels. Recreate the resource and frames before trying again after an ambiguous outcome; do not replay a possibly applied composition.
 
-`PersistentRasterAnimation` has no reviewed passive support query. The initial call returns current inspection knowledge; it does not upload a test frame or establish live animation support. An unknown or unavailable result causes the sample to report that animation is not currently usable and exit nonzero. Even when `IsUsable` is true, subsequent resource and animation operations can fail and are checked separately. Verifying ordinary or persistent raster graphics alone does not verify animation. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the three capabilities with live support paths.
+`PersistentRasterAnimation` has no reviewed passive support query. The preflight verifies persistent raster graphics, checks for a usable graphics endpoint and no known animation rejection, and then attempts real acknowledged animation operations. An unknown animation status does not falsely stop a fresh session; successful controls establish live animation evidence. The resource creation, frame append, and composition results are checked separately. Verifying persistent raster graphics alone does not prove animation or composition support. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the capabilities with live support paths.
 
 The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame replay cache, image-file decoder, or screen-layout policy. A failed or ambiguous operation is reported and is never automatically retried.
 

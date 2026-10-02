@@ -23,6 +23,24 @@ namespace Icod.Terminal.RasterAnimation.Sample;
 using Icod.Terminal;
 
 internal static class RasterAnimationCompositionExample {
+	internal static async ValueTask<bool> VerifyPrerequisiteAsync(
+		TerminalSession session,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		TerminalCapabilityStatus graphics = await session.VerifyCapabilityAsync(
+			TerminalCapability.PersistentRasterGraphics,
+			cancellationToken
+		);
+		TerminalCapabilityStatus animation = session.InspectCapability(
+			TerminalCapability.PersistentRasterAnimation
+		);
+		return graphics.IsUsable
+			&& TerminalCapabilityEndpointAvailability.Available
+				== animation.EndpointAvailability
+			&& TerminalCapabilitySupport.Unsupported != animation.Support;
+	}
+
 	internal static ValueTask<TerminalControlMutationResult> ComposeAsync(
 		TerminalRasterAnimation animation,
 		TerminalRasterAnimationFrame destination,

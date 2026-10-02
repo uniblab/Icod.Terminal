@@ -43,6 +43,7 @@ foreach ($forbidden in @(
 
 foreach ($required in @(
     'TerminalCapability.PersistentRasterAnimation',
+    'TerminalCapability.PersistentRasterGraphics',
     'CreateRasterResourceAsync',
     '.Animation',
     'RootFrame',
@@ -63,6 +64,9 @@ foreach ($required in @(
 }
 if (-not $programText.Contains('RasterAnimationCompositionExample.ComposeAsync', [System.StringComparison]::Ordinal)) {
     throw 'The executable raster animation sample must call the tested composition step.'
+}
+if (-not $programText.Contains('RasterAnimationCompositionExample.VerifyPrerequisiteAsync', [System.StringComparison]::Ordinal)) {
+    throw 'The executable raster animation sample must use the tested capability preflight.'
 }
 
 Write-Host ''
