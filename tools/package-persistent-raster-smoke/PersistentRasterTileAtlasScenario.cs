@@ -130,7 +130,7 @@ internal static class PersistentRasterTileAtlasScenario {
 				Require( update.Succeeded, "A measured tile-region update failed." );
 				if ( 0 == index ) firstAcknowledgement.Stop();
 			}
-			long encodedBytes = checked( transport.EndMeasurement( regionCount ) * regionCount );
+			long encodedBytes = transport.EndMeasurementTotal( regionCount );
 			TerminalControlMutationResult selected = await animation.SelectFrameAsync(
 				back,
 				cancellationToken

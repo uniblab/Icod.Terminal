@@ -260,17 +260,22 @@ internal static class PersistentRasterCompositionScenario {
 		}
 
 		internal long EndMeasurement( int expectedWrites ) {
+			long totalBytes = this.EndMeasurementTotal( expectedWrites );
+			Require(
+				0 == totalBytes % expectedWrites,
+				"Measured writes did not have a stable byte count."
+			);
+			return totalBytes / expectedWrites;
+		}
+
+		internal long EndMeasurementTotal( int expectedWrites ) {
 			Require( this.measuring, "No wire measurement is active." );
 			this.measuring = false;
 			Require(
 				expectedWrites == this.measuredWrites,
 				"The measured update did not emit exactly one write per operation."
 			);
-			Require(
-				0 == this.measuredBytes % expectedWrites,
-				"Measured writes did not have a stable byte count."
-			);
-			return this.measuredBytes / expectedWrites;
+			return this.measuredBytes;
 		}
 
 		public async ValueTask<int> ReadAsync(
