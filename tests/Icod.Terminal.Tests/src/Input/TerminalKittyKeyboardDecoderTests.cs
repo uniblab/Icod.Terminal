@@ -319,6 +319,15 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 	}
 
 	[Fact]
+	public async Task MalformedKittyFrameAtEndOfInputRecoversAsEndOfInput() {
+		TerminalInputDecoder decoder = CreateDecoder( "\u001b[97;1:9u" );
+
+		TerminalInputEvent recovered = await decoder.ReadAsync();
+
+		Assert.Equal( TerminalInputEventKind.EndOfInput, recovered.Kind );
+	}
+
+	[Fact]
 	public async Task ExistingTraditionalArrowSequenceStillWinsOutsideCsiU() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "traditional-arrow" )
 			.SetString( StringCapability.KeyCursorUp, "\u001b[A" )

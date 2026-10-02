@@ -253,6 +253,9 @@ internal sealed partial class TerminalInputDecoder {
 			if ( response.HasValue ) {
 				return response.Value;
 			}
+			if ( 0 == this.bufferedBytes.Count ) {
+				continue;
+			}
 
 			TerminalInputEvent? mouseEvent = await this.TryReadMouseEventAsync(
 				cancellationToken

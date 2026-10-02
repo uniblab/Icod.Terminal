@@ -192,6 +192,7 @@ internal sealed partial class TerminalInputDecoder {
 				6 => TerminalKey.PageDown,
 				7 => TerminalKey.Home,
 				8 => TerminalKey.End,
+				29 => TerminalKey.Menu,
 				11 or 12 or 13 or 14 or 15 or 17 or 18 or 19
 					or 20 or 21 or 23 or 24 => TerminalKey.Function,
 				_ => TerminalKey.None
