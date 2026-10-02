@@ -121,6 +121,8 @@ The controller is resource owned and not independently disposable. Animation seq
 
 The session-wide animation registry is bounded to 4096 known frames including roots, with one pending append per animation. No source-frame replay cache, partial-frame update, composition, or decoder dependency is added.
 
+Version 1.22 additively introduces `TerminalRasterAnimation.ComposeFrameAsync(...)` and `TerminalRasterFrameCompositionMode` with numeric values `AlphaBlend = 0` and `Replace = 1`. It reuses opaque known frame tokens and intrinsic pixel geometry, appends no frame, and preserves the existing capacity ceiling. The 1.16 statement above describes that historical release; the 1.22 operation adds bounded existing-frame composition without exposing protocol identities or changing 1.0.0 signatures. The cross-framework API fingerprint is recorded in [the 1.22 baseline](Public-API-Baseline-1.22.md).
+
 ### 4.6 1.17 semantic screen output
 
 Version 1.17 additively introduces Terminal-owned dimensions, an immutable semantic profile, TermInfo-free screen values, opaque costed operation plans, and bounded session-bound output transactions.
@@ -248,7 +250,7 @@ Stable 1.x does not promise:
 - pixel-within-cell positioning;
 - automatic placeholder redraw or emitted-screen-position tracking;
 - Terminal-owned retained-screen comparison, damage, refresh, or repaint policy;
-- partial-frame animation updates, frame composition, and delta editing;
+- partial-frame animation transmission and delta editing beyond bounded composition between known frames;
 - scene-graph/cells/windows/damage/layout ownership;
 - image-file decoding/transcoding;
 - PTY/ConPTY process hosting inside this package.

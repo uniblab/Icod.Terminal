@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.21.0` — Rich input and cursor visibility
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.21.0 merged and published; 1.22.0 planning PR
+- **Development status:** 1.21.0 merged and published; 1.22.0 implementation and qualification in PR #67
 - **Active development target:** `1.22.0` — Bounded animation frame composition
 - **Selected scope:** Bounded composition of known frames on one persistent raster resource + executable sample and downstream acceptance
 - **Stable compatibility floor:** `1.0.0`
@@ -21,7 +21,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.21.0` was merged through [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66) at `24295f83153ce18f731dd2eced83d19ccf70b972`, tagged `v1.21.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.21.0) on 2026-09-28. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) records T2100–T2110 and the pre-merge qualification; the final PR head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36358713525). Its input and cursor-visibility scope is complete.
 
-Version 1.22.0 selects **bounded animation frame composition** with an executable sample and downstream acceptance. The [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) defines T2200–T2210; implementation and release qualification remain pending.
+Version 1.22.0 selects **bounded animation frame composition** with an executable sample and downstream acceptance. [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67) now contains the semantic API, private encoder, acknowledgement path, and sample. The [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) defines T2200–T2210 and records qualification evidence; final release qualification remains pending.
 
 ### Earlier checkpoints
 
@@ -89,7 +89,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.19.0  downstream/planner/transaction hardening and docs/samples    PUBLISHED
 1.20.0  profile and capability decisions                           PUBLISHED
 1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
-1.22.0  bounded animation frame composition                     PLANNING
+1.22.0  bounded animation frame composition                     IN DEVELOPMENT
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -376,7 +376,7 @@ The governing rule is:
 
 > Terminal owns frame identity, bounded pixel geometry validation, protocol commitment, acknowledgement, and lifecycle certainty; callers own source art, screen placement, timing decisions, and scene composition.
 
-T2200–T2210 cover the protocol/API review, TermInfo 1.17.0 dependency qualification, failing fixtures, semantic composition contract, private encoding and query correlation, failure/lifecycle hardening, sample and downstream acceptance, package/API/XML/security checks, and exact-head stable release closure. See the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) for detailed acceptance criteria. No 1.22 feature or release gate is asserted complete by this planning PR.
+T2200–T2210 cover the protocol/API review, TermInfo 1.17.0 dependency qualification, failing fixtures, semantic composition contract, private encoding and query correlation, failure/lifecycle hardening, sample and downstream acceptance, package/API/XML/security checks, and exact-head stable release closure. The implementation is under test in [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67); see the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) for acceptance criteria and evidence. Publication remains separate.
 
 ## Later development candidates
 

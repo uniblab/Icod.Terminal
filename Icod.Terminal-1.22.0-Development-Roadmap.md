@@ -2,7 +2,7 @@
 
 **Goal:** Add bounded composition of pixels from one known animation frame into another known frame on the same current persistent raster resource, then demonstrate the contract through an executable sample and a downstream consumer witness.
 
-**Status:** Planning and dependency-refresh PR. Composition implementation, candidate qualification, merge, and publication are pending. The published baseline is 1.21.0.
+**Status:** Composition implementation and candidate qualification in PR #67. Merge and publication are pending. The published baseline is 1.21.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible package scripts and cmd/sh. No Python or new production package.
 
@@ -43,10 +43,10 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 **Inspect:** `src/Graphics/TerminalRasterAnimation.cs`, `TerminalRasterAnimationFrame.cs`, `TerminalRasterSourceRectangle.cs`, `TerminalPersistentRasterAnimationRegistry.cs`; `src/Session/TerminalSession.PersistentRasterAnimation.cs`; `docs/Persistent-Raster-Ownership.md`; 1.16 tests and the Kitty composition reference.
 
-- [ ] Capture the 1.21 tag, API fingerprint, supported frameworks, full-frame animation behavior, registry ceiling, and currently published dependency graph.
-- [ ] Freeze source/destination ownership, same-frame overlap, coordinate conventions, modes, capability evidence, playback ordering, result shape, error classification, and ambiguous-commit policy.
-- [ ] Review the smallest additive public API with a downstream consumer; preserve 1.0.0 compatibility and avoid duplicating placement geometry or exporting Kitty identities.
-- [ ] Record the exact reviewed signature and state table here before implementation. Establish 1.22 prerelease metadata when feature implementation begins.
+- [x] Capture the 1.21 tag, API fingerprint, supported frameworks, full-frame animation behavior, registry ceiling, and currently published dependency graph.
+- [x] Freeze source/destination ownership, same-frame overlap, coordinate conventions, modes, capability evidence, playback ordering, result shape, error classification, and ambiguous-commit policy.
+- [x] Review the smallest additive public API with a downstream consumer; preserve 1.0.0 compatibility and avoid duplicating placement geometry or exporting Kitty identities.
+- [x] Record the exact reviewed signature and state table here before implementation. Establish 1.22 prerelease metadata when feature implementation begins.
 
 **Acceptance:** A reviewed API and failure-state matrix explain the observable behavior without claiming an unproved terminal capability.
 
@@ -148,4 +148,8 @@ The exact public method and enum names are frozen during T2200, after comparing 
 | --- | --- | --- |
 | 1.21.0 published baseline | [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66), [v1.21.0](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.21.0) | Historical baseline |
 | TermInfo 1.17.0 published | [v1.17.0](https://github.com/uniblab/Icod.TermInfo/releases/tag/v1.17.0) | Available for dependency refresh |
-| 1.22 feature fixtures and cross-platform qualification | Pending | No implementation result claimed |
+| Encoder fixture RED | [run 36974300099](https://github.com/uniblab/Icod.Terminal/actions/runs/36974300099) | Linux compilation failed on missing composition mode as intended |
+| Semantic fixture RED | [run 36974852765](https://github.com/uniblab/Icod.Terminal/actions/runs/36974852765) | Linux compilation failed on missing composition API as intended |
+| Initial composition implementation | [run 36975138106](https://github.com/uniblab/Icod.Terminal/actions/runs/36975138106) at `d619471177f25696978e9c0567301423279ee175` | Runtime Linux, macOS, and Windows passed; package fingerprint gate expected a new 1.22 baseline |
+| 1.22 candidate API snapshot | [run 36975636717](https://github.com/uniblab/Icod.Terminal/actions/runs/36975636717) at `bb9a0f5be8bb1b2397d2ec5c392f68ccdcdc982e` | Package candidate passed; three-framework fingerprint `61bcebdcff55a16a17d4e5a2546421c89fddc017ca3a05ea5d2673faa39cbe34`; later jobs cancelled by subsequent push |
+| Final 1.22 PR head qualification | Pending | No stable candidate claim until full exact-head workflow passes |

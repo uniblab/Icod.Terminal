@@ -289,6 +289,8 @@ Animation frame transfer and control reuse the session output gate, authoritativ
 
 Session bookkeeping admits at most 4096 known animation frames across resources, including roots, with one pending append reservation per animation. Stale, released, and owner-disposed animations release their capacity; sequence-uncertain animations retain acknowledged tokens and their capacity.
 
+The 1.22 composition operation resolves two known tokens of this same controller, checks intrinsic source and destination pixel bounds, and enqueues a private graphics control mutation through the authoritative query transaction. The query path serializes composition with append and playback commands. It publishes no new token and does not change frame-sequence certainty when destination pixels are ambiguous after commitment. An unambiguous resource-missing reply invalidates the resource and descendants conservatively; the terminal protocol does not distinguish missing image from missing frame in that reply.
+
 ## 8. One authoritative input conversation
 
 A live session owns one incremental byte stream containing ordinary input, lifecycle traffic, active query responses, unsolicited semantic reports, graphics probe replies, persistent graphics acknowledgements, placeholder acknowledgements, and animation frame/control acknowledgements.
@@ -395,7 +397,7 @@ Stable 1.x still does not treat the following as ordinary `Icod.Terminal` respon
 - absolute screen-coordinate placement / Terminal-owned layout;
 - pixel-within-cell positioning;
 - automatic placeholder redraw or emitted-screen-position tracking;
-- partial-frame animation updates, frame composition, and delta editing;
+- partial-frame animation transmission and delta editing beyond bounded composition between known frames;
 - PTY/ConPTY process hosting;
 - cells, windows, layout, damage, or scene-graph ownership.
 
