@@ -169,6 +169,16 @@ The distinction is intentional: placeholder row/column coordinates identify cell
 
 See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPlaceholder.Sample/README.md) for the full responsibility boundary.
 
+### `Icod.Terminal.RasterAnimation.Sample`
+
+Demonstrates the 1.22 bounded frame-composition operation within a resource-owned animation. It verifies persistent raster graphics, appends known full-size frames, replaces one destination pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
+```
+
+Run this in an interactive terminal with persistent raster graphics and animation support. The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, and caller-owned placement and playback policy.
+
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
 The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.17.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and exercises the advisory raster-backend planner introduced in TermInfo 1.14.
@@ -298,7 +308,7 @@ Icod.Terminal.CapabilityPlanning.Sample
     -> Icod.Terminal.RasterGraphics.Sample             (ephemeral display)
     -> Icod.Terminal.PersistentRaster.Sample           (terminal-resident ownership + lifecycle observation)
     -> Icod.Terminal.RasterPlaceholder.Sample          (virtual placement + caller-owned text-grid rendering)
-    -> Icod.Terminal.RasterAnimation.Sample            (terminal-driven animation + frame lifecycle)
+    -> Icod.Terminal.RasterAnimation.Sample            (frame composition + terminal-driven playback)
     -> Icod.Terminal.TermInfoPersistentRaster.Sample   (TermInfo lifecycle/placement/backend planning + Terminal execution)
 ```
 
