@@ -71,9 +71,9 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2403 — Persistent-resource geometry
 
-- [ ] Add immutable `PixelWidth` and `PixelHeight` properties backed by the resource's existing source dimensions.
-- [ ] Verify values across RGB24, RGBA32, and Indexed8 resource creation.
-- [ ] Verify that property access performs no I/O, exposes no protocol identity, and retains its intrinsic meaning after lifecycle loss or disposal.
+- [x] Add immutable `PixelWidth` and `PixelHeight` properties backed by the resource's existing source dimensions.
+- [x] Verify values across RGB24, RGBA32, and Indexed8 resource creation.
+- [x] Verify that property access performs no I/O, exposes no protocol identity, and retains its intrinsic meaning after lifecycle loss or disposal.
 
 **Acceptance:** A consumer can partition a known atlas using the resource handle as the authoritative geometry source.
 
@@ -166,3 +166,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | Planning PR | [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) | Main roadmap, versioned roadmap, design, and implementation plan |
 | T2400 implementation baseline | Run `37012305959` at `079bb726d9923992f2eac70bfb1c11a97a5e0bc9` | All nine jobs green; `1.24.0-alpha` pre-feature API fingerprint remains identical to the published 1.23 surface |
 | T2401/T2402 pixel geometry | Run `37014482468` at `25d6e0a962368f39c51380dd361fd2a94280742c` | All nine jobs green after one same-head Windows rerun isolated an unrelated timing flake; public API fingerprint `41576a33a971ef9634ac0e409ba06c8e264f2d3d264ab8445b983e7d5ebf0fa2` |
+| T2403 resource geometry | Run `37017398715` at `42d1299f00e976021a0110d3e4f3fd458f879d76` | All nine jobs green after one same-head Linux rerun isolated an unrelated keyboard-lease timing flake; public API fingerprint `c02db531c9f029635ff436785a8a862b4e5f2ce2665e9c22f5347cc3a6759809` |
