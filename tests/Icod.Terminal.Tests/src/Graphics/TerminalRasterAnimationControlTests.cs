@@ -111,7 +111,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
-			session, transport, imageId: 77u, width: 2, height: 2
+			session, transport, imageId: 77u
 		);
 		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
 			resource, transport, expectedWriteCount: 2
