@@ -225,12 +225,13 @@ public sealed class TerminalSemanticBackendResolverTests {
 	}
 
 	[Theory]
-	[InlineData( TerminalSemanticOperation.RasterFrameComposition )]
-	[InlineData( TerminalSemanticOperation.RasterFrameRegionUpdateRgb24 )]
-	[InlineData( TerminalSemanticOperation.RasterFrameRegionUpdateRgba32 )]
+	[InlineData( (int)TerminalSemanticOperation.RasterFrameComposition )]
+	[InlineData( (int)TerminalSemanticOperation.RasterFrameRegionUpdateRgb24 )]
+	[InlineData( (int)TerminalSemanticOperation.RasterFrameRegionUpdateRgba32 )]
 	public void FocusedRasterOperationsAreReviewedUnknownSafeFallbacks(
-		TerminalSemanticOperation operation
+		int operationValue
 	) {
+		TerminalSemanticOperation operation = (TerminalSemanticOperation)operationValue;
 		TerminalSemanticBackendResolution resolution = TerminalSemanticBackendResolver.Resolve(
 			operation,
 			new TerminalCapabilityEvidenceLedger()
