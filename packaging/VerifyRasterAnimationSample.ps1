@@ -42,6 +42,8 @@ foreach ($required in @(
     'RootFrame',
     'SetFrameDurationAsync',
     'AddFrameAsync',
+    'ComposeFrameAsync',
+    'TerminalRasterFrameCompositionMode.Replace',
     'CreatePlacementAsync',
     'RunLoadingAsync',
     'StopAsync',
