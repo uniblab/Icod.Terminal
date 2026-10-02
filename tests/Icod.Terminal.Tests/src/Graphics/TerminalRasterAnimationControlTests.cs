@@ -371,6 +371,49 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task SessionGenerationLossRejectsCompositionWithoutOutput() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource, transport, expectedWriteCount: 2
+		);
+		session.InvalidateState();
+		int writesBefore = transport.Writes.Count;
+		TerminalControlMutationResult result = await resource.Animation.ComposeFrameAsync(
+			resource.Animation.RootFrame, destination,
+			new TerminalRasterSourceRectangle( 0, 0, 1, 1 ), 0, 0
+		);
+		Assert.Equal( TerminalControlStatus.Unavailable, result.Status );
+		Assert.Equal( writesBefore, transport.Writes.Count );
+		Assert.Equal( TerminalRasterAnimationStatus.Stale, resource.Animation.State.Status );
+	}
+
+	[Fact]
+	public async Task CommittedCompositionFlushFailureLeavesPixelsUncertainAndFramesKnown() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource, transport, expectedWriteCount: 2
+		);
+		transport.FailNextFlush = true;
+		await Assert.ThrowsAsync<IOException>(
+			() => resource.Animation.ComposeFrameAsync(
+				resource.Animation.RootFrame, destination,
+				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ), 0, 0
+			).AsTask()
+		);
+		Assert.Equal( 3, transport.Writes.Count );
+		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		Assert.Equal( TerminalRasterOwnershipStatus.Current, resource.OwnershipState.Status );
+	}
+
+	[Fact]
 	public async Task ForeignAnimationFrameRejectsBeforeOutput() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
@@ -538,6 +581,11 @@ public sealed class TerminalRasterAnimationControlTests {
 		private readonly SemaphoreSlim writeSignal = new( 0 );
 		private readonly List<byte[]> writes = [];
 
+		internal bool FailNextFlush {
+			get;
+			set;
+		}
+
 		internal IReadOnlyList<byte[]> Writes {
 			get {
 				lock ( this.synchronization ) {
@@ -580,6 +628,10 @@ public sealed class TerminalRasterAnimationControlTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( this.FailNextFlush ) {
+				this.FailNextFlush = false;
+				throw new IOException( "Synthetic composition flush failure." );
+			}
 			return ValueTask.CompletedTask;
 		}
 

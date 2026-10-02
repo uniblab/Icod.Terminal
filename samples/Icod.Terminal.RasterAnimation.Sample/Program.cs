@@ -69,7 +69,7 @@ if ( !await RasterAnimationCompositionExample.VerifyPrerequisiteAsync( session )
 	);
 	await session.WriteTextAsync(
 		string.Concat(
-			"Persistent raster prerequisites are not currently usable: graphics=",
+			"Persistent raster prerequisites are not currently usable: graphics ",
 			graphics.Support.ToString(),
 			", animation=",
 			animationCapability.Support.ToString(),
