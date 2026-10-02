@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.22.0` — Bounded animation frame composition
+- **Current published feature line:** `1.23.0` — Partial animation-frame transfer and rich-input completion
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.22.0 merged, tagged, and published; stable 1.23.0 package candidate in PR #68, with final exact-head qualification in progress
-- **Active development target:** `1.23.0` — Partial animation-frame transfer + rich-input completion
-- **Selected scope:** Option 2 + Option 9 + Option 10, with bounded ownership and evidence-driven acceptance
+- **Development status:** 1.23.0 merged, tagged, and published; 1.24.0 planning is active
+- **Active development target:** `1.24.0` — Raster geometry and planning contracts
+- **Selected scope:** Public pixel geometry, resource geometry, bounded raster planning, operation-specific evidence, and a tile-atlas measurement witness
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -18,6 +18,8 @@ This file is the concise entry point for current `Icod.Terminal` development and
 The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
 
 ## Latest accepted checkpoint
+
+`Icod.Terminal 1.23.0` was merged through [PR #68](https://github.com/uniblab/Icod.Terminal/pull/68) at `65b8a82`, tagged `v1.23.0`, and published on 2026-10-02. It adds bounded RGB24/RGBA32 animation-frame region replacement, completes legacy Menu phase decoding, repairs malformed modern-keyboard end-of-input recovery, and expands the runnable raster-animation and rich-input guidance. The [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) preserves its implementation and qualification evidence.
 
 `Icod.Terminal 1.21.0` was merged through [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66) at `24295f83153ce18f731dd2eced83d19ccf70b972`, tagged `v1.21.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.21.0) on 2026-09-28. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) records T2100–T2110 and the pre-merge qualification; the final PR head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36358713525). Its input and cursor-visibility scope is complete.
 
@@ -57,7 +59,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph for the 1.22.0 development branch is:
+The production dependency graph for the 1.24.0 planning branch is:
 
 ```text
 Icod.TermInfo 1.17.0
@@ -66,7 +68,7 @@ Icod.Timing   1.0.0
 
 Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspection and Source remain outside the production package graph.
 
-## Qualified stable sequence through 1.21.0
+## Qualified stable sequence and active target
 
 ```text
 1.5.0   normalized control families / capability evidence / semantic routing
@@ -90,7 +92,8 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.20.0  profile and capability decisions                           PUBLISHED
 1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
 1.22.0  bounded animation frame composition                     PUBLISHED
-1.23.0  partial frame transfer + rich-input completion           STABLE CANDIDATE
+1.23.0  partial frame transfer + rich-input completion           PUBLISHED
+1.24.0  raster geometry and planning contracts                   PLANNING
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -391,8 +394,38 @@ The governing rule is:
 
 The 1.23 work remains additive to 1.22. It does not add gapless scheduling, absolute or pixel-within-cell placement, hidden replay, raw protocol extensibility, image codecs, PTY hosting, or a second input reader.
 
+## 1.24 development line — Raster Geometry and Planning Contracts
+
+The selected 1.24 scope publishes the geometry, bounded-capacity, and operation-evidence contracts that a later `Icod.DCurses` tile renderer needs without moving tile maps, viewports, damage, asset policy, or game rules into Terminal.
+
+The governing rule is:
+
+> Terminal owns live pixel-geometry queries, exact derivation, resource geometry, bounded local raster ownership, operation evidence, protocol execution, acknowledgement, lifecycle, and cleanup. DCurses owns tile-cell mapping, clipping, damage, viewport state, refresh policy, and frame-selection strategy. The game owns maps, actors, visibility, animation policy, and rules.
+
+The approved release shape commits only 1.24.0. A possible 1.25.0 bounded frame-edit execution release remains conditional on measurements from a real DCurses tile-rendering workload. No batch API, Indexed8 partial-update promise, remote atomicity, rollback, or hidden replay is precommitted.
+
+The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) govern the work.
+
+The implementation sequence is:
+
+```text
+T2400  published 1.23 baseline, consumer requirements, and API-regret gate
+T2401  public pixel-geometry contract and RED fixtures
+T2402  semantic terminal/cell pixel-geometry acquisition and exact derivation
+T2403  immutable persistent-raster resource geometry
+T2404  raster limits and advisory local-capacity planning snapshot
+T2405  generation-scoped raster-operation evidence
+T2406  lifecycle, concurrency, cancellation, and failure hardening
+T2407  tile-atlas planning, double-buffer, and measurement witness
+T2408  samples, consumer guide, package/API/XML/security qualification
+T2409  downstream and cross-platform exact-head qualification
+T2410  stable 1.24.0 closure and evidence record
+```
+
 ## Later development candidates
 
-Beyond the selected 1.23 scope, independent candidates still include gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
+The first conditional candidate after 1.24 is a measured bounded frame-edit execution release. It may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when 1.24/DCurses workload evidence demonstrates a material benefit. It must not claim remote atomicity or rollback.
+
+Other independent candidates still include gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.
