@@ -164,4 +164,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | 1.23 production dependencies | Published project graph | `Icod.TermInfo 1.17.0`; `Icod.Timing 1.0.0`; compatibility floor remains 1.0.0 |
 | Local planning baseline | Current environment | Repository wrapper unavailable because `pwsh` is absent; direct baseline also unavailable because `dotnet` is absent; GitHub CI is the approved verifier |
 | Planning PR | [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) | Main roadmap, versioned roadmap, design, and implementation plan |
-| T2400 implementation baseline | `1.24.0-alpha` | Pre-feature API fingerprint remains identical to the published 1.23 surface; CI run recorded after this tranche is pushed |
+| T2400 implementation baseline | Run `37012305959` at `079bb726d9923992f2eac70bfb1c11a97a5e0bc9` | All nine jobs green; `1.24.0-alpha` pre-feature API fingerprint remains identical to the published 1.23 surface |
