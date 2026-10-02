@@ -18,6 +18,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Threading.Channels;
@@ -29,6 +30,8 @@ internal static class PersistentRasterCompositionScenario {
 	internal static Task RunAsync() => RunCoreAsync().WaitAsync( TimeSpan.FromSeconds( 30 ) );
 
 	private static async Task RunCoreAsync() {
+		const int frameWidth = 16;
+		const int frameHeight = 16;
 		using CancellationTokenSource deadline = new( TimeSpan.FromSeconds( 20 ) );
 		ScriptedTerminal transport = new();
 		await using TerminalSession session = await TerminalSession.OpenAsync(
@@ -60,7 +63,11 @@ internal static class PersistentRasterCompositionScenario {
 
 		TerminalControlResult<TerminalRasterResource> created =
 			await session.CreateRasterResourceAsync(
-				TerminalRasterImage.CreateRgb24( 2, 2, new byte[12] ),
+				TerminalRasterImage.CreateRgb24(
+					frameWidth,
+					frameHeight,
+					new byte[frameWidth * frameHeight * 3]
+				),
 				deadline.Token
 			);
 		Require( TerminalControlStatus.Available == created.Status, "Root image creation failed." );
@@ -68,7 +75,11 @@ internal static class PersistentRasterCompositionScenario {
 			?? throw new InvalidOperationException( "Root image token was not returned." );
 		TerminalControlResult<TerminalRasterAnimationFrame> appended =
 			await resource.Animation.AddFrameAsync(
-				TerminalRasterImage.CreateRgb24( 2, 2, new byte[12] ),
+				TerminalRasterImage.CreateRgb24(
+					frameWidth,
+					frameHeight,
+					new byte[frameWidth * frameHeight * 3]
+				),
 				TimeSpan.FromMilliseconds( 180 ),
 				deadline.Token
 			);
@@ -91,6 +102,117 @@ internal static class PersistentRasterCompositionScenario {
 			TerminalRasterAnimationStatus.Current == resource.Animation.State.Status,
 			"Composition changed the known frame sequence."
 		);
+
+		await MeasurePartialTransferAsync(
+			resource.Animation,
+			tile,
+			transport,
+			frameWidth,
+			frameHeight,
+			deadline.Token
+		);
+	}
+
+	private static async Task MeasurePartialTransferAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		ScriptedTerminal transport,
+		int frameWidth,
+		int frameHeight,
+		CancellationToken cancellationToken
+	) {
+		const int partialWidth = 4;
+		const int partialHeight = 4;
+		const int iterations = 32;
+		TerminalRasterImage full = TerminalRasterImage.CreateRgba32(
+			frameWidth,
+			frameHeight,
+			new byte[frameWidth * frameHeight * 4]
+		);
+		TerminalRasterImage partial = TerminalRasterImage.CreateRgba32(
+			partialWidth,
+			partialHeight,
+			new byte[partialWidth * partialHeight * 4]
+		);
+
+		Require(
+			( await animation.UpdateFrameRegionAsync(
+				frame, full, 0, 0, cancellationToken
+			) ).Succeeded,
+			"Full-frame measurement warmup failed."
+		);
+		Require(
+			( await animation.UpdateFrameRegionAsync(
+				frame, partial, 0, 0, cancellationToken
+			) ).Succeeded,
+			"Partial-frame measurement warmup failed."
+		);
+
+		Measurement fullMeasurement = await MeasureAsync(
+			animation,
+			frame,
+			full,
+			iterations,
+			transport,
+			cancellationToken
+		);
+		Measurement partialMeasurement = await MeasureAsync(
+			animation,
+			frame,
+			partial,
+			iterations,
+			transport,
+			cancellationToken
+		);
+
+		Require(
+			partialMeasurement.WireBytes < fullMeasurement.WireBytes,
+			"A bounded region must transfer fewer measured wire bytes than the full frame."
+		);
+		Console.WriteLine(
+			FormattableString.Invariant(
+				$"Partial-frame measurement {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}: "
+				+ $"full={frameWidth}x{frameHeight}, partial={partialWidth}x{partialHeight}, iterations={iterations}; "
+				+ $"full wire={fullMeasurement.WireBytes} B/op, first={fullMeasurement.FirstLatency.TotalMicroseconds:F1} us, "
+				+ $"total={fullMeasurement.TotalLatency.TotalMilliseconds:F3} ms, cpu={fullMeasurement.CpuTime.TotalMilliseconds:F3} ms, "
+				+ $"allocated={fullMeasurement.AllocatedBytes} B; "
+				+ $"partial wire={partialMeasurement.WireBytes} B/op, first={partialMeasurement.FirstLatency.TotalMicroseconds:F1} us, "
+				+ $"total={partialMeasurement.TotalLatency.TotalMilliseconds:F3} ms, cpu={partialMeasurement.CpuTime.TotalMilliseconds:F3} ms, "
+				+ $"allocated={partialMeasurement.AllocatedBytes} B."
+			)
+		);
+	}
+
+	private static async Task<Measurement> MeasureAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame frame,
+		TerminalRasterImage image,
+		int iterations,
+		ScriptedTerminal transport,
+		CancellationToken cancellationToken
+	) {
+		transport.BeginMeasurement();
+		long allocatedBefore = GC.GetTotalAllocatedBytes( precise: true );
+		using Process process = Process.GetCurrentProcess();
+		TimeSpan cpuBefore = process.TotalProcessorTime;
+		Stopwatch total = Stopwatch.StartNew();
+		Stopwatch first = Stopwatch.StartNew();
+		for ( int index = 0; index < iterations; ++index ) {
+			TerminalControlMutationResult result = await animation.UpdateFrameRegionAsync(
+				frame,
+				image,
+				0,
+				0,
+				cancellationToken
+			);
+			Require( result.Succeeded, "Measured partial-frame operation failed." );
+			if ( 0 == index ) first.Stop();
+		}
+		total.Stop();
+		TimeSpan cpu = process.TotalProcessorTime - cpuBefore;
+		long allocated = GC.GetTotalAllocatedBytes( precise: true ) - allocatedBefore;
+		long wireBytes = transport.EndMeasurement( iterations );
+		return new Measurement( wireBytes, first.Elapsed, total.Elapsed, cpu, allocated );
 	}
 
 	private static void Require( bool condition, string message ) {
@@ -106,6 +228,30 @@ internal static class PersistentRasterCompositionScenario {
 		internal int Appends;
 		internal int PartialUpdates;
 		internal int Compositions;
+		private int measuredWrites;
+		private long measuredBytes;
+		private bool measuring;
+
+		internal void BeginMeasurement() {
+			Require( !this.measuring, "A wire measurement is already active." );
+			this.measuredWrites = 0;
+			this.measuredBytes = 0;
+			this.measuring = true;
+		}
+
+		internal long EndMeasurement( int expectedWrites ) {
+			Require( this.measuring, "No wire measurement is active." );
+			this.measuring = false;
+			Require(
+				expectedWrites == this.measuredWrites,
+				"The measured update did not emit exactly one write per operation."
+			);
+			Require(
+				0 == this.measuredBytes % expectedWrites,
+				"Measured writes did not have a stable byte count."
+			);
+			return this.measuredBytes / expectedWrites;
+		}
 
 		public async ValueTask<int> ReadAsync(
 			Memory<byte> buffer, CancellationToken cancellationToken = default
@@ -143,11 +289,13 @@ internal static class PersistentRasterCompositionScenario {
 				this.Publish( $"\u001b_Gi=77,I={imageNumber};OK\u001b\\" );
 			} else if ( request.StartsWith( "\u001b_Ga=f,", StringComparison.Ordinal )
 				&& request.Contains( ",r=", StringComparison.Ordinal ) ) {
-				Require(
-					request == "\u001b_Ga=f,f=32,s=1,v=1,t=d,i=77,r=2,x=0,y=1,X=1,m=0;IOCg/w==\u001b\\",
-					"The package consumer emitted unexpected partial frame geometry or pixels."
-				);
-				++this.PartialUpdates;
+				if ( this.measuring ) {
+					++this.measuredWrites;
+					this.measuredBytes += buffer.Length;
+				} else if ( request
+					== "\u001b_Ga=f,f=32,s=1,v=1,t=d,i=77,r=2,x=0,y=1,X=1,m=0;IOCg/w==\u001b\\" ) {
+					++this.PartialUpdates;
+				}
 				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
 			} else if ( request.StartsWith( "\u001b_Ga=f,", StringComparison.Ordinal ) ) {
 				++this.Appends;
@@ -176,6 +324,14 @@ internal static class PersistentRasterCompositionScenario {
 				"The scripted terminal response channel is closed." );
 		}
 	}
+
+	private readonly record struct Measurement(
+		long WireBytes,
+		TimeSpan FirstLatency,
+		TimeSpan TotalLatency,
+		TimeSpan CpuTime,
+		long AllocatedBytes
+	);
 
 	private sealed class Control : ITerminalControlProvider {
 		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
