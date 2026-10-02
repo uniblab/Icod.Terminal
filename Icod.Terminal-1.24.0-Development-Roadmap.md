@@ -107,11 +107,11 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2407 — Tile-atlas and measurement witness
 
-- [ ] Extend the raster-animation sample with a protocol-neutral numbered/colored atlas demonstration.
-- [ ] Use only public resource dimensions, planning snapshot, placeholder cells, known frames, regional updates, and selection.
-- [ ] Demonstrate two-frame presentation: edit the unselected frame, await every result, then select it and reuse the former front frame.
-- [ ] Report one-, four-, sixteen-, and sixty-four-region workloads with operation count, updated pixels, encoded bytes where available, CPU, allocations, acknowledgement latency, and total latency.
-- [ ] Exercise explicit text fallback when placeholders or geometry are unavailable.
+- [x] Extend the raster-animation sample with a protocol-neutral numbered/colored atlas demonstration.
+- [x] Use only public resource dimensions, planning snapshot, placeholder cells, known frames, regional updates, and selection.
+- [x] Demonstrate two-frame presentation: edit the unselected frame, await every result, then select it and reuse the former front frame.
+- [x] Report one-, four-, sixteen-, and sixty-four-region workloads with operation count, updated pixels, encoded bytes where available, CPU, allocations, acknowledgement latency, and total latency.
+- [x] Exercise explicit text fallback when placeholders or geometry are unavailable.
 
 **Acceptance:** The witness demonstrates the exact Terminal mechanisms needed by DCurses and produces evidence for the 1.25 go/no-go decision without implementing a game.
 
@@ -170,3 +170,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | T2404 raster planning | Run `37021056682` at `38958cdc62b05cda6ddf9f86caa07cedd6548689` | All nine jobs green; fixed ceilings and synchronized advisory counts including append reservations; public API fingerprint `67dcb10e5a1dad58db9e4c83e13fda38976e3ac68195fcec7a7f8bbb1b8ca2d8` |
 | T2405 raster-operation evidence | Run `37024183550` at `3c4eea8b4d3954680059d6a70de8ae7b8223ad92` | All nine jobs green; direct generation-scoped composition/RGB24/RGBA32 evidence remains isolated from broad backend evidence; public API fingerprint `fc3ebf0fb2f6561084deb2fd49a5043373a27da1486a222f932a7a91fd43f6ca` |
 | T2406 lifecycle hardening | Run `37025367302` at `8db73c088ccfa7d802089ba92e17f287e5ba0384` | All nine jobs green; resize/no-cache, malformed and maximum geometry, concurrent count snapshots, pending reservations, suspend/resume evidence expiry, and late-acknowledgement generation races passed on all runtime targets |
+| T2407 tile-atlas witness | Run `37027131690` at `878832ac3abb8bba46e076e3b3a6e15f55a97f61` | All nine jobs green; package-only net8/net9/net10 consumers exercised 1/4/16/64 acknowledged region workloads, two-frame selection ordering, total encoded bytes, latency, CPU, allocations, and explicit non-physical-rendering scope |

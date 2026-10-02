@@ -16,17 +16,21 @@ dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.
 
 That path prefers a direct cell-pixel query. If it times out, it explicitly attempts exact derivation from a terminal-pixel query and the current character dimensions. It never rounds. It checks the local planning ceilings before allocating a generated 8-by-8 atlas, reads the accepted resource's intrinsic geometry, creates a placeholder grid, and runs 1-, 4-, 16-, and 64-region damage workloads against two reusable known frames. Every region update is acknowledged before the completed back frame is selected; only then are the front/back references swapped. This is ordered two-frame presentation, not remote atomicity or gapless display.
 
+The planning snapshot is local and advisory: it does not reserve capacity or report terminal memory, and the later create/append result remains authoritative. After acknowledged regional work, the sample inspects only the matching focused RGB24 operation evidence. That evidence is generation-scoped and does not prove composition, RGBA32 replacement, physical rendering, or future success.
+
 If geometry, planning, resource creation, placeholders, frame creation, an update, or selection is unavailable, the path prints a text-fallback reason and stops raster work. The generated colors and damage list are test presentation data. They are not a tile-map, camera, scene, asset decoder, or game rule.
 
 The sample keeps the ownership boundary explicit:
 
 ```text
 application / higher-level renderer
-    owns source frames, placement intent, and playback policy
+    owns tiles, source frames, layout, damage, placement intent,
+    text fallback, front/back policy, and playback policy
 
 Icod.Terminal
-    owns opaque terminal image/frame identity, acknowledged transfer,
-    frame-sequence certainty, serialized playback control, and cleanup
+    owns live queries, local admission ceilings/counts, opaque terminal
+    image/frame identity, acknowledged transfer, lifecycle certainty,
+    serialized playback control, and cleanup
 ```
 
 The executable flow:

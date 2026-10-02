@@ -17,7 +17,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
 | Render semantic virtual-raster cells with caller-owned cursor/layout control | [`Icod.Terminal.RasterPlaceholder.Sample`](Icod.Terminal.RasterPlaceholder.Sample/README.md) |
-| Stream full frames, apply bounded composition and partial replacement, and control terminal-resident animation through backend-neutral semantics | [`Icod.Terminal.RasterAnimation.Sample`](Icod.Terminal.RasterAnimation.Sample/README.md) |
+| Stream full frames, apply bounded composition/partial replacement, inspect 1.24 geometry/planning/evidence, and run the two-frame tile-atlas witness | [`Icod.Terminal.RasterAnimation.Sample`](Icod.Terminal.RasterAnimation.Sample/README.md) |
 | Combine TermInfo lifecycle, advanced-placement, and explicit raster-backend planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
@@ -171,13 +171,19 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.RasterAnimation.Sample`
 
-Demonstrates full-frame streaming plus the 1.22 bounded frame-composition operation and the 1.23 bounded caller-supplied partial frame replacement within a resource-owned animation. It verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+Demonstrates full-frame streaming, the 1.22 bounded frame-composition operation, the 1.23 bounded caller-supplied partial frame replacement, and the 1.24 geometry/planning/evidence contracts within a resource-owned animation. Its default path verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
 ```
 
-Run this in an interactive terminal with persistent raster graphics and animation support. The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, and caller-owned placement and playback policy.
+Pass `--tile-atlas` for a generated 8-by-8 atlas, exact cell-geometry fallback, planning checks, placeholder cells, two reusable known frames, and measured 1/4/16/64-region damage workloads:
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
+```
+
+Run this in an interactive terminal with persistent raster graphics and animation support. The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy.
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
