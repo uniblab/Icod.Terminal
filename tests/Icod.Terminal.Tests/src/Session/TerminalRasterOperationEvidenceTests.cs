@@ -172,16 +172,17 @@ public sealed class TerminalRasterOperationEvidenceTests {
 
 		public TerminalControlResult<TerminalEndpointObservation> Observe( TerminalEndpoint endpoint ) {
 			ArgumentNullException.ThrowIfNull( endpoint );
+			bool isTerminal = 1 != endpoint.FileDescriptor || this.outputIsTerminal;
 			return TerminalControlResult<TerminalEndpointObservation>.Available(
 				new TerminalEndpointObservation(
-					1 == endpoint.FileDescriptor
-						? this.outputIsTerminal
-						: true,
+					isTerminal,
 					null,
-					TerminalPlatformKind.PosixTermios,
-					TerminalControlCapabilities.Attachment
-						| TerminalControlCapabilities.ModeRead
-						| TerminalControlCapabilities.ModeWrite
+					isTerminal ? TerminalPlatformKind.PosixTermios : null,
+					isTerminal
+						? TerminalControlCapabilities.Attachment
+							| TerminalControlCapabilities.ModeRead
+							| TerminalControlCapabilities.ModeWrite
+						: TerminalControlCapabilities.None
 				)
 			);
 		}
