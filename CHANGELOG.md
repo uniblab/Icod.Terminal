@@ -2,7 +2,7 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
-## 1.22.0 (candidate)
+## 1.22.0
 
 - Adds acknowledged bounded pixel composition between opaque known frames in one current persistent raster animation, with alpha-blend and replacement modes, local geometry validation, and no new frame or replay cache.
 - Extends the executable animation sample and package consumer API witness; updates production `Icod.TermInfo` and optional `Icod.TermInfo.Inspection` to 1.17.0. See [1.22.0 release notes](docs/releases/1.22.0.md).

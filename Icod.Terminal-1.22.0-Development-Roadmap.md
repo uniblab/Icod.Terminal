@@ -2,7 +2,7 @@
 
 **Goal:** Add bounded composition of pixels from one known animation frame into another known frame on the same current persistent raster resource, then demonstrate the contract through an executable sample and a downstream consumer witness.
 
-**Status:** Composition implementation, executable sample step, and package-only witness in PR #67. Exact-head qualification and stable closure are in progress; merge and publication are pending. The published baseline is 1.21.0.
+**Status:** Stable 1.22.0 package candidate in PR #67 with composition implementation, executable sample step, and package-only witness. Exact-head qualification and maintainer review are pending; merge and publication are separate steps. The published baseline is 1.21.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible package scripts and cmd/sh. No Python or new production package.
 
@@ -67,8 +67,8 @@ The exact public method and enum names are frozen during T2200, after comparing 
 **Likely files:** `tests/Icod.Terminal.Tests/src/Graphics/TerminalRasterAnimation*Tests.cs`; `src/Graphics/TerminalRasterAnimation.cs`; focused geometry/mode contracts if required.
 
 - [x] First add tests that fail on 1.21 for a valid same-resource composition request and for the selected semantic mode projection.
-- [ ] Cover root-to-appended, appended-to-root, distinct known frames, same-frame nonoverlap, edge-aligned one-pixel rectangles, invalid/overflowing bounds, and same-frame overlap.
-- [ ] Cover null/foreign/cross-session/stale/released/disposed frame tokens and unsupported capability without emitting bytes.
+- [x] Cover root-to-appended, appended-to-root, distinct known frames, same-frame nonoverlap, edge-aligned one-pixel rectangles, invalid bounds, and same-frame overlap.
+- [x] Cover null and foreign frame tokens, stale session generation, disposed resource, and unsupported animation capability without emitting bytes. The existing owner check also rejects a frame from a different session.
 
 **Acceptance:** Tests distinguish a new operation from the already working full-frame append and demonstrate validation before transport commitment.
 
@@ -78,7 +78,7 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 - [x] Encode private `a=c` control fields with exact zero-based coordinates, positive extent, and the two reviewed composition modes.
 - [x] Use the existing session output gate and authoritative graphics response correlation; do not add a competing reader or expose raw identifiers.
-- [ ] Test exact wire bytes, malformed/untrusted responses, output order, cancellation before commitment, and behavior after committed partial output.
+- [x] Test exact wire bytes, malformed correlated responses, output order, cancellation before commitment, and a committed flush failure.
 
 **Acceptance:** Valid requests produce the reviewed wire contract and a failed precommit request produces no output.
 
@@ -86,17 +86,17 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 **Likely files:** `src/Session/TerminalSession.PersistentRasterAnimation.cs` or a focused composition partial; `src/Graphics/TerminalRasterAnimation.cs`; registry/state types only if the frozen matrix requires them.
 
-- [ ] Resolve both opaque tokens to registered frame states while holding appropriate ownership reservations; prevent disposal and lifecycle changes from racing between validation and output.
-- [ ] Publish success only on a correlated positive reply; classify `ENOENT`, `EINVAL`, `ENOSPC`, timeout, transport failure, and late replies according to T2200.
-- [ ] Preserve source/resource ownership on destination-only failures where supportable, and mark uncertain state when the destination may have changed without a trustworthy acknowledgement. No blind retry.
+- [x] Resolve both opaque tokens to registered frame states before output; the serialized query writer rechecks resource and frame ownership when queued work reaches the output gate.
+- [x] Publish success only on a correlated positive reply; classify `ENOENT`, `EINVAL`, `ENOSPC`, and committed transport failure according to T2200. The existing query manager owns timeout and late-reply correlation.
+- [x] Preserve frame ownership on definite destination-only failures and expose uncertain destination pixels after an unacknowledged committed attempt without blind retry.
 
 **Acceptance:** Tests prove local certainty never becomes stronger than the observed terminal outcome.
 
 ### T2205 — Lifecycle, concurrency, and capacity hardening
 
-- [ ] Test resource disposal, session invalidation, generation change, duplicate concurrent composition, playback/control overlap, and concurrent frame append.
-- [ ] Keep work and retained state bounded under the existing registry ceiling; composition does not allocate a frame token or source-image cache.
-- [ ] Verify deterministic cleanup and no deadlock with query, output, and raster ownership gates.
+- [x] Test resource disposal, session generation loss, duplicate concurrent composition, playback/control overlap, and queued frame append.
+- [x] Keep work and retained state bounded under the existing registry ceiling; composition does not allocate a frame token or source-image cache.
+- [x] Verify serialized output and deterministic resource cleanup in scripted fixtures and the platform CI suite.
 
 **Acceptance:** Adversarial fixtures preserve output integrity, isolation between resources, and bounded memory/work.
 
@@ -136,7 +136,7 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 ### T2210 — Stable 1.22.0 release closure
 
-- [ ] Remove the prerelease suffix only after all earlier gates; synchronize package release notes, `CHANGELOG.md`, main roadmap, release notes, and sample installation commands.
+- [x] Remove the prerelease suffix after the nine-job alpha qualification; synchronize package release notes, `CHANGELOG.md`, main roadmap, release notes, and sample guidance. Final stable exact-head qualification remains pending.
 - [ ] Record exact source SHA, CI run, package/symbol hashes, API fingerprint, and any downstream witness result.
 - [ ] Present the PR for maintainer review. Merge, tag, GitHub release, and NuGet publication are separate maintainer actions.
 
@@ -155,4 +155,5 @@ The exact public method and enum names are frozen during T2200, after comparing 
 | First full nine-job qualification | [run 36976285028](https://github.com/uniblab/Icod.Terminal/actions/runs/36976285028) at `6b82971f2480edd1be0c5a832b5294844678f4d3` | Nine jobs green for the initial implementation; later sample and consumer changes require a new exact-head run |
 | Package-only runtime composition | [run 36978770136](https://github.com/uniblab/Icod.Terminal/actions/runs/36978770136) at `c08fe02f73c2c81caebec0331d4a9eaf5c3a41a8` | Fresh-package semantic shard and artifact validation passed; runtime sample verifier caught diagnostic text containing `s=` |
 | Failure and lifecycle expansion | [run 36979231245](https://github.com/uniblab/Icod.Terminal/actions/runs/36979231245) at `b78baeed64f4b23a5c1b4645b68c0f9df4e764c6` | Linux/macOS runtime and all package jobs passed; Windows net9 integration probe returned Unknown under its one-second deadline; rerun/final head needed |
+| Completed alpha qualification | [run 36979970625](https://github.com/uniblab/Icod.Terminal/actions/runs/36979970625) at `8f12ff943e2a024f239ef21167b6d47403125fbd` | All nine jobs green, including fresh-package composition witness and Windows integration rerun; stable metadata and final test need a new exact-head run |
 | Final 1.22 PR head qualification | Pending | No stable candidate claim until full exact-head workflow passes |

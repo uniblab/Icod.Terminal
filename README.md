@@ -238,11 +238,11 @@ TerminalControlMutationResult result = await resource.Animation.ComposeFrameAsyn
     TerminalRasterFrameCompositionMode.Replace
 );
 if ( !result.Succeeded ) {
-    // Report the result and choose a fresh resource after an ambiguous committed failure.
+    // Report the definite unavailable, unsupported, or failed result.
 }
 ```
 
-Verify persistent raster graphics first; animation and composition have no passive support probe. The actual acknowledged operation determines success. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
+Verify persistent raster graphics first; animation and composition have no passive support probe. The actual acknowledged operation determines success. If a committed attempt throws before a trustworthy acknowledgement, destination pixels may have changed: recreate the resource and frames instead of replaying the operation blindly. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) for lifecycle, capacity, failure, cleanup, relative-placement, and placeholder guarantees.
 

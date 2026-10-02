@@ -111,7 +111,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
-			session, transport, imageId: 77u
+			session, transport, imageId: 77u, width: 2, height: 2
 		);
 		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
 			resource, transport, expectedWriteCount: 2
@@ -254,6 +254,11 @@ public sealed class TerminalRasterAnimationControlTests {
 				pixel, 0, 0
 			)
 		);
+		Assert.Throws<ArgumentNullException>(
+			() => first.Animation.ComposeFrameAsync(
+				null!, first.Animation.RootFrame, pixel, 0, 0
+			)
+		);
 		Assert.Throws<ArgumentOutOfRangeException>(
 			() => first.Animation.ComposeFrameAsync(
 				first.Animation.RootFrame,
@@ -268,6 +273,27 @@ public sealed class TerminalRasterAnimationControlTests {
 				pixel, 0, 0
 			)
 		);
+		Assert.Equal( writesBefore, transport.Writes.Count );
+	}
+
+	[Fact]
+	public async Task UnsupportedAnimationBackendRejectsCompositionBeforeOutput() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u, width: 2, height: 2
+		);
+		session.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
+			TerminalCapabilitySupportState.Unsupported,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+		int writesBefore = transport.Writes.Count;
+		TerminalControlMutationResult result = await resource.Animation.ComposeFrameAsync(
+			resource.Animation.RootFrame, resource.Animation.RootFrame,
+			new TerminalRasterSourceRectangle( 0, 0, 1, 1 ), 1, 1
+		);
+		Assert.Equal( TerminalControlStatus.Unsupported, result.Status );
 		Assert.Equal( writesBefore, transport.Writes.Count );
 	}
 
