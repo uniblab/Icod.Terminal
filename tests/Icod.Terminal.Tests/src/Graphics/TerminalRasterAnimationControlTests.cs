@@ -749,6 +749,32 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task LateCompositionAcknowledgementCannotSeedNextEvidenceGeneration() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource, transport, expectedWriteCount: 2
+		);
+		Task<TerminalControlMutationResult> composition = resource.Animation.ComposeFrameAsync(
+			resource.Animation.RootFrame,
+			destination,
+			new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+			0,
+			0
+		).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+
+		session.InvalidateState();
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+
+		Assert.Equal( TerminalControlStatus.Unavailable, ( await composition ).Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
+	}
+
+	[Fact]
 	public async Task CommittedCompositionFlushFailureLeavesPixelsUncertainAndFramesKnown() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );

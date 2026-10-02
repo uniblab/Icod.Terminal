@@ -141,6 +141,44 @@ public sealed class TerminalRasterAnimationConcurrencyTests {
 	}
 
 	[Fact]
+	public async Task ConcurrentAllocatedFrameObservationsIncludePendingReservationWithoutTearing() {
+		TerminalPersistentRasterAnimationRegistry registry = new();
+		TerminalPersistentRasterAnimationState animation = CreateAnimation(
+			registry,
+			CreateResource()
+		);
+		TaskCompletionSource start = new( TaskCreationOptions.RunContinuationsAsynchronously );
+		Task writer = Task.Run(
+			async () => {
+				await start.Task.ConfigureAwait( false );
+				for ( int iteration = 0; iteration < 10_000; ++iteration ) {
+					if ( registry.TryReserveAppend(
+						animation,
+						out TerminalPersistentRasterAnimationRegistry.AppendReservation? reservation
+					) ) {
+						Assert.NotNull( reservation );
+						Assert.True( registry.TryRollbackAppend( reservation ) );
+					}
+				}
+			}
+		);
+		Task[] readers = Enumerable.Range( 0, ReaderCount ).Select(
+			_ => Task.Run(
+				async () => {
+					await start.Task.ConfigureAwait( false );
+					for ( int iteration = 0; iteration < ObservationsPerReader; ++iteration ) {
+						Assert.InRange( registry.AllocatedFrameCount, 1, 2 );
+					}
+				}
+			)
+		).ToArray();
+
+		start.SetResult();
+		await Task.WhenAll( readers.Append( writer ) );
+		Assert.Equal( 1, registry.AllocatedFrameCount );
+	}
+
+	[Fact]
 	public async Task AppendPublicationRacingInvalidationCannotResurrectOwnedFrames() {
 		for ( int iteration = 0; iteration < PublishInvalidationRaceCount; ++iteration ) {
 			TerminalPersistentRasterAnimationRegistry registry = new();

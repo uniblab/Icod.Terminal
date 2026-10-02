@@ -60,6 +60,44 @@ public sealed class TerminalRasterAnimationLifecycleTests {
 	}
 
 	[Fact]
+	public async Task SuspendResumeClearsFocusedRasterOperationEvidenceWithoutReplay() {
+		ScriptedTransport transport = new();
+		TestLifecycleSource lifecycle = new() {
+			AutoResume = true
+		};
+		await using TerminalSession session = await OpenSessionAsync( transport, lifecycle );
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.RasterFrameComposition,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation( TerminalRasterOperation.FrameComposition ).Support
+		);
+		int baselineWrites = transport.Writes.Count;
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+
+		lifecycle.Publish( TerminalLifecycleSignalKind.Suspend );
+		Assert.Equal(
+			TerminalLifecycleEventKind.Suspending,
+			( await session.ReadLifecycleEventAsync( timeout.Token ) ).Kind
+		);
+		Assert.Equal(
+			TerminalLifecycleEventKind.Resumed,
+			( await session.ReadLifecycleEventAsync( timeout.Token ) ).Kind
+		);
+
+		TerminalRasterOperationStatus status = session.InspectRasterOperation(
+			TerminalRasterOperation.FrameComposition
+		);
+		Assert.Equal( TerminalCapabilitySupport.Unknown, status.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.None, status.EvidenceKind );
+		Assert.True( status.IsUsable );
+		Assert.Equal( baselineWrites, transport.Writes.Count );
+	}
+
+	[Fact]
 	public async Task PlacementEnoentStalesPrivateAnimationFrameState() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
@@ -322,7 +360,8 @@ public sealed class TerminalRasterAnimationLifecycleTests {
 	}
 
 	private static async ValueTask<TerminalSession> OpenSessionAsync(
-		ScriptedTransport transport
+		ScriptedTransport transport,
+		ITerminalLifecycleSource? lifecycleSource = null
 	) {
 		TerminalSession session = await TerminalSession.OpenAsync(
 			new RecordingTerminalControlProvider(),
@@ -333,6 +372,7 @@ public sealed class TerminalRasterAnimationLifecycleTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				LifecycleSource = lifecycleSource,
 				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
@@ -344,6 +384,39 @@ public sealed class TerminalRasterAnimationLifecycleTests {
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
 		return session;
+	}
+
+	private sealed class TestLifecycleSource
+		: ITerminalLifecycleSource,
+		  ITerminalSuspendController {
+		private readonly Channel<TerminalLifecycleSignal> signals =
+			Channel.CreateUnbounded<TerminalLifecycleSignal>();
+
+		internal bool AutoResume {
+			get;
+			init;
+		}
+
+		internal void Publish( TerminalLifecycleSignalKind kind ) {
+			Assert.True( this.signals.Writer.TryWrite( new TerminalLifecycleSignal( kind ) ) );
+		}
+
+		public ValueTask<TerminalLifecycleSignal> ReadAsync(
+			CancellationToken cancellationToken = default
+		) {
+			return this.signals.Reader.ReadAsync( cancellationToken );
+		}
+
+		public TerminalControlMutationResult SuspendCurrentProcess() {
+			if ( this.AutoResume ) {
+				this.Publish( TerminalLifecycleSignalKind.Resume );
+			}
+			return TerminalControlMutationResult.Success();
+		}
+
+		public void Dispose() {
+			this.signals.Writer.TryComplete();
+		}
 	}
 
 	private sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {

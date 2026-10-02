@@ -67,13 +67,81 @@ public sealed class TerminalRasterPlanningSnapshotTests {
 		Assert.Equal( typeof( TerminalRasterPlanningSnapshot ), method.ReturnType );
 	}
 
-	private static ValueTask<TerminalSession> OpenSessionAsync() {
+	[Fact]
+	public async Task ConcurrentSnapshotsRemainBoundedAndPerformNoOutput() {
+		CountingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output );
+
+		Task[] readers = Enumerable.Range( 0, 8 ).Select(
+			_ => Task.Run(
+				() => {
+					for ( int iteration = 0; iteration < 10_000; ++iteration ) {
+						TerminalRasterPlanningSnapshot snapshot =
+							session.GetRasterPlanningSnapshot();
+						Assert.InRange( snapshot.OwnedResourceCount, 0, snapshot.MaximumResources );
+						Assert.InRange( snapshot.OwnedPlacementCount, 0, snapshot.MaximumPlacements );
+						Assert.InRange(
+							snapshot.AllocatedAnimationFrameCount,
+							0,
+							snapshot.MaximumAnimationFrames
+						);
+					}
+				}
+			)
+		).ToArray();
+
+		await Task.WhenAll( readers );
+		Assert.Equal( 0, output.WriteCount );
+	}
+
+	[Fact]
+	public async Task ConcurrentRegistryPlanningCountsRemainCoherentDuringReservationAndRelease() {
+		TerminalPersistentRasterRegistry registry = new();
+		TaskCompletionSource start = new( TaskCreationOptions.RunContinuationsAsynchronously );
+		Task writer = Task.Run(
+			async () => {
+				await start.Task.ConfigureAwait( false );
+				for ( int iteration = 0; iteration < 5_000; ++iteration ) {
+					Assert.True( registry.TryReserveResource(
+						out TerminalPersistentRasterResourceState? resource
+					) );
+					Assert.NotNull( resource );
+					Assert.True( registry.TryReservePlacement( resource, out _ ) );
+					Assert.True( registry.TryReservePlaceholder( resource, 1, 1, out _ ) );
+					Assert.True( registry.TryReleaseResource( resource ) );
+				}
+			}
+		);
+		Task[] readers = Enumerable.Range( 0, 8 ).Select(
+			_ => Task.Run(
+				async () => {
+					await start.Task.ConfigureAwait( false );
+					for ( int iteration = 0; iteration < 20_000; ++iteration ) {
+						(int resources, int placements) = registry.CapturePlanningCounts();
+						Assert.InRange( resources, 0, 1 );
+						Assert.InRange( placements, 0, 2 );
+						if ( 0 == resources ) {
+							Assert.Equal( 0, placements );
+						}
+					}
+				}
+			)
+		).ToArray();
+
+		start.SetResult();
+		await Task.WhenAll( readers.Append( writer ) );
+		Assert.Equal( ( 0, 0 ), registry.CapturePlanningCounts() );
+	}
+
+	private static ValueTask<TerminalSession> OpenSessionAsync(
+		ITerminalOutput? output = null
+	) {
 		return TerminalSession.OpenAsync(
 			new RecordingTerminalControlProvider(),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			new EmptyTerminalInput(),
-			new NullTerminalOutput(),
+			output ?? new NullTerminalOutput(),
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
@@ -81,6 +149,26 @@ public sealed class TerminalRasterPlanningSnapshotTests {
 				RequireInteractiveOutput = false
 			}
 		);
+	}
+
+	private sealed class CountingTerminalOutput : ITerminalOutput {
+		private int writeCount;
+
+		internal int WriteCount => Volatile.Read( ref this.writeCount );
+
+		public ValueTask WriteAsync(
+			ReadOnlyMemory<byte> buffer,
+			CancellationToken cancellationToken = default
+		) {
+			cancellationToken.ThrowIfCancellationRequested();
+			Interlocked.Increment( ref this.writeCount );
+			return ValueTask.CompletedTask;
+		}
+
+		public ValueTask FlushAsync( CancellationToken cancellationToken = default ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			return ValueTask.CompletedTask;
+		}
 	}
 
 	private sealed class EmptyTerminalInput : ITerminalInput {
