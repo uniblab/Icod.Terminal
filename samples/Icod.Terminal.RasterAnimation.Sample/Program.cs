@@ -132,6 +132,21 @@ if ( TerminalControlStatus.Available != thirdResult.Status
 	);
 	return 1;
 }
+TerminalRasterAnimationFrame thirdFrame = thirdResult.Value;
+if ( !await RequireSuccessAsync(
+	session,
+	"Frame composition",
+	await animation.ComposeFrameAsync(
+		rootFrame,
+		thirdFrame,
+		new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+		1,
+		1,
+		TerminalRasterFrameCompositionMode.Replace
+	)
+) ) {
+	return 1;
+}
 
 TerminalControlResult<TerminalRasterPlacement> placementResult =
 	await resource.CreatePlacementAsync(

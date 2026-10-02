@@ -187,6 +187,7 @@ The root README describes the current product by capability rather than by the r
 - **Persistent ownership observation** — atomic `Current`, `Stale`, `Released`, and `Disposed` snapshots with semantic loss/release reasons and no passive terminal-side existence fiction.
 - **Unicode raster placeholders** — opaque virtual placements, semantic row/column cell tokens, self-contained current-cursor output, and physical placement relative to a virtual parent without exposing Kitty numeric identities or placeholder encoding.
 - **Persistent raster animation** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
+- **Animation frame composition (1.22 candidate)** — acknowledged bounded pixel composition between known frames of one current resource, with alpha blending or replacement; callers retain placement and playback control.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
@@ -271,7 +272,7 @@ Recommended documentation entry points:
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
-- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral 1.16 animation walkthrough;
+- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation and 1.22 frame composition walkthrough;
 - [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md) — semantic capability evidence and verification model;
 - [`docs/Input-and-Events.md`](docs/Input-and-Events.md) — authoritative input/event routing;
 - [`docs/Queries-and-Responses.md`](docs/Queries-and-Responses.md) — bounded query/response ownership and correlation;

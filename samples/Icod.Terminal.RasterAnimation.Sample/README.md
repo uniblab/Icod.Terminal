@@ -26,12 +26,13 @@ The executable flow:
 3. obtains the resource-owned animation controller and opaque root-frame token without I/O;
 4. assigns the root frame a positive duration;
 5. appends two acknowledged full-size frames;
-6. creates one ordinary placement through the existing presentation API;
-7. starts loading-mode playback and appends another frame while loading;
-8. stops playback and explicitly selects a known frame;
-9. runs normal playback with one additional traversal;
-10. runs normal playback indefinitely, then stops it explicitly;
-11. releases placement and resource ownership deterministically with `await using`.
+6. composes a one-pixel region of the root into the third frame, awaiting its acknowledgement;
+7. creates one ordinary placement through the existing presentation API;
+8. starts loading-mode playback and appends another frame while loading;
+9. stops playback and explicitly selects a known frame;
+10. runs normal playback with one additional traversal;
+11. runs normal playback indefinitely, then stops it explicitly;
+12. releases placement and resource ownership deterministically with `await using`.
 
 `PersistentRasterAnimation` has no reviewed passive support query. The initial call returns current inspection knowledge; it does not upload a test frame or establish live animation support. An unknown or unavailable result causes the sample to report that animation is not currently usable and exit nonzero. Even when `IsUsable` is true, subsequent resource and animation operations can fail and are checked separately. Verifying ordinary or persistent raster graphics alone does not verify animation. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the three capabilities with live support paths.
 
