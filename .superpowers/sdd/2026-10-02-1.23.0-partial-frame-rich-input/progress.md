@@ -21,3 +21,4 @@
 ## Rulings
 
 - 2026-10-02: Use Kitty `a=f` with `r`, `x`, `y`, `s`, `v`, and `X=1`, as specified by the official protocol. Chunk continuations retain `a=f`.
+- 2026-10-02: The verified decoder gap is legacy Kitty Menu (`CSI 29 ~`) with event phases. The obsolete F3 `CSI R` form remains excluded because the current protocol removed it to avoid collision with cursor-position reports.
