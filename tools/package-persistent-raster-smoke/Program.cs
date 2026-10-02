@@ -538,6 +538,7 @@ AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderOptions ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholder ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderCell ) );
+await PersistentRasterCompositionScenario.RunAsync();
 Require(
 	typeof( TerminalRasterPlacement ).GetProperty(
 		"Parent",
