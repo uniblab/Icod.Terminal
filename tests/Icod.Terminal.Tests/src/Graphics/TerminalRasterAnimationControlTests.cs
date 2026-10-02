@@ -172,6 +172,33 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task SamplePreflightAllowsFirstAnimationCommandWithUnknownAnimationEvidence() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Assert.False( session.InspectCapability(
+			TerminalCapability.PersistentRasterAnimation
+		).IsUsable );
+		Assert.True( await Icod.Terminal.RasterAnimation.Sample
+			.RasterAnimationCompositionExample.VerifyPrerequisiteAsync( session ) );
+		Assert.Empty( transport.Writes );
+
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		Task<TerminalControlMutationResult> firstControl = resource.Animation
+			.SetFrameDurationAsync(
+				resource.Animation.RootFrame,
+				TimeSpan.FromMilliseconds( 180 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await firstControl ).Succeeded );
+		Assert.True( session.InspectCapability(
+			TerminalCapability.PersistentRasterAnimation
+		).IsUsable );
+	}
+
+	[Fact]
 	public async Task CompositionRejectsForeignAndOutOfBoundsFramesBeforeOutput() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
