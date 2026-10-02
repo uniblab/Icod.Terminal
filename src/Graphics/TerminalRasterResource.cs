@@ -49,6 +49,28 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		get;
 	}
 
+	/// <summary>Gets the immutable intrinsic source width in pixels.</summary>
+	/// <remarks>
+	/// Reading this property performs no terminal I/O. The value remains available
+	/// after ownership loss or disposal and does not prove that terminal-side storage exists.
+	/// </remarks>
+	public int PixelWidth {
+		get {
+			return this.State.SourceWidth;
+		}
+	}
+
+	/// <summary>Gets the immutable intrinsic source height in pixels.</summary>
+	/// <remarks>
+	/// Reading this property performs no terminal I/O. The value remains available
+	/// after ownership loss or disposal and does not prove that terminal-side storage exists.
+	/// </remarks>
+	public int PixelHeight {
+		get {
+			return this.State.SourceHeight;
+		}
+	}
+
 	/// <summary>
 	/// Gets one side-effect-free snapshot of Icod.Terminal's current local ownership certainty for this resource.
 	/// </summary>
