@@ -208,14 +208,17 @@ internal static class RasterTileAtlasExample {
 				)
 					? derived
 					: null;
-			} catch ( TimeoutException ) {
+			} catch ( Exception error ) when ( IsGeometryUnavailableFailure( error ) ) {
 				return null;
 			}
-		} catch ( InvalidOperationException ) {
-			return null;
-		} catch ( FormatException ) {
+		} catch ( Exception error ) when ( IsGeometryUnavailableFailure( error ) ) {
 			return null;
 		}
+	}
+
+	internal static bool IsGeometryUnavailableFailure( Exception error ) {
+		ArgumentNullException.ThrowIfNull( error );
+		return error is TimeoutException or InvalidOperationException or FormatException;
 	}
 
 	private static bool TryPlanAtlas(

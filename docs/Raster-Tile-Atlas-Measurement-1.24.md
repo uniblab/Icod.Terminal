@@ -6,7 +6,7 @@ The package-only scripted scenario owns two opaque known frames for one 16-by-16
 
 GitHub Actions run `37027131690` at source `878832ac3abb8bba46e076e3b3a6e15f55a97f61` produced these package-only results on the Linux runner:
 
-| Framework | Regions | Operations | Updated pixels | Encoded bytes | First ack (µs) | Total (ms) | CPU (ms) | Allocations (bytes) |
+| Framework | Regions | Operations | Updated pixels | Encoded update bytes | First ack (µs) | Total (ms) | CPU (ms) | Allocations (bytes) |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|
 | net8.0 | 1 | 2 | 1 | 55 | 252.0 | 2.688 | 0.000 | 24,504 |
 | net8.0 | 4 | 5 | 4 | 220 | 106.7 | 0.476 | 0.000 | 47,032 |
@@ -21,7 +21,7 @@ GitHub Actions run `37027131690` at source `878832ac3abb8bba46e076e3b3a6e15f55a9
 | net10.0 | 16 | 17 | 16 | 886 | 95.0 | 1.366 | 3.287 | 151,336 |
 | net10.0 | 64 | 65 | 64 | 3,544 | 170.0 | 4.969 | 14.029 | 580,224 |
 
-`packaging/VerifyPersistentRasterPackage.ps1` runs the scenario from the packed artifact on `net8.0`, `net9.0`, and `net10.0`. Each invariant-formatted output row records `regions`, `operations`, `updatedPixels`, total `encodedBytes` observed by the scripted output harness, first-acknowledgement microseconds, total milliseconds, process CPU milliseconds, and allocated bytes. The run log is the authoritative measurement artifact because timing, CPU, and allocation values are runner- and framework-dependent. Encoded bytes grow from 55 per one-digit-coordinate update; the 16/64-region totals also reflect the longer decimal coordinate fields, so the witness intentionally reports totals rather than assuming a constant per-operation frame length.
+`packaging/VerifyPersistentRasterPackage.ps1` runs the scenario from the packed artifact on `net8.0`, `net9.0`, and `net10.0`. Each invariant-formatted output row records `regions`, `operations`, `updatedPixels`, total regional-update `encodedBytes` observed by the scripted output harness, first-acknowledgement microseconds, total milliseconds, process CPU milliseconds, and allocated bytes. The operation count and total time include the final selection; the encoded-byte subtotal intentionally isolates the update frames that a later batching contract could change. The run log is the authoritative measurement artifact because timing, CPU, and allocation values are runner- and framework-dependent. Encoded update bytes grow from 55 per one-digit-coordinate update; the 16/64-region totals also reflect the longer decimal coordinate fields, so the witness reports totals rather than assuming a constant per-update frame length.
 
 The scripted terminal returns valid acknowledgements immediately. Therefore these measurements establish bounded encoding, correlation, acknowledgement, and caller sequencing. They do not prove physical rendering, terminal-side storage capacity, visual atomicity, frame-gap behavior, or performance on a particular terminal emulator.
 
