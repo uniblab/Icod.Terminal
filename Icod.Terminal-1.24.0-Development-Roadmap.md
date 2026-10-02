@@ -2,7 +2,7 @@
 
 **Goal:** Publish the pixel geometry, persistent-resource geometry, bounded local planning, and operation-evidence contracts required by a later `Icod.DCurses` tile renderer, then qualify them with an executable tile-atlas workload.
 
-**Status:** Approved implementation in progress in draft [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
+**Status:** Stable metadata qualification in progress in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 **Release theme:** Raster Geometry and Planning Contracts.
 
@@ -117,19 +117,19 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2408 — Documentation and package gates
 
-- [ ] Update the root README, sample index, raster-animation guide, persistent-raster ownership guide, capability guidance, changelog, and 1.24 release notes.
-- [ ] Add XML documentation and fresh-package compile/runtime checks for every new public member on net8/net9/net10.
-- [ ] Freeze equal public API snapshots across all targets and compare intentional additions with 1.23.
-- [ ] Run license, dependency-boundary, package/symbol, sample, security/privacy, and documentation-link checks.
+- [x] Update the root README, sample index, raster-animation guide, persistent-raster ownership guide, capability guidance, changelog, and 1.24 release notes.
+- [x] Add XML documentation and fresh-package compile/runtime checks for every new public member on net8/net9/net10.
+- [x] Freeze equal public API snapshots across all targets and compare intentional additions with 1.23.
+- [x] Run license, dependency-boundary, package/symbol, sample, security/privacy, and documentation-link checks.
 
 **Acceptance:** A package-only consumer can understand and use every new contract without source internals.
 
 ### T2409 — Downstream and cross-platform qualification
 
-- [ ] Compile and execute the Terminal tile-atlas witness from the built package.
-- [ ] Compile a TermInfo-free DCurses-facing consumer that uses only semantic Terminal APIs; do not require a DCurses release to complete Terminal.
-- [ ] Run the complete Windows/Linux/macOS runtime, package, sample, API, XML, and artifact matrix against one exact PR head.
-- [ ] Record failures and reruns against exact source SHAs.
+- [x] Compile and execute the Terminal tile-atlas witness from the built package.
+- [x] Compile a TermInfo-free DCurses-facing consumer that uses only semantic Terminal APIs; do not require a DCurses release to complete Terminal.
+- [x] Run the complete Windows/Linux/macOS runtime, package, sample, API, XML, and artifact matrix against one exact PR head.
+- [x] Record failures and reruns against exact source SHAs.
 
 **Acceptance:** Every required job is green at one exact head and downstream boundaries remain intact.
 
@@ -171,3 +171,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | T2405 raster-operation evidence | Run `37024183550` at `3c4eea8b4d3954680059d6a70de8ae7b8223ad92` | All nine jobs green; direct generation-scoped composition/RGB24/RGBA32 evidence remains isolated from broad backend evidence; public API fingerprint `fc3ebf0fb2f6561084deb2fd49a5043373a27da1486a222f932a7a91fd43f6ca` |
 | T2406 lifecycle hardening | Run `37025367302` at `8db73c088ccfa7d802089ba92e17f287e5ba0384` | All nine jobs green; resize/no-cache, malformed and maximum geometry, concurrent count snapshots, pending reservations, suspend/resume evidence expiry, and late-acknowledgement generation races passed on all runtime targets |
 | T2407 tile-atlas witness | Run `37027131690` at `878832ac3abb8bba46e076e3b3a6e15f55a97f61` | All nine jobs green; package-only net8/net9/net10 consumers exercised 1/4/16/64 acknowledged region workloads, two-frame selection ordering, total encoded bytes, latency, CPU, allocations, and explicit non-physical-rendering scope |
+| T2408/T2409 candidate qualification | Run `37029340298` at `e212a3b14c11f300d236150274df419a45ff3563` | All nine jobs green after a same-head Windows rerun isolated an unrelated OSC 52 timing timeout; 2,547 runtime tests plus 15 source-integration tests passed per framework, expanded XML/API/package gates passed, and package-only tile plus TermInfo-free/published-DCurses consumers passed |

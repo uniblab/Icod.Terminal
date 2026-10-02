@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.23.0` — Partial animation-frame transfer and rich-input completion
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.23.0 merged, tagged, and published; 1.24.0 planning is active
+- **Development status:** 1.23.0 is published; the 1.24.0 stable package candidate is under final qualification in PR #69
 - **Active development target:** `1.24.0` — Raster geometry and planning contracts
 - **Selected scope:** Public pixel geometry, resource geometry, bounded raster planning, operation-specific evidence, and a tile-atlas measurement witness
 - **Stable compatibility floor:** `1.0.0`
@@ -93,7 +93,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
 1.22.0  bounded animation frame composition                     PUBLISHED
 1.23.0  partial frame transfer + rich-input completion           PUBLISHED
-1.24.0  raster geometry and planning contracts                   PLANNING
+1.24.0  raster geometry and planning contracts          RELEASE CANDIDATE
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -404,7 +404,7 @@ The governing rule is:
 
 The approved release shape commits only 1.24.0. A possible 1.25.0 bounded frame-edit execution release remains conditional on measurements from a real DCurses tile-rendering workload. No batch API, Indexed8 partial-update promise, remote atomicity, rollback, or hidden replay is precommitted.
 
-The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) govern the work in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
+The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) govern the stable package candidate in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 The implementation sequence is:
 

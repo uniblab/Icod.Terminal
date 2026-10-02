@@ -9,9 +9,9 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.23.0`.
+Current stable release: `Icod.Terminal 1.24.0`.
 
-The package is published separately after the repository merge. If you are reading this page on the 1.24 pull-request branch, use its verified package artifact rather than treating the candidate as published.
+The package is published separately after the repository merge. If you are reading this page on the 1.24 pull-request branch, use its verified package artifact until version 1.24.0 is available on NuGet.
 
 Version 1.24 adds direct and exactly derived terminal-pixel geometry, intrinsic persistent-resource geometry, advisory local raster-planning snapshots, and focused generation-scoped evidence for acknowledged composition and RGB24/RGBA32 frame-region updates. The [1.24 roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md), [release notes](docs/releases/1.24.0.md), [ownership guide](docs/Persistent-Raster-Ownership.md), and [tile-atlas witness](samples/Icod.Terminal.RasterAnimation.Sample/README.md) define the contract and its Terminal/DCurses/game boundary.
 
@@ -27,7 +27,7 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. The 1.24 candidate retains every 1.23 public signature and enum value. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.24 retains every 1.23 public signature and enum value. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
 
 See the [1.24.0 release notes](docs/releases/1.24.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
@@ -79,10 +79,10 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the current stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.23.0
+dotnet add package Icod.Terminal --version 1.24.0
 ```
 
-The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require the 1.24 source tree or its verified package artifact until 1.24.0 is published.
+The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
 

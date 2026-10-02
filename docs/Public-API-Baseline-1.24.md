@@ -1,6 +1,6 @@
 # Icod.Terminal 1.24 Public API Baseline
 
-The `1.24.0-alpha` surface retains every published 1.23 signature and enum value. Its first intentional additive contract consists of:
+The `1.24.0` surface retains every published 1.23 signature and enum value. Its intentional additive contract consists of:
 
 - the immutable positive `TerminalPixelDimensions` value;
 - `TerminalPixelGeometry.TryDeriveCellDimensions(...)` for exact, side-effect-free derivation;
