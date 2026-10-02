@@ -54,18 +54,18 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2401 — Pixel-geometry RED fixtures
 
-- [ ] Add compile-time/public-surface failures for the new pixel-dimension type, derivation helper, and two query methods.
-- [ ] Add behavior failures for positive dimensions, zero/negative rejection, exact derivation, indivisible dimensions, timeout, cancellation, malformed replies, and mismatched CSI replies.
-- [ ] Preserve bounded late-response ownership and the single authoritative input/query coordinator.
+- [x] Add compile-time/public-surface failures for the new pixel-dimension type, derivation helper, and two query methods.
+- [x] Add behavior failures for positive dimensions, zero/negative rejection, exact derivation, indivisible dimensions, timeout, cancellation, malformed replies, and mismatched CSI replies.
+- [x] Preserve bounded late-response ownership and the single authoritative input/query coordinator.
 
 **Acceptance:** Tests fail against 1.23 because the public contract is absent while existing internal query behavior remains green.
 
 ### T2402 — Semantic pixel geometry
 
-- [ ] Replace the internal `TerminalPixelSize` with the frozen public immutable value type without changing wire behavior.
-- [ ] Publish terminal-pixel and cell-pixel query methods through the existing transaction manager.
-- [ ] Publish exact derivation without caching, guessing, rounding, or treating timeout as unsupported.
-- [ ] Document an explicit consumer fallback: query cell pixels; on timeout, query terminal pixels and combine them with `GetDimensions()` only when exact derivation succeeds.
+- [x] Replace the internal `TerminalPixelSize` with the frozen public immutable value type without changing wire behavior.
+- [x] Publish terminal-pixel and cell-pixel query methods through the existing transaction manager.
+- [x] Publish exact derivation without caching, guessing, rounding, or treating timeout as unsupported.
+- [x] Document an explicit consumer fallback: query cell pixels; on timeout, query terminal pixels and combine them with `GetDimensions()` only when exact derivation succeeds.
 
 **Acceptance:** Consumers can obtain or exactly derive cell pixel geometry without raw control sequences or brand detection.
 
@@ -165,3 +165,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | Local planning baseline | Current environment | Repository wrapper unavailable because `pwsh` is absent; direct baseline also unavailable because `dotnet` is absent; GitHub CI is the approved verifier |
 | Planning PR | [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) | Main roadmap, versioned roadmap, design, and implementation plan |
 | T2400 implementation baseline | Run `37012305959` at `079bb726d9923992f2eac70bfb1c11a97a5e0bc9` | All nine jobs green; `1.24.0-alpha` pre-feature API fingerprint remains identical to the published 1.23 surface |
+| T2401/T2402 pixel geometry | Run `37014482468` at `25d6e0a962368f39c51380dd361fd2a94280742c` | All nine jobs green after one same-head Windows rerun isolated an unrelated timing flake; public API fingerprint `41576a33a971ef9634ac0e409ba06c8e264f2d3d264ab8445b983e7d5ebf0fa2` |

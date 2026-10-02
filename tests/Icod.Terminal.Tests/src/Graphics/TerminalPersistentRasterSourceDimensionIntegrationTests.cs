@@ -30,8 +30,13 @@ using Xunit;
 /// Verifies that live persistent-resource creation retains the actual source dimensions.
 /// </summary>
 public sealed class TerminalPersistentRasterSourceDimensionIntegrationTests {
-	[Fact]
-	public async Task CreatedResourceRetainsActualSourceDimensions() {
+	[Theory]
+	[InlineData( TerminalRasterPixelFormat.Rgb24 )]
+	[InlineData( TerminalRasterPixelFormat.Rgba32 )]
+	[InlineData( TerminalRasterPixelFormat.Indexed8 )]
+	public async Task CreatedResourceExposesActualSourceDimensions(
+		TerminalRasterPixelFormat pixelFormat
+	) {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await TerminalSession.OpenAsync(
 			new RecordingTerminalControlProvider(),
@@ -51,11 +56,7 @@ public sealed class TerminalPersistentRasterSourceDimensionIntegrationTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
-		TerminalRasterImage image = TerminalRasterImage.CreateRgb24(
-			2,
-			3,
-			new byte[ 18 ]
-		);
+		TerminalRasterImage image = CreateImage( pixelFormat );
 
 		Task<TerminalControlResult<TerminalRasterResource>> creation =
 			session.CreateRasterResourceAsync( image ).AsTask();
@@ -68,8 +69,40 @@ public sealed class TerminalPersistentRasterSourceDimensionIntegrationTests {
 			result.Value
 		);
 
-		Assert.Equal( 2, resource.State.SourceWidth );
-		Assert.Equal( 3, resource.State.SourceHeight );
+		int writesBeforeObservation = transport.WriteCount;
+		Assert.Equal( 2, resource.PixelWidth );
+		Assert.Equal( 3, resource.PixelHeight );
+		Assert.Equal( writesBeforeObservation, transport.WriteCount );
+
+		await resource.DisposeAsync();
+		int writesAfterDisposal = transport.WriteCount;
+		Assert.Equal( 2, resource.PixelWidth );
+		Assert.Equal( 3, resource.PixelHeight );
+		Assert.Equal( writesAfterDisposal, transport.WriteCount );
+	}
+
+	private static TerminalRasterImage CreateImage(
+		TerminalRasterPixelFormat pixelFormat
+	) {
+		return pixelFormat switch {
+			TerminalRasterPixelFormat.Rgb24 => TerminalRasterImage.CreateRgb24(
+				2,
+				3,
+				new byte[ 18 ]
+			),
+			TerminalRasterPixelFormat.Rgba32 => TerminalRasterImage.CreateRgba32(
+				2,
+				3,
+				new byte[ 24 ]
+			),
+			TerminalRasterPixelFormat.Indexed8 => TerminalRasterImage.CreateIndexed8(
+				2,
+				3,
+				new byte[ 6 ],
+				[ new TerminalRasterColor( 1, 2, 3 ) ]
+			),
+			_ => throw new ArgumentOutOfRangeException( nameof( pixelFormat ) )
+		};
 	}
 
 	private sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
@@ -82,6 +115,12 @@ public sealed class TerminalPersistentRasterSourceDimensionIntegrationTests {
 		);
 		private readonly SemaphoreSlim writeSignal = new( 0 );
 		private int writeCount;
+
+		internal int WriteCount {
+			get {
+				return Volatile.Read( ref this.writeCount );
+			}
+		}
 
 		public async ValueTask<int> ReadAsync(
 			Memory<byte> buffer,

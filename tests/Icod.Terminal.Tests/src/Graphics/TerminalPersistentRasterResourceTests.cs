@@ -39,6 +39,14 @@ public sealed class TerminalPersistentRasterResourceTests {
 		Assert.True( resourceType.IsPublic );
 		Assert.True( resourceType.IsSealed );
 		Assert.Contains( typeof( IAsyncDisposable ), resourceType.GetInterfaces() );
+		Assert.Equal(
+			typeof( int ),
+			resourceType.GetProperty( "PixelWidth" )?.PropertyType
+		);
+		Assert.Equal(
+			typeof( int ),
+			resourceType.GetProperty( "PixelHeight" )?.PropertyType
+		);
 		Assert.DoesNotContain(
 			resourceType.GetMembers( BindingFlags.Instance | BindingFlags.Public ),
 			static member => member.Name.Contains( "ImageId", StringComparison.Ordinal )
