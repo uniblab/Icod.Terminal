@@ -2,7 +2,7 @@
 
 **Goal:** Publish the pixel geometry, persistent-resource geometry, bounded local planning, and operation-evidence contracts required by a later `Icod.DCurses` tile renderer, then qualify them with an executable tile-atlas workload.
 
-**Status:** Stable metadata qualification in progress in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
+**Status:** Qualified stable package candidate ready for maintainer review in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 **Release theme:** Raster Geometry and Planning Contracts.
 
@@ -135,15 +135,17 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2410 — Stable 1.24.0 closure
 
-- [ ] Record exact source SHA, CI run, package/symbol hashes, API fingerprint, dependency versions, measurement results, and downstream witnesses.
-- [ ] State the evidence-based 1.25 decision without opening or promising that release automatically.
-- [ ] Present the stable candidate for maintainer review; merge, tag, GitHub release, and NuGet publication remain separate maintainer actions.
+- [x] Record exact source SHA, CI run, package/symbol hashes, API fingerprint, dependency versions, measurement results, and downstream witnesses.
+- [x] State the evidence-based 1.25 decision without opening or promising that release automatically.
+- [x] Present the stable candidate for maintainer review; merge, tag, GitHub release, and NuGet publication remain separate maintainer actions.
 
 **Acceptance:** One stable candidate satisfies every release gate without claiming unobserved physical-terminal behavior.
 
 ## Conditional 1.25 decision
 
 Open a 1.25 bounded frame-edit release only after a DCurses package consumer shows that separate acknowledged edits materially miss its presentation budget and a proposed execution plan measurably improves that workload without weakening certainty.
+
+**Closure decision:** Do not open the bounded batching/Indexed8 1.25 release from the 1.24 Terminal witness alone. The package-only 1/4/16/64-region results establish bounded linear work and the measurement mechanism, but they do not supply the required real DCurses presentation budget or comparative batch result. Version 1.25 remains uncommitted and available for a different independently justified feature.
 
 Any later batch must validate every edit before first output, remain bounded, execute deterministically, select the final frame only after prior success, report exactly how much completed when knowable, and preserve ambiguity after committed failure. It must not promise remote atomicity, rollback, pixel restoration, hidden caches, or automatic retry.
 
@@ -172,3 +174,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | T2406 lifecycle hardening | Run `37025367302` at `8db73c088ccfa7d802089ba92e17f287e5ba0384` | All nine jobs green; resize/no-cache, malformed and maximum geometry, concurrent count snapshots, pending reservations, suspend/resume evidence expiry, and late-acknowledgement generation races passed on all runtime targets |
 | T2407 tile-atlas witness | Run `37027131690` at `878832ac3abb8bba46e076e3b3a6e15f55a97f61` | All nine jobs green; package-only net8/net9/net10 consumers exercised 1/4/16/64 acknowledged region workloads, two-frame selection ordering, total encoded bytes, latency, CPU, allocations, and explicit non-physical-rendering scope |
 | T2408/T2409 candidate qualification | Run `37029340298` at `e212a3b14c11f300d236150274df419a45ff3563` | All nine jobs green after a same-head Windows rerun isolated an unrelated OSC 52 timing timeout; 2,547 runtime tests plus 15 source-integration tests passed per framework, expanded XML/API/package gates passed, and package-only tile plus TermInfo-free/published-DCurses consumers passed |
+| T2410 stable candidate | Run `37031211110` at `26f650497de6b11c3dbab106e1ecf6d18fbdcdeb`; artifact `11237750694` | All nine jobs green with stable `1.24.0` metadata; 2,547 runtime tests plus 15 source-integration tests passed on net8/net9/net10 across Windows, Linux, and macOS; package SHA-256 `494d917c075cbe7ff4de41a604cf03a2e9fdca0714c35e65e7c6867761bbe483`; symbols SHA-256 `15c81169bd3a90b6b0b8a9e2749af24e6bd225c4101026089bb3be005954c6bf`; API `fc3ebf0fb2f6561084deb2fd49a5043373a27da1486a222f932a7a91fd43f6ca`; dependencies `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`; package-only measurements and TermInfo-free/published-DCurses witnesses passed |

@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.23.0` — Partial animation-frame transfer and rich-input completion
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.23.0 is published; the 1.24.0 stable package candidate is under final qualification in PR #69
+- **Development status:** 1.23.0 is published; the qualified 1.24.0 stable package candidate is ready for maintainer review in PR #69
 - **Active development target:** `1.24.0` — Raster geometry and planning contracts
 - **Selected scope:** Public pixel geometry, resource geometry, bounded raster planning, operation-specific evidence, and a tile-atlas measurement witness
 - **Stable compatibility floor:** `1.0.0`
