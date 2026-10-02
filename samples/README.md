@@ -17,7 +17,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
 | Render semantic virtual-raster cells with caller-owned cursor/layout control | [`Icod.Terminal.RasterPlaceholder.Sample`](Icod.Terminal.RasterPlaceholder.Sample/README.md) |
-| Stream, compose, and control terminal-resident animation frames through backend-neutral semantics | [`Icod.Terminal.RasterAnimation.Sample`](Icod.Terminal.RasterAnimation.Sample/README.md) |
+| Stream full frames, apply bounded composition and partial replacement, and control terminal-resident animation through backend-neutral semantics | [`Icod.Terminal.RasterAnimation.Sample`](Icod.Terminal.RasterAnimation.Sample/README.md) |
 | Combine TermInfo lifecycle, advanced-placement, and explicit raster-backend planning with live Terminal execution | `Icod.Terminal.TermInfoPersistentRaster.Sample` |
 | Own cursor style, synchronized output, progress, or pointer shape | focused state samples |
 | Publish title/location/prompt/shell metadata | focused metadata samples |
@@ -171,7 +171,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.RasterAnimation.Sample`
 
-Demonstrates the 1.22 bounded frame-composition operation and the 1.23 caller-supplied partial frame replacement within a resource-owned animation. It verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+Demonstrates full-frame streaming plus the 1.22 bounded frame-composition operation and the 1.23 bounded caller-supplied partial frame replacement within a resource-owned animation. It verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0

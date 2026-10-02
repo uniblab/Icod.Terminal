@@ -247,7 +247,24 @@ if ( !result.Succeeded ) {
 }
 ```
 
-Verify persistent raster graphics first; animation and composition have no passive support probe. The actual acknowledged operation determines success. If a committed attempt throws before a trustworthy acknowledgement, destination pixels may have changed: recreate the resource and frames instead of replaying the operation blindly. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
+In 1.23, the caller can also replace a bounded region of a known frame from immutable caller-owned pixels:
+
+```csharp
+TerminalRasterImage patch = TerminalRasterImage.CreateRgba32(
+    1, 1, [ 32, 224, 160, 255 ]
+);
+TerminalControlMutationResult result = await resource.Animation.UpdateFrameRegionAsync(
+    destinationFrame,
+    patch,
+    destinationX: 0,
+    destinationY: 1
+);
+if ( !result.Succeeded ) {
+    // Report the definite unavailable, unsupported, or failed result.
+}
+```
+
+Verify persistent raster graphics first; animation mutations have no passive support probe. The actual acknowledged operation determines success. If a committed attempt throws before a trustworthy acknowledgement, destination pixels may have changed: recreate the resource and frames from caller-owned art instead of replaying the operation blindly. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) for lifecycle, capacity, failure, cleanup, relative-placement, and placeholder guarantees.
 
@@ -297,7 +314,7 @@ Recommended documentation entry points:
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
-- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation and 1.22 frame composition walkthrough;
+- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation, 1.22 frame composition, and 1.23 partial replacement walkthrough;
 - [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md) — semantic capability evidence and verification model;
 - [`docs/Input-and-Events.md`](docs/Input-and-Events.md) — authoritative input/event routing;
 - [`docs/Queries-and-Responses.md`](docs/Queries-and-Responses.md) — bounded query/response ownership and correlation;
