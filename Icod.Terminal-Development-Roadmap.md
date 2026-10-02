@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.22.0` — Bounded animation frame composition
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.22.0 merged, tagged, and published; 1.23.0 planning PR opened for partial frame transfer, rich-input completion, and consumer qualification
+- **Development status:** 1.22.0 merged, tagged, and published; 1.23.0 implementation candidate in PR #68 for partial frame replacement, rich-input completion, and consumer qualification
 - **Active development target:** `1.23.0` — Partial animation-frame transfer + rich-input completion
 - **Selected scope:** Option 2 + Option 9 + Option 10, with bounded ownership and evidence-driven acceptance
 - **Stable compatibility floor:** `1.0.0`
@@ -21,7 +21,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 `Icod.Terminal 1.21.0` was merged through [PR #66](https://github.com/uniblab/Icod.Terminal/pull/66) at `24295f83153ce18f731dd2eced83d19ccf70b972`, tagged `v1.21.0`, and published as a [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.21.0) on 2026-09-28. The [1.21 development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) records T2100–T2110 and the pre-merge qualification; the final PR head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36358713525). Its input and cursor-visibility scope is complete.
 
-Version 1.22.0 selects **bounded animation frame composition** with an executable sample and downstream acceptance. [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67) contains the semantic API, private encoder, acknowledgement path, sample, and a fresh-package runtime witness. The implementation head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36982553507); the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) records source and artifact identities. The final documentation head needs qualification and maintainer review before merge or publication.
+Version 1.22.0 selects **bounded animation frame composition** with an executable sample and downstream acceptance. [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67) contains the semantic API, private encoder, acknowledgement path, sample, and a fresh-package runtime witness. The implementation head passed [all nine CI jobs](https://github.com/uniblab/Icod.Terminal/actions/runs/36982553507); the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) records source and artifact identities. It was subsequently merged and published as 1.22.0; its final nine-job qualification is recorded in that roadmap.
 
 ### Earlier checkpoints
 
@@ -383,7 +383,7 @@ T2200–T2210 cover the protocol/API review, TermInfo 1.17.0 dependency qualific
 
 The selected scope is **Option 2 + Option 9 + Option 10**. Option 2 adds a bounded caller-supplied update to an existing known animation frame. Option 9 completes the remaining protocol-neutral rich-input and keyboard contract. Option 10 supplies samples, downstream package witnesses, documentation, measurement, and release qualification.
 
-The [1.23 design](docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md) and [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) are proposed in the planning PR. Implementation starts only after the design and plan are reviewed.
+The approved [1.23 design](docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md) and [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) govern implementation in [PR #68](https://github.com/uniblab/Icod.Terminal/pull/68).
 
 The governing rule is:
 

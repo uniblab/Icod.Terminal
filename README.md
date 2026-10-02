@@ -15,6 +15,8 @@ The package is published separately after the repository merge. If you are readi
 
 Version 1.22 adds acknowledged bounded pixel composition between known animation frames of one persistent raster resource. See the [development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) and [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) for the implementation and a runnable example.
 
+The 1.23 development line adds bounded caller-supplied partial frame replacement, completes current legacy Menu phase decoding, and expands package/sample qualification. See the [1.23 roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md).
+
 Version 1.21 adds Kitty functional-key phase reporting and temporary cursor visibility for one screen transaction, restoring the presentation lease owner or ordinary cursor afterward. See the [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) and [screen-output sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the implementation and an input-driven refresh.
 
 Version 1.20 adds immutable screen-advertisement facts, fixes generation and late-response ownership in existing support verification, and expands the [capability guide](docs/Capability-Inspection-and-Planning.md) and [runnable sample](samples/Icod.Terminal.CapabilityPlanning.Sample/README.md). Static advertisement, concrete plans, live support evidence, and endpoint availability remain separate decisions.
@@ -190,6 +192,7 @@ The root README describes the current product by capability rather than by the r
 - **Unicode raster placeholders** — opaque virtual placements, semantic row/column cell tokens, self-contained current-cursor output, and physical placement relative to a virtual parent without exposing Kitty numeric identities or placeholder encoding.
 - **Persistent raster animation** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
 - **Animation frame composition (1.22)** — acknowledged bounded pixel composition between known frames of one current resource, with alpha blending or replacement; callers retain placement and playback control.
+- **Partial animation frame replacement (1.23 candidate)** — acknowledged RGB24/RGBA32 rectangle replacement in one known frame, with no new frame identity or hidden replay cache.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance

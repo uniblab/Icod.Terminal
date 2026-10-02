@@ -2,6 +2,12 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.23.0 (candidate)
+
+- Adds acknowledged bounded RGB24/RGBA32 replacement of a rectangle in one known persistent animation frame through `UpdateFrameRegionAsync`, with local validation, serialized output, no new frame identity, and conservative committed-failure recovery.
+- Completes the current Kitty phase-bearing legacy numeric key set with Menu and fixes clean end-of-input recovery after consumed malformed modern-keyboard frames.
+- Extends animation and rich-input samples, package-only consumers, API/XML gates, ownership and privacy guidance, and cross-platform qualification.
+
 ## 1.22.0
 
 - Adds acknowledged bounded pixel composition between opaque known frames in one current persistent raster animation, with alpha-blend and replacement modes, local geometry validation, and no new frame or replay cache.

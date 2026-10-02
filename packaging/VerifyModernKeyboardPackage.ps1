@@ -131,4 +131,4 @@ try {
     }
 }
 
-Write-Host "0.17 modern-keyboard package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "1.23 rich-input package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

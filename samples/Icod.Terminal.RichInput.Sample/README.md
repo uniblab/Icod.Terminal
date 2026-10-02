@@ -29,3 +29,8 @@ The program prints paste content and associated text to the terminal. They can c
 - [Input and events](../../docs/Input-and-Events.md) explains the event contract; [modern keyboard compatibility](../../docs/Modern-Keyboard-Security-and-Compatibility.md) covers reporting prerequisites and limits.
 
 The package verifier feeds scripted phase-bearing frames to the same editor-state source through a freshly built `Icod.Terminal` package. This checks decoding and consumer behavior; it cannot certify that a particular physical terminal sends those frames. The fixture provider in the test host uses TermInfo to construct a synthetic profile; the sample application itself does not use TermInfo directly.
+
+
+## Privacy
+
+Paste text, associated key text, shifted/base-layout identities, mouse coordinates, and focus timing can all be sensitive. The sample displays them interactively for demonstration; production applications should retain or log only fields required for their purpose.

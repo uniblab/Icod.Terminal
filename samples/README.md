@@ -76,7 +76,7 @@ Normal execution needs interactive input/output and alternate-screen/cursor/rend
 
 Interactive inspector for text, keys, bracketed paste, focus, mouse, lifecycle, unsolicited semantic events, and negotiated modern keyboard reporting.
 
-On terminals that send Kitty phase-bearing functional CSI frames, navigation and editing keys retain repeat/release phases in the existing event model. The example tracks a held Left key and Control+Insert repeats only while a modern keyboard-reporting lease is active. Traditional key decoding remains the fallback; an ordinary traditional press does not imply that a matching release will arrive. The [sample walkthrough](Icod.Terminal.RichInput.Sample/README.md) explains reporting, output, privacy, and fresh-package verification.
+On terminals that send Kitty phase-bearing functional CSI frames, navigation, editing, and Menu keys retain repeat/release phases in the existing event model. The example tracks a held Left key and Control+Insert repeats only while a modern keyboard-reporting lease is active. Traditional key decoding remains the fallback; an ordinary traditional press does not imply that a matching release will arrive. The [sample walkthrough](Icod.Terminal.RichInput.Sample/README.md) explains reporting, output, privacy, and fresh-package verification.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0
@@ -171,7 +171,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.RasterAnimation.Sample`
 
-Demonstrates the 1.22 bounded frame-composition operation within a resource-owned animation. It verifies persistent raster graphics, appends known full-size frames, replaces one destination pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+Demonstrates the 1.22 bounded frame-composition operation and the 1.23 caller-supplied partial frame replacement within a resource-owned animation. It verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0

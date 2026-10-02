@@ -58,4 +58,25 @@ internal static class RasterAnimationCompositionExample {
 			cancellationToken
 		);
 	}
+
+	internal static ValueTask<TerminalControlMutationResult> UpdateRegionAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame destination,
+		CancellationToken cancellationToken = default
+	) {
+		ArgumentNullException.ThrowIfNull( animation );
+		ArgumentNullException.ThrowIfNull( destination );
+		TerminalRasterImage replacement = TerminalRasterImage.CreateRgba32(
+			1,
+			1,
+			[ 32, 224, 160, 255 ]
+		);
+		return animation.UpdateFrameRegionAsync(
+			destination,
+			replacement,
+			destinationX: 0,
+			destinationY: 1,
+			cancellationToken
+		);
+	}
 }

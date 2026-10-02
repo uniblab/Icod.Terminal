@@ -1,6 +1,6 @@
 # Icod.Terminal.RasterAnimation.Sample
 
-This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0` and bounded composition between known frames added in 1.22.0.
+This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, and caller-supplied partial frame replacement added in 1.23.0.
 
 Run it with, for example:
 
@@ -26,25 +26,23 @@ The executable flow:
 3. obtains the resource-owned animation controller and opaque root-frame token without I/O;
 4. assigns the root frame a positive duration;
 5. appends two acknowledged full-size frames;
-6. composes a one-pixel region of the root into the third frame, awaiting its acknowledgement;
-7. creates one ordinary placement through the existing presentation API;
-8. starts loading-mode playback and appends another frame while loading;
-9. stops playback and explicitly selects a known frame;
-10. runs normal playback with one additional traversal;
-11. runs normal playback indefinitely, then stops it explicitly;
+6. replaces one pixel in the third frame from an immutable caller-owned RGBA32 region, awaiting its acknowledgement;
+7. composes a different one-pixel region of the root into the third frame;
+8. creates one ordinary placement through the existing presentation API;
+9. starts loading-mode playback and appends another frame while loading;
+10. stops playback and explicitly selects a known frame;
+11. runs finite and indefinite normal playback;
 12. releases placement and resource ownership deterministically with `await using`.
 
-The composition step lives in `RasterAnimationCompositionExample.ComposeAsync`. The automated scripted-terminal test invokes this same sample step with a two-by-two resource, verifies the emitted control frame, and withholds the acknowledgement until the operation is waiting. A returned unsuccessful result is reported with its status and the program exits. A timeout, cancellation, or transport exception currently propagates out of the executable sample; `await using` still disposes its owned resource. Such an exception after output may mean that destination pixels changed without a trustworthy acknowledgement. A consuming application can handle that uncertain path explicitly:
+The partial replacement and composition steps live in `RasterAnimationCompositionExample.UpdateRegionAsync` and `ComposeAsync`. Automated scripted-terminal tests invoke both sample steps with a two-by-two resource, verify each emitted control frame, and withhold acknowledgement until the operation is waiting. A returned unsuccessful result is reported with its status and the program exits. A timeout, cancellation, or transport exception currently propagates out of the executable sample; `await using` still disposes its owned resource. Such an exception after output may mean that destination pixels changed without a trustworthy acknowledgement. A consuming application can handle that uncertain path explicitly:
 
 ```csharp
 try {
-    TerminalControlMutationResult result = await animation.ComposeFrameAsync(
-        animation.RootFrame,
-        thirdFrame,
-        new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
-        destinationX: 1,
-        destinationY: 1,
-        TerminalRasterFrameCompositionMode.Replace
+    TerminalRasterImage patch = TerminalRasterImage.CreateRgba32(
+        1, 1, [ 32, 224, 160, 255 ]
+    );
+    TerminalControlMutationResult result = await animation.UpdateFrameRegionAsync(
+        thirdFrame, patch, destinationX: 0, destinationY: 1
     );
     if ( !result.Succeeded ) {
         // Report result.Status and result.Message; do not retry automatically.
@@ -59,11 +57,11 @@ try {
 }
 ```
 
-The catch treats precommit and committed exceptions conservatively. It does not claim that an exception proves the destination changed, and it never blindly replays a possibly applied composition.
+The catch treats precommit and committed exceptions conservatively. It does not claim that an exception proves the destination changed, and it never blindly replays a possibly applied replacement.
 
 `PersistentRasterAnimation` has no reviewed passive support query. The preflight verifies persistent raster graphics, checks for a usable graphics endpoint and no known animation rejection, and then attempts real acknowledged animation operations. An unknown animation status does not falsely stop a fresh session; successful controls establish live animation evidence. The resource creation, frame append, and composition results are checked separately. Verifying persistent raster graphics alone does not prove animation or composition support. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the capabilities with live support paths.
 
-The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame replay cache, image-file decoder, or screen-layout policy. Returned failures are reported; exceptions propagate after resource cleanup. Neither path automatically retries composition.
+The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame or delta cache, image-file decoder, or screen-layout policy. Returned failures are reported; exceptions propagate after resource cleanup. Neither path automatically retries composition.
 
 The animation controller is resource-owned and is not independently disposable. Disposing the resource remains final terminal-side cleanup authority for the resource, its frames, and its placements.
 

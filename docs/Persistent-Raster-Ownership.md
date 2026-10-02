@@ -2,7 +2,7 @@
 
 This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources, placements, placeholders, and animations.
 
-Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Version 1.12 added bounded source-pixel cropping and signed z-order. Version 1.13 added bounded relative placement ownership with immutable parentage while preserving resource ownership as a separate lifetime axis. Version 1.14 added side-effect-free observation of Terminal's local ownership certainty and semantic loss/release reason. Version 1.15 added virtual placements and independently renderable Unicode-placeholder cells. Version 1.16 adds resource-owned animation sequences, opaque frame tokens, positive timing, terminal-driven playback, and a distinct sequence-certainty axis.
+Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Versions 1.12 through 1.16 added crop/depth/observation/placeholders and resource-owned animation. Version 1.22 added bounded frame composition. Version 1.23 adds bounded caller-supplied replacement of existing frame pixels.
 
 Historical tranche and versioned-roadmap documents explain how the design was developed and qualified. This document defines the supported semantic contract consumers should rely on.
 
@@ -673,7 +673,7 @@ Animation changes the current pixels of the same resource. It does not create an
 
 ## 31. Full-frame, timing, and playback contract
 
-`AddFrameAsync(...)` accepts one bounded `TerminalRasterImage` whose intrinsic width and height exactly match the owning resource. Version 1.16 does not expose partial-frame transfer, delta editing, composition, or retained source-frame replay. Version 1.22 adds the separate existing-frame composition operation described in section 36.
+`AddFrameAsync(...)` accepts one bounded `TerminalRasterImage` whose intrinsic width and height exactly match the owning resource. Version 1.16 did not expose partial-frame transfer, delta editing, composition, or retained source-frame replay. Version 1.22 adds the existing-frame composition operation described in section 36, and 1.23 adds caller-supplied partial replacement in section 37.
 
 Frame duration is a positive exact whole number of milliseconds in `1..int.MaxValue`. Fractional milliseconds, zero, negative values, and larger values are rejected before output. Duration control and current-frame selection accept only known opaque tokens owned by that animation.
 
@@ -748,3 +748,10 @@ The 1.15 and earlier baseline documents remain immutable historical evidence.
 The source rectangle and destination origin use zero-based intrinsic resource pixels. Both bounded rectangles must fit. On the same frame they must not overlap. Null or foreign tokens, invalid coordinates, overlapping regions, and unknown modes fail locally before output. A disposed resource handle throws `ObjectDisposedException`; stale or released ownership, an unknown frame, or an unavailable backend yields a controlled unavailable result. The operation does not retain pixels or a replay cache.
 
 The composition request uses the existing serialized graphics query path. A positive correlated reply completes the mutation. A definite `EINVAL` or `ENOSPC` failure leaves the known frame sequence intact; `ENOENT` could mean either a missing frame or image, so the resource is conservatively invalidated. A timeout, cancellation after output commitment, or transport failure may leave destination pixels uncertain even while the known frame identities and sequence remain current. The caller must not replay that composition blindly. The `State` snapshot describes ownership and sequence certainty, not the exact pixel contents. `PersistentRasterAnimation` selects the backend, but does not by itself prove that the endpoint implements composition; the correlated reply supplies that evidence for the request.
+
+
+## 37. Partial animation frame replacement — 1.23
+
+`TerminalRasterAnimation.UpdateFrameRegionAsync(destination, region, destinationX, destinationY, cancellationToken)` replaces one bounded rectangle in a known frame from immutable caller-owned RGB24 or RGBA32 pixels. The region must fit the resource's intrinsic dimensions. Indexed input, foreign tokens, negative or overflowing coordinates, stale ownership, disposal, and precommit cancellation are rejected before output. The operation creates no frame token and retains no source or delta cache.
+
+The request shares the animation output gate, frame/resource generation checks, and correlated acknowledgement path with append, playback, selection, timing, and composition. A definite rejection preserves known frame ownership. `ENOENT` conservatively invalidates the resource. A timeout, cancellation, or transport failure after the first output frame commits leaves the affected pixels uncertain while only frame identity remains known. Callers should dispose and recreate the resource and its frames from their own source art before retrying.

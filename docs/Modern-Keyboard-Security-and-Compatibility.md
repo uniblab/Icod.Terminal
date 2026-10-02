@@ -46,7 +46,7 @@ Known functional identities map to `TerminalKey`. A syntactically valid modern f
 
 Traditional keyboard decoding remains active regardless of whether a modern protocol is negotiated. Applications should treat modern reporting as an optional enhancement, not a prerequisite for ordinary input.
 
-Kitty can report phase on legacy functional CSI forms as well as CSI-u. In 1.21, supported arrow, navigation, and function-key forms with an explicit `modifier:phase` suffix produce named `TerminalKey` press/repeat/release events. Ordinary unsuffixed terminfo keys remain traditional press events; the library never infers a release from an absent phase. This additive decoding uses the existing reader and does not enable a new terminal mode. Cursor-position replies retain query ownership, including the ambiguous CSI `R` family.
+Kitty can report phase on legacy functional CSI forms as well as CSI-u. Supported arrow, navigation, function-key, and Menu forms with an explicit `modifier:phase` suffix produce named `TerminalKey` press/repeat/release events. Version 1.23 completes the current numeric legacy set with Menu (`29 ~`). Ordinary unsuffixed terminfo keys remain traditional press events; the library never infers a release from an absent phase. This additive decoding uses the existing reader and does not enable a new terminal mode. Cursor-position replies retain query ownership, including the ambiguous CSI `R` family.
 
 ## Bounded decoding
 
@@ -109,6 +109,8 @@ In particular:
 - expanded modifiers reveal more chord context.
 
 Applications should avoid logging, persisting, transmitting, or displaying these fields unless needed for their purpose.
+
+Bracketed paste text and mouse coordinates are also user-controlled, potentially sensitive input. Treat them with the same retention and logging policy as ordinary typed text. Focus events expose activity timing and should not be used as an authentication or authorization signal.
 
 `Icod.Terminal` does not automatically redact application-requested input metadata.
 

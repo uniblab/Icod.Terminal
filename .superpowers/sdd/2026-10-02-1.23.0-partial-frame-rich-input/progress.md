@@ -16,7 +16,7 @@
 - [x] Observe intended RED failure in CI (run 36989498423: missing `UpdateFrameRegionAsync` on net8/net9/net10).
 - [x] Implement partial-frame API and transaction locally; GREEN CI pending.
 - [x] Complete rich-input inventory and implement legacy Menu plus empty-buffer malformed-frame recovery locally; GREEN CI pending.
-- [ ] Update samples, docs, package witnesses, and qualification evidence.
+- [x] Update samples, docs, package witnesses, and qualification evidence locally; exact-head CI pending.
 
 ## Rulings
 

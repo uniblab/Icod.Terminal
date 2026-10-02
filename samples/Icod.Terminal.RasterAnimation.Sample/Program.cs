@@ -141,6 +141,13 @@ if ( TerminalControlStatus.Available != thirdResult.Status
 TerminalRasterAnimationFrame thirdFrame = thirdResult.Value;
 if ( !await RequireSuccessAsync(
 	session,
+	"Partial frame replacement",
+	await RasterAnimationCompositionExample.UpdateRegionAsync( animation, thirdFrame )
+) ) {
+	return 1;
+}
+if ( !await RequireSuccessAsync(
+	session,
 	"Frame composition",
 	await RasterAnimationCompositionExample.ComposeAsync( animation, thirdFrame )
 ) ) {
@@ -246,7 +253,7 @@ if ( !await RequireSuccessAsync(
 }
 
 await session.WriteTextAsync(
-	"Completed loading-mode append, explicit selection, finite playback, indefinite playback, and deterministic resource-owned cleanup.\r\n"
+	"Completed partial replacement, composition, loading-mode append, explicit selection, playback, and deterministic resource-owned cleanup.\r\n"
 );
 return 0;
 

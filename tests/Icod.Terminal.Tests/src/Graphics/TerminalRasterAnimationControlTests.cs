@@ -110,6 +110,83 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task PartialFrameRejectionPreservesOwnershipButMissingIdentityInvalidatesResource() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterImage pixel = TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] );
+
+		Task<TerminalControlMutationResult> invalid = resource.Animation
+			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:invalid region\u001b\\" ) );
+		Assert.Equal( TerminalControlStatus.Failed, ( await invalid ).Status );
+		Assert.Equal( TerminalRasterOwnershipStatus.Current, resource.OwnershipState.Status );
+
+		Task<TerminalControlMutationResult> missing = resource.Animation
+			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;ENOENT:missing frame\u001b\\" ) );
+		Assert.Equal( TerminalControlStatus.Unavailable, ( await missing ).Status );
+		Assert.Equal( TerminalRasterOwnershipStatus.Stale, resource.OwnershipState.Status );
+	}
+
+	[Fact]
+	public async Task ConcurrentPartialUpdatesSerializeAndCommittedFailurePreservesFrameIdentity() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterImage pixel = TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] );
+		Task<TerminalControlMutationResult> first = resource.Animation
+			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		Task<TerminalControlMutationResult> second = resource.Animation
+			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
+		await YieldSeveralTimesAsync();
+		Assert.Equal( 2, transport.Writes.Count );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await first ).Succeeded );
+		await transport.WaitForWriteCountAsync( 3 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await second ).Succeeded );
+
+		transport.FailNextFlush = true;
+		await Assert.ThrowsAsync<IOException>(
+			() => resource.Animation.UpdateFrameRegionAsync(
+				resource.Animation.RootFrame, pixel, 0, 0
+			).AsTask()
+		);
+		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		Assert.Equal( TerminalRasterOwnershipStatus.Current, resource.OwnershipState.Status );
+	}
+
+	[Fact]
+	public async Task SessionGenerationLossRejectsPartialFrameUpdateWithoutOutput() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		session.InvalidateState();
+		int writesBefore = transport.Writes.Count;
+
+		TerminalControlMutationResult result = await resource.Animation.UpdateFrameRegionAsync(
+			resource.Animation.RootFrame,
+			TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ),
+			0,
+			0
+		);
+
+		Assert.Equal( TerminalControlStatus.Unavailable, result.Status );
+		Assert.Equal( writesBefore, transport.Writes.Count );
+		Assert.Equal( TerminalRasterAnimationStatus.Stale, resource.Animation.State.Status );
+	}
+
+	[Fact]
 	public async Task RootFrameDurationUsesAcknowledgedAnimationControl() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
@@ -284,6 +361,31 @@ public sealed class TerminalRasterAnimationControlTests {
 		);
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await composition ).Succeeded );
+	}
+
+	[Fact]
+	public async Task SamplePartialUpdatePathExecutesAgainstScriptedTerminal() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u, width: 2, height: 2
+		);
+
+		Task<TerminalControlMutationResult> update =
+			Icod.Terminal.RasterAnimation.Sample.RasterAnimationCompositionExample
+				.UpdateRegionAsync(
+					resource.Animation,
+					resource.Animation.RootFrame
+				).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b_Ga=f,f=32,s=1,v=1,t=d,i=77,r=1,x=0,y=1,X=1,m=0;IOCg/w==\u001b\\"
+			),
+			transport.Writes[ 1 ]
+		);
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await update ).Succeeded );
 	}
 
 	[Fact]

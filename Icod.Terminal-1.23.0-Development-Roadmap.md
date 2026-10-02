@@ -2,7 +2,7 @@
 
 **Goal:** Implement bounded partial animation-frame transfer, complete the remaining rich-input contract, and qualify both through consumer samples and package-only acceptance.
 
-**Status:** Approved design; planning PR opened from the published 1.22.0 line. No 1.23 production implementation has started.
+**Status:** Implementation candidate in draft PR #68; RED fixtures, production changes, samples, package witnesses, and API freeze are implemented. Cross-platform exact-head qualification is in progress.
 
 **Selected scope:** Option 2 + Option 9 + Option 10.
 
@@ -22,68 +22,68 @@
 
 ### T2300 — Baseline and API-regret gate
 
-- [ ] Capture the published 1.22.0 source, API fingerprint, package hashes, dependency graph, animation contract, and rich-input inventory.
-- [ ] Identify concrete downstream use cases for partial updates and the missing rich-input cases; reject scope that lacks a semantic consumer.
-- [ ] Freeze the failure matrix, bounds, ownership, formats, and public naming before implementation.
+- [x] Capture the published 1.22.0 source, API fingerprint, package hashes, dependency graph, animation contract, and rich-input inventory.
+- [x] Identify concrete downstream use cases for partial updates and the missing rich-input cases; reject scope that lacks a semantic consumer.
+- [x] Freeze the failure matrix, bounds, ownership, formats, and public naming before implementation.
 
 **Acceptance:** The design explains why each public addition is needed and preserves existing ownership and compatibility boundaries.
 
 ### T2301 — Partial-frame RED fixtures
 
-- [ ] Add failing tests for a valid destination-frame region replacement and semantic result behavior.
-- [ ] Add failing tests for zero dimensions, overflowing coordinates, format/size mismatch, foreign/stale/disposed frames, generation loss, and pre-output cancellation.
+- [x] Add failing tests for a valid destination-frame region replacement and semantic result behavior.
+- [x] Add failing tests for zero dimensions, overflowing coordinates, format/size mismatch, foreign/stale/disposed frames, generation loss, and pre-output cancellation.
 
 **Acceptance:** The tests fail against the published 1.22 API and demonstrate validation before transport commitment.
 
 ### T2302 — Partial-frame semantic API and encoder
 
-- [ ] Add `UpdateFrameRegionAsync(destination, region, destinationX, destinationY, cancellationToken)` with immutable image ownership and bounded geometry.
-- [ ] Encode the private partial transfer through the existing graphics transaction path without exposing protocol identifiers.
-- [ ] Test exact wire fields, row/payload bounds, output ordering, and both RGB24/RGBA32 paths supported by the existing raster adapter.
+- [x] Add `UpdateFrameRegionAsync(destination, region, destinationX, destinationY, cancellationToken)` with immutable image ownership and bounded geometry.
+- [x] Encode the private partial transfer through the existing graphics transaction path without exposing protocol identifiers.
+- [x] Test exact wire fields, row/payload bounds, output ordering, and both RGB24/RGBA32 paths supported by the existing raster adapter.
 
 **Acceptance:** Valid updates produce the reviewed protocol operation and invalid requests emit no bytes.
 
 ### T2303 — Partial-frame acknowledgement and lifecycle hardening
 
-- [ ] Correlate positive, definite-negative, malformed, timeout, and late responses through the existing query manager.
-- [ ] Preserve frame ownership on definite rejection and document uncertain affected pixels after committed failure.
-- [ ] Test disposal, generation loss, playback/update serialization, concurrent updates, cancellation, bounded registry/work, and cleanup.
+- [x] Correlate positive, definite-negative, malformed, timeout, and late responses through the existing query manager.
+- [x] Preserve frame ownership on definite rejection and document uncertain affected pixels after committed failure.
+- [x] Test disposal, generation loss, playback/update serialization, concurrent updates, cancellation, bounded registry/work, and cleanup.
 
 **Acceptance:** Tests never claim stronger pixel certainty than the observed terminal outcome.
 
 ### T2304 — Rich-input gap inventory and RED fixtures
 
-- [ ] Inventory current traditional keyboard, CSI-u/Kitty, focus, bracketed-paste, and mouse behavior against the published semantic event model.
-- [ ] Add failing fixtures for every approved missing case, including malformed/oversized recovery, modifiers, phases, boundaries, and lease cleanup.
+- [x] Inventory current traditional keyboard, CSI-u/Kitty, focus, bracketed-paste, and mouse behavior against the published semantic event model.
+- [x] Add failing fixtures for every approved missing case, including malformed/oversized recovery, modifiers, phases, boundaries, and lease cleanup.
 
 **Acceptance:** Each proposed input addition has a named semantic event/result and a failing test before decoder changes.
 
 ### T2305 — Rich-input and keyboard completion
 
-- [ ] Implement the approved missing decoder and event cases through the authoritative input path.
-- [ ] Preserve negotiation leases, query correlation, event ordering, nonfatal unknown outer events, and bounded buffering.
-- [ ] Add privacy and payload-handling guidance for associated text, paste, mouse, and terminal-controlled reports.
+- [x] Implement the approved missing decoder and event cases through the authoritative input path.
+- [x] Preserve negotiation leases, query correlation, event ordering, nonfatal unknown outer events, and bounded buffering.
+- [x] Add privacy and payload-handling guidance for associated text, paste, mouse, and terminal-controlled reports.
 
 **Acceptance:** All approved fixtures pass across net8/net9/net10 without a competing reader or raw protocol API.
 
 ### T2306 — Samples and consumer documentation
 
-- [ ] Extend the animation sample with a caller-owned partial update and explicit recovery after uncertain commitment.
-- [ ] Extend the rich-input sample with the completed keyboard/input paths, negotiation, fallback, cleanup, and privacy notes.
-- [ ] Update `samples/README.md`, root README feature inventory, input/ownership docs, release notes, and migration guidance.
+- [x] Extend the animation sample with a caller-owned partial update and explicit recovery after uncertain commitment.
+- [x] Extend the rich-input sample with the completed keyboard/input paths, negotiation, fallback, cleanup, and privacy notes.
+- [x] Update `samples/README.md`, root README feature inventory, input/ownership docs, release notes, and migration guidance.
 
 **Acceptance:** Samples agree with the public contract and run their shared semantic paths headlessly in scripted tests.
 
 ### T2307 — Fresh-package downstream witnesses
 
-- [ ] Consume only the built 1.23 package in fresh net8/net9/net10 projects.
-- [ ] Exercise partial transfer, animation recovery, rich-input event handling, and the existing Terminal-only and published-DCurses witnesses.
+- [x] Consume only the built 1.23 package in fresh net8/net9/net10 projects.
+- [x] Exercise partial transfer, animation recovery, rich-input event handling, and the existing Terminal-only and published-DCurses witnesses.
 
 **Acceptance:** Package consumers use no source internals, protocol numbers, or second reader.
 
 ### T2308 — API, XML, dependency, security, and performance gates
 
-- [ ] Freeze equal public API snapshots across all target frameworks and compare intentional additive changes with 1.22.
+- [x] Freeze equal public API snapshots across all target frameworks and compare intentional additive changes with 1.22.
 - [ ] Run XML, package/symbol, license, dependency-boundary, security, and sample checks.
 - [ ] Benchmark full-frame replacement versus partial transfer for wire bytes, CPU, allocations, first-frame latency, and total transfer latency; retain partial transfer only when measurements justify it.
 

@@ -75,13 +75,17 @@ internal static class PersistentRasterCompositionScenario {
 		Require( TerminalControlStatus.Available == appended.Status, "Tile frame append failed." );
 		TerminalRasterAnimationFrame tile = appended.Value
 			?? throw new InvalidOperationException( "Tile frame token was not returned." );
+		TerminalControlMutationResult updated = await RasterAnimationCompositionExample
+			.UpdateRegionAsync( resource.Animation, tile, deadline.Token );
+		Require( updated.Succeeded, "Package-only partial frame replacement failed." );
 		TerminalControlMutationResult composed = await RasterAnimationCompositionExample
 			.ComposeAsync( resource.Animation, tile, deadline.Token );
 		Require( composed.Succeeded, "Package-only frame composition failed." );
 		Require(
 			transport.Probes == 1 && transport.Roots == 1
-				&& transport.Appends == 1 && transport.Compositions == 1,
-			"The sample did not execute exactly one verified graphics and composition path."
+				&& transport.Appends == 1 && transport.PartialUpdates == 1
+				&& transport.Compositions == 1,
+			"The sample did not execute exactly one verified graphics, partial update, and composition path."
 		);
 		Require(
 			TerminalRasterAnimationStatus.Current == resource.Animation.State.Status,
@@ -100,6 +104,7 @@ internal static class PersistentRasterCompositionScenario {
 		internal int Probes;
 		internal int Roots;
 		internal int Appends;
+		internal int PartialUpdates;
 		internal int Compositions;
 
 		public async ValueTask<int> ReadAsync(
@@ -136,6 +141,14 @@ internal static class PersistentRasterCompositionScenario {
 				uint imageNumber = uint.Parse( request.AsSpan( start, end - start ),
 					NumberStyles.None, CultureInfo.InvariantCulture );
 				this.Publish( $"\u001b_Gi=77,I={imageNumber};OK\u001b\\" );
+			} else if ( request.StartsWith( "\u001b_Ga=f,", StringComparison.Ordinal )
+				&& request.Contains( ",r=", StringComparison.Ordinal ) ) {
+				Require(
+					request == "\u001b_Ga=f,f=32,s=1,v=1,t=d,i=77,r=2,x=0,y=1,X=1,m=0;IOCg/w==\u001b\\",
+					"The package consumer emitted unexpected partial frame geometry or pixels."
+				);
+				++this.PartialUpdates;
+				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
 			} else if ( request.StartsWith( "\u001b_Ga=f,", StringComparison.Ordinal ) ) {
 				++this.Appends;
 				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
