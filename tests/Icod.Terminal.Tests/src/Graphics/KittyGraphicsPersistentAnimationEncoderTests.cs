@@ -155,6 +155,58 @@ public sealed class KittyGraphicsPersistentAnimationEncoderTests {
 	}
 
 	[Fact]
+	public void MultiChunkFrameEditPreservesTargetAndRepeatsAnimationAction() {
+		byte[] pixels = Enumerable.Range(
+			0,
+			KittyGraphicsDirectEncoder.MaximumRawChunkBytes + 3
+		).Select( index => unchecked( (byte)( index * 19 ) ) ).ToArray();
+		KittyRasterData raster = KittyRasterAdapter.Adapt(
+			TerminalRasterImage.CreateRgb24(
+				1025,
+				1,
+				pixels
+			)
+		);
+
+		ReadOnlyMemory<byte>[] payloads = KittyGraphicsPersistentAnimationEncoder
+			.EncodeFrameEditPayloads(
+				raster,
+				imageId: 99,
+				frameNumber: 2,
+				destinationX: 3,
+				destinationY: 4
+			)
+			.ToArray();
+
+		Assert.Equal( 2, payloads.Length );
+		SplitPayload(
+			payloads[ 0 ],
+			out string firstControl,
+			out byte[] firstEncoded
+		);
+		SplitPayload(
+			payloads[ 1 ],
+			out string finalControl,
+			out byte[] finalEncoded
+		);
+
+		Assert.Equal(
+			"Ga=f,f=24,s=1025,v=1,t=d,i=99,r=2,x=3,y=4,X=1,m=1;",
+			firstControl
+		);
+		Assert.Equal( "Ga=f,m=0;", finalControl );
+		Assert.True(
+			firstEncoded.Length
+				<= KittyGraphicsDirectEncoder.MaximumEncodedPayloadBytes
+		);
+		Assert.True(
+			finalEncoded.Length
+				<= KittyGraphicsDirectEncoder.MaximumEncodedPayloadBytes
+		);
+		Assert.Equal( pixels, DecodeCombinedPayloads( payloads ) );
+	}
+
+	[Fact]
 	public void FrameTransferUsesOnlyDirectTransportAndDoesNotSuppressAcknowledgement() {
 		KittyRasterData raster = KittyRasterAdapter.Adapt(
 			TerminalRasterImage.CreateRgb24(
