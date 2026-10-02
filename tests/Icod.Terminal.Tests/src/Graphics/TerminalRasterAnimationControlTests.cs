@@ -140,6 +140,38 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task SampleCompositionPathExecutesAgainstScriptedTerminal() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u, width: 2, height: 2
+		);
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				TerminalRasterImage.CreateRgb24( 2, 2, new byte[12] ),
+				TimeSpan.FromMilliseconds( 180 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		TerminalRasterAnimationFrame destination = Assert.IsType<TerminalRasterAnimationFrame>(
+			( await append ).Value
+		);
+
+		Task<TerminalControlMutationResult> composition =
+			Icod.Terminal.RasterAnimation.Sample.RasterAnimationCompositionExample
+				.ComposeAsync( resource.Animation, destination ).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b_Ga=c,i=77,r=1,c=2,w=1,h=1,X=0,Y=0,x=1,y=1,C=1\u001b\\"
+			),
+			transport.Writes[ 2 ]
+		);
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await composition ).Succeeded );
+	}
+
+	[Fact]
 	public async Task CompositionRejectsForeignAndOutOfBoundsFramesBeforeOutput() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
