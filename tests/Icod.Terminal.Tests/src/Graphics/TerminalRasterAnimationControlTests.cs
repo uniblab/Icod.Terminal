@@ -58,6 +58,18 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await update ).Succeeded );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgb24
+			).Support
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Unknown,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgba32
+			).Support
+		);
 	}
 
 	[Fact]
@@ -294,6 +306,18 @@ public sealed class TerminalRasterAnimationControlTests {
 		Assert.True( ( await composition ).Succeeded );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
 		Assert.Equal( 2, destination.SequenceNumber );
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameComposition
+			).Support
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Unknown,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgb24
+			).Support
+		);
 	}
 
 	[Fact]
@@ -386,6 +410,12 @@ public sealed class TerminalRasterAnimationControlTests {
 		);
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await update ).Succeeded );
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgba32
+			).Support
+		);
 	}
 
 	[Fact]

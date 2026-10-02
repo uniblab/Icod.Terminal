@@ -79,10 +79,10 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2404 — Raster planning snapshot
 
-- [ ] Publish all stable library ceilings needed for atlas planning: image dimension, pixel count, owned bytes, palette entries, resources, combined placements, relative depth, placeholder extent, and allocated animation frames.
-- [ ] Add advisory local counts for currently owned resources, combined placements, and allocated animation frames, including in-flight frame reservations where they consume admission capacity.
-- [ ] Capture each registry's counts under its existing synchronization and document that the combined snapshot is observational rather than an atomic reservation.
-- [ ] Keep final create/append results authoritative when concurrent work changes capacity after observation.
+- [x] Publish all stable library ceilings needed for atlas planning: image dimension, pixel count, owned bytes, palette entries, resources, combined placements, relative depth, placeholder extent, and allocated animation frames.
+- [x] Add advisory local counts for currently owned resources, combined placements, and allocated animation frames, including in-flight frame reservations where they consume admission capacity.
+- [x] Capture each registry's counts under its existing synchronization and document that the combined snapshot is observational rather than an atomic reservation.
+- [x] Keep final create/append results authoritative when concurrent work changes capacity after observation.
 
 **Acceptance:** DCurses can reject an impossible atlas plan before output while never mistaking local bookkeeping for terminal storage.
 
@@ -167,3 +167,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | T2400 implementation baseline | Run `37012305959` at `079bb726d9923992f2eac70bfb1c11a97a5e0bc9` | All nine jobs green; `1.24.0-alpha` pre-feature API fingerprint remains identical to the published 1.23 surface |
 | T2401/T2402 pixel geometry | Run `37014482468` at `25d6e0a962368f39c51380dd361fd2a94280742c` | All nine jobs green after one same-head Windows rerun isolated an unrelated timing flake; public API fingerprint `41576a33a971ef9634ac0e409ba06c8e264f2d3d264ab8445b983e7d5ebf0fa2` |
 | T2403 resource geometry | Run `37017398715` at `42d1299f00e976021a0110d3e4f3fd458f879d76` | All nine jobs green after one same-head Linux rerun isolated an unrelated keyboard-lease timing flake; public API fingerprint `c02db531c9f029635ff436785a8a862b4e5f2ce2665e9c22f5347cc3a6759809` |
+| T2404 raster planning | Run `37021056682` at `38958cdc62b05cda6ddf9f86caa07cedd6548689` | All nine jobs green; fixed ceilings and synchronized advisory counts including append reservations; public API fingerprint `67dcb10e5a1dad58db9e4c83e13fda38976e3ac68195fcec7a7f8bbb1b8ca2d8` |
