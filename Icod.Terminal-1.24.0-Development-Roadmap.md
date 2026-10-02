@@ -88,11 +88,11 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2405 — Generation-scoped raster-operation evidence
 
-- [ ] Add focused raster-operation status rather than expanding the broad `TerminalCapability` enum with format variants.
-- [ ] Record semantic-operation evidence separately from the shared Kitty animation backend so one successful operation does not verify unrelated operations.
-- [ ] Verify composition after successful `ComposeFrameAsync` acknowledgement and verify the matching RGB24 or RGBA32 variant after successful `UpdateFrameRegionAsync` acknowledgement.
-- [ ] Clear live evidence on lifecycle-generation advance; keep initial state unknown and endpoints separately available/unavailable.
-- [ ] Leave generic rejection, timeout, cancellation, transport loss, and missing-resource invalidation non-decisive for operation support.
+- [x] Add focused raster-operation status rather than expanding the broad `TerminalCapability` enum with format variants.
+- [x] Record semantic-operation evidence separately from the shared Kitty animation backend so one successful operation does not verify unrelated operations.
+- [x] Verify composition after successful `ComposeFrameAsync` acknowledgement and verify the matching RGB24 or RGBA32 variant after successful `UpdateFrameRegionAsync` acknowledgement.
+- [x] Clear live evidence on lifecycle-generation advance; keep initial state unknown and endpoints separately available/unavailable.
+- [x] Leave generic rejection, timeout, cancellation, transport loss, and missing-resource invalidation non-decisive for operation support.
 
 **Acceptance:** Inspection truthfully reports what has succeeded in this live generation without probing or leaking protocol details.
 
@@ -168,3 +168,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | T2401/T2402 pixel geometry | Run `37014482468` at `25d6e0a962368f39c51380dd361fd2a94280742c` | All nine jobs green after one same-head Windows rerun isolated an unrelated timing flake; public API fingerprint `41576a33a971ef9634ac0e409ba06c8e264f2d3d264ab8445b983e7d5ebf0fa2` |
 | T2403 resource geometry | Run `37017398715` at `42d1299f00e976021a0110d3e4f3fd458f879d76` | All nine jobs green after one same-head Linux rerun isolated an unrelated keyboard-lease timing flake; public API fingerprint `c02db531c9f029635ff436785a8a862b4e5f2ce2665e9c22f5347cc3a6759809` |
 | T2404 raster planning | Run `37021056682` at `38958cdc62b05cda6ddf9f86caa07cedd6548689` | All nine jobs green; fixed ceilings and synchronized advisory counts including append reservations; public API fingerprint `67dcb10e5a1dad58db9e4c83e13fda38976e3ac68195fcec7a7f8bbb1b8ca2d8` |
+| T2405 raster-operation evidence | Run `37024183550` at `3c4eea8b4d3954680059d6a70de8ae7b8223ad92` | All nine jobs green; direct generation-scoped composition/RGB24/RGBA32 evidence remains isolated from broad backend evidence; public API fingerprint `fc3ebf0fb2f6561084deb2fd49a5043373a27da1486a222f932a7a91fd43f6ca` |
