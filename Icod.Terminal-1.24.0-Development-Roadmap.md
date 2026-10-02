@@ -2,7 +2,7 @@
 
 **Goal:** Publish the pixel geometry, persistent-resource geometry, bounded local planning, and operation-evidence contracts required by a later `Icod.DCurses` tile renderer, then qualify them with an executable tile-atlas workload.
 
-**Status:** Proposed planning scope in draft [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69). Production implementation has not begun.
+**Status:** Approved implementation in progress in draft [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 **Release theme:** Raster Geometry and Planning Contracts.
 
@@ -45,10 +45,10 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2400 — Published baseline, consumer contract, and API-regret gate
 
-- [ ] Record the merged/tagged 1.23.0 source identity, public API fingerprint, package and symbol hashes, dependency graph, bounds, and qualification evidence.
-- [ ] Record the representative consumer: uniform atlas, opaque placeholder cells, caller-owned damage, two known frames, and explicit text fallback.
-- [ ] Freeze exact public names, values, XML semantics, failure behavior, evidence transitions, counts, and compatibility constraints.
-- [ ] Establish a `1.24.0-alpha` development identity without changing the 1.0.0 compatibility floor.
+- [x] Record the merged/tagged 1.23.0 source identity, public API fingerprint, package and symbol hashes, dependency graph, bounds, and qualification evidence.
+- [x] Record the representative consumer: uniform atlas, opaque placeholder cells, caller-owned damage, two known frames, and explicit text fallback.
+- [x] Freeze exact public names, values, XML semantics, failure behavior, evidence transitions, counts, and compatibility constraints.
+- [x] Establish a `1.24.0-alpha` development identity without changing the 1.0.0 compatibility floor.
 
 **Acceptance:** The public additions are fully specified and no game, DCurses, protocol identifier, or speculative batch abstraction crosses into Terminal.
 
@@ -155,7 +155,13 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 
 | Checkpoint | Source or run | Result |
 | --- | --- | --- |
-| Published 1.23 baseline | `v1.23.0` / `65b8a82` | Merged and published baseline for 1.24 planning |
+| Published 1.23 source | `v1.23.0` / `65b8a820e2f5d7147e0ec07fec47228166b3f7dc` | Merged and published baseline for 1.24 development |
+| Final 1.23 qualification | Run `36996137883` at PR head `312edf46bb2f4f2f2a30dbc84cd97cac17df1b93` | Nine jobs green; runtime suite passed 2,515 tests plus 15 source-integration tests on Windows, Linux, and macOS |
+| Published 1.23 package | `Icod.Terminal.1.23.0.nupkg` | SHA-256 `a2793821ff510548465048e0a8b920b440554edebd136573302b47e0c190910b` |
+| Published 1.23 symbols | `Icod.Terminal.1.23.0.snupkg` | SHA-256 `f9863a74ed580b52f1555b9923c813f6b02b7d3484b61e480ef55f16f5125b30` |
+| Validated 1.23 PR candidate | Artifact `11221771211` | Package SHA-256 `d01e18f0a8285c37c756adf17f368b0a787982faa30f757f6b339ef366bc5a59`; symbols SHA-256 `f87a7e782ac00e6c94558c96c865f0c47a7b4b5551a0d2849ed63bb5acccb9af` |
+| 1.23 public API | `docs/Public-API-Baseline-1.23.sha256` | `47ce550ebe58219a46bb711b789608592c3cad34c3c3607ffc7aaf054c8c5358` across net8.0, net9.0, and net10.0 |
+| 1.23 production dependencies | Published project graph | `Icod.TermInfo 1.17.0`; `Icod.Timing 1.0.0`; compatibility floor remains 1.0.0 |
 | Local planning baseline | Current environment | Repository wrapper unavailable because `pwsh` is absent; direct baseline also unavailable because `dotnet` is absent; GitHub CI is the approved verifier |
 | Planning PR | [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) | Main roadmap, versioned roadmap, design, and implementation plan |
-| T2400 implementation baseline | Pending | Record after development begins |
+| T2400 implementation baseline | `1.24.0-alpha` | Pre-feature API fingerprint remains identical to the published 1.23 surface; CI run recorded after this tranche is pushed |
