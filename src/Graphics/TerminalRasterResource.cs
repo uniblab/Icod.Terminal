@@ -370,6 +370,38 @@ public sealed class TerminalRasterResource : IAsyncDisposable {
 		);
 	}
 
+	internal ValueTask<TerminalControlMutationResult> ComposeAnimationFrameAsync(
+		TerminalRasterAnimation animation,
+		TerminalRasterAnimationFrame source,
+		TerminalRasterAnimationFrame destination,
+		TerminalRasterSourceRectangle sourceRectangle,
+		int destinationX,
+		int destinationY,
+		TerminalRasterFrameCompositionMode mode,
+		CancellationToken cancellationToken
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		TerminalSession? owner = Volatile.Read( ref this.session );
+		if ( owner is null ) {
+			throw new ObjectDisposedException(
+				nameof( TerminalRasterResource ),
+				"The persistent raster resource has already been disposed."
+			);
+		}
+
+		return owner.ComposePersistentRasterAnimationFrameAsync(
+			this.State,
+			animation,
+			source,
+			destination,
+			sourceRectangle,
+			destinationX,
+			destinationY,
+			mode,
+			cancellationToken
+		);
+	}
+
 	internal ValueTask<TerminalControlMutationResult> StopAnimationAsync(
 		TerminalRasterAnimation animation,
 		CancellationToken cancellationToken

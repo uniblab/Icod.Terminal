@@ -165,6 +165,84 @@ public sealed class TerminalRasterAnimation {
 	}
 
 	/// <summary>
+	/// Composes a bounded source-pixel region from one known frame into another known frame.
+	/// </summary>
+	/// <param name="source">The known source frame owned by this animation.</param>
+	/// <param name="destination">The known destination frame owned by this animation.</param>
+	/// <param name="sourceRectangle">A nonempty region measured in resource pixels.</param>
+	/// <param name="destinationX">The zero-based destination pixel column.</param>
+	/// <param name="destinationY">The zero-based destination pixel row.</param>
+	/// <param name="mode">Alpha blending or replacement of destination pixels.</param>
+	/// <param name="cancellationToken">Cancellation observed before output commits.</param>
+	/// <returns>An acknowledged mutation result; an ambiguous committed failure must not be retried blindly.</returns>
+	/// <remarks>
+	/// This operation changes pixels of an existing frame, not the number or identity of frames.
+	/// <see cref="State"/> reports ownership and frame-sequence certainty, not exact pixel contents.
+	/// The caller remains responsible for placement, damage, and animation timing.
+	/// </remarks>
+	public ValueTask<TerminalControlMutationResult> ComposeFrameAsync(
+		TerminalRasterAnimationFrame source,
+		TerminalRasterAnimationFrame destination,
+		TerminalRasterSourceRectangle sourceRectangle,
+		int destinationX,
+		int destinationY,
+		TerminalRasterFrameCompositionMode mode = TerminalRasterFrameCompositionMode.AlphaBlend,
+		CancellationToken cancellationToken = default
+	) {
+		this.ValidateFrame( source );
+		this.ValidateFrame( destination );
+		sourceRectangle.Validate();
+		if ( mode is not TerminalRasterFrameCompositionMode.AlphaBlend
+			and not TerminalRasterFrameCompositionMode.Replace ) {
+			throw new ArgumentOutOfRangeException( nameof( mode ) );
+		}
+
+		int width = this.resource.State.SourceWidth;
+		int height = this.resource.State.SourceHeight;
+		if ( sourceRectangle.X > width - sourceRectangle.Width
+			|| sourceRectangle.Y > height - sourceRectangle.Height ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( sourceRectangle ),
+				"The source rectangle must fit within the resource's intrinsic pixels."
+			);
+		}
+		if ( destinationX < 0 || destinationX > width - sourceRectangle.Width ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( destinationX ),
+				"The destination rectangle must fit within the resource's intrinsic pixels."
+			);
+		}
+		if ( destinationY < 0 || destinationY > height - sourceRectangle.Height ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( destinationY ),
+				"The destination rectangle must fit within the resource's intrinsic pixels."
+			);
+		}
+		if ( ReferenceEquals( source, destination )
+			&& sourceRectangle.X < destinationX + sourceRectangle.Width
+			&& destinationX < sourceRectangle.X + sourceRectangle.Width
+			&& sourceRectangle.Y < destinationY + sourceRectangle.Height
+			&& destinationY < sourceRectangle.Y + sourceRectangle.Height ) {
+			throw new ArgumentException(
+				"Overlapping source and destination rectangles on the same frame cannot be composed.",
+				nameof( destination )
+			);
+		}
+
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.resource.ComposeAnimationFrameAsync(
+			this,
+			source,
+			destination,
+			sourceRectangle,
+			destinationX,
+			destinationY,
+			mode,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
 	/// Stops terminal-driven playback without releasing the owning raster resource or known frames.
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>
