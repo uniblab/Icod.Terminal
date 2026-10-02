@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.21.0` — Rich input and cursor visibility
+- **Current published feature line:** `1.22.0` — Bounded animation frame composition
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.21.0 merged and published; 1.22.0 implementation candidate passed nine-job CI in PR #67, final documentation-head qualification and review pending
-- **Active development target:** `1.22.0` — Bounded animation frame composition
-- **Selected scope:** Bounded composition of known frames on one persistent raster resource + executable sample and downstream acceptance
+- **Development status:** 1.22.0 merged, tagged, and published; 1.23.0 planning PR opened for partial frame transfer, rich-input completion, and consumer qualification
+- **Active development target:** `1.23.0` — Partial animation-frame transfer + rich-input completion
+- **Selected scope:** Option 2 + Option 9 + Option 10, with bounded ownership and evidence-driven acceptance
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -89,7 +89,8 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.19.0  downstream/planner/transaction hardening and docs/samples    PUBLISHED
 1.20.0  profile and capability decisions                           PUBLISHED
 1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
-1.22.0  bounded animation frame composition                     STABLE CANDIDATE
+1.22.0  bounded animation frame composition                     PUBLISHED
+1.23.0  partial frame transfer + rich-input completion           PLANNING
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -378,8 +379,20 @@ The governing rule is:
 
 T2200–T2210 cover the protocol/API review, TermInfo 1.17.0 dependency qualification, failing fixtures, semantic composition contract, private encoding and query correlation, failure/lifecycle hardening, sample and downstream acceptance, package/API/XML/security checks, and exact-head stable release closure. The implementation is under test in [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67); see the [1.22 development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) for acceptance criteria and evidence. Publication remains separate.
 
+## 1.23 development line — Partial Frame Transfer and Rich-Input Completion
+
+The selected scope is **Option 2 + Option 9 + Option 10**. Option 2 adds a bounded caller-supplied update to an existing known animation frame. Option 9 completes the remaining protocol-neutral rich-input and keyboard contract. Option 10 supplies samples, downstream package witnesses, documentation, measurement, and release qualification.
+
+The [1.23 design](docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md) and [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) are proposed in the planning PR. Implementation starts only after the design and plan are reviewed.
+
+The governing rule is:
+
+> Terminal owns bounded pixel transfer, input framing, event decoding, correlation, leases, lifecycle, and cleanup; callers own source data, placement, layout, keymaps, editing, damage, and presentation policy.
+
+The 1.23 work remains additive to 1.22. It does not add gapless scheduling, absolute or pixel-within-cell placement, hidden replay, raw protocol extensibility, image codecs, PTY hosting, or a second input reader.
+
 ## Later development candidates
 
-Beyond the selected 1.22 scope, independent candidates still include partial frame transfer/delta editing, gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
+Beyond the selected 1.23 scope, independent candidates still include gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.
