@@ -53,7 +53,7 @@ internal static class TerminalCsiGeometryProtocol {
 		get;
 	} = new GeometryResponseMatcher( CellPixelResponseSelector );
 
-	internal static TerminalPixelSize ParseTerminalPixelSize(
+	internal static TerminalPixelDimensions ParseTerminalPixelSize(
 		TerminalResponseFrame frame
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
@@ -64,7 +64,7 @@ internal static class TerminalCsiGeometryProtocol {
 		);
 	}
 
-	internal static TerminalPixelSize ParseCellPixelSize(
+	internal static TerminalPixelDimensions ParseCellPixelSize(
 		TerminalResponseFrame frame
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
@@ -75,7 +75,7 @@ internal static class TerminalCsiGeometryProtocol {
 		);
 	}
 
-	private static TerminalPixelSize ParsePixelSize(
+	private static TerminalPixelDimensions ParsePixelSize(
 		TerminalResponseFrame frame,
 		int expectedSelector,
 		string description
@@ -110,7 +110,7 @@ internal static class TerminalCsiGeometryProtocol {
 			);
 		}
 
-		return new TerminalPixelSize(
+		return new TerminalPixelDimensions(
 			parameters[ 2 ],
 			parameters[ 1 ]
 		);

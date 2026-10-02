@@ -154,7 +154,7 @@ public sealed class TerminalCsiHardeningTests {
 		);
 
 		for ( int split = 1; split < response.Length; ++split ) {
-			Task<TerminalPixelSize> query = session.QueryTerminalPixelSizeAsync(
+			Task<TerminalPixelDimensions> query = session.QueryTerminalPixelDimensionsAsync(
 				TimeSpan.FromSeconds( 30 )
 			).AsTask();
 			await WaitForWriteCountAsync(
@@ -166,7 +166,7 @@ public sealed class TerminalCsiHardeningTests {
 			Assert.False( query.IsCompleted );
 			transport.Publish( response[ split.. ] );
 
-			TerminalPixelSize result = await query.WaitAsync( HarnessTimeout );
+			TerminalPixelDimensions result = await query.WaitAsync( HarnessTimeout );
 			Assert.Equal( 1200, result.Width );
 			Assert.Equal( 800, result.Height );
 		}
@@ -179,7 +179,7 @@ public sealed class TerminalCsiHardeningTests {
 		HardeningTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
-		Task<TerminalPixelSize> malformed = session.QueryTerminalPixelSizeAsync(
+		Task<TerminalPixelDimensions> malformed = session.QueryTerminalPixelDimensionsAsync(
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
@@ -188,7 +188,7 @@ public sealed class TerminalCsiHardeningTests {
 		);
 		await Assert.ThrowsAsync<FormatException>( () => malformed );
 
-		Task<TerminalPixelSize> valid = session.QueryCellPixelSizeAsync(
+		Task<TerminalPixelDimensions> valid = session.QueryCellPixelDimensionsAsync(
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 2 );
@@ -196,7 +196,7 @@ public sealed class TerminalCsiHardeningTests {
 			Encoding.ASCII.GetBytes( "\u001b[6;20;10t" )
 		);
 
-		TerminalPixelSize result = await valid;
+		TerminalPixelDimensions result = await valid;
 		Assert.Equal( 10, result.Width );
 		Assert.Equal( 20, result.Height );
 	}

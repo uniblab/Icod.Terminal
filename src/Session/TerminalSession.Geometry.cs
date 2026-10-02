@@ -21,10 +21,21 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Provides internal semantic pixel-geometry observations for later graphics backends.
+/// Provides semantic pixel-geometry observations for graphics consumers.
 /// </summary>
 public sealed partial class TerminalSession {
-	internal async ValueTask<TerminalPixelSize> QueryTerminalPixelSizeAsync(
+	/// <summary>Queries one terminal-window pixel-dimension observation.</summary>
+	/// <remarks>
+	/// The observation is not cached as authoritative terminal state. A timeout does
+	/// not imply that the operation is unsupported. A correlated malformed response
+	/// fails rather than fabricating dimensions.
+	/// </remarks>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is not positive.</exception>
+	/// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+	/// <exception cref="TimeoutException">Thrown when no matching response arrives before <paramref name="timeout"/>.</exception>
+	/// <exception cref="FormatException">Thrown when a correlated response is malformed.</exception>
+	/// <exception cref="InvalidOperationException">Thrown when the session cannot perform an active query.</exception>
+	public async ValueTask<TerminalPixelDimensions> QueryTerminalPixelDimensionsAsync(
 		TimeSpan timeout,
 		CancellationToken cancellationToken = default
 	) {
@@ -40,7 +51,18 @@ public sealed partial class TerminalSession {
 		return TerminalCsiGeometryProtocol.ParseTerminalPixelSize( frame );
 	}
 
-	internal async ValueTask<TerminalPixelSize> QueryCellPixelSizeAsync(
+	/// <summary>Queries one character-cell pixel-dimension observation.</summary>
+	/// <remarks>
+	/// The observation is not cached as authoritative terminal state. A timeout does
+	/// not imply that the operation is unsupported. A correlated malformed response
+	/// fails rather than fabricating dimensions.
+	/// </remarks>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout"/> is not positive.</exception>
+	/// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+	/// <exception cref="TimeoutException">Thrown when no matching response arrives before <paramref name="timeout"/>.</exception>
+	/// <exception cref="FormatException">Thrown when a correlated response is malformed.</exception>
+	/// <exception cref="InvalidOperationException">Thrown when the session cannot perform an active query.</exception>
+	public async ValueTask<TerminalPixelDimensions> QueryCellPixelDimensionsAsync(
 		TimeSpan timeout,
 		CancellationToken cancellationToken = default
 	) {

@@ -61,6 +61,34 @@ public sealed class TerminalPixelGeometryPublicApiTests {
 	}
 
 	[Fact]
+	public void InexactOrInvalidObservationsDoNotFabricateCellDimensions() {
+		Assert.False(
+			TerminalPixelGeometry.TryDeriveCellDimensions(
+				new TerminalDimensions( 99, 30 ),
+				new TerminalPixelDimensions( 800, 480 ),
+				out TerminalPixelDimensions fractional
+			)
+		);
+		Assert.Equal( default, fractional );
+		Assert.False(
+			TerminalPixelGeometry.TryDeriveCellDimensions(
+				default,
+				new TerminalPixelDimensions( 800, 480 ),
+				out TerminalPixelDimensions invalidGrid
+			)
+		);
+		Assert.Equal( default, invalidGrid );
+		Assert.False(
+			TerminalPixelGeometry.TryDeriveCellDimensions(
+				new TerminalDimensions( 100, 30 ),
+				default,
+				out TerminalPixelDimensions invalidPixels
+			)
+		);
+		Assert.Equal( default, invalidPixels );
+	}
+
+	[Fact]
 	public void PublicQueriesUseTheFrozenValueTaskSignatures() {
 		AssertQuerySignature( nameof( TerminalSession.QueryTerminalPixelDimensionsAsync ) );
 		AssertQuerySignature( nameof( TerminalSession.QueryCellPixelDimensionsAsync ) );
