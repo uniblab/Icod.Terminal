@@ -2,7 +2,7 @@
 
 **Goal:** Add bounded composition of pixels from one known animation frame into another known frame on the same current persistent raster resource, then demonstrate the contract through an executable sample and a downstream consumer witness.
 
-**Status:** Composition implementation and candidate qualification in PR #67. Merge and publication are pending. The published baseline is 1.21.0.
+**Status:** Composition implementation, executable sample step, and package-only witness in PR #67. Exact-head qualification and stable closure are in progress; merge and publication are pending. The published baseline is 1.21.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible package scripts and cmd/sh. No Python or new production package.
 
@@ -56,9 +56,9 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 **Files:** `Icod.Terminal.csproj`; optional Inspection references in `tests/Icod.Terminal.TermInfoIntegration.Tests/Icod.Terminal.TermInfoIntegration.Tests.csproj` and `samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj`; `IntegrationDependencyBoundaryTests.cs`; current dependency documentation.
 
-- [ ] Advance production TermInfo and optional Inspection consistently to 1.17.0, retaining Timing 1.0.0 and excluding Inspection/Source from the production graph.
-- [ ] Restore, build, and run the TermInfo integration tests on each supported framework; exercise the actual optional sample and package dependency inspection.
-- [ ] Check the unified directory/hashed catalog change for any altered capability-selection or sample behavior. Record actual compatibility evidence, not just a version-string match.
+- [x] Advance production TermInfo and optional Inspection consistently to 1.17.0, retaining Timing 1.0.0 and excluding Inspection/Source from the production graph.
+- [x] Restore, build, and run the TermInfo integration tests on each supported framework; exercise the actual optional sample and package dependency inspection.
+- [x] Check the unified directory/hashed catalog change for any altered capability-selection or sample behavior. Record actual compatibility evidence, not just a version-string match.
 
 **Acceptance:** The dependency guard passes, the package graph is unchanged except for the intended TermInfo version, and fresh restore/build/integration evidence is recorded.
 
@@ -66,7 +66,7 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 **Likely files:** `tests/Icod.Terminal.Tests/src/Graphics/TerminalRasterAnimation*Tests.cs`; `src/Graphics/TerminalRasterAnimation.cs`; focused geometry/mode contracts if required.
 
-- [ ] First add tests that fail on 1.21 for a valid same-resource composition request and for the selected semantic mode projection.
+- [x] First add tests that fail on 1.21 for a valid same-resource composition request and for the selected semantic mode projection.
 - [ ] Cover root-to-appended, appended-to-root, distinct known frames, same-frame nonoverlap, edge-aligned one-pixel rectangles, invalid/overflowing bounds, and same-frame overlap.
 - [ ] Cover null/foreign/cross-session/stale/released/disposed frame tokens and unsupported capability without emitting bytes.
 
@@ -76,8 +76,8 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 **Likely files:** `src/Graphics/KittyGraphicsPersistentAnimationEncoder.cs`; a focused composition transaction helper under `src/Graphics/`; matching wire tests.
 
-- [ ] Encode private `a=c` control fields with exact zero-based coordinates, positive extent, and the two reviewed composition modes.
-- [ ] Use the existing session output gate and authoritative graphics response correlation; do not add a competing reader or expose raw identifiers.
+- [x] Encode private `a=c` control fields with exact zero-based coordinates, positive extent, and the two reviewed composition modes.
+- [x] Use the existing session output gate and authoritative graphics response correlation; do not add a competing reader or expose raw identifiers.
 - [ ] Test exact wire bytes, malformed/untrusted responses, output order, cancellation before commitment, and behavior after committed partial output.
 
 **Acceptance:** Valid requests produce the reviewed wire contract and a failed precommit request produces no output.
@@ -104,25 +104,25 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 **Likely files:** `samples/Icod.Terminal.RasterAnimation.Sample/` or a focused companion; `docs/Persistent-Raster-Ownership.md`; `samples/README.md`; root README.
 
-- [ ] Add an executable case that creates a resource, appends known frames, composes a bounded region, selects or plays the result, and disposes the resource.
-- [ ] Show capability fallback and how to recover after uncertain composition without guessing terminal state or replaying an emitted prefix.
-- [ ] Explain source versus destination pixels and why the caller still owns screen placement and presentation timing.
+- [x] Add an executable case that creates a resource, appends known frames, composes a bounded region, selects or plays the result, and disposes the resource.
+- [x] Show capability fallback and how to recover after uncertain composition without guessing terminal state or replaying an emitted prefix.
+- [x] Explain source versus destination pixels and why the caller still owns screen placement and presentation timing.
 
-**Acceptance:** A test executes the actual sample path headlessly; the guide and sample agree with the public API and failure model.
+**Acceptance:** The shared preflight and composition steps used by the executable sample run headlessly in scripted tests. The complete interactive playback program is built but not run as a headless executable. The guide and sample agree with the public API and failure model.
 
 ### T2207 — Fresh-package downstream witness
 
-- [ ] Consume only the built package in a fresh .NET 8/9/10 project and execute the composition sample path.
-- [ ] Add a representative DCurses-owned tile/sprite frame decision witness without introducing a direct DCurses dependency in Terminal or shifting DCurses layout/damage ownership.
-- [ ] Preserve the existing published-DCurses and Terminal-only screen-output witnesses.
+- [x] Consume only the built package in a fresh .NET 8/9/10 project and execute the composition sample path.
+- [x] Add a representative caller-owned tile frame choice without introducing a direct DCurses dependency in Terminal or shifting layout/damage ownership.
+- [x] Preserve the existing published-DCurses and Terminal-only screen-output witnesses.
 
 **Acceptance:** Package consumers can exercise the semantic operation without protocol numbers, source access, or a second reader.
 
 ### T2208 — Compatibility, API, documentation, and security gate
 
-- [ ] Capture equal public API snapshots across net8/net9/net10 and compare to 1.21 for intentional additive changes only.
-- [ ] Run XML documentation, NuGet package/symbol, license, dependency-boundary, sample, and security checks.
-- [ ] Update architecture, persistent ownership, compatibility, security, README, changelog, and versioned release notes for the actual implementation; keep historical release evidence intact.
+- [x] Capture equal public API snapshots across net8/net9/net10 and compare to 1.21 for intentional additive changes only.
+- [x] Run XML documentation, NuGet package/symbol, license, dependency-boundary, sample, and security checks.
+- [x] Update architecture, persistent ownership, compatibility, security, README, changelog, and versioned release notes for the actual implementation; keep historical release evidence intact.
 
 **Acceptance:** Package and documentation describe precisely the implemented contract and its limits.
 
@@ -152,4 +152,7 @@ The exact public method and enum names are frozen during T2200, after comparing 
 | Semantic fixture RED | [run 36974852765](https://github.com/uniblab/Icod.Terminal/actions/runs/36974852765) | Linux compilation failed on missing composition API as intended |
 | Initial composition implementation | [run 36975138106](https://github.com/uniblab/Icod.Terminal/actions/runs/36975138106) at `d619471177f25696978e9c0567301423279ee175` | Runtime Linux, macOS, and Windows passed; package fingerprint gate expected a new 1.22 baseline |
 | 1.22 candidate API snapshot | [run 36975636717](https://github.com/uniblab/Icod.Terminal/actions/runs/36975636717) at `bb9a0f5be8bb1b2397d2ec5c392f68ccdcdc982e` | Package candidate passed; three-framework fingerprint `61bcebdcff55a16a17d4e5a2546421c89fddc017ca3a05ea5d2673faa39cbe34`; later jobs cancelled by subsequent push |
+| First full nine-job qualification | [run 36976285028](https://github.com/uniblab/Icod.Terminal/actions/runs/36976285028) at `6b82971f2480edd1be0c5a832b5294844678f4d3` | Nine jobs green for the initial implementation; later sample and consumer changes require a new exact-head run |
+| Package-only runtime composition | [run 36978770136](https://github.com/uniblab/Icod.Terminal/actions/runs/36978770136) at `c08fe02f73c2c81caebec0331d4a9eaf5c3a41a8` | Fresh-package semantic shard and artifact validation passed; runtime sample verifier caught diagnostic text containing `s=` |
+| Failure and lifecycle expansion | [run 36979231245](https://github.com/uniblab/Icod.Terminal/actions/runs/36979231245) at `b78baeed64f4b23a5c1b4645b68c0f9df4e764c6` | Linux/macOS runtime and all package jobs passed; Windows net9 integration probe returned Unknown under its one-second deadline; rerun/final head needed |
 | Final 1.22 PR head qualification | Pending | No stable candidate claim until full exact-head workflow passes |

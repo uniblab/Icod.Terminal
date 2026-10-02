@@ -137,6 +137,42 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await composition ).Succeeded );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		Assert.Equal( 2, destination.SequenceNumber );
+	}
+
+	[Fact]
+	public async Task AppendedSourceComposesIntoRootAtResourceEdge() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u, width: 2, height: 2
+		);
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append = resource.Animation
+			.AddFrameAsync(
+				TerminalRasterImage.CreateRgb24( 2, 2, new byte[12] ),
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 2 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		TerminalRasterAnimationFrame source = Assert.IsType<TerminalRasterAnimationFrame>(
+			( await append ).Value
+		);
+
+		Task<TerminalControlMutationResult> composition = resource.Animation
+			.ComposeFrameAsync(
+				source, resource.Animation.RootFrame,
+				new TerminalRasterSourceRectangle( 1, 1, 1, 1 ),
+				1, 1
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes(
+				"\u001b_Ga=c,i=77,r=2,c=1,w=1,h=1,X=1,Y=1,x=1,y=1\u001b\\"
+			),
+			transport.Writes[ 2 ]
+		);
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await composition ).Succeeded );
 	}
 
 	[Fact]
@@ -257,15 +293,46 @@ public sealed class TerminalRasterAnimationControlTests {
 		Assert.Equal( TerminalControlStatus.Failed, ( await invalid ).Status );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
 
-		Task<TerminalControlMutationResult> missing = resource.Animation
+		Task<TerminalControlMutationResult> storage = resource.Animation
 			.ComposeFrameAsync( resource.Animation.RootFrame, destination, pixel, 0, 0 )
 			.AsTask();
 		await transport.WaitForWriteCountAsync( 4 );
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;ENOSPC:frame storage\u001b\\" )
+		);
+		Assert.Equal( TerminalControlStatus.Failed, ( await storage ).Status );
+		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+
+		Task<TerminalControlMutationResult> missing = resource.Animation
+			.ComposeFrameAsync( resource.Animation.RootFrame, destination, pixel, 0, 0 )
+			.AsTask();
+		await transport.WaitForWriteCountAsync( 5 );
 		transport.Publish(
 			Encoding.ASCII.GetBytes( "\u001b_Gi=77;ENOENT:missing frame\u001b\\" )
 		);
 		Assert.Equal( TerminalControlStatus.Unavailable, ( await missing ).Status );
 		Assert.Equal( TerminalRasterOwnershipStatus.Stale, resource.OwnershipState.Status );
+	}
+
+	[Fact]
+	public async Task MalformedCorrelatedCompositionReplyCannotReportSuccess() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource, transport, expectedWriteCount: 2
+		);
+		Task<TerminalControlMutationResult> composition = resource.Animation
+			.ComposeFrameAsync(
+				resource.Animation.RootFrame, destination,
+				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ), 0, 0
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;\u001b\\" ) );
+		await Assert.ThrowsAsync<FormatException>( () => composition );
+		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
 	}
 
 	[Fact]
@@ -368,6 +435,46 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await second ).Succeeded );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+	}
+
+	[Fact]
+	public async Task CompositionSerializesQueuedAppendAndPlayback() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource, transport, expectedWriteCount: 2
+		);
+		Task<TerminalControlMutationResult> composition = resource.Animation
+			.ComposeFrameAsync(
+				resource.Animation.RootFrame, destination,
+				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ), 0, 0
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				TerminalRasterImage.CreateRgb24( 1, 1, [ 7, 8, 9 ] ),
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		Task<TerminalControlMutationResult> playback = resource.Animation.RunAsync()
+			.AsTask();
+		await YieldSeveralTimesAsync();
+		Assert.Equal( 3, transport.Writes.Count );
+
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await composition ).Succeeded );
+		await transport.WaitForWriteCountAsync( 4 );
+		Assert.StartsWith( "\u001b_Ga=f,", Encoding.ASCII.GetString( transport.Writes[ 3 ] ) );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.Equal( 3, Assert.IsType<TerminalRasterAnimationFrame>(
+			( await append ).Value
+		).SequenceNumber );
+		await transport.WaitForWriteCountAsync( 5 );
+		Assert.StartsWith( "\u001b_Ga=a,", Encoding.ASCII.GetString( transport.Writes[ 4 ] ) );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+		Assert.True( ( await playback ).Succeeded );
 	}
 
 	[Fact]

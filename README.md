@@ -226,6 +226,24 @@ session-wide known animation frames, roots      4096
 
 Placeholder cell output is current-cursor text output. Animation changes the current pixels of the same resource without creating another placement graph. Terminal owns protocol-private image/placement/frame identity and encoding; the caller owns screen coordinates, clipping, scrolling, redraw order, damage, layout, and higher-level animation policy.
 
+For the 1.22 candidate, a caller with a two-by-two resource and an acknowledged destination frame can reuse the root frame's upper-left pixel at the destination's lower-right pixel:
+
+```csharp
+TerminalControlMutationResult result = await resource.Animation.ComposeFrameAsync(
+    resource.Animation.RootFrame,
+    destinationFrame,
+    new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+    destinationX: 1,
+    destinationY: 1,
+    TerminalRasterFrameCompositionMode.Replace
+);
+if ( !result.Succeeded ) {
+    // Report the result and choose a fresh resource after an ambiguous committed failure.
+}
+```
+
+Verify persistent raster graphics first; animation and composition have no passive support probe. The actual acknowledged operation determines success. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
+
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) for lifecycle, capacity, failure, cleanup, relative-placement, and placeholder guarantees.
 
 ## Platforms and Targets
@@ -265,6 +283,7 @@ The [`samples`](samples/README.md) directory contains focused examples for sessi
 Recommended documentation entry points:
 
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — current input and cursor visibility release notes;
+- [`docs/releases/1.22.0.md`](docs/releases/1.22.0.md) — candidate frame composition release notes;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
 - [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
@@ -281,6 +300,7 @@ Recommended documentation entry points:
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
 - [`docs/Public-API-Baseline-1.21.md`](docs/Public-API-Baseline-1.21.md) — current frozen API and additive 1.21 fingerprint;
+- [`docs/Public-API-Baseline-1.22.md`](docs/Public-API-Baseline-1.22.md) — candidate additive composition API fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
