@@ -191,7 +191,7 @@ The stable semantic surface intentionally does not expose:
 
 ## 14. TermInfo 1.14 advisory backend planning
 
-The active 1.20 repository directly depends on `Icod.TermInfo 1.16.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.16.0`.
+The 1.22 development branch directly depends on `Icod.TermInfo 1.17.0`. Optional integration tests and samples use `Icod.TermInfo.Inspection 1.17.0`.
 
 Inspection's `RasterBackendPlanner` classifies advisory Sixel/Kitty availability and applies explicit caller preference. This is **not** production Terminal routing and is not a security/authentication oracle.
 
@@ -228,14 +228,14 @@ TermInfo backend planning does not justify extra probes by itself; runtime verif
 
 ## 18. Dependency boundary
 
-The active 1.20 production package graph is:
+The 1.22 development branch production package graph is:
 
 ```text
-Icod.TermInfo 1.16.0
+Icod.TermInfo 1.17.0
 Icod.Timing   1.0.0
 ```
 
-`Icod.TermInfo.Inspection 1.16.0` is test/sample-only where used. Inspection, Source, image decoders, scene/layout libraries, and graphics toolkits are not added to the production graph.
+`Icod.TermInfo.Inspection 1.17.0` is test/sample-only where used. Inspection, Source, image decoders, scene/layout libraries, and graphics toolkits are not added to the production graph.
 
 Historical release records retain the dependency versions they actually shipped.
 

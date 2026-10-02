@@ -353,7 +353,7 @@ Persistent source cropping and virtual-placeholder rendering operate on already-
 
 ## 14. Optional TermInfo 1.14 backend planning boundary
 
-The active 1.20 repository uses `Icod.TermInfo 1.16.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.16.0`.
+The 1.22 development branch uses `Icod.TermInfo 1.17.0`. Optional integration tests and the `Icod.Terminal.TermInfoPersistentRaster.Sample` use `Icod.TermInfo.Inspection 1.17.0`.
 
 Inspection 1.14 adds advisory Sixel/Kitty backend availability evidence, candidate evaluation, and explicit backend-selection planning. That planner remains a **consumer/application policy layer**; it is not invoked by `Icod.Terminal` production routing.
 
@@ -403,14 +403,14 @@ Relative placement, lifecycle observation, virtual placeholders, and resource-ow
 
 ## 16. Dependency boundary
 
-`Icod.Terminal.csproj` is the direct NuGet dependency authority. The active 1.20 production graph is:
+`Icod.Terminal.csproj` is the direct NuGet dependency authority. The 1.22 development branch production graph is:
 
 ```text
-Icod.TermInfo 1.16.0
+Icod.TermInfo 1.17.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.16.0`. Inspection and Source remain absent from the production dependency graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`. Inspection and Source remain absent from the production dependency graph.
 
 Historical release documents retain the dependency versions shipped by those releases; advancing the active development dependency does not rewrite those records.
 

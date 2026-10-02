@@ -171,7 +171,7 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
-The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.16.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and exercises the advisory raster-backend planner introduced in TermInfo 1.14.
+The loose-coupling pattern introduced in 1.11.1 remains intact. The current executable sample consumes `Icod.TermInfo.Inspection 1.17.0`, continues to demonstrate persistent lifecycle planning and the advanced-placement planner introduced in TermInfo 1.12, and exercises the advisory raster-backend planner introduced in TermInfo 1.14.
 
 ```text
 dotnet run --project samples/Icod.Terminal.TermInfoPersistentRaster.Sample/Icod.Terminal.TermInfoPersistentRaster.Sample.csproj -f net10.0
@@ -183,7 +183,7 @@ After lifecycle success, the sample requires both source-rectangle and signed-z-
 
 The 1.14 step then keeps separate backend contexts. Sixel retains its own static availability plus the original unstrengthened lifecycle/placement profiles. A conclusive live `PersistentRasterGraphics` result is caller-mapped to Kitty Graphics availability because Icod.Terminal's reviewed persistent-raster route is Kitty-based, and only the Kitty candidate receives the strengthened lifecycle/placement evidence. The sample plans first without ranking and then supplies explicit Kitty-first caller preference. TermInfo remains advisory; Icod.Terminal still owns actual routing and protocol commitment.
 
-This distinction is intentional: ordinary `RasterGraphics` does not identify Kitty versus Sixel, `PersistentRasterGraphics` is not misrepresented as a source-rectangle or z-order probe, and `UnicodeRasterPlaceholders` is not fed into Inspection as persistent lifecycle/placement evidence. This integration uses the planner introduced in TermInfo 1.14, with the current 1.16.0 package reference; it does not plan Terminal's relative-placement or virtual-placeholder graphs.
+This distinction is intentional: ordinary `RasterGraphics` does not identify Kitty versus Sixel, `PersistentRasterGraphics` is not misrepresented as a source-rectangle or z-order probe, and `UnicodeRasterPlaceholders` is not fed into Inspection as persistent lifecycle/placement evidence. This integration uses the planner introduced in TermInfo 1.14, with the current 1.17.0 package reference; it does not plan Terminal's relative-placement or virtual-placeholder graphs.
 
 `Icod.TermInfo.Inspection` remains a sample-only dependency. The production `Icod.Terminal` package does not acquire an Inspection or Source dependency. The sample uses Inspection's semantic Sixel/Kitty backend identities only for explicit application planning and never exposes raw graphics commands, terminal-brand heuristics, caller-supplied protocol-private numeric identities, or direct protocol dispatch.
 

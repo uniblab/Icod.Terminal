@@ -183,14 +183,14 @@ Endpoint availability remains separate from support knowledge. Static advertisem
 
 ## 8. TermInfo 1.15 optional integration compatibility
 
-The active 1.20 direct production dependency graph remains:
+The 1.22 development branch direct production dependency graph is:
 
 ```text
-Icod.TermInfo 1.16.0
+Icod.TermInfo 1.17.0
 Icod.Timing   1.0.0
 ```
 
-Optional integration tests/samples use `Icod.TermInfo.Inspection 1.16.0`; Inspection and Source remain outside the production graph.
+Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspection and Source remain outside the production graph.
 
 Inspection 1.14 adds advisory raster-backend evidence/candidate/selection planning. Icod.Terminal qualifies that API at the consumer boundary but does **not** use `RasterBackendPlanner` in its production router.
 
