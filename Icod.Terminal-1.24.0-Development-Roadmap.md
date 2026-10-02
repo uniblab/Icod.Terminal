@@ -2,7 +2,7 @@
 
 **Goal:** Publish the pixel geometry, persistent-resource geometry, bounded local planning, and operation-evidence contracts required by a later `Icod.DCurses` tile renderer, then qualify them with an executable tile-atlas workload.
 
-**Status:** Proposed planning scope. Production implementation has not begun.
+**Status:** Proposed planning scope in draft [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69). Production implementation has not begun.
 
 **Release theme:** Raster Geometry and Planning Contracts.
 
@@ -157,5 +157,5 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | --- | --- | --- |
 | Published 1.23 baseline | `v1.23.0` / `65b8a82` | Merged and published baseline for 1.24 planning |
 | Local planning baseline | Current environment | Repository wrapper unavailable because `pwsh` is absent; direct baseline also unavailable because `dotnet` is absent; GitHub CI is the approved verifier |
-| Planning PR | Pending | Main roadmap, versioned roadmap, design, and implementation plan |
+| Planning PR | [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) | Main roadmap, versioned roadmap, design, and implementation plan |
 | T2400 implementation baseline | Pending | Record after development begins |

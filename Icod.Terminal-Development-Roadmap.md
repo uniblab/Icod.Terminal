@@ -404,7 +404,7 @@ The governing rule is:
 
 The approved release shape commits only 1.24.0. A possible 1.25.0 bounded frame-edit execution release remains conditional on measurements from a real DCurses tile-rendering workload. No batch API, Indexed8 partial-update promise, remote atomicity, rollback, or hidden replay is precommitted.
 
-The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) govern the work.
+The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) govern the work in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 The implementation sequence is:
 
