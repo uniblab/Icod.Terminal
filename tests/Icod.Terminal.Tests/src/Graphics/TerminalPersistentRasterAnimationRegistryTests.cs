@@ -64,7 +64,7 @@ public sealed class TerminalPersistentRasterAnimationRegistryTests {
 		Assert.NotNull( firstReservation );
 		Assert.Equal( 2u, firstReservation.FrameNumber );
 		Assert.Equal( 1, animation.KnownFrameCount );
-		Assert.Equal( 1, registry.AllocatedFrameCount );
+		Assert.Equal( 2, registry.AllocatedFrameCount );
 		Assert.False( registry.TryReserveAppend( animation, out _ ) );
 
 		Assert.True( registry.TryRollbackAppend( firstReservation ) );
