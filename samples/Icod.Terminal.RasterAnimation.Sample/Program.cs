@@ -60,6 +60,10 @@ await session.WriteTextAsync(
 	"The application supplies frames and presentation intent; Terminal owns opaque frame identity, sequence certainty, acknowledged control, and cleanup.\r\n"
 );
 
+if ( args.Contains( "--tile-atlas", StringComparer.Ordinal ) ) {
+	return await RasterTileAtlasExample.RunAsync( session );
+}
+
 if ( !await RasterAnimationCompositionExample.VerifyPrerequisiteAsync( session ) ) {
 	TerminalCapabilityStatus graphics = session.InspectCapability(
 		TerminalCapability.PersistentRasterGraphics

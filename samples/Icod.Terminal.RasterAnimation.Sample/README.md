@@ -1,12 +1,22 @@
 # Icod.Terminal.RasterAnimation.Sample
 
-This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, and caller-supplied partial frame replacement added in 1.23.0.
+This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, caller-supplied partial frame replacement added in 1.23.0, and the geometry/planning contracts added in 1.24.0.
 
 Run it with, for example:
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
 ```
+
+Pass `--tile-atlas` to run the 1.24 tile-presentation witness:
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
+```
+
+That path prefers a direct cell-pixel query. If it times out, it explicitly attempts exact derivation from a terminal-pixel query and the current character dimensions. It never rounds. It checks the local planning ceilings before allocating a generated 8-by-8 atlas, reads the accepted resource's intrinsic geometry, creates a placeholder grid, and runs 1-, 4-, 16-, and 64-region damage workloads against two reusable known frames. Every region update is acknowledged before the completed back frame is selected; only then are the front/back references swapped. This is ordered two-frame presentation, not remote atomicity or gapless display.
+
+If geometry, planning, resource creation, placeholders, frame creation, an update, or selection is unavailable, the path prints a text-fallback reason and stops raster work. The generated colors and damage list are test presentation data. They are not a tile-map, camera, scene, asset decoder, or game rule.
 
 The sample keeps the ownership boundary explicit:
 

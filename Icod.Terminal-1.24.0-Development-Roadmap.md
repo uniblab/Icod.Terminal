@@ -98,10 +98,10 @@ No verification method is planned for the raster-operation surface. The actual a
 
 ### T2406 — Lifecycle and adversarial hardening
 
-- [ ] Cover suspend/resume, resize, endpoint loss, disposal, foreign and stale handles, generation advance, concurrent observation/allocation, and cancellation.
-- [ ] Cover contradictory direct and derived geometry, overflow, malformed/oversized replies, and late replies.
-- [ ] Prove snapshot bounds, no unbounded terminal-controlled allocation, no hidden replay, and deterministic cleanup.
-- [ ] Preserve existing composition and partial-update commitment/failure semantics.
+- [x] Cover suspend/resume, resize, endpoint loss, disposal, foreign and stale handles, generation advance, concurrent observation/allocation, and cancellation.
+- [x] Cover contradictory direct and derived geometry, overflow, malformed/oversized replies, and late replies.
+- [x] Prove snapshot bounds, no unbounded terminal-controlled allocation, no hidden replay, and deterministic cleanup.
+- [x] Preserve existing composition and partial-update commitment/failure semantics.
 
 **Acceptance:** New observations never overstate geometry, capacity, operation support, or remote state.
 
@@ -169,3 +169,4 @@ Version 1.24 does not add tile maps, cameras, viewports, scene graphs, damage tr
 | T2403 resource geometry | Run `37017398715` at `42d1299f00e976021a0110d3e4f3fd458f879d76` | All nine jobs green after one same-head Linux rerun isolated an unrelated keyboard-lease timing flake; public API fingerprint `c02db531c9f029635ff436785a8a862b4e5f2ce2665e9c22f5347cc3a6759809` |
 | T2404 raster planning | Run `37021056682` at `38958cdc62b05cda6ddf9f86caa07cedd6548689` | All nine jobs green; fixed ceilings and synchronized advisory counts including append reservations; public API fingerprint `67dcb10e5a1dad58db9e4c83e13fda38976e3ac68195fcec7a7f8bbb1b8ca2d8` |
 | T2405 raster-operation evidence | Run `37024183550` at `3c4eea8b4d3954680059d6a70de8ae7b8223ad92` | All nine jobs green; direct generation-scoped composition/RGB24/RGBA32 evidence remains isolated from broad backend evidence; public API fingerprint `fc3ebf0fb2f6561084deb2fd49a5043373a27da1486a222f932a7a91fd43f6ca` |
+| T2406 lifecycle hardening | Run `37025367302` at `8db73c088ccfa7d802089ba92e17f287e5ba0384` | All nine jobs green; resize/no-cache, malformed and maximum geometry, concurrent count snapshots, pending reservations, suspend/resume evidence expiry, and late-acknowledgement generation races passed on all runtime targets |

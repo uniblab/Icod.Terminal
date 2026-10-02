@@ -111,6 +111,13 @@ internal static class PersistentRasterCompositionScenario {
 			frameHeight,
 			deadline.Token
 		);
+		await PersistentRasterTileAtlasScenario.RunAsync(
+			session,
+			resource,
+			tile,
+			transport,
+			deadline.Token
+		);
 	}
 
 	private static async Task MeasurePartialTransferAsync(
@@ -232,7 +239,7 @@ internal static class PersistentRasterCompositionScenario {
 		if ( !condition ) throw new InvalidOperationException( message );
 	}
 
-	private sealed class ScriptedTerminal : ITerminalInput, ITerminalOutput {
+	internal sealed class ScriptedTerminal : ITerminalInput, ITerminalOutput {
 		private readonly Channel<byte[]> responses = Channel.CreateUnbounded<byte[]>(
 			new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }
 		);
@@ -319,6 +326,8 @@ internal static class PersistentRasterCompositionScenario {
 					"The package consumer emitted unexpected composition geometry or identities."
 				);
 				++this.Compositions;
+				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
+			} else if ( request.StartsWith( "\u001b_Ga=a,", StringComparison.Ordinal ) ) {
 				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
 			} else if ( !request.StartsWith( "\u001b_Ga=d,", StringComparison.Ordinal ) ) {
 				throw new InvalidOperationException( "Unexpected package witness output: "

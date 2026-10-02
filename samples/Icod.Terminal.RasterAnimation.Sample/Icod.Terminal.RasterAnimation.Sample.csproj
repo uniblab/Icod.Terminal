@@ -36,6 +36,7 @@
 	<ItemGroup>
 		<Compile Include="Program.cs" />
 		<Compile Include="RasterAnimationCompositionExample.cs" />
+		<Compile Include="RasterTileAtlasExample.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

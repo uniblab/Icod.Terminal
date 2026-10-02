@@ -572,6 +572,10 @@ AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderOptions ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholder ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderCell ) );
+AssertOpaquePublicSurface( typeof( TerminalPixelDimensions ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterPlanningSnapshot ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterOperationStatus ) );
+PersistentRasterTileAtlasScenario.AssertPublicContract();
 await PersistentRasterCompositionScenario.RunAsync();
 Require(
 	typeof( TerminalRasterPlacement ).GetProperty(
