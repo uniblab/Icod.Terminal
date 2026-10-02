@@ -13,8 +13,8 @@
 - [x] Read approved design and implementation plan.
 - [x] Confirm official Kitty partial-frame edit semantics.
 - [x] Add initial RED partial-frame contract fixtures.
-- [ ] Observe intended RED failure in CI.
-- [ ] Implement partial-frame API and transaction.
+- [x] Observe intended RED failure in CI (run 36989498423: missing `UpdateFrameRegionAsync` on net8/net9/net10).
+- [x] Implement partial-frame API and transaction locally; GREEN CI pending.
 - [ ] Complete rich-input inventory and missing cases.
 - [ ] Update samples, docs, package witnesses, and qualification evidence.
 

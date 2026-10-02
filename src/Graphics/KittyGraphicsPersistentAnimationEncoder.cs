@@ -46,6 +46,28 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 		);
 	}
 
+	internal static IEnumerable<ReadOnlyMemory<byte>> EncodeFrameEditPayloads(
+		KittyRasterData raster,
+		uint imageId,
+		uint frameNumber,
+		int destinationX,
+		int destinationY
+	) {
+		ArgumentNullException.ThrowIfNull( raster );
+		ValidateImageId( imageId );
+		ValidateFrameNumber( frameNumber );
+		if ( destinationX is < 0 or >= TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException( nameof( destinationX ) );
+		}
+		if ( destinationY is < 0 or >= TerminalRasterImage.MaximumDimension ) {
+			throw new ArgumentOutOfRangeException( nameof( destinationY ) );
+		}
+
+		return EncodeFrameEditPayloadsCore(
+			raster, imageId, frameNumber, destinationX, destinationY
+		);
+	}
+
 	internal static ReadOnlyMemory<byte> EncodeFrameDurationPayload(
 		uint imageId,
 		uint frameNumber,
@@ -226,6 +248,59 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 		}
 	}
 
+	private static IEnumerable<ReadOnlyMemory<byte>> EncodeFrameEditPayloadsCore(
+		KittyRasterData raster,
+		uint imageId,
+		uint frameNumber,
+		int destinationX,
+		int destinationY
+	) {
+		ReadOnlyMemory<byte> bytes = raster.Bytes;
+		int offset = 0;
+		bool first = true;
+		while ( offset < bytes.Length ) {
+			int remaining = bytes.Length - offset;
+			int rawCount = Math.Min(
+				KittyGraphicsDirectEncoder.MaximumRawChunkBytes,
+				remaining
+			);
+			bool isFinal = rawCount == remaining;
+			string control = first
+				? CreateFirstFrameEditControlData(
+					raster, imageId, frameNumber,
+					destinationX, destinationY, isFinal
+				)
+				: CreateContinuationControlData( isFinal );
+			byte[] controlData = Encoding.ASCII.GetBytes( control );
+			int encodedCount = checked( ( ( rawCount + 2 ) / 3 ) * 4 );
+			if ( KittyGraphicsDirectEncoder.MaximumEncodedPayloadBytes < encodedCount ) {
+				throw new InvalidOperationException(
+					"The partial animation-frame Base64 chunk exceeded the reviewed payload ceiling."
+				);
+			}
+			byte[] payload = new byte[checked( controlData.Length + encodedCount )];
+			controlData.CopyTo( payload, 0 );
+			OperationStatus status = Base64.EncodeToUtf8(
+				bytes.Span.Slice( offset, rawCount ),
+				payload.AsSpan( controlData.Length ),
+				out int consumed,
+				out int written,
+				isFinalBlock: true
+			);
+			if ( OperationStatus.Done != status
+				|| rawCount != consumed
+				|| encodedCount != written ) {
+				throw new InvalidOperationException(
+					"The partial animation-frame Base64 encoder did not consume and encode the complete bounded chunk."
+				);
+			}
+
+			yield return payload;
+			offset = checked( offset + rawCount );
+			first = false;
+		}
+	}
+
 	private static ReadOnlyMemory<byte> EncodePlaybackStatePayload(
 		uint imageId,
 		int state
@@ -261,6 +336,26 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			+ gapMilliseconds.ToString( CultureInfo.InvariantCulture )
 			+ ",m="
 			+ ( isFinal ? "0" : "1" )
+			+ ";";
+	}
+
+	private static string CreateFirstFrameEditControlData(
+		KittyRasterData raster,
+		uint imageId,
+		uint frameNumber,
+		int destinationX,
+		int destinationY,
+		bool isFinal
+	) {
+		return "Ga=f,f="
+			+ ( (int)raster.PixelFormat ).ToString( CultureInfo.InvariantCulture )
+			+ ",s=" + raster.Width.ToString( CultureInfo.InvariantCulture )
+			+ ",v=" + raster.Height.ToString( CultureInfo.InvariantCulture )
+			+ ",t=d,i=" + imageId.ToString( CultureInfo.InvariantCulture )
+			+ ",r=" + frameNumber.ToString( CultureInfo.InvariantCulture )
+			+ ",x=" + destinationX.ToString( CultureInfo.InvariantCulture )
+			+ ",y=" + destinationY.ToString( CultureInfo.InvariantCulture )
+			+ ",X=1,m=" + ( isFinal ? "0" : "1" )
 			+ ";";
 	}
 
