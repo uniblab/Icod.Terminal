@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.22.0` — Bounded animation frame composition
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.22.0 merged, tagged, and published; 1.23.0 implementation candidate in PR #68 for partial frame replacement, rich-input completion, and consumer qualification
+- **Development status:** 1.22.0 merged, tagged, and published; stable 1.23.0 package candidate in PR #68, with final exact-head qualification in progress
 - **Active development target:** `1.23.0` — Partial animation-frame transfer + rich-input completion
 - **Selected scope:** Option 2 + Option 9 + Option 10, with bounded ownership and evidence-driven acceptance
 - **Stable compatibility floor:** `1.0.0`
@@ -90,7 +90,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.20.0  profile and capability decisions                           PUBLISHED
 1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
 1.22.0  bounded animation frame composition                     PUBLISHED
-1.23.0  partial frame transfer + rich-input completion           PLANNING
+1.23.0  partial frame transfer + rich-input completion           STABLE CANDIDATE
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:

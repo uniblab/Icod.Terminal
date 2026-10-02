@@ -2,7 +2,7 @@
 
 **Goal:** Implement bounded partial animation-frame transfer, complete the remaining rich-input contract, and qualify both through consumer samples and package-only acceptance.
 
-**Status:** Implementation candidate in draft PR #68; RED fixtures, production changes, samples, package witnesses, and API freeze are implemented. Cross-platform exact-head qualification is in progress.
+**Status:** Stable package candidate in draft PR #68. The reviewed alpha implementation passed all nine CI jobs; final exact-head stable qualification is in progress.
 
 **Selected scope:** Option 2 + Option 9 + Option 10.
 
@@ -84,16 +84,16 @@
 ### T2308 — API, XML, dependency, security, and performance gates
 
 - [x] Freeze equal public API snapshots across all target frameworks and compare intentional additive changes with 1.22.
-- [ ] Run XML, package/symbol, license, dependency-boundary, security, and sample checks.
-- [ ] Benchmark full-frame replacement versus partial transfer for wire bytes, CPU, allocations, first-frame latency, and total transfer latency; retain partial transfer only when measurements justify it.
+- [x] Run XML, package/symbol, license, dependency-boundary, security, and sample checks.
+- [x] Benchmark full-frame replacement versus partial transfer for wire bytes, CPU, allocations, first-frame latency, and total transfer latency; retain partial transfer only when measurements justify it.
 
 **Acceptance:** Documentation, package metadata, and measured performance describe the implemented behavior precisely.
 
 ### T2309 — Cross-platform qualification and review
 
-- [ ] Run the complete Windows/Linux/macOS runtime and package/artifact matrix on one exact PR head.
-- [ ] Review input privacy, lifecycle races, partial-transfer uncertainty, API ambiguity, and downstream evidence.
-- [ ] Record all failures and reruns against exact source SHAs.
+- [x] Run the complete Windows/Linux/macOS runtime and package/artifact matrix on one exact PR head.
+- [x] Review input privacy, lifecycle races, partial-transfer uncertainty, API ambiguity, and downstream evidence.
+- [x] Record all failures and reruns against exact source SHAs.
 
 **Acceptance:** All required jobs are green and limitations are explicit.
 
@@ -107,3 +107,14 @@
 ## Deferred work
 
 Gapless frames, absolute/pixel placement, stronger reconciliation, extensibility, image codecs, PTY/ConPTY hosting, scene/layout ownership, hidden replay, and unmeasured transport optimizations remain outside 1.23.
+
+## Evidence log
+
+| Checkpoint | Source or run | Result |
+| --- | --- | --- |
+| 1.22.0 published baseline | [PR #67](https://github.com/uniblab/Icod.Terminal/pull/67), [v1.22.0](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.22.0) | Historical API, dependency, and package baseline |
+| Partial API RED | [run 36989498423](https://github.com/uniblab/Icod.Terminal/actions/runs/36989498423) | net8/net9/net10 compilation failed on the intentionally missing `UpdateFrameRegionAsync` API |
+| Rich-input RED | [run 36990037142](https://github.com/uniblab/Icod.Terminal/actions/runs/36990037142) | Menu press/repeat/release fixtures failed and the malformed-frame EOF fixture exposed empty-buffer fallback |
+| Initial integrated implementation | [run 36990997960](https://github.com/uniblab/Icod.Terminal/actions/runs/36990997960) at `e13c923e77f0149ee5b5e90718c915a643468880` | All nine jobs green for production, tests, samples, documentation, API freeze, and fresh-package witnesses |
+| Completed alpha qualification | [run 36991995045](https://github.com/uniblab/Icod.Terminal/actions/runs/36991995045) at `cb0a2a9fdd5c43dafbee7ccaf62d46e089fa5a9b` | All nine jobs green, including multi-chunk frame-edit coverage and package-only performance measurement on net8/net9/net10; stable metadata requires a new exact-head run |
+| Stable 1.23.0 qualification | Pending | Verify the exact stable head and record its run and artifact identities in PR #68 |

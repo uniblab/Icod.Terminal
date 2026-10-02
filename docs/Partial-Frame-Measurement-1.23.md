@@ -34,6 +34,18 @@ The exact single-chunk wire sizes are deterministic for this fixture: 1,421 byte
 
 CPU, allocation, and latency values are observations from the named workflow run. Hosted-runner scheduling and runtime JIT/GC behavior make them unsuitable as fixed regression thresholds. Their purpose is to reveal a gross implementation reversal while the deterministic wire result establishes the release value: callers with bounded damage can avoid encoding and transferring unchanged pixels.
 
+## Alpha qualification results
+
+The exact alpha implementation head `cb0a2a9fdd5c43dafbee7ccaf62d46e089fa5a9b` passed all nine jobs in [workflow run 36991995045](https://github.com/uniblab/Icod.Terminal/actions/runs/36991995045). Its fresh-package semantic shard recorded:
+
+| Runtime | Full first | Partial first | Full total | Partial total | Full CPU | Partial CPU | Full allocation | Partial allocation |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| .NET 8.0.31 | 1,463.2 us | 180.4 us | 2.744 ms | 0.986 ms | 0.000 ms | 10.000 ms | 425,272 B | 255,568 B |
+| .NET 9.0.20 | 1,895.1 us | 134.9 us | 3.069 ms | 0.863 ms | 3.170 ms | 0.865 ms | 417,240 B | 252,128 B |
+| .NET 10.0.12 | 1,470.4 us | 168.6 us | 3.626 ms | 1.886 ms | 6.707 ms | 3.534 ms | 462,232 B | 294,808 B |
+
+Both cases measured 32 acknowledged operations after warmup. The .NET 8 CPU counter resolution exceeded the sub-millisecond partial workload and produced the expected coarse/noisy inversion; no conclusion is drawn from that counter. Every runtime showed the deterministic 90.2% wire reduction, lower first completion latency, lower total elapsed time, and fewer allocated bytes for the bounded region.
+
 ## Interpretation
 
 Partial transfer is retained for 1.23 because it provides a measured, substantial reduction when the caller already knows the damaged rectangle. The operation remains explicit. Terminal does not compute damage, retain source pixels, cache deltas, or claim that a small update is preferable when most of the frame changed.
