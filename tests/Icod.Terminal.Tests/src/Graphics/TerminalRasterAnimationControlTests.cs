@@ -275,10 +275,11 @@ public sealed class TerminalRasterAnimationControlTests {
 
 		await resource.DisposeAsync();
 		int writesAfterDisposal = transport.Writes.Count;
-		TerminalControlMutationResult unavailable = await animation.ComposeFrameAsync(
-			root, destination, pixel, 0, 0
+		Assert.Throws<ObjectDisposedException>(
+			() => animation.ComposeFrameAsync(
+				root, destination, pixel, 0, 0
+			)
 		);
-		Assert.Equal( TerminalControlStatus.Unavailable, unavailable.Status );
 		Assert.Equal( writesAfterDisposal, transport.Writes.Count );
 	}
 
