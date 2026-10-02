@@ -47,7 +47,10 @@ internal enum TerminalSemanticOperation {
 	RasterGraphics,
 	PersistentRasterGraphics,
 	UnicodeRasterPlaceholders,
-	PersistentRasterAnimation
+	PersistentRasterAnimation,
+	RasterFrameComposition,
+	RasterFrameRegionUpdateRgb24,
+	RasterFrameRegionUpdateRgba32
 }
 
 /// <summary>

@@ -218,6 +218,18 @@ internal static class TerminalSemanticBackendRegistry {
 			[ TerminalSemanticOperation.PersistentRasterAnimation ] = CreateCandidates(
 				TerminalSemanticOperation.PersistentRasterAnimation,
 				TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+			),
+			[ TerminalSemanticOperation.RasterFrameComposition ] = CreateCandidates(
+				TerminalSemanticOperation.RasterFrameComposition,
+				TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+			),
+			[ TerminalSemanticOperation.RasterFrameRegionUpdateRgb24 ] = CreateCandidates(
+				TerminalSemanticOperation.RasterFrameRegionUpdateRgb24,
+				TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+			),
+			[ TerminalSemanticOperation.RasterFrameRegionUpdateRgba32 ] = CreateCandidates(
+				TerminalSemanticOperation.RasterFrameRegionUpdateRgba32,
+				TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
 			)
 		};
 

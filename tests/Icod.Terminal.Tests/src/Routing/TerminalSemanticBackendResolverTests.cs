@@ -224,6 +224,26 @@ public sealed class TerminalSemanticBackendResolverTests {
 		);
 	}
 
+	[Theory]
+	[InlineData( TerminalSemanticOperation.RasterFrameComposition )]
+	[InlineData( TerminalSemanticOperation.RasterFrameRegionUpdateRgb24 )]
+	[InlineData( TerminalSemanticOperation.RasterFrameRegionUpdateRgba32 )]
+	public void FocusedRasterOperationsAreReviewedUnknownSafeFallbacks(
+		TerminalSemanticOperation operation
+	) {
+		TerminalSemanticBackendResolution resolution = TerminalSemanticBackendResolver.Resolve(
+			operation,
+			new TerminalCapabilityEvidenceLedger()
+		);
+
+		AssertBackend(
+			resolution,
+			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
+			TerminalCapabilitySupportState.Unknown,
+			TerminalBackendSelectionReason.SafeFallback
+		);
+	}
+
 	[Fact]
 	public void GraphicsPrefersVerifiedKittyOverVerifiedSixel() {
 		TerminalCapabilityEvidenceLedger evidence = new();

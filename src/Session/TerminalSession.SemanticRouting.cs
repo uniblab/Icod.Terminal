@@ -101,6 +101,30 @@ public sealed partial class TerminalSession {
 		);
 	}
 
+	internal void RecordSemanticOperationEvidence(
+		TerminalSemanticOperation operation,
+		TerminalCapabilitySupportState state,
+		TerminalCapabilityEvidenceSource source,
+		long? expectedGeneration = null
+	) {
+		if ( !Enum.IsDefined( operation ) ) {
+			throw new ArgumentOutOfRangeException( nameof( operation ) );
+		}
+		if ( !Enum.IsDefined( state ) ) {
+			throw new ArgumentOutOfRangeException( nameof( state ) );
+		}
+		if ( !Enum.IsDefined( source ) ) {
+			throw new ArgumentOutOfRangeException( nameof( source ) );
+		}
+
+		this.GetSemanticCapabilityEvidence().Record(
+			TerminalCapabilitySubject.ForSemanticOperation( operation ),
+			state,
+			source,
+			expectedGeneration
+		);
+	}
+
 	internal void AdvanceSemanticLiveEvidenceGeneration() {
 		lock ( this.semanticRoutingSync ) {
 			this.semanticCapabilityEvidence?.AdvanceLiveGeneration();

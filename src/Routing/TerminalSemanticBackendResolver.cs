@@ -508,6 +508,21 @@ internal static class TerminalSemanticBackendResolver {
 			TerminalSemanticOperation.PersistentRasterAnimation,
 			( TerminalProtocolBackend.ApcKittyPersistentRasterAnimation, false )
 		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.RasterFrameComposition,
+			( TerminalProtocolBackend.ApcKittyPersistentRasterAnimation, true )
+		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.RasterFrameRegionUpdateRgb24,
+			( TerminalProtocolBackend.ApcKittyPersistentRasterAnimation, true )
+		);
+		AddPolicy(
+			policies,
+			TerminalSemanticOperation.RasterFrameRegionUpdateRgba32,
+			( TerminalProtocolBackend.ApcKittyPersistentRasterAnimation, true )
+		);
 
 		ValidatePolicies( policies );
 		return new ReadOnlyDictionary<

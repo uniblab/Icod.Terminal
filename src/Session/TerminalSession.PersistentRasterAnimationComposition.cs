@@ -99,6 +99,7 @@ public sealed partial class TerminalSession {
 				"An animation frame is no longer current for this session generation."
 			);
 		}
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 
 		ReadOnlyMemory<byte> payload =
 			KittyGraphicsPersistentAnimationEncoder.EncodeCompositionPayload(
@@ -167,7 +168,14 @@ public sealed partial class TerminalSession {
 		this.RecordSemanticBackendEvidence(
 			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
 			TerminalCapabilitySupportState.Verified,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
+		);
+		this.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.RasterFrameComposition,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
 		);
 		return TerminalControlMutationResult.Success();
 	}

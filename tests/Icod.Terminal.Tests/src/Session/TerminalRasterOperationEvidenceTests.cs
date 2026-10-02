@@ -37,6 +37,10 @@ public sealed class TerminalRasterOperationEvidenceTests {
 				BindingFlags.Instance | BindingFlags.Public
 			)
 		);
+		Assert.DoesNotContain(
+			typeof( TerminalSession ).GetMethods( BindingFlags.Instance | BindingFlags.Public ),
+			method => method.Name.Contains( "VerifyRasterOperation", StringComparison.Ordinal )
+		);
 
 		await using TerminalSession session = await OpenSessionAsync( outputIsTerminal: true );
 		Assert.Throws<ArgumentOutOfRangeException>(
@@ -79,10 +83,12 @@ public sealed class TerminalRasterOperationEvidenceTests {
 			session.InspectRasterOperation( TerminalRasterOperation.FrameComposition ).Support
 		);
 
+		long evidenceGeneration = session.GetSemanticCapabilityEvidence().LiveGeneration;
 		session.RecordSemanticOperationEvidence(
 			TerminalSemanticOperation.RasterFrameRegionUpdateRgb24,
 			TerminalCapabilitySupportState.Verified,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
 		);
 		Assert.Equal(
 			TerminalCapabilitySupport.Verified,
@@ -102,6 +108,12 @@ public sealed class TerminalRasterOperationEvidenceTests {
 		);
 
 		session.AdvanceSemanticLiveEvidenceGeneration();
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.RasterFrameRegionUpdateRgb24,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
+		);
 		Assert.Equal(
 			TerminalCapabilitySupport.Unknown,
 			session.InspectRasterOperation(

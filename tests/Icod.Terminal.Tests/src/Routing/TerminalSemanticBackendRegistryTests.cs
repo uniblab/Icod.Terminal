@@ -140,6 +140,22 @@ public sealed class TerminalSemanticBackendRegistryTests {
 	}
 
 	[Fact]
+	public void FocusedRasterOperationsUsePersistentAnimationBackend() {
+		AssertCandidates(
+			TerminalSemanticOperation.RasterFrameComposition,
+			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+		);
+		AssertCandidates(
+			TerminalSemanticOperation.RasterFrameRegionUpdateRgb24,
+			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+		);
+		AssertCandidates(
+			TerminalSemanticOperation.RasterFrameRegionUpdateRgba32,
+			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+		);
+	}
+
+	[Fact]
 	public void ModeBasedSemanticOperationsUseSpecificBackendIdentities() {
 		AssertCandidates(
 			TerminalSemanticOperation.SynchronizedOutput,
