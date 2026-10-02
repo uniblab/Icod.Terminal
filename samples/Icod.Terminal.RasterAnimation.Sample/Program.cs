@@ -19,6 +19,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using Icod.Terminal;
+using Icod.Terminal.RasterAnimation.Sample;
 
 TerminalRasterImage rootImage = CreateFrame(
 	255, 72, 72,
@@ -136,14 +137,7 @@ TerminalRasterAnimationFrame thirdFrame = thirdResult.Value;
 if ( !await RequireSuccessAsync(
 	session,
 	"Frame composition",
-	await animation.ComposeFrameAsync(
-		rootFrame,
-		thirdFrame,
-		new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
-		1,
-		1,
-		TerminalRasterFrameCompositionMode.Replace
-	)
+	await RasterAnimationCompositionExample.ComposeAsync( animation, thirdFrame )
 ) ) {
 	return 1;
 }

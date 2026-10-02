@@ -34,6 +34,8 @@ The executable flow:
 11. runs normal playback indefinitely, then stops it explicitly;
 12. releases placement and resource ownership deterministically with `await using`.
 
+The composition step lives in `RasterAnimationCompositionExample.ComposeAsync`. The automated scripted-terminal test invokes this same sample step with a two-by-two resource, verifies the emitted control frame, and withholds the acknowledgement until the operation is waiting. A failure reports its status and exits without guessing whether a committed composition changed the destination pixels. Recreate the resource and frames before trying again after an ambiguous outcome; do not replay a possibly applied composition.
+
 `PersistentRasterAnimation` has no reviewed passive support query. The initial call returns current inspection knowledge; it does not upload a test frame or establish live animation support. An unknown or unavailable result causes the sample to report that animation is not currently usable and exit nonzero. Even when `IsUsable` is true, subsequent resource and animation operations can fail and are checked separately. Verifying ordinary or persistent raster graphics alone does not verify animation. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the three capabilities with live support paths.
 
 The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame replay cache, image-file decoder, or screen-layout policy. A failed or ambiguous operation is reported and is never automatically retried.

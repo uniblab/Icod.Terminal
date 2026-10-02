@@ -16,6 +16,12 @@ if (-not (Test-Path -LiteralPath $project -PathType Leaf)) {
 
 $programPath = Join-Path $repositoryRoot 'samples/Icod.Terminal.RasterAnimation.Sample/Program.cs'
 $programText = [System.IO.File]::ReadAllText($programPath)
+$compositionPath = Join-Path $repositoryRoot 'samples/Icod.Terminal.RasterAnimation.Sample/RasterAnimationCompositionExample.cs'
+if (-not (Test-Path -LiteralPath $compositionPath -PathType Leaf)) {
+    throw "Raster animation sample composition step '$compositionPath' does not exist."
+}
+$compositionText = [System.IO.File]::ReadAllText($compositionPath)
+$sampleText = $programText + $compositionText
 foreach ($forbidden in @(
     'Kitty',
     'Sixel',
@@ -30,7 +36,7 @@ foreach ($forbidden in @(
     's=',
     'v='
 )) {
-    if ($programText.Contains($forbidden, [System.StringComparison]::Ordinal)) {
+    if ($sampleText.Contains($forbidden, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample must remain protocol-neutral; found forbidden text '$forbidden'."
     }
 }
@@ -51,9 +57,12 @@ foreach ($required in @(
     'RunAsync',
     'TerminalRasterAnimationPlaybackOptions'
 )) {
-    if (-not $programText.Contains($required, [System.StringComparison]::Ordinal)) {
+    if (-not $sampleText.Contains($required, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample is missing required semantic API usage '$required'."
     }
+}
+if (-not $programText.Contains('RasterAnimationCompositionExample.ComposeAsync', [System.StringComparison]::Ordinal)) {
+    throw 'The executable raster animation sample must call the tested composition step.'
 }
 
 Write-Host ''
