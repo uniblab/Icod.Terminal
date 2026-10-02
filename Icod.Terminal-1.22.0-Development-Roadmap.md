@@ -2,7 +2,7 @@
 
 **Goal:** Add bounded composition of pixels from one known animation frame into another known frame on the same current persistent raster resource, then demonstrate the contract through an executable sample and a downstream consumer witness.
 
-**Status:** Stable 1.22.0 package candidate in PR #67 with composition implementation, executable sample step, and package-only witness. Exact-head qualification and maintainer review are pending; merge and publication are separate steps. The published baseline is 1.21.0.
+**Status:** Stable 1.22.0 package candidate in PR #67 with composition implementation, executable sample step, and package-only witness. The implementation head passed all nine CI jobs; final documentation-head qualification and maintainer review are pending. Merge and publication are separate steps. The published baseline is 1.21.0.
 
 **Tech stack:** C# 13; .NET 8, 9, and 10; PowerShell 5.1-compatible package scripts and cmd/sh. No Python or new production package.
 
@@ -128,16 +128,16 @@ The exact public method and enum names are frozen during T2200, after comparing 
 
 ### T2209 — Cross-platform qualification and review
 
-- [ ] Run the complete unit/integration suite and the repository's Windows, Linux, macOS, package, and artifact CI matrix on the exact PR head.
-- [ ] Review concurrency/error tests and the public API for ambiguity. Distinguish scripted protocol coverage from physical emulator observations.
-- [ ] Record failures and reruns against their source SHA; do not infer a clean final head from an earlier run.
+- [x] Run the complete unit/integration suite and the repository's Windows, Linux, macOS, package, and artifact CI matrix on the implementation head; recheck the final documentation head.
+- [x] Review concurrency/error tests and the public API for ambiguity. Scripted protocol coverage and fresh-package execution are recorded; physical emulator composition is not claimed.
+- [x] Record failures and reruns against their source SHA; do not infer a clean final head from an earlier run.
 
 **Acceptance:** Required CI jobs and current-head artifact verification are green, with any limitations recorded.
 
 ### T2210 — Stable 1.22.0 release closure
 
 - [x] Remove the prerelease suffix after the nine-job alpha qualification; synchronize package release notes, `CHANGELOG.md`, main roadmap, release notes, and sample guidance. Final stable exact-head qualification remains pending.
-- [ ] Record exact source SHA, CI run, package/symbol hashes, API fingerprint, and any downstream witness result.
+- [x] Record the qualified implementation source SHA, CI run, package/symbol hashes, API fingerprint, and fresh-package downstream witness below. A subsequent documentation-only head needs its own CI result and artifact identity before it can replace this checkpoint.
 - [ ] Present the PR for maintainer review. Merge, tag, GitHub release, and NuGet publication are separate maintainer actions.
 
 **Acceptance:** A stable candidate at one exact source head satisfies the repository's release gates. The roadmap itself does not certify its own final commit.
@@ -156,4 +156,8 @@ The exact public method and enum names are frozen during T2200, after comparing 
 | Package-only runtime composition | [run 36978770136](https://github.com/uniblab/Icod.Terminal/actions/runs/36978770136) at `c08fe02f73c2c81caebec0331d4a9eaf5c3a41a8` | Fresh-package semantic shard and artifact validation passed; runtime sample verifier caught diagnostic text containing `s=` |
 | Failure and lifecycle expansion | [run 36979231245](https://github.com/uniblab/Icod.Terminal/actions/runs/36979231245) at `b78baeed64f4b23a5c1b4645b68c0f9df4e764c6` | Linux/macOS runtime and all package jobs passed; Windows net9 integration probe returned Unknown under its one-second deadline; rerun/final head needed |
 | Completed alpha qualification | [run 36979970625](https://github.com/uniblab/Icod.Terminal/actions/runs/36979970625) at `8f12ff943e2a024f239ef21167b6d47403125fbd` | All nine jobs green, including fresh-package composition witness and Windows integration rerun; stable metadata and final test need a new exact-head run |
-| Final 1.22 PR head qualification | Pending | No stable candidate claim until full exact-head workflow passes |
+| Stable metadata qualification | [run 36980918118](https://github.com/uniblab/Icod.Terminal/actions/runs/36980918118) at `93d96811f235730fbd5240fb6929b969b46ab281` | Test fixture dimension mismatch and missing stable release-note framework strings; corrected at `ae91499951063b9b3fa6ea0725d5ee8944b63aa0` |
+| Stable README gate | [run 36981519058](https://github.com/uniblab/Icod.Terminal/actions/runs/36981519058) at `ae91499951063b9b3fa6ea0725d5ee8944b63aa0` | Package required matching current stable release and install command in embedded README; corrected at `04c68886db1a38c1af5d80d80149d4ccfef23277` |
+| Windows fixture deadline | [run 36981813717](https://github.com/uniblab/Icod.Terminal/actions/runs/36981813717) at `04c68886db1a38c1af5d80d80149d4ccfef23277` | Eight jobs passed; Windows net9 scripted append exceeded the one-second acknowledgement deadline. Fixture now replies at flush; no production behavior change. |
+| Stable implementation qualification | [run 36982553507](https://github.com/uniblab/Icod.Terminal/actions/runs/36982553507) at `d589aca1a9146fe7b371885c5fe767c8264057e8` | All nine jobs green. Fresh restored 1.22.0 package executes the composition sample path on net8.0/net9.0/net10.0. Public API SHA-256 on all three frameworks: `61bcebdcff55a16a17d4e5a2546421c89fddc017ca3a05ea5d2673faa39cbe34`. Package SHA-256: `fd1e424c448cc3c11525203952deabfb8a6692336e7d5684bb6ba852ffb7c251`; symbols SHA-256: `c7043e605c4ba80ea0408df0480456a67336a5f268df9beb14bb1370bf23b2da`. [Validated package artifact](https://github.com/uniblab/Icod.Terminal/actions/runs/36982553507/artifacts/11216221686). |
+| Final 1.22 PR head qualification | Pending | Documentation evidence commit needs its own exact-head workflow; record the final identity in the PR. |
