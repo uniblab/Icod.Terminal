@@ -242,6 +242,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				MonotonicClock = new FrozenMonotonicClock(),
 				ObserveLifecycleEvents = false,
 				RequireInteractiveOutput = false
 			}
