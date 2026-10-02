@@ -222,6 +222,28 @@ Func<
 Func<
 	TerminalRasterAnimation,
 	TerminalRasterAnimationFrame,
+	TerminalRasterImage,
+	int,
+	int,
+	CancellationToken,
+	ValueTask<TerminalControlMutationResult>
+> updateAnimationFrameRegion = static (
+	TerminalRasterAnimation animation,
+	TerminalRasterAnimationFrame destination,
+	TerminalRasterImage region,
+	int destinationX,
+	int destinationY,
+	CancellationToken cancellationToken
+) => animation.UpdateFrameRegionAsync(
+	destination,
+	region,
+	destinationX,
+	destinationY,
+	cancellationToken
+);
+Func<
+	TerminalRasterAnimation,
+	TerminalRasterAnimationFrame,
 	TimeSpan,
 	CancellationToken,
 	ValueTask<TerminalControlMutationResult>
@@ -289,6 +311,7 @@ _ = writePlaceholderCell;
 _ = writePlaceholderCells;
 _ = addAnimationFrame;
 _ = composeAnimationFrame;
+_ = updateAnimationFrameRegion;
 _ = setAnimationFrameDuration;
 _ = selectAnimationFrame;
 _ = stopAnimation;

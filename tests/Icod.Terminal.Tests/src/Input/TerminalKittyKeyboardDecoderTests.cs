@@ -69,6 +69,27 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 		}
 	}
 
+	[Theory]
+	[InlineData( "\u001b[29;1:1~", TerminalKeyEventPhase.Press )]
+	[InlineData( "\u001b[29;5:2~", TerminalKeyEventPhase.Repeat )]
+	[InlineData( "\u001b[29;5:3~", TerminalKeyEventPhase.Release )]
+	public async Task KittyLegacyMenuKeyPreservesModifiersAndPhase(
+		string bytes,
+		TerminalKeyEventPhase phase
+	) {
+		TerminalInputEvent inputEvent = await CreateDecoder( bytes ).ReadAsync();
+
+		Assert.Equal( TerminalInputEventKind.Key, inputEvent.Kind );
+		Assert.Equal( TerminalKey.Menu, inputEvent.Key );
+		Assert.Equal(
+			phase == TerminalKeyEventPhase.Press
+				? TerminalKeyModifiers.None
+				: TerminalKeyModifiers.Control,
+			inputEvent.Modifiers
+		);
+		Assert.Equal( phase, inputEvent.KeyPhase );
+	}
+
 	[Fact]
 	public async Task KittyFunctionalReleaseSurvivesEveryFrameSplit() {
 		byte[] bytes = Encoding.ASCII.GetBytes( "\u001b[1;5:3DZ" );
@@ -295,6 +316,15 @@ public sealed class TerminalKittyKeyboardDecoderTests {
 
 		Assert.Equal( TerminalInputEventKind.Text, recovered.Kind );
 		Assert.Equal( new Rune( 'Z' ), recovered.Character );
+	}
+
+	[Fact]
+	public async Task MalformedKittyFrameAtEndOfInputRecoversAsEndOfInput() {
+		TerminalInputDecoder decoder = CreateDecoder( "\u001b[97;1:9u" );
+
+		TerminalInputEvent recovered = await decoder.ReadAsync();
+
+		Assert.Equal( TerminalInputEventKind.EndOfInput, recovered.Kind );
 	}
 
 	[Fact]

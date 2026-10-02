@@ -9,9 +9,11 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.22.0`.
+Current stable release: `Icod.Terminal 1.23.0`.
 
-The package is published separately after the repository merge. If you are reading this page on a pull-request branch, use the verified package artifact until version 1.22.0 is available on NuGet.
+The package is published separately after the repository merge. If you are reading this page on a pull-request branch, use the verified package artifact until version 1.23.0 is available on NuGet.
+
+Version 1.23 adds bounded caller-supplied partial frame replacement, completes current legacy Menu phase decoding, and fixes malformed modern-keyboard end-of-input recovery. See the [1.23 roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md), [release notes](docs/releases/1.23.0.md), and [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md).
 
 Version 1.22 adds acknowledged bounded pixel composition between known animation frames of one persistent raster resource. See the [development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) and [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) for the implementation and a runnable example.
 
@@ -23,9 +25,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.22 retains every 1.21 public signature and enum value, adding frame composition. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.23 retains every 1.22 public signature and enum value, adding partial frame replacement. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
 
-See the [1.22.0 release notes](docs/releases/1.22.0.md) and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.23.0 release notes](docs/releases/1.23.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -72,13 +74,13 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install version 1.22.0 after it is published:
+Install version 1.23.0 after it is published:
 
 ```text
-dotnet add package Icod.Terminal --version 1.22.0
+dotnet add package Icod.Terminal --version 1.23.0
 ```
 
-The temporary cursor-visibility API shown below requires `Icod.Terminal 1.21.0` or later. While the pull request is open, use the source tree or its verified package artifact to try the 1.22 composition API.
+The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. While the pull request is open, use the source tree or its verified package artifact.
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
 
@@ -190,6 +192,7 @@ The root README describes the current product by capability rather than by the r
 - **Unicode raster placeholders** — opaque virtual placements, semantic row/column cell tokens, self-contained current-cursor output, and physical placement relative to a virtual parent without exposing Kitty numeric identities or placeholder encoding.
 - **Persistent raster animation** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
 - **Animation frame composition (1.22)** — acknowledged bounded pixel composition between known frames of one current resource, with alpha blending or replacement; callers retain placement and playback control.
+- **Partial animation frame replacement (1.23)** — acknowledged RGB24/RGBA32 rectangle replacement in one known frame, with no new frame identity or hidden replay cache.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
@@ -244,7 +247,24 @@ if ( !result.Succeeded ) {
 }
 ```
 
-Verify persistent raster graphics first; animation and composition have no passive support probe. The actual acknowledged operation determines success. If a committed attempt throws before a trustworthy acknowledgement, destination pixels may have changed: recreate the resource and frames instead of replaying the operation blindly. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
+In 1.23, the caller can also replace a bounded region of a known frame from immutable caller-owned pixels:
+
+```csharp
+TerminalRasterImage patch = TerminalRasterImage.CreateRgba32(
+    1, 1, [ 32, 224, 160, 255 ]
+);
+TerminalControlMutationResult result = await resource.Animation.UpdateFrameRegionAsync(
+    destinationFrame,
+    patch,
+    destinationX: 0,
+    destinationY: 1
+);
+if ( !result.Succeeded ) {
+    // Report the definite unavailable, unsupported, or failed result.
+}
+```
+
+Verify persistent raster graphics first; animation mutations have no passive support probe. The actual acknowledged operation determines success. If a committed attempt throws before a trustworthy acknowledgement, destination pixels may have changed: recreate the resource and frames from caller-owned art instead of replaying the operation blindly. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) for lifecycle, capacity, failure, cleanup, relative-placement, and placeholder guarantees.
 
@@ -286,6 +306,7 @@ Recommended documentation entry points:
 
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — prior input and cursor visibility release notes;
 - [`docs/releases/1.22.0.md`](docs/releases/1.22.0.md) — frame composition release notes;
+- [`docs/releases/1.23.0.md`](docs/releases/1.23.0.md) — partial frame replacement and rich-input completion release notes;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
 - [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
@@ -293,7 +314,7 @@ Recommended documentation entry points:
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
-- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation and 1.22 frame composition walkthrough;
+- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation, 1.22 frame composition, and 1.23 partial replacement walkthrough;
 - [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md) — semantic capability evidence and verification model;
 - [`docs/Input-and-Events.md`](docs/Input-and-Events.md) — authoritative input/event routing;
 - [`docs/Queries-and-Responses.md`](docs/Queries-and-Responses.md) — bounded query/response ownership and correlation;

@@ -67,6 +67,7 @@ $requiredMembers = @(
 	'F:Icod.Terminal.TerminalRasterFrameCompositionMode.Replace',
 	'M:Icod.Terminal.TerminalRasterAnimation.AddFrameAsync(Icod.Terminal.TerminalRasterImage,System.TimeSpan,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.ComposeFrameAsync(Icod.Terminal.TerminalRasterAnimationFrame,Icod.Terminal.TerminalRasterAnimationFrame,Icod.Terminal.TerminalRasterSourceRectangle,System.Int32,System.Int32,Icod.Terminal.TerminalRasterFrameCompositionMode,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalRasterAnimation.UpdateFrameRegionAsync(Icod.Terminal.TerminalRasterAnimationFrame,Icod.Terminal.TerminalRasterImage,System.Int32,System.Int32,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.SetFrameDurationAsync(Icod.Terminal.TerminalRasterAnimationFrame,System.TimeSpan,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.SelectFrameAsync(Icod.Terminal.TerminalRasterAnimationFrame,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalRasterAnimation.StopAsync(System.Threading.CancellationToken)',
@@ -213,4 +214,4 @@ try {
 	}
 }
 
-Write-Host "Persistent-raster animation, 1.22 composition, and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Persistent-raster animation, 1.23 partial replacement, composition, and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

@@ -243,6 +243,62 @@ public sealed class TerminalRasterAnimation {
 	}
 
 	/// <summary>
+	/// Replaces a bounded pixel region in one known frame from an immutable caller-owned raster.
+	/// </summary>
+	/// <param name="destination">The known destination frame owned by this animation.</param>
+	/// <param name="region">A nonempty RGB24 or RGBA32 raster containing the replacement pixels.</param>
+	/// <param name="destinationX">The zero-based destination pixel column.</param>
+	/// <param name="destinationY">The zero-based destination pixel row.</param>
+	/// <param name="cancellationToken">Cancellation observed before output commits.</param>
+	/// <returns>An acknowledged mutation result; an ambiguous committed failure must not be retried blindly.</returns>
+	/// <remarks>
+	/// This operation changes pixels of an existing frame and creates no new frame identity.
+	/// A definite rejection preserves known frame ownership. After an unacknowledged committed attempt,
+	/// exact pixels are uncertain and callers should recreate the resource before retrying.
+	/// </remarks>
+	public ValueTask<TerminalControlMutationResult> UpdateFrameRegionAsync(
+		TerminalRasterAnimationFrame destination,
+		TerminalRasterImage region,
+		int destinationX,
+		int destinationY,
+		CancellationToken cancellationToken = default
+	) {
+		this.ValidateFrame( destination );
+		ArgumentNullException.ThrowIfNull( region );
+		if ( region.PixelFormat is not TerminalRasterPixelFormat.Rgb24
+			and not TerminalRasterPixelFormat.Rgba32 ) {
+			throw new NotSupportedException(
+				"Partial animation-frame updates require RGB24 or RGBA32 pixels."
+			);
+		}
+
+		int width = this.resource.State.SourceWidth;
+		int height = this.resource.State.SourceHeight;
+		if ( destinationX < 0 || destinationX > width - region.Width ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( destinationX ),
+				"The replacement region must fit within the resource's intrinsic pixels."
+			);
+		}
+		if ( destinationY < 0 || destinationY > height - region.Height ) {
+			throw new ArgumentOutOfRangeException(
+				nameof( destinationY ),
+				"The replacement region must fit within the resource's intrinsic pixels."
+			);
+		}
+
+		cancellationToken.ThrowIfCancellationRequested();
+		return this.resource.UpdateAnimationFrameRegionAsync(
+			this,
+			destination,
+			region,
+			destinationX,
+			destinationY,
+			cancellationToken
+		);
+	}
+
+	/// <summary>
 	/// Stops terminal-driven playback without releasing the owning raster resource or known frames.
 	/// </summary>
 	/// <param name="cancellationToken">Cancellation observed before control output commits.</param>

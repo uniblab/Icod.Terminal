@@ -124,8 +124,14 @@ if ( !Enum.IsDefined( TerminalKey.Unrecognized ) ) {
 	);
 }
 
+if ( !Enum.IsDefined( TerminalKey.Menu ) ) {
+	throw new InvalidOperationException(
+		"The shipped package is missing the semantic Menu key used by current legacy Kitty reports."
+	);
+}
+
 Console.WriteLine(
-	"Icod.Terminal 0.17 modern-keyboard package API and exclusion smoke passed."
+	"Icod.Terminal 1.23 rich-input package API and exclusion smoke passed."
 );
 
 static void RequireProperty(

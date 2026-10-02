@@ -38,6 +38,22 @@ internal sealed class KittyGraphicsPersistentAnimationAppendCommitment {
 }
 
 internal static class KittyGraphicsPersistentAnimationTransaction {
+	internal static ValueTask WriteFrameEditAsync(
+		TerminalSession session,
+		KittyRasterData raster,
+		uint imageId,
+		uint frameNumber,
+		int destinationX,
+		int destinationY,
+		KittyGraphicsPersistentAnimationAppendCommitment commitment
+	) {
+		IEnumerable<ReadOnlyMemory<byte>> payloads =
+			KittyGraphicsPersistentAnimationEncoder.EncodeFrameEditPayloads(
+				raster, imageId, frameNumber, destinationX, destinationY
+			);
+		return WritePayloadsAsync( session, payloads, commitment );
+	}
+
 	internal static async ValueTask WriteAsync(
 		TerminalSession session,
 		KittyRasterData raster,
@@ -61,6 +77,17 @@ internal static class KittyGraphicsPersistentAnimationTransaction {
 				imageId,
 				gapMilliseconds
 			);
+		await WritePayloadsAsync( session, payloads, commitment ).ConfigureAwait( false );
+	}
+
+	private static async ValueTask WritePayloadsAsync(
+		TerminalSession session,
+		IEnumerable<ReadOnlyMemory<byte>> payloads,
+		KittyGraphicsPersistentAnimationAppendCommitment commitment
+	) {
+		ArgumentNullException.ThrowIfNull( session );
+		ArgumentNullException.ThrowIfNull( payloads );
+		ArgumentNullException.ThrowIfNull( commitment );
 		using IEnumerator<ReadOnlyMemory<byte>> enumerator = payloads.GetEnumerator();
 		if ( !enumerator.MoveNext() ) {
 			throw new InvalidOperationException(
