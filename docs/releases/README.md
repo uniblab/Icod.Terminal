@@ -27,3 +27,5 @@ The file is part of release qualification. It should be written for package cons
 - links to permanent documentation and the changelog.
 
 `release.yaml` does not fall back to automatically generated GitHub notes when this file is missing. A tag is therefore not publishable until its curated release notes exist in the tagged commit.
+
+`packaging/BuildPackageArtifact.ps1` checks the same exact-version notes path before preparing an artifact directory or building a candidate. This makes pull-request and main package validation catch missing notes, including prerelease suffixes such as `1.25.0-alpha`, before a release tag is created.
