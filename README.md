@@ -11,6 +11,8 @@
 
 Current stable release: `Icod.Terminal 1.24.1`.
 
+The [1.25 development branch](Icod.Terminal-1.25.0-Development-Roadmap.md) adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a complete, caller-owned image in the same ordered commit as cursor plans and text. Call `VerifyCapabilityAsync(TerminalCapability.RasterGraphics)` before building the transaction. The commit uses already verified Kitty Graphics or Sixel evidence, encodes all frames within the aggregate 64 MiB bound before output, and does not infer placement or cursor position after the raster. This is an alpha candidate in [PR #71](https://github.com/uniblab/Icod.Terminal/pull/71), not a published package.
+
 Version 1.24.1 verifies the persistent Kitty resource-identity path independently from generic Kitty graphics support. A terminal must accept a bounded 1x1 persistent upload and return a nonzero terminal-assigned image id before `PersistentRasterGraphics` becomes usable; the probe resource is then deleted. Zero ids and other malformed acknowledgements no longer escape from capability verification as raw format failures. See the [1.24.1 release notes](docs/releases/1.24.1.md).
 
 Version 1.24 adds direct and exactly derived terminal-pixel geometry, intrinsic persistent-resource geometry, advisory local raster-planning snapshots, and focused generation-scoped evidence for acknowledged composition and RGB24/RGBA32 frame-region updates. The [1.24 roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md), [release notes](docs/releases/1.24.0.md), [ownership guide](docs/Persistent-Raster-Ownership.md), and [tile-atlas witness](samples/Icod.Terminal.RasterAnimation.Sample/README.md) define the contract and its Terminal/DCurses/game boundary.

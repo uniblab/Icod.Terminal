@@ -52,7 +52,8 @@ $requiredMembers = @(
 	'M:Icod.Terminal.TerminalRasterImage.CreateRgba32(System.Int32,System.Int32,System.ReadOnlySpan{System.Byte})',
 	'M:Icod.Terminal.TerminalRasterImage.CreateIndexed8(System.Int32,System.Int32,System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{Icod.Terminal.TerminalRasterColor})',
 	'M:Icod.Terminal.TerminalRasterImage.GetPixelColor(System.Int32,System.Int32)',
-	'M:Icod.Terminal.TerminalSession.DisplayRasterAsync(Icod.Terminal.TerminalRasterImage,System.Threading.CancellationToken)'
+	'M:Icod.Terminal.TerminalSession.DisplayRasterAsync(Icod.Terminal.TerminalRasterImage,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalScreenOutputTransaction.WriteRaster(Icod.Terminal.TerminalRasterImage)'
 )
 
 $archive = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
@@ -136,4 +137,4 @@ try {
 	}
 }
 
-Write-Host "1.8 multi-backend raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Multi-backend and screen-transaction raster package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

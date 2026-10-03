@@ -14,7 +14,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
 | Compare static advertisement, concrete plans, and live capability knowledge | [`Icod.Terminal.CapabilityPlanning.Sample`](Icod.Terminal.CapabilityPlanning.Sample/README.md) |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
-| Display a backend-neutral ephemeral raster | `Icod.Terminal.RasterGraphics.Sample` |
+| Verify and commit a complete backend-neutral raster in a screen transaction | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
 | Render semantic virtual-raster cells with caller-owned cursor/layout control | [`Icod.Terminal.RasterPlaceholder.Sample`](Icod.Terminal.RasterPlaceholder.Sample/README.md) |
 | Stream full frames, apply bounded composition/partial replacement, inspect 1.24 geometry/planning/evidence, and run the two-frame tile-atlas witness | [`Icod.Terminal.RasterAnimation.Sample`](Icod.Terminal.RasterAnimation.Sample/README.md) |
@@ -47,6 +47,7 @@ The examples follow the permanent 1.x contracts:
 - persistent `OwnershipState` snapshots report Terminal's local certainty and do not pretend to authenticate remote terminal existence;
 - placeholder samples keep cursor position, clipping, redraw order, and screen layout in caller ownership;
 - ordinary Terminal raster samples do not branch on Kitty/Sixel/backend ids and do not teach hidden replay; the optional TermInfo integration sample may use Inspection's semantic backend identities only for explicit caller-owned planning, never raw protocol dispatch;
+- raster transaction samples verify ordinary `RasterGraphics` before construction, submit a complete caller-owned frame per repaint, and plan cursor movement from an unknown position after raster output before assuming text alignment;
 - metadata publication is explicit because paths, user/host identities, shell metadata, clipboard contents, notifications, command lines, hyperlinks, and raster content may disclose information outside the application;
 - event-loop samples remain nonfatal when a later compatible 1.x release introduces an unfamiliar outer event kind.
 

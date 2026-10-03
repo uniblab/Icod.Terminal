@@ -89,6 +89,112 @@ public sealed class TerminalScreenRasterTransactionTests {
 		Assert.Empty( transport.Bytes );
 	}
 
+	[Fact]
+	public async Task OrdinaryKittyWorksWhenPersistentRasterIsUnsupported() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Unsupported,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+
+		await transaction.CommitAsync();
+		Assert.Equal( "\u001b_Ga=T,f=24,s=1,v=1,t=d,m=0,q=2;AQID\u001b\\", Encoding.ASCII.GetString( transport.Bytes ) );
+	}
+
+	[Fact]
+	public async Task CursorPlansBracketRasterWithExplicitUnknownPosition() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, cursorAddress: true );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.Add( session.Screen.PlanCursorMove( null, new TerminalScreenPosition( 2, 3 ) )!.Value );
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+		transaction.Add( session.Screen.PlanCursorMove( null, new TerminalScreenPosition( 5, 6 ) )!.Value );
+		transaction.WriteText( "after" );
+
+		await transaction.CommitAsync();
+		Assert.Equal(
+			"<cup:2,3>\u001b_Ga=T,f=24,s=1,v=1,t=d,m=0,q=2;AQID\u001b\\<cup:5,6>after",
+			Encoding.ASCII.GetString( transport.Bytes )
+		);
+	}
+
+	[Fact]
+	public async Task ChangedEvidenceDuringGateWaitRejectsWithoutOutput() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		IDisposable blocker = await session.AcquireSessionOutputAsync( CancellationToken.None );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+		Task commit = transaction.CommitAsync().AsTask();
+		try {
+			Assert.False( commit.IsCompleted );
+			session.RecordSemanticBackendEvidence(
+				TerminalProtocolBackend.ApcKittyGraphics,
+				TerminalCapabilitySupportState.Unsupported,
+				TerminalCapabilityEvidenceSource.ProtocolResponse
+			);
+		} finally {
+			blocker.Dispose();
+		}
+		await Assert.ThrowsAsync<InvalidOperationException>( () => commit.WaitAsync( TimeSpan.FromSeconds( 5 ) ) );
+		Assert.Empty( transport.Bytes );
+	}
+
+	[Fact]
+	public async Task StaleEpochAndPrecommitCancellationDoNotEmit() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		TerminalScreenOutputTransaction stale = session.CreateScreenOutputTransaction();
+		stale.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+		await session.WriteTextAsync( "other" );
+		await Assert.ThrowsAsync<InvalidOperationException>( () => stale.CommitAsync().AsTask() );
+		Assert.Equal( "other", Encoding.ASCII.GetString( transport.Bytes ) );
+		TerminalScreenOutputTransaction cancelled = session.CreateScreenOutputTransaction();
+		cancelled.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+		using CancellationTokenSource source = new();
+		source.Cancel();
+		await Assert.ThrowsAnyAsync<OperationCanceledException>( () => cancelled.CommitAsync( source.Token ).AsTask() );
+		Assert.Equal( "other", Encoding.ASCII.GetString( transport.Bytes ) );
+	}
+
+	[Fact]
+	public async Task EncodedCeilingRejectsBeforeAnyWriteAndNullImageRejectsAtAdd() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		TerminalRasterImage image = TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		Assert.Throws<ArgumentNullException>( () => transaction.WriteRaster( null! ) );
+		transaction.WriteText( "before" );
+		transaction.WriteRaster( image );
+		Assert.Throws<InvalidOperationException>( () => TerminalPreparedRasterOutput.Prepare( session, image, 8 ) );
+		Assert.Empty( transport.Bytes );
+	}
+
+	[Fact]
+	public async Task CommittedRasterWriteFailureDoesNotRetryOrSwitchBackend() {
+		RecordingTransport transport = new() { FailingWriteAttempt = 2 };
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.DcsSixel );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+		transaction.WriteText( "after" );
+		await Assert.ThrowsAsync<IOException>( () => transaction.CommitAsync().AsTask() );
+		Assert.Equal( 2, transport.WriteAttemptCount );
+		Assert.Equal( 1, transport.FlushCount );
+		Assert.DoesNotContain( "after", Encoding.ASCII.GetString( transport.Bytes ) );
+		await Assert.ThrowsAsync<InvalidOperationException>( () => transaction.CommitAsync().AsTask() );
+	}
+
 	private static void Verify( TerminalSession session, TerminalProtocolBackend backend ) {
 		session.RecordSemanticBackendEvidence(
 			backend,
@@ -97,7 +203,7 @@ public sealed class TerminalScreenRasterTransactionTests {
 		);
 	}
 
-	private static ValueTask<TerminalSession> OpenSessionAsync( RecordingTransport transport ) =>
+	private static ValueTask<TerminalSession> OpenSessionAsync( RecordingTransport transport, bool cursorAddress = false ) =>
 		TerminalSession.OpenAsync(
 			new TestTerminalControlProvider(),
 			TerminalEndpoint.StandardInput,
@@ -105,7 +211,10 @@ public sealed class TerminalScreenRasterTransactionTests {
 			transport,
 			transport,
 			new TerminalSessionOptions {
-				TerminalOverride = new TerminalDescriptionBuilder( "screen-raster-test" ).Build(),
+				TerminalOverride = cursorAddress
+					? new TerminalDescriptionBuilder( "screen-raster-test" )
+						.SetString( StringCapability.CursorAddress, "<cup:%p1%d,%p2%d>" ).Build()
+					: new TerminalDescriptionBuilder( "screen-raster-test" ).Build(),
 				ConfigureOutput = false,
 				ObserveLifecycleEvents = false
 			}
@@ -116,6 +225,8 @@ public sealed class TerminalScreenRasterTransactionTests {
 		private readonly List<byte> bytes = [];
 		internal byte[] Bytes => bytes.ToArray();
 		internal int FlushCount { get; private set; }
+		internal int WriteAttemptCount { get; private set; }
+		internal int FailingWriteAttempt { get; init; }
 
 		public async ValueTask<int> ReadAsync( Memory<byte> buffer, CancellationToken cancellationToken = default ) {
 			byte[] value = await input.Reader.ReadAsync( cancellationToken );
@@ -125,6 +236,10 @@ public sealed class TerminalScreenRasterTransactionTests {
 
 		public ValueTask WriteAsync( ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default ) {
 			cancellationToken.ThrowIfCancellationRequested();
+			WriteAttemptCount++;
+			if ( WriteAttemptCount == FailingWriteAttempt ) {
+				throw new IOException( "Synthetic raster write failure." );
+			}
 			bytes.AddRange( buffer.ToArray() );
 			return ValueTask.CompletedTask;
 		}

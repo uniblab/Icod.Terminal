@@ -50,24 +50,30 @@ await session.WriteTextAsync(
 	"Icod.Terminal backend-neutral raster sample.\r\n"
 );
 await session.WriteTextAsync(
-	"The same DisplayRasterAsync call may use verified Kitty Graphics or verified Sixel internally.\r\n"
+	"One complete frame is submitted through verified Kitty Graphics or Sixel.\r\n"
 );
 
-TerminalControlMutationResult result = await session.DisplayRasterAsync( image );
-if ( result.Succeeded ) {
-	await session.WriteTextAsync(
-		"\r\nRaster transfer completed through a verified backend.\r\n"
+TerminalCapabilityStatus capability = await session.VerifyCapabilityAsync(
+	TerminalCapability.RasterGraphics
+);
+if ( capability.IsUsable ) {
+	TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+	TerminalScreenOperationPlan? origin = session.Screen.PlanCursorMove(
+		null,
+		new TerminalScreenPosition( 2, 0 )
 	);
+	if ( origin.HasValue ) {
+		transaction.Add( origin.Value );
+	}
+	transaction.WriteRaster( image );
+	await transaction.CommitAsync();
 	return 0;
 }
 
 await session.WriteTextAsync(
 	string.Concat(
-		"\r\nRaster display was not completed: ",
-		result.Status.ToString(),
-		string.IsNullOrEmpty( result.Message )
-			? string.Empty
-			: string.Concat( " — ", result.Message ),
+		"\r\nNo verified raster graphics backend: ",
+		capability.Support.ToString(),
 		"\r\n"
 	)
 );

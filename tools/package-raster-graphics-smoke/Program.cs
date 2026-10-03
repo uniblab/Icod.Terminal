@@ -24,6 +24,8 @@ using Icod.Terminal;
 Func<TerminalSession, TerminalRasterImage, CancellationToken, ValueTask<TerminalControlMutationResult>> display =
 	BindDisplayRaster;
 _ = display;
+Action<TerminalSession, TerminalRasterImage> screenRaster = BindScreenRaster;
+_ = screenRaster;
 
 RequireEnumValue(
 	TerminalRasterPixelFormat.Rgb24,
@@ -164,6 +166,26 @@ static ValueTask<TerminalControlMutationResult> BindDisplayRaster(
 		image,
 		cancellationToken
 	);
+}
+
+static void BindScreenRaster( TerminalSession session, TerminalRasterImage image ) {
+	ArgumentNullException.ThrowIfNull( session );
+	ArgumentNullException.ThrowIfNull( image );
+	TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+	TerminalScreenOperationPlan? origin = session.Screen.PlanCursorMove(
+		null, new TerminalScreenPosition( 0, 0 )
+	);
+	if ( origin.HasValue ) {
+		transaction.Add( origin.Value );
+	}
+	transaction.WriteRaster( image );
+	TerminalScreenOperationPlan? statusPosition = session.Screen.PlanCursorMove(
+		null, new TerminalScreenPosition( 1, 0 )
+	);
+	if ( statusPosition.HasValue ) {
+		transaction.Add( statusPosition.Value );
+		transaction.WriteText( "Frame queued." );
+	}
 }
 
 static void RequireEnumValue<TEnum>(
