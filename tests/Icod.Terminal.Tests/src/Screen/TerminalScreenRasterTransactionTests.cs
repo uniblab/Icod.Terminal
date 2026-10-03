@@ -99,7 +99,7 @@ public sealed class TerminalScreenRasterTransactionTests {
 
 	private static ValueTask<TerminalSession> OpenSessionAsync( RecordingTransport transport ) =>
 		TerminalSession.OpenAsync(
-			new RecordingTerminalControlProvider(),
+			new TestTerminalControlProvider(),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			transport,
@@ -134,5 +134,31 @@ public sealed class TerminalScreenRasterTransactionTests {
 			FlushCount++;
 			return ValueTask.CompletedTask;
 		}
+	}
+
+	private sealed class TestTerminalControlProvider : ITerminalControlProvider {
+		private readonly TerminalModeSnapshot baseline = TerminalModeSnapshot.CreatePosix(
+			0, 0, 0, 0x0002UL, new byte[ 32 ], 0, 32, 0,
+			new TerminalSpeed( 13, 9600 ), new TerminalSpeed( 13, 9600 )
+		);
+
+		public TerminalControlResult<TerminalEndpointObservation> Observe( TerminalEndpoint endpoint ) =>
+			TerminalControlResult<TerminalEndpointObservation>.Available(
+				new TerminalEndpointObservation(
+					true, null, TerminalPlatformKind.PosixTermios,
+					TerminalControlCapabilities.Attachment | TerminalControlCapabilities.ModeRead
+						| TerminalControlCapabilities.ModeWrite | TerminalControlCapabilities.LiveSize
+				)
+			);
+
+		public TerminalControlResult<TerminalModeSnapshot> GetMode( TerminalEndpoint endpoint ) =>
+			TerminalControlResult<TerminalModeSnapshot>.Available( this.baseline );
+
+		public TerminalControlResult<TerminalSize> GetSize( TerminalEndpoint endpoint ) =>
+			TerminalControlResult<TerminalSize>.Available( new TerminalSize( 80, 24 ) );
+
+		public TerminalControlMutationResult SetMode(
+			TerminalEndpoint endpoint, TerminalModeSnapshot mode, TerminalModeApplyTiming timing
+		) => TerminalControlMutationResult.Success();
 	}
 }

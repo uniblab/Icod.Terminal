@@ -73,6 +73,18 @@ public sealed class TerminalScreenOutputTransaction {
 		this.AddItem( OutputItem.ForBytes( bytes ) );
 	}
 
+	/// <summary>Adds an immutable raster at its intrinsic size in caller-supplied output order.</summary>
+	/// <remarks>
+	/// Commit requires an already verified Kitty Graphics or Sixel backend. All raster
+	/// frames are encoded and bounded before the output gate is acquired; this method
+	/// performs no terminal probing or output.
+	/// </remarks>
+	public void WriteRaster( TerminalRasterImage image ) {
+		ArgumentNullException.ThrowIfNull( image );
+		this.ThrowIfCommitStarted();
+		this.AddItem( OutputItem.ForRaster( image ) );
+	}
+
 	/// <summary>Requests a temporary cursor presentation for this frame only.</summary>
 	/// <param name="visibility">The cursor presentation during the committed frame.</param>
 	/// <remarks>
@@ -152,6 +164,7 @@ public sealed class TerminalScreenOutputTransaction {
 		}
 		cancellationToken.ThrowIfCancellationRequested();
 		this.ValidateRetainedItems();
+		TerminalPreparedRasterOutput?[] preparedRasters = this.PrepareRasters( cancellationToken );
 
 		// All manager gates precede the output gate and remain reserved through
 		// visibility and framing cleanup. Presentation changes also reserve the
@@ -179,6 +192,9 @@ public sealed class TerminalScreenOutputTransaction {
 		cancellationToken.ThrowIfCancellationRequested();
 		TerminalPersistentRasterPlaceholderState[]?[] rasterStates =
 			this.CaptureRasterStatesForCommit();
+		foreach ( TerminalPreparedRasterOutput? preparedRaster in preparedRasters ) {
+			preparedRaster?.ValidateEvidence( this.session );
+		}
 
 		List<Exception> failures = [];
 		bool synchronizedCleanupRequired = false;
@@ -210,7 +226,8 @@ public sealed class TerminalScreenOutputTransaction {
 				}
 				await this.WriteItemAsync(
 					this.items[ index ],
-					rasterStates[ index ]
+					rasterStates[ index ],
+					preparedRasters[ index ]
 				).ConfigureAwait( false );
 			}
 		} catch ( Exception exception ) {
@@ -253,7 +270,8 @@ public sealed class TerminalScreenOutputTransaction {
 
 	private async ValueTask WriteItemAsync(
 		OutputItem item,
-		TerminalPersistentRasterPlaceholderState[]? rasterStates
+		TerminalPersistentRasterPlaceholderState[]? rasterStates,
+		TerminalPreparedRasterOutput? preparedRaster
 	) {
 		switch ( item.Kind ) {
 			case OutputItemKind.Plan:
@@ -288,6 +306,18 @@ public sealed class TerminalScreenOutputTransaction {
 							cell.Row,
 							cell.Column
 						),
+						CancellationToken.None
+					).ConfigureAwait( false );
+				}
+				break;
+
+			case OutputItemKind.Raster:
+				if ( preparedRaster is null ) {
+					throw new InvalidOperationException( "Committed raster state is inconsistent." );
+				}
+				foreach ( ReadOnlyMemory<byte> segment in preparedRaster.Segments ) {
+					await this.session.Output.WriteAsync(
+						segment,
 						CancellationToken.None
 					).ConfigureAwait( false );
 				}
@@ -339,6 +369,26 @@ public sealed class TerminalScreenOutputTransaction {
 				);
 			}
 		}
+	}
+
+	private TerminalPreparedRasterOutput?[] PrepareRasters( CancellationToken cancellationToken ) {
+		TerminalPreparedRasterOutput?[] prepared = new TerminalPreparedRasterOutput?[ this.items.Count ];
+		int availableBytes = MaximumPayloadByteCount - this.payloadByteCount;
+		for ( int index = 0; index < this.items.Count; ++index ) {
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( OutputItemKind.Raster != this.items[ index ].Kind ) {
+				continue;
+			}
+			TerminalPreparedRasterOutput raster = TerminalPreparedRasterOutput.Prepare(
+				this.session,
+				this.items[ index ].Raster!,
+				availableBytes,
+				cancellationToken
+			);
+			prepared[ index ] = raster;
+			availableBytes -= raster.ByteCount;
+		}
+		return prepared;
 	}
 
 	private TerminalPersistentRasterPlaceholderState[]?[] CaptureRasterStatesForCommit() {
@@ -416,7 +466,8 @@ public sealed class TerminalScreenOutputTransaction {
 		Plan,
 		Bytes,
 		Hyperlink,
-		RasterCells
+		RasterCells,
+		Raster
 	}
 
 	private sealed record OutputItem(
@@ -425,24 +476,28 @@ public sealed class TerminalScreenOutputTransaction {
 		byte[]? Bytes,
 		byte[]? HyperlinkBegin,
 		byte[]? HyperlinkEnd,
-		TerminalRasterPlaceholderCell[]? RasterCells
+		TerminalRasterPlaceholderCell[]? RasterCells,
+		TerminalRasterImage? Raster
 	) {
 		internal static OutputItem ForPlan(
 			IReadOnlyList<TerminalScreenOutputSegment> segments
-		) => new( OutputItemKind.Plan, segments, null, null, null, null );
+		) => new( OutputItemKind.Plan, segments, null, null, null, null, null );
 
 		internal static OutputItem ForBytes(
 			byte[] bytes
-		) => new( OutputItemKind.Bytes, null, bytes, null, null, null );
+		) => new( OutputItemKind.Bytes, null, bytes, null, null, null, null );
 
 		internal static OutputItem ForHyperlink(
 			byte[] begin,
 			byte[] text,
 			byte[] end
-		) => new( OutputItemKind.Hyperlink, null, text, begin, end, null );
+		) => new( OutputItemKind.Hyperlink, null, text, begin, end, null, null );
 
 		internal static OutputItem ForRasterCells(
 			TerminalRasterPlaceholderCell[] cells
-		) => new( OutputItemKind.RasterCells, null, null, null, null, cells );
+		) => new( OutputItemKind.RasterCells, null, null, null, null, cells, null );
+
+		internal static OutputItem ForRaster( TerminalRasterImage image ) =>
+			new( OutputItemKind.Raster, null, null, null, null, null, image );
 	}
 }
