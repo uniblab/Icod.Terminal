@@ -28,6 +28,51 @@ using Xunit;
 /// <summary>Hardens literal cost and exact output for core screen-planner candidates.</summary>
 public sealed class TerminalScreenPlannerCoreHardeningTests {
 	[Fact]
+	public async Task RelativeCursorMotionDoesNotAssumeLineFeedPreservesColumn() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "translated-newline" )
+			.SetString( StringCapability.CursorAddress, "\u001b[%i%p1%d;%p2%dH" )
+			.SetString( StringCapability.CursorDown, "\u001b[%p1%dB" )
+			.SetString( StringCapability.CursorDownOne, "\n" )
+			.SetString( StringCapability.CursorLeftOne, "\b" ).Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			new TerminalScreenPosition( 8, 8 ), new TerminalScreenPosition( 9, 7 )
+		) ?? throw new InvalidOperationException();
+		await CommitAsync( session, plan );
+		// LF + BS is shorter, but with ONLCR/console newline processing it lands
+		// at (9,0), leaving the exact left-edge player trail seen in live testing.
+		Assert.Equal( Encoding.ASCII.GetBytes( "\u001b[1B\b" ), output.Bytes );
+	}
+
+	[Theory]
+	[InlineData( "\n" )]
+	[InlineData( "\r\n" )]
+	public async Task ParameterizedLineBreakMotionFallsBackToAbsoluteAddressing( string unsafeDown ) {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "unsafe-parameterized-newline" )
+			.SetString( StringCapability.CursorAddress, "\u001b[%i%p1%d;%p2%dH" )
+			.SetString( StringCapability.CursorDown, unsafeDown )
+			.SetString( StringCapability.CursorDownOne, unsafeDown ).Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		TerminalScreenOperationPlan plan = session.Screen.PlanCursorMove(
+			new TerminalScreenPosition( 8, 8 ), new TerminalScreenPosition( 9, 8 )
+		) ?? throw new InvalidOperationException();
+		await CommitAsync( session, plan );
+		Assert.Equal( Encoding.ASCII.GetBytes( "\u001b[10;9H" ), output.Bytes );
+	}
+
+	[Fact]
+	public async Task UnreliableLineFeedOnlyRouteReturnsUnavailableWithoutOutput() {
+		TerminalDescription terminal = new TerminalDescriptionBuilder( "newline-only" )
+			.SetString( StringCapability.CursorDownOne, "\n" ).Build();
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync( output, terminal );
+		Assert.Null( session.Screen.PlanCursorMove( new( 8, 8 ), new( 9, 8 ) ) );
+		Assert.Empty( output.Bytes );
+	}
+
+	[Fact]
 	public async Task AdvertisementDoesNotRequireAbsoluteAddressingOrConsumeOutputEpoch() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "advertisement-fallback" )
 			.SetString( StringCapability.CursorHome, "H" )
