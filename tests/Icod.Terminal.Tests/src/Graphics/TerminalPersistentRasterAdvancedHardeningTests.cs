@@ -344,6 +344,11 @@ public sealed class TerminalPersistentRasterAdvancedHardeningTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
 		return session;
 	}
 

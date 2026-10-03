@@ -445,6 +445,11 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
 		return session;
 	}
 

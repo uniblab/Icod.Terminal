@@ -86,7 +86,7 @@ public sealed class TerminalPersistentRasterCapabilityTests {
 	}
 
 	[Fact]
-	public async Task VerifiedKittyVerifiesBothRasterCapabilitiesWithoutInspectionIo() {
+	public async Task VerifiedKittyDoesNotVerifyPersistentIdentityWithoutInspectionIo() {
 		RecordingOutput output = new();
 		await using TerminalSession session = await OpenSessionAsync(
 			new RecordingTerminalControlProvider(),
@@ -106,12 +106,9 @@ public sealed class TerminalPersistentRasterCapabilityTests {
 		);
 
 		Assert.Equal( TerminalCapabilitySupport.Verified, raster.Support );
-		Assert.Equal( TerminalCapabilitySupport.Verified, persistent.Support );
-		Assert.Equal(
-			TerminalCapabilityEvidenceKind.LiveObservation,
-			persistent.EvidenceKind
-		);
-		Assert.True( persistent.IsUsable );
+		Assert.Equal( TerminalCapabilitySupport.Unknown, persistent.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.None, persistent.EvidenceKind );
+		Assert.False( persistent.IsUsable );
 		Assert.Empty( output.Bytes );
 	}
 

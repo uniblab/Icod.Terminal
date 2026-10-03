@@ -141,6 +141,11 @@ public sealed class TerminalRasterDefaultSourceRectangleTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
 		return session;
 	}
 

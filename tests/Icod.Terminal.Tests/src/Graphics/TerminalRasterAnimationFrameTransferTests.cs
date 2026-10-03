@@ -428,6 +428,11 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
 		return session;
 	}
 

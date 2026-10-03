@@ -67,8 +67,8 @@ public sealed class TerminalUnicodeRasterPlaceholderCapabilityTests {
 			TerminalCapability.UnicodeRasterPlaceholders
 		);
 
-		Assert.Equal( TerminalCapabilitySupport.Verified, persistent.Support );
-		Assert.True( persistent.IsUsable );
+		Assert.Equal( TerminalCapabilitySupport.Unknown, persistent.Support );
+		Assert.False( persistent.IsUsable );
 		Assert.Equal( TerminalCapabilitySupport.Unknown, placeholder.Support );
 		Assert.Equal( TerminalCapabilityEvidenceKind.None, placeholder.EvidenceKind );
 		Assert.True(

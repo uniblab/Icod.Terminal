@@ -25,6 +25,7 @@ namespace Icod.Terminal;
 /// </summary>
 public sealed partial class TerminalSession {
 	private static int kittyGraphicsProbeIdentity;
+	private static int kittyPersistentRasterProbeIdentity;
 
 	private static TimeSpan KittyGraphicsProbeTimeout {
 		get;
@@ -124,11 +125,139 @@ public sealed partial class TerminalSession {
 		}
 	}
 
+	internal async ValueTask<bool> ProbeKittyPersistentRasterSupportAsync(
+		CancellationToken cancellationToken = default
+	) {
+		cancellationToken.ThrowIfCancellationRequested();
+		TerminalCapabilityEvidenceLedger evidence = this.GetSemanticCapabilityEvidence();
+		long evidenceGeneration = evidence.LiveGeneration;
+		TerminalCapabilityResolution kitty = evidence.Resolve(
+			TerminalCapabilitySubject.ForProtocolBackend(
+				TerminalProtocolBackend.ApcKittyGraphics
+			)
+		);
+		if ( TerminalCapabilitySupportState.Verified != kitty.State ) {
+			bool kittySupported = await this.ProbeKittyGraphicsSupportAsync(
+				cancellationToken
+			).ConfigureAwait( false );
+			if ( !kittySupported ) {
+				TerminalCapabilityResolution currentKitty = evidence.Resolve(
+					TerminalCapabilitySubject.ForProtocolBackend(
+						TerminalProtocolBackend.ApcKittyGraphics
+					)
+				);
+				this.RecordSemanticOperationEvidence(
+					TerminalSemanticOperation.PersistentRasterGraphics,
+					TerminalCapabilitySupportState.Unsupported == currentKitty.State
+						? TerminalCapabilitySupportState.Unsupported
+						: TerminalCapabilitySupportState.Unknown,
+					currentKitty.EvidenceSource
+						?? TerminalCapabilityEvidenceSource.LiveProbe,
+					evidenceGeneration
+				);
+				return false;
+			}
+		}
+
+		uint imageNumber = CreateKittyPersistentRasterProbeImageNumber();
+		KittyRasterData raster = new(
+			1,
+			1,
+			KittyGraphicsPixelFormat.Rgb24,
+			new byte[ 3 ]
+		);
+		KittyGraphicsPersistentResponseMatcher matcher = new(
+			imageNumber,
+			validateMatchedResponse: false
+		);
+		TerminalQueryResponseResult queryResult;
+		try {
+			queryResult = await this.GetQueryTransactionManager().ExecuteAsync(
+				_ => KittyGraphicsPersistentUploadTransaction.WriteAsync(
+					this,
+					raster,
+					imageNumber
+				),
+				TerminalQueryResponsePlan.ForCompletion( matcher ),
+				KittyGraphicsProbeTimeout,
+				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+				cancellationToken
+			).ConfigureAwait( false );
+		} catch ( TimeoutException ) {
+			this.RecordSemanticOperationEvidence(
+				TerminalSemanticOperation.PersistentRasterGraphics,
+				TerminalCapabilitySupportState.Unknown,
+				TerminalCapabilityEvidenceSource.LiveProbe,
+				evidenceGeneration
+			);
+			return false;
+		}
+
+		KittyGraphicsPersistentCreationResponse response;
+		try {
+			response = KittyGraphicsPersistentCreationResponse.Parse(
+				queryResult.Frame,
+				imageNumber
+			);
+		} catch ( FormatException ) {
+			this.RecordSemanticOperationEvidence(
+				TerminalSemanticOperation.PersistentRasterGraphics,
+				TerminalCapabilitySupportState.Unsupported,
+				TerminalCapabilityEvidenceSource.ProtocolResponse,
+				evidenceGeneration
+			);
+			return false;
+		}
+
+		if ( !response.IsSuccess || !response.ImageId.HasValue ) {
+			this.RecordSemanticOperationEvidence(
+				TerminalSemanticOperation.PersistentRasterGraphics,
+				TerminalCapabilitySupportState.Unsupported,
+				TerminalCapabilityEvidenceSource.ProtocolResponse,
+				evidenceGeneration
+			);
+			return false;
+		}
+
+		using ( await this.AcquireControlOutputAsync(
+			CancellationToken.None
+		).ConfigureAwait( false ) ) {
+			await this.WritePersistentRasterControlFrameCoreAsync(
+				KittyGraphicsPersistentEncoder.EncodeDeleteResourcePayload(
+					response.ImageId.Value
+				)
+			).ConfigureAwait( false );
+			await this.Output.FlushAsync(
+				CancellationToken.None
+			).ConfigureAwait( false );
+		}
+
+		this.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
+		);
+		return evidenceGeneration == evidence.LiveGeneration;
+	}
+
 	private static uint CreateKittyGraphicsProbeImageId() {
 		while ( true ) {
 			uint value = unchecked(
 				(uint)Interlocked.Increment( ref kittyGraphicsProbeIdentity )
 			);
+			if ( 0 != value ) {
+				return value;
+			}
+		}
+	}
+
+	private static uint CreateKittyPersistentRasterProbeImageNumber() {
+		while ( true ) {
+			uint value = unchecked(
+				(uint)Interlocked.Increment( ref kittyPersistentRasterProbeIdentity )
+			);
+			value |= 0x80000000u;
 			if ( 0 != value ) {
 				return value;
 			}

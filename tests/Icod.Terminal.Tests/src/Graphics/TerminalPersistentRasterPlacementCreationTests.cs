@@ -349,6 +349,11 @@ public sealed class TerminalPersistentRasterPlacementCreationTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
 		return session;
 	}
 

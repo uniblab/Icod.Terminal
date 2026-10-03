@@ -56,6 +56,11 @@ public sealed class TerminalPersistentRasterSourceDimensionIntegrationTests {
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
 		TerminalRasterImage image = CreateImage( pixelFormat );
 
 		Task<TerminalControlResult<TerminalRasterResource>> creation =

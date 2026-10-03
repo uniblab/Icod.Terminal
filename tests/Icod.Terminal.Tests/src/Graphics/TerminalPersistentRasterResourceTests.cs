@@ -123,6 +123,7 @@ public sealed class TerminalPersistentRasterResourceTests {
 			transport.Writes[ 1 ]
 		);
 	}
+
 	[Fact]
 	public void PublicResourceContractIsOpaqueAndSessionOwned() {
 		Type resourceType = typeof( TerminalRasterResource );
@@ -443,6 +444,11 @@ public sealed class TerminalPersistentRasterResourceTests {
 		ArgumentNullException.ThrowIfNull( session );
 		session.RecordSemanticBackendEvidence(
 			TerminalProtocolBackend.ApcKittyGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+		session.RecordSemanticOperationEvidence(
+			TerminalSemanticOperation.PersistentRasterGraphics,
 			TerminalCapabilitySupportState.Verified,
 			TerminalCapabilityEvidenceSource.ProtocolResponse
 		);
