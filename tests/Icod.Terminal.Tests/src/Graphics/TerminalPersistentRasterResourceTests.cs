@@ -22,6 +22,7 @@ namespace Icod.Terminal.Tests.Graphics;
 
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
@@ -32,6 +33,96 @@ using Xunit;
 /// Defines the C114 public persistent-resource and acknowledged-upload contract.
 /// </summary>
 public sealed class TerminalPersistentRasterResourceTests {
+	[Fact]
+	public async Task BasicKittyEvidenceDoesNotVerifyTerminalAssignedResourceIdentity() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			new RecordingTerminalControlProvider(),
+			transport,
+			new ManualMonotonicClock()
+		);
+		session.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.ApcKittyGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+
+		TerminalCapabilityStatus status = session.InspectCapability(
+			TerminalCapability.PersistentRasterGraphics
+		);
+
+		Assert.Equal( TerminalCapabilitySupport.Unknown, status.Support );
+		Assert.False( status.IsUsable );
+		Assert.Empty( transport.Writes );
+	}
+
+	[Fact]
+	public async Task ZeroTerminalAssignedImageIdMakesPersistentVerificationUnsupported() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			new RecordingTerminalControlProvider(),
+			transport,
+			new ManualMonotonicClock()
+		);
+		session.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.ApcKittyGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+
+		Task<TerminalCapabilityStatus> verification = session.VerifyCapabilityAsync(
+			TerminalCapability.PersistentRasterGraphics
+		).AsTask();
+		await transport.WaitForWriteCountAsync( 1 );
+		uint imageNumber = ReadImageNumber( transport.Writes[ 0 ] );
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				$"\u001b_Gi=0,I={imageNumber};OK\u001b\\"
+			)
+		);
+
+		TerminalCapabilityStatus status = await verification;
+
+		Assert.Equal( TerminalCapabilitySupport.Unsupported, status.Support );
+		Assert.False( status.IsUsable );
+		Assert.Single( transport.Writes );
+	}
+
+	[Fact]
+	public async Task NonzeroTerminalAssignedImageIdVerifiesAndCleansUpProbeResource() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			new RecordingTerminalControlProvider(),
+			transport,
+			new ManualMonotonicClock()
+		);
+		session.RecordSemanticBackendEvidence(
+			TerminalProtocolBackend.ApcKittyGraphics,
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse
+		);
+
+		Task<TerminalCapabilityStatus> verification = session.VerifyCapabilityAsync(
+			TerminalCapability.PersistentRasterGraphics
+		).AsTask();
+		await transport.WaitForWriteCountAsync( 1 );
+		uint imageNumber = ReadImageNumber( transport.Writes[ 0 ] );
+		transport.Publish(
+			Encoding.ASCII.GetBytes(
+				$"\u001b_Gi=77,I={imageNumber};OK\u001b\\"
+			)
+		);
+
+		TerminalCapabilityStatus status = await verification;
+		await transport.WaitForWriteCountAsync( 2 );
+
+		Assert.Equal( TerminalCapabilitySupport.Verified, status.Support );
+		Assert.True( status.IsUsable );
+		Assert.Equal(
+			Encoding.ASCII.GetBytes( "\u001b_Ga=d,d=I,i=77,q=2\u001b\\" ),
+			transport.Writes[ 1 ]
+		);
+	}
 	[Fact]
 	public void PublicResourceContractIsOpaqueAndSessionOwned() {
 		Type resourceType = typeof( TerminalRasterResource );
@@ -328,6 +419,21 @@ public sealed class TerminalPersistentRasterResourceTests {
 			1,
 			1,
 			[ 1, 2, 3 ]
+		);
+	}
+
+	private static uint ReadImageNumber(
+		byte[] request
+	) {
+		ArgumentNullException.ThrowIfNull( request );
+		Match match = Regex.Match(
+			Encoding.ASCII.GetString( request ),
+			@"(?:^|,)I=(?<number>[0-9]+)(?:,|;)"
+		);
+		Assert.True( match.Success );
+		return uint.Parse(
+			match.Groups[ "number" ].Value,
+			System.Globalization.CultureInfo.InvariantCulture
 		);
 	}
 
