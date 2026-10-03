@@ -31,13 +31,13 @@ internal static class SixelOutputTransaction {
 		ReadOnlySpan<byte>.Empty
 	);
 
-	private static readonly ReadOnlyMemory<byte> CanonicalPrefix =
+	internal static readonly ReadOnlyMemory<byte> CanonicalPrefix =
 		CanonicalEmptyFrame.AsMemory(
 			0,
 			CanonicalEmptyFrame.Length - 2
 		);
 
-	private static readonly ReadOnlyMemory<byte> CanonicalTerminator =
+	internal static readonly ReadOnlyMemory<byte> CanonicalTerminator =
 		CanonicalEmptyFrame.AsMemory(
 			CanonicalEmptyFrame.Length - 2,
 			2
@@ -88,7 +88,7 @@ internal static class SixelOutputTransaction {
 		).ConfigureAwait( false );
 	}
 
-	private static void ValidateImageForStreaming(
+	internal static void ValidateImageForStreaming(
 		SixelPaletteImage image
 	) {
 		ArgumentNullException.ThrowIfNull( image );

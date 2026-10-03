@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.24.0` — Raster geometry and planning contracts
-- **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.24.0 is published; the 1.24.1 persistent-raster verification patch is under review in PR #70
-- **Active development target:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Selected scope:** Separate generic Kitty support from successful persistent upload identity, clean up the bounded probe resource, and preserve the 1.24.0 public surface
+- **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
+- **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
+- **Development status:** 1.24.1 is published; additive 1.25.0-alpha implementation is in draft PR #71 and under cross-platform qualification
+- **Active development target:** `1.25.0` — Ordered screen raster transactions for immediate Kitty/Sixel presentation
+- **Selected scope:** Add a backend-neutral raster item to the session-bound screen output transaction, with precommit capability/encoding validation and honest cursor/output uncertainty
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -19,7 +19,7 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-`Icod.Terminal 1.24.0` was merged through [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) at `04115b6ae45c6b1f5fc83468cac884bc904c66d1` and tagged `v1.24.0`. The 1.24.1 patch corrects persistent-raster verification after downstream Contour qualification showed that generic Kitty query support does not guarantee a valid terminal-assigned persistent image id.
+`Icod.Terminal 1.24.1` was merged through [PR #70](https://github.com/uniblab/Icod.Terminal/pull/70) at `b6830ce4d7f6c97ffd9bf5e8fcbcf822febf59ea` and published. It corrects persistent-raster verification after downstream Contour qualification showed that generic Kitty query support does not guarantee a valid terminal-assigned persistent image id. The new 1.25 track responds to the distinct need for immediate raster output that can be ordered with screen operations when persistence is unavailable.
 
 `Icod.Terminal 1.23.0` was merged through [PR #68](https://github.com/uniblab/Icod.Terminal/pull/68) at `65b8a82`, tagged `v1.23.0`, and published on 2026-10-02. It adds bounded RGB24/RGBA32 animation-frame region replacement, completes legacy Menu phase decoding, repairs malformed modern-keyboard end-of-input recovery, and expands the runnable raster-animation and rich-input guidance. The [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) preserves its implementation and qualification evidence.
 
@@ -57,11 +57,11 @@ terminal applications
 ```
 
 - `Icod.TermInfo` owns immutable terminal capability data and expansion.
-- `Icod.Terminal` owns the live terminal conversation, input/query/event authority, semantic capability evidence and routing, terminal output, ephemeral raster routing, persistent raster resource/placement/placeholder ownership, animation/frame lifecycle, protocol-private encoding/identity, lifecycle certainty, and deterministic cleanup.
+- `Icod.Terminal` owns the live terminal conversation, input/query/event authority, semantic capability evidence and routing, terminal output, ephemeral raster routing and transaction commitment, persistent raster resource/placement/placeholder ownership, animation/frame lifecycle, protocol-private encoding/identity, lifecycle certainty, and deterministic cleanup.
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph for the 1.24.1 patch branch is:
+The production dependency baseline for the 1.25 planning branch is:
 
 ```text
 Icod.TermInfo 1.17.0
@@ -95,7 +95,9 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.21.0  rich input/keyboard and cursor visibility composition     PUBLISHED
 1.22.0  bounded animation frame composition                     PUBLISHED
 1.23.0  partial frame transfer + rich-input completion           PUBLISHED
-1.24.0  raster geometry and planning contracts          RELEASE CANDIDATE
+1.24.0  raster geometry and planning contracts                 PUBLISHED
+1.24.1  persistent Kitty identity verification                PUBLISHED
+1.25.0  ordered screen raster transactions                    ALPHA / QUALIFICATION
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -404,9 +406,9 @@ The governing rule is:
 
 > Terminal owns live pixel-geometry queries, exact derivation, resource geometry, bounded local raster ownership, operation evidence, protocol execution, acknowledgement, lifecycle, and cleanup. DCurses owns tile-cell mapping, clipping, damage, viewport state, refresh policy, and frame-selection strategy. The game owns maps, actors, visibility, animation policy, and rules.
 
-The approved release shape commits only 1.24.0. A possible 1.25.0 bounded frame-edit execution release remains conditional on measurements from a real DCurses tile-rendering workload. No batch API, Indexed8 partial-update promise, remote atomicity, rollback, or hidden replay is precommitted.
+The 1.24 closure did not justify a bounded frame-edit execution release. The distinct 1.25 screen raster transaction scope is documented below. Frame-edit batching remains a separate measurement-gated candidate. No batch API, Indexed8 partial-update promise, remote atomicity, rollback, or hidden replay is precommitted.
 
-The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) govern the stable package candidate in [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
+The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) record the published release from [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 The implementation sequence is:
 
@@ -424,9 +426,33 @@ T2409  downstream and cross-platform exact-head qualification
 T2410  stable 1.24.0 closure and evidence record
 ```
 
+## 1.25 development line — Ordered Screen Raster Transactions
+
+The selected 1.25 scope lets a terminal application order a complete immediate raster with ordinary cursor, text, rendition, and presentation operations in one session-bound screen-output transaction. It extends the existing `RasterGraphics` route: a verified ordinary Kitty backend is preferred and verified Sixel is used when Kitty is unavailable. Persistent Kitty resources and placeholders remain a separate capability and API.
+
+The governing rule is:
+
+> Terminal owns raster backend evidence, protocol-private encoding, bounded transaction preflight, serialized output, and commitment uncertainty. DCurses owns raster-surface placement, source-image provision, clipping, overlay policy, damage, and refresh. Applications own assets and viewport content.
+
+The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Draft PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) carries the alpha API, tests, sample, package verifier, and release documentation; stable closure and physical Sixel evidence remain separate gates.
+
+```text
+T2500  published baseline, placement assumptions, and API-regret gate
+T2501  failing transaction/capability fixtures
+T2502  bounded Kitty/Sixel payload preparation
+T2503  ordered transaction emission and cursor-state contract
+T2504  capability, lifecycle, concurrency, and failure hardening
+T2505  public-only sample and downstream DCurses acceptance
+T2506  documentation, package, API, and security gates
+T2507  Windows/Linux/macOS exact-head qualification
+T2508  stable 1.25.0 closure and evidence record
+```
+
+This feature permits a caller-supplied complete viewport image per repaint without a Terminal-side source cache. It makes no claim that Sixel supports persistent identity, sparse frame edits, portable clipping or terminal-independent post-display cursor behavior. Real terminal acceptance must qualify any stronger visual claim separately.
+
 ## Later development candidates
 
-The first conditional candidate after 1.24 is a measured bounded frame-edit execution release. It may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when 1.24/DCurses workload evidence demonstrates a material benefit. It must not claim remote atomicity or rollback.
+The deferred bounded frame-edit execution candidate may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when a real DCurses workload demonstrates a material benefit. It must not claim remote atomicity or rollback.
 
 Other independent candidates still include gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
 

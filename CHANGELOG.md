@@ -2,6 +2,13 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.25.0 (development)
+
+- Adds `TerminalScreenOutputTransaction.WriteRaster(TerminalRasterImage)` for complete image transfer ordered with semantic cursor plans and text under one screen transaction.
+- Uses current verified ordinary Kitty Graphics or Sixel evidence without probing under the output gate. Encodes and bounds all raster frames before the first byte, then checks backend evidence and output epoch again at commitment.
+- Keeps cursor placement, full-frame repaint, and text fallback with the caller. Committed transport failures are not retried or switched to a second graphics backend.
+- Updates the raster sample, package consumer, public API fingerprint, and the 1.25 development roadmap. Physical Sixel presentation remains a separate downstream terminal qualification.
+
 ## 1.24.1
 
 - Verifies persistent Kitty raster identity with a bounded 1x1 direct upload rather than inferring support from the generic Kitty graphics dialect.
