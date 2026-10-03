@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** T2500 contract frozen; `1.25.0-alpha` implementation underway in PR #71.
+**Status:** T2500–T2506 alpha implementation in [draft PR #71](https://github.com/uniblab/Icod.Terminal/pull/71); cross-platform and package qualification underway. Physical terminal witness and stable closure remain open.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -32,7 +32,7 @@ The 1.24 roadmap's conditional frame-edit batching proposal did not meet its rea
 
 ## Public contract gate
 
-The planned additive member is:
+The additive member in the alpha implementation is:
 
 ```csharp
 public sealed class TerminalScreenOutputTransaction {
@@ -127,6 +127,9 @@ No Sixel persistent resource, Unicode placeholder, frame copy/update/select, spa
 | --- | --- | --- |
 | Published baseline | [PR #70](https://github.com/uniblab/Icod.Terminal/pull/70) / merge `b6830ce4d7f6c97ffd9bf5e8fcbcf822febf59ea` | 1.24.1 persistent identity probe is distinct from ordinary Kitty/Sixel raster |
 | Downstream motivation | [DCurses PR #35](https://github.com/uniblab/Icod.DCurses/pull/35) | Persistent Kitty unavailable in the tested sessions; controlled text fallback works; Sixel physical support remains to be tested |
-| 1.25 planning PR | Pending | Design, roadmap, and implementation plan only |
-| T2500 contract | Pending | Freeze exact API/limits before runtime edits |
+| 1.25 draft PR | [#71](https://github.com/uniblab/Icod.Terminal/pull/71) | Design and alpha implementation on the same feature branch |
+| T2500 contract | `fab885128d269b573e5669651915157e943835e7` | 64 MiB aggregate encoded bound, exception rules, 1.25.0-alpha metadata |
+| T2501 red fixtures | [run 37127265959](https://github.com/uniblab/Icod.Terminal/actions/runs/37127265959) | Expected missing `WriteRaster`; test fixture typo also found and corrected |
+| T2502/T2503 first implementation | [run 37127551967](https://github.com/uniblab/Icod.Terminal/actions/runs/37127551967) | Windows/Linux/macOS runtime passed; package API baseline gate rejected intentional new member |
+| T2504–T2506 alpha qualification | [run 37127949385](https://github.com/uniblab/Icod.Terminal/actions/runs/37127949385) | Package candidate passed; full matrix in progress; API fingerprint `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146` |
 | Stable candidate | Pending | Record exact-head evidence at closure |

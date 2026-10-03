@@ -66,6 +66,14 @@ if ( capability.IsUsable ) {
 		transaction.Add( origin.Value );
 	}
 	transaction.WriteRaster( image );
+	TerminalScreenOperationPlan? statusPosition = session.Screen.PlanCursorMove(
+		null,
+		new TerminalScreenPosition( 1, 0 )
+	);
+	if ( statusPosition.HasValue ) {
+		transaction.Add( statusPosition.Value );
+		transaction.WriteText( "Raster transfer queued." );
+	}
 	await transaction.CommitAsync();
 	return 0;
 }

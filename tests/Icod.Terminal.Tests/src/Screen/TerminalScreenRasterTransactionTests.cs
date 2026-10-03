@@ -195,6 +195,26 @@ public sealed class TerminalScreenRasterTransactionTests {
 		await Assert.ThrowsAsync<InvalidOperationException>( () => transaction.CommitAsync().AsTask() );
 	}
 
+	[Fact]
+	public async Task SynchronizedFrameContainsCompleteRasterInItemOrder() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.ApcKittyGraphics );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		transaction.WriteText( "before" );
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ) );
+		transaction.WriteText( "after" );
+
+		await transaction.CommitAsync();
+		Assert.Equal(
+			"\u001b[?2026hbefore\u001b_Ga=T,f=24,s=1,v=1,t=d,m=0,q=2;AQID\u001b\\after\u001b[?2026l",
+			Encoding.ASCII.GetString( transport.Bytes )
+		);
+		Assert.Equal( 1, transport.FlushCount );
+	}
+
 	private static void Verify( TerminalSession session, TerminalProtocolBackend backend ) {
 		session.RecordSemanticBackendEvidence(
 			backend,

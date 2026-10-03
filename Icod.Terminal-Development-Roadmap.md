@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
 - **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** 1.24.1 is published; planning for additive 1.25.0 screen raster transactions is open for review
+- **Development status:** 1.24.1 is published; additive 1.25.0-alpha implementation is in draft PR #71 and under cross-platform qualification
 - **Active development target:** `1.25.0` — Ordered screen raster transactions for immediate Kitty/Sixel presentation
 - **Selected scope:** Add a backend-neutral raster item to the session-bound screen output transaction, with precommit capability/encoding validation and honest cursor/output uncertainty
 - **Stable compatibility floor:** `1.0.0`
@@ -97,7 +97,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.23.0  partial frame transfer + rich-input completion           PUBLISHED
 1.24.0  raster geometry and planning contracts                 PUBLISHED
 1.24.1  persistent Kitty identity verification                PUBLISHED
-1.25.0  ordered screen raster transactions                    PLANNING
+1.25.0  ordered screen raster transactions                    ALPHA / QUALIFICATION
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -434,7 +434,7 @@ The governing rule is:
 
 > Terminal owns raster backend evidence, protocol-private encoding, bounded transaction preflight, serialized output, and commitment uncertainty. DCurses owns raster-surface placement, source-image provision, clipping, overlay policy, damage, and refresh. Applications own assets and viewport content.
 
-The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. This planning PR does not change package metadata or production behavior.
+The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Draft PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) carries the alpha API, tests, sample, package verifier, and release documentation; stable closure and physical Sixel evidence remain separate gates.
 
 ```text
 T2500  published baseline, placement assumptions, and API-regret gate
