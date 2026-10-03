@@ -533,10 +533,17 @@ public sealed class TerminalScreenPlanner {
 			[ count ],
 			affectedLines
 		);
+		if ( TerminalScreenOperationKind.CursorMove == operationKind
+			&& best.HasValue && ContainsLineBreak( best.Value ) ) {
+			best = null;
+		}
 		string? literal = this.terminal.GetString( oneCapability );
 		if ( literal is not null
 			&& (long)literal.Length * count <= MaximumRepeatedSourceLength ) {
 			TerminalScreenOperationPlan single = this.Create( operationKind, literal, affectedLines );
+			if ( TerminalScreenOperationKind.CursorMove == operationKind && ContainsLineBreak( single ) ) {
+				return best;
+			}
 			long repeatedByteCount = (long)single.ByteCount * count;
 			if ( best.HasValue && repeatedByteCount >= best.Value.ByteCount ) {
 				return best;
@@ -549,6 +556,17 @@ public sealed class TerminalScreenPlanner {
 			ChooseBetter( ref best, repeated );
 		}
 		return best;
+	}
+
+	private static bool ContainsLineBreak( TerminalScreenOperationPlan plan ) {
+		// Relative axes must preserve the other coordinate. Host output processing
+		// can translate LF to CRLF; no portable output-mode guarantee permits LF here.
+		foreach ( TerminalScreenOutputSegment segment in plan.Segments! ) {
+			if ( segment.Value.Contains( '\r' ) || segment.Value.Contains( '\n' ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private TerminalScreenColor ResolveColor(

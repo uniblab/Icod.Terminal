@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** T2500–T2506 alpha implementation in [draft PR #71](https://github.com/uniblab/Icod.Terminal/pull/71); cross-platform and package qualification underway. Physical terminal witness and stable closure remain open.
+**Status:** Alpha implementation merged in [PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) and 1.25.0-alpha published. [PR #73](https://github.com/uniblab/Icod.Terminal/pull/73) prepares 1.25.0-alpha.1 cursor hardening. Physical terminal acceptance and stable closure remain open.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -118,6 +118,23 @@ T2500 freezes the aggregate 64 MiB ceiling for encoded raster data, including AP
 **Acceptance:** One stable candidate meets every release gate without asserting unobserved terminal rendering.
 
 ## Explicit non-goals
+
+### Live-test follow-up: 1.25.0-alpha.1
+
+The October 3 DCurses recordings show complete images in Windows Terminal and
+Contour, with intermediate text-map flashes handled in DCurses PR #35. WezTerm
+uses text fallback and leaves left-margin player trails. The semantic cursor planner
+can choose `cud1=LF` while assuming the column survives host newline processing.
+
+PR #73 excludes CR/LF in both parameterized and repeated relative candidates,
+retains safe advertised relative/absolute alternatives, and returns unavailable if
+none exists. Regression-only CI reproduced all four new cases on .NET 8/9/10
+([run 37136903422](https://github.com/uniblab/Icod.Terminal/actions/runs/37136903422)).
+The alpha.1 candidate includes exact-version curated release notes. After CI and
+maintainer publication, DCurses must consume alpha.1 and repeat live movement,
+resize, fallback, and clean-exit checks. Graphics verification is unchanged.
+
+## Scope limits
 
 No Sixel persistent resource, Unicode placeholder, frame copy/update/select, sparse hidden cache, full-screen scene compositor, application pixel ownership, protocol selector, image decoder, native terminal API, layout policy, automatic clipping/scaling, alpha-compositing guarantee, batching optimization, or PTY/ConPTY hosting is introduced in 1.25.
 
