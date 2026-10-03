@@ -74,7 +74,9 @@ internal static class CapabilityPlanningScenario {
 		string verified = report.ToString();
 		Require( verified.Split('\n').Count( line => line.StartsWith( "Verified result:", StringComparison.Ordinal ) ) == 3, "Wrong verification selection." );
 		Require( control.ModeWrites == modesAfterOpen, "Verification enabled a reporting mode." );
-		Require( outputAvailable ? transport.KeyboardQueries == 1 && transport.GraphicsQueries == 1 : transport.Writes == 0,
+		Require( outputAvailable ? transport.KeyboardQueries == 1
+			&& transport.GraphicsQueries == 1
+			&& transport.PersistentGraphicsQueries == 1 : transport.Writes == 0,
 			"Unexpected verification traffic." );
 		if ( outputAvailable ) {
 			foreach ( TerminalCapability capability in new[] { TerminalCapability.KeyboardReporting, TerminalCapability.RasterGraphics, TerminalCapability.PersistentRasterGraphics } ) {
@@ -113,6 +115,7 @@ internal static class CapabilityPlanningScenario {
 		internal int Writes;
 		internal int KeyboardQueries;
 		internal int GraphicsQueries;
+		internal int PersistentGraphicsQueries;
 		public async ValueTask<int> ReadAsync( Memory<byte> buffer, CancellationToken cancellationToken = default ) {
 			Interlocked.Increment( ref this.Reads );
 			byte first = await this.replies.Reader.ReadAsync( cancellationToken );
@@ -134,6 +137,13 @@ internal static class CapabilityPlanningScenario {
 				string id = Regex.Match( request, @"i=([0-9]+)," ).Groups[1].Value;
 				Require( id.Length > 0, "Graphics correlation missing." );
 				response = $"\u001b_Gi={id};OK\u001b\\\u001b[?64;4c";
+			} else if ( request.StartsWith( "\u001b_Ga=t,", StringComparison.Ordinal ) ) {
+				++this.PersistentGraphicsQueries;
+				string imageNumber = Regex.Match( request, @"(?:^|,)I=([0-9]+)(?:,|;)" ).Groups[1].Value;
+				Require( imageNumber.Length > 0, "Persistent graphics correlation missing." );
+				response = $"\u001b_Gi=77,I={imageNumber};OK\u001b\\";
+			} else if ( request.StartsWith( "\u001b_Ga=d,", StringComparison.Ordinal ) ) {
+				response = string.Empty;
 			} else {
 				throw new InvalidOperationException( "Unexpected sample output: " + Convert.ToHexString( buffer.Span ) );
 			}

@@ -2,6 +2,13 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.24.1
+
+- Verifies persistent Kitty raster identity with a bounded 1x1 direct upload rather than inferring support from the generic Kitty graphics dialect.
+- Requires a successful acknowledgement with a nonzero terminal-assigned image id, deletes the temporary resource, and records generation-scoped persistent support only after cleanup succeeds.
+- Treats zero or malformed persistent identities as unsupported and a missing acknowledgement as unknown, preventing raw format failures from escaping the capability-verification path.
+- Preserves the complete 1.24.0 public API, .NET 8/9/10 target matrix, managed cross-platform implementation, and production dependency versions.
+
 ## 1.24.0
 
 - Adds bounded live terminal/cell pixel queries and exact, side-effect-free cell-pixel derivation without caching, rounding, terminal-brand inference, or a second reader.

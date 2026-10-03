@@ -68,6 +68,18 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		if ( TerminalCapability.KeyboardReporting == capability ) {
 			Assert.Equal( "\u001b[?u\u001b[c", freshRequest );
 			transport.Publish( Encoding.ASCII.GetBytes( "\u001b[?1u\u001b[?64;4c" ) );
+		} else if ( TerminalCapability.PersistentRasterGraphics == capability ) {
+			System.Text.RegularExpressions.Match freshId = System.Text.RegularExpressions.Regex.Match( freshRequest, "i=([0-9]+)," );
+			Assert.True( freshId.Success );
+			Assert.NotEqual( request, freshRequest );
+			transport.ResetRequest();
+			transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=" + freshId.Groups[ 1 ].Value + ";OK\u001b\\\u001b[?64;4c" ) );
+			await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+			string persistentRequest = Encoding.ASCII.GetString( transport.GetRequest() );
+			System.Text.RegularExpressions.Match imageNumber = System.Text.RegularExpressions.Regex.Match( persistentRequest, "I=([0-9]+)," );
+			Assert.True( imageNumber.Success );
+			transport.ResetRequest();
+			transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77,I=" + imageNumber.Groups[ 1 ].Value + ";OK\u001b\\" ) );
 		} else {
 			System.Text.RegularExpressions.Match freshId = System.Text.RegularExpressions.Regex.Match( freshRequest, "i=([0-9]+)," );
 			Assert.True( freshId.Success );

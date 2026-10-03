@@ -60,6 +60,11 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 			$"\u001b_Gi={imageId.ToString( CultureInfo.InvariantCulture )};OK\u001b\\"
 		);
 		transport.Publish( "\u001b[?64;1c" );
+		string persistentRequest = await transport.WaitForWriteCountAsync( 2 );
+		uint imageNumber = ExtractKittyPersistentImageNumber( persistentRequest );
+		transport.Publish(
+			$"\u001b_Gi=77,I={imageNumber.ToString( CultureInfo.InvariantCulture )};OK\u001b\\"
+		);
 
 		TerminalCapabilityStatus status = await verification;
 		Assert.Equal( TerminalCapabilitySupport.Verified, status.Support );
@@ -246,6 +251,34 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 		);
 	}
 
+	private static uint ExtractKittyPersistentImageNumber(
+		string request
+	) {
+		ArgumentException.ThrowIfNullOrWhiteSpace( request );
+		const string marker = ",I=";
+		int valueStart = request.IndexOf( marker, StringComparison.Ordinal );
+		if ( 0 > valueStart ) {
+			throw new InvalidOperationException(
+				"The Terminal persistent-raster verification did not emit an image number."
+			);
+		}
+		valueStart += marker.Length;
+		int valueEnd = request.IndexOf( ',', valueStart );
+		if ( 0 > valueEnd ) {
+			valueEnd = request.IndexOf( ';', valueStart );
+		}
+		if ( valueStart >= valueEnd ) {
+			throw new InvalidOperationException(
+				"The Terminal persistent-raster image number was not parseable."
+			);
+		}
+		return uint.Parse(
+			request.AsSpan( valueStart, valueEnd - valueStart ),
+			NumberStyles.None,
+			CultureInfo.InvariantCulture
+		);
+	}
+
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		TerminalDescription terminal,
 		ITerminalControlProvider controlProvider,
@@ -292,6 +325,7 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 		private readonly TaskCompletionSource<string> firstWrite = new(
 			TaskCreationOptions.RunContinuationsAsynchronously
 		);
+		private readonly SemaphoreSlim writeSignal = new( 0 );
 
 		internal IReadOnlyList<string> Writes {
 			get {
@@ -303,6 +337,23 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 
 		internal Task<string> WaitForWriteAsync() {
 			return this.firstWrite.Task;
+		}
+
+		internal async Task<string> WaitForWriteCountAsync(
+			int expectedCount
+		) {
+			if ( 1 > expectedCount ) {
+				throw new ArgumentOutOfRangeException( nameof( expectedCount ) );
+			}
+			using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+			while ( true ) {
+				lock ( this.sync ) {
+					if ( expectedCount <= this.writes.Count ) {
+						return this.writes[ expectedCount - 1 ];
+					}
+				}
+				await this.writeSignal.WaitAsync( timeout.Token ).ConfigureAwait( false );
+			}
 		}
 
 		internal void Publish(
@@ -344,6 +395,7 @@ public sealed class PersistentRasterLifecycleIntegrationTests {
 			lock ( this.sync ) {
 				this.writes.Add( value );
 			}
+			this.writeSignal.Release();
 			this.firstWrite.TrySetResult( value );
 			return ValueTask.CompletedTask;
 		}

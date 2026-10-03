@@ -89,8 +89,8 @@ public sealed class TerminalPersistentRasterAnimationCapabilityTests {
 			TerminalCapability.PersistentRasterAnimation
 		);
 
-		Assert.Equal( TerminalCapabilitySupport.Verified, persistent.Support );
-		Assert.True( persistent.IsUsable );
+		Assert.Equal( TerminalCapabilitySupport.Unknown, persistent.Support );
+		Assert.False( persistent.IsUsable );
 		Assert.Equal( TerminalCapabilitySupport.Unknown, animation.Support );
 		Assert.Equal( TerminalCapabilityEvidenceKind.None, animation.EvidenceKind );
 		Assert.False( animation.IsUsable );

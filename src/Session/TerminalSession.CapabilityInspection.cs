@@ -47,6 +47,13 @@ public sealed partial class TerminalSession {
 		TerminalSemanticOperation operation = MapCapability( capability );
 		TerminalCapabilityEvidenceLedger evidence = this.GetSemanticCapabilityEvidence();
 		bool endpointAvailable = this.HasSemanticEndpointAvailability( operation );
+		if ( TerminalCapability.PersistentRasterGraphics == capability ) {
+			return InspectPersistentRasterCapability(
+				capability,
+				evidence,
+				endpointAvailable
+			);
+		}
 		TerminalSemanticBackendResolution resolution = TerminalSemanticBackendResolver.Resolve(
 			operation,
 			evidence,
@@ -124,7 +131,7 @@ public sealed partial class TerminalSession {
 				break;
 
 			case TerminalCapability.PersistentRasterGraphics:
-				_ = await this.ProbeKittyGraphicsSupportAsync(
+				_ = await this.ProbeKittyPersistentRasterSupportAsync(
 					cancellationToken
 				).ConfigureAwait( false );
 				break;
@@ -135,6 +142,42 @@ public sealed partial class TerminalSession {
 
 		cancellationToken.ThrowIfCancellationRequested();
 		return this.InspectCapability( capability );
+	}
+
+	private static TerminalCapabilityStatus InspectPersistentRasterCapability(
+		TerminalCapability capability,
+		TerminalCapabilityEvidenceLedger evidence,
+		bool endpointAvailable
+	) {
+		TerminalCapabilityResolution semantic = evidence.Resolve(
+			TerminalCapabilitySubject.ForSemanticOperation(
+				TerminalSemanticOperation.PersistentRasterGraphics
+			)
+		);
+		TerminalCapabilitySupportState support = semantic.State;
+		TerminalCapabilityEvidenceSource? source = semantic.EvidenceSource;
+
+		if ( TerminalCapabilitySupportState.Unknown == support ) {
+			TerminalCapabilityResolution kitty = evidence.Resolve(
+				TerminalCapabilitySubject.ForProtocolBackend(
+					TerminalProtocolBackend.ApcKittyGraphics
+				)
+			);
+			if ( TerminalCapabilitySupportState.Unsupported == kitty.State ) {
+				support = TerminalCapabilitySupportState.Unsupported;
+				source = kitty.EvidenceSource;
+			}
+		}
+
+		return new TerminalCapabilityStatus(
+			capability,
+			MapSupport( support ),
+			endpointAvailable
+				? TerminalCapabilityEndpointAvailability.Available
+				: TerminalCapabilityEndpointAvailability.Unavailable,
+			MapEvidenceKind( source ),
+			endpointAvailable && TerminalCapabilitySupportState.Verified == support
+		);
 	}
 
 	private static TerminalSemanticOperation MapCapability(
