@@ -177,13 +177,13 @@ Demonstrates full-frame streaming, the 1.22 bounded frame-composition operation,
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
 ```
 
-Pass `--tile-atlas` for a generated 8-by-8 atlas, exact cell-geometry fallback, planning checks, placeholder cells, two reusable known frames, and measured 1/4/16/64-region damage workloads:
+Pass `--tile-atlas` for a generated 8-by-8 atlas, exact cell-geometry fallback, planning checks, placeholder cells, two reusable known frames, and exercised 1/4/16/64-region damage workloads:
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
 ```
 
-Run this in an interactive terminal with persistent raster graphics and animation support. The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy.
+Run this in an interactive terminal with persistent raster graphics and animation support. The interactive sample does not benchmark the terminal. Controlled metrics come from the package-only scripted harness and are recorded in the [1.24 tile-atlas measurement report](../docs/Raster-Tile-Atlas-Measurement-1.24.md). The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy.
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 

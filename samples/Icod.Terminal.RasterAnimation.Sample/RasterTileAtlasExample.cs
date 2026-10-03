@@ -177,9 +177,21 @@ internal static class RasterTileAtlasExample {
 			}
 			(front, back) = (back, front);
 		}
+		regionStatus = session.InspectRasterOperation(
+			TerminalRasterOperation.FrameRegionUpdateRgb24
+		);
+		if ( TerminalCapabilitySupport.Verified != regionStatus.Support
+			|| TerminalCapabilityEvidenceKind.LiveObservation != regionStatus.EvidenceKind ) {
+			await WriteFallbackAsync(
+				session,
+				"acknowledged RGB24 updates did not establish matching live operation evidence",
+				cancellationToken
+			);
+			return 0;
+		}
 
 		await session.WriteTextAsync(
-			"Tile-atlas witness completed 1/4/16/64 acknowledged damage workloads with two reusable known frames. This demonstrates ordered completion, not atomic or gapless presentation.\r\n",
+			"Tile-atlas witness completed 1/4/16/64 acknowledged damage workloads with two reusable known frames and Verified / LiveObservation RGB24 evidence. This demonstrates ordered completion, not atomic or gapless presentation.\r\n",
 			cancellationToken
 		);
 		return 0;

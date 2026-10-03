@@ -69,6 +69,8 @@ foreach ($required in @(
 	'GetRasterPlanningSnapshot',
 	'InspectRasterOperation',
 	'TerminalRasterOperation.FrameRegionUpdateRgb24',
+	'TerminalCapabilitySupport.Verified',
+	'TerminalCapabilityEvidenceKind.LiveObservation',
 	'.PixelWidth',
 	'.PixelHeight',
 	'CreatePlaceholderAsync',
@@ -92,6 +94,17 @@ foreach ($workload in @('1', '4', '16', '64')) {
 	if (-not $tileAtlasText.Contains($workload, [System.StringComparison]::Ordinal)) {
 		throw "The tile-atlas witness is missing workload '$workload'."
 	}
+}
+$workloadIndex = $tileAtlasText.IndexOf(
+	'foreach ( int regionCount in Workloads )',
+	[System.StringComparison]::Ordinal
+)
+$verifiedEvidenceIndex = $tileAtlasText.IndexOf(
+	'TerminalCapabilitySupport.Verified',
+	[System.StringComparison]::Ordinal
+)
+if ($workloadIndex -lt 0 -or $verifiedEvidenceIndex -le $workloadIndex) {
+	throw 'The tile-atlas witness must inspect verified focused evidence after its acknowledged workloads.'
 }
 
 Write-Host ''

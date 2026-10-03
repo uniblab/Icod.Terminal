@@ -196,7 +196,7 @@ The root README describes the current product by capability rather than by the r
 - **Animation frame composition (1.22)** — acknowledged bounded pixel composition between known frames of one current resource, with alpha blending or replacement; callers retain placement and playback control.
 - **Partial animation frame replacement (1.23)** — acknowledged RGB24/RGBA32 rectangle replacement in one known frame, with no new frame identity or hidden replay cache.
 - **Raster geometry and planning (1.24)** — live terminal/cell pixel queries, exact caller-selected derivation, immutable resource dimensions, fixed admission ceilings, advisory local ownership counts, and focused generation-scoped operation evidence.
-- **Tile-atlas witness (1.24)** — protocol-neutral two-frame regional editing and placeholder presentation with measured 1/4/16/64-region workloads and explicit text fallback; tile retention, damage, layout, and game state remain above Terminal.
+- **Tile-atlas witness (1.24)** — protocol-neutral two-frame regional editing and placeholder presentation with exercised 1/4/16/64-region workloads, separate package-only measurements, and explicit text fallback; tile retention, damage, layout, and game state remain above Terminal.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
@@ -357,9 +357,10 @@ Recommended documentation entry points:
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md) — trust, disclosure, and protocol-security boundary;
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
-- [`docs/Public-API-Baseline-1.21.md`](docs/Public-API-Baseline-1.21.md) — current frozen API and additive 1.21 fingerprint;
+- [`docs/Public-API-Baseline-1.21.md`](docs/Public-API-Baseline-1.21.md) — historical rich-input and cursor-visibility API fingerprint;
 - [`docs/Public-API-Baseline-1.22.md`](docs/Public-API-Baseline-1.22.md) — additive composition API fingerprint;
-- [`docs/Public-API-Baseline-1.24.md`](docs/Public-API-Baseline-1.24.md) — additive geometry, planning, and focused-evidence API fingerprint;
+- [`docs/Public-API-Baseline-1.23.md`](docs/Public-API-Baseline-1.23.md) — additive partial-frame and rich-input completion API fingerprint;
+- [`docs/Public-API-Baseline-1.24.md`](docs/Public-API-Baseline-1.24.md) — current frozen API and additive geometry, planning, and focused-evidence fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
