@@ -32,6 +32,11 @@ if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) {
     throw 'Unable to determine the expected Icod.Terminal package version.'
 }
 
+$notesPath = Join-Path $repositoryRoot "docs/releases/$ExpectedVersion.md"
+if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+    throw "Package candidate '$ExpectedVersion' requires curated release notes at '$notesPath'."
+}
+
 if (Test-Path -LiteralPath $ArtifactDirectory) {
     Remove-Item -LiteralPath $ArtifactDirectory -Recurse -Force
 }
