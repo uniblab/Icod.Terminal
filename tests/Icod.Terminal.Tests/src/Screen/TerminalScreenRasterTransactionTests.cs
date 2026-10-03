@@ -28,6 +28,41 @@ using Xunit;
 
 public sealed class TerminalScreenRasterTransactionTests {
 	[Fact]
+	public async Task MultiBandSixelUsesOneTransportWriteWithUnchangedWireBytes() {
+		RecordingTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.DcsSixel );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteText( "before" );
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 7, new byte[21] ) );
+		transaction.WriteText( "after" );
+
+		await transaction.CommitAsync();
+
+		Assert.Equal( "before\u001bP0;1;0q\"1;1;1;7#0;2;0;0;0#0~-#0@\u001b\\after", Encoding.ASCII.GetString( transport.Bytes ) );
+		// Encoding fragments, including one-byte band separators, are not transport boundaries.
+		Assert.Equal( 3, transport.WriteAttemptCount );
+		Assert.Equal( 1, transport.FlushCount );
+	}
+
+	[Fact]
+	public async Task SixelWriteFailureStillEndsSynchronizationWithoutRetryOrLaterText() {
+		RecordingTransport transport = new() { FailingWriteAttempt = 3 };
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Verify( session, TerminalProtocolBackend.DcsSixel );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction(
+			new TerminalScreenOutputTransactionOptions { UseSynchronizedOutput = true }
+		);
+		transaction.WriteText( "before" );
+		transaction.WriteRaster( TerminalRasterImage.CreateRgb24( 1, 7, new byte[21] ) );
+		transaction.WriteText( "after" );
+		await Assert.ThrowsAsync<IOException>( () => transaction.CommitAsync().AsTask() );
+		Assert.Equal( "\u001b[?2026hbefore\u001b[?2026l", Encoding.ASCII.GetString( transport.Bytes ) );
+		Assert.Equal( 4, transport.WriteAttemptCount );
+		Assert.Equal( 1, transport.FlushCount );
+	}
+
+	[Fact]
 	public async Task VerifiedSixelOrdersTextAndOneCompleteRaster() {
 		RecordingTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
