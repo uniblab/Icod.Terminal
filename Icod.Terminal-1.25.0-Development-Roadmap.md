@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** Alpha implementation merged in [PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) and 1.25.0-alpha published. [PR #73](https://github.com/uniblab/Icod.Terminal/pull/73) prepares 1.25.0-alpha.1 cursor hardening. Physical terminal acceptance and stable closure remain open.
+**Status:** 1.25.0-alpha.1 is published with cursor hardening from [PR #73](https://github.com/uniblab/Icod.Terminal/pull/73). [PR #74](https://github.com/uniblab/Icod.Terminal/pull/74) prepares alpha.2 Sixel screen-write coalescing. Physical terminal acceptance and stable closure remain open.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -117,7 +117,7 @@ T2500 freezes the aggregate 64 MiB ceiling for encoded raster data, including AP
 
 **Acceptance:** One stable candidate meets every release gate without asserting unobserved terminal rendering.
 
-## Explicit non-goals
+## Live-test follow-ups
 
 ### Live-test follow-up: 1.25.0-alpha.1
 
@@ -134,9 +134,31 @@ The alpha.1 candidate includes exact-version curated release notes. After CI and
 maintainer publication, DCurses must consume alpha.1 and repeat live movement,
 resize, fallback, and clean-exit checks. Graphics verification is unchanged.
 
+### Progressive image redraw: 1.25.0-alpha.2
+
+The 17:20–17:22 UTC DCurses retest shows Contour movement without the earlier text
+flash, but Windows Terminal clears and progressively redraws horizontal image bands.
+The prepared Sixel screen path writes every encoder fragment separately, including
+one-byte separators. Microsoft's Sixel parser explicitly supports partial image
+flushes while consuming a stream; transport coalescing removes avoidable scheduling
+points without assuming an atomic remote display.
+
+PR #74 combines each already-size-checked Sixel image into one contiguous buffer
+before commitment, bounded by the existing aggregate encoded limit. Exact bytes,
+item ordering, epoch/evidence checks, synchronization cleanup, and failure rules
+are unchanged. Kitty chunking and the standalone streaming display API remain as
+before. The transient copy can briefly double encoded image storage; it adds no
+unbounded cache or public batching API.
+
+The regression-only [run 37140618899](https://github.com/uniblab/Icod.Terminal/actions/runs/37140618899)
+reproduced nine writes instead of three for text/image/text on .NET 8/9/10, while
+literal bytes and 2,566 other unit cases passed. The alpha.2 candidate has curated
+exact-version release notes. A new physical Windows Terminal/Contour retest remains
+required after publication; WezTerm text-glyph shaping is a separate hypothesis.
+
 ## Scope limits
 
-No Sixel persistent resource, Unicode placeholder, frame copy/update/select, sparse hidden cache, full-screen scene compositor, application pixel ownership, protocol selector, image decoder, native terminal API, layout policy, automatic clipping/scaling, alpha-compositing guarantee, batching optimization, or PTY/ConPTY hosting is introduced in 1.25.
+No Sixel persistent resource, Unicode placeholder, frame copy/update/select, sparse hidden cache, full-screen scene compositor, application pixel ownership, protocol selector, image decoder, native terminal API, layout policy, automatic clipping/scaling, alpha-compositing guarantee, frame-edit batching API, or PTY/ConPTY hosting is introduced in 1.25.
 
 ## Evidence log
 

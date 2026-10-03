@@ -4,6 +4,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 ## 1.25.0 (development)
 
+- `1.25.0-alpha.2` combines each prepared Sixel screen-transaction image into one bounded transport write, preserving protocol bytes and failure cleanup while reducing avoidable progressive redraw. Physical atomicity remains terminal-dependent.
 - `1.25.0-alpha.1` excludes CR/LF-bearing relative cursor candidates, preventing column drift when a host translates newline output. Safe advertised relative or absolute addressing remains available; no native calls or public API changes are introduced.
 - Adds `TerminalScreenOutputTransaction.WriteRaster(TerminalRasterImage)` for complete image transfer ordered with semantic cursor plans and text under one screen transaction.
 - Uses current verified ordinary Kitty Graphics or Sixel evidence without probing under the output gate. Encodes and bounds all raster frames before the first byte, then checks backend evidence and output epoch again at commitment.
