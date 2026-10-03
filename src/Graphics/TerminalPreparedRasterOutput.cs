@@ -93,6 +93,20 @@ internal sealed class TerminalPreparedRasterOutput {
 		if ( segments.Count == 0 ) {
 			throw new InvalidOperationException( "The raster encoder produced no output." );
 		}
+		if ( TerminalProtocolBackend.DcsSixel == backend ) {
+			// Encoder fragments include single-byte separators. They must not become
+			// transport scheduling points that expose avoidable partial-image redraws.
+			// The complete encoded size has already passed the transaction's bound.
+			byte[] completeImage = new byte[ byteCount ];
+			int offset = 0;
+			foreach ( ReadOnlyMemory<byte> segment in segments ) {
+				cancellationToken.ThrowIfCancellationRequested();
+				segment.Span.CopyTo( completeImage.AsSpan( offset ) );
+				offset += segment.Length;
+			}
+			segments.Clear();
+			segments.Add( completeImage );
+		}
 		TerminalPreparedRasterOutput result = new( backend, generation, segments.ToArray(), byteCount );
 		result.ValidateEvidence( session );
 		return result;
