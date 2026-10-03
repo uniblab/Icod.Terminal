@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.23.0` — Partial animation-frame transfer and rich-input completion
+- **Current published feature line:** `1.24.0` — Raster geometry and planning contracts
 - **Previous patch line:** `1.17.1` — Packaged README and release metadata correction
-- **Development status:** 1.23.0 is published; the qualified 1.24.0 stable package candidate is ready for maintainer review in PR #69
-- **Active development target:** `1.24.0` — Raster geometry and planning contracts
-- **Selected scope:** Public pixel geometry, resource geometry, bounded raster planning, operation-specific evidence, and a tile-atlas measurement witness
+- **Development status:** 1.24.0 is published; the 1.24.1 persistent-raster verification patch is under review in PR #70
+- **Active development target:** `1.24.1` — Persistent Kitty resource-identity verification
+- **Selected scope:** Separate generic Kitty support from successful persistent upload identity, clean up the bounded probe resource, and preserve the 1.24.0 public surface
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -18,6 +18,8 @@ This file is the concise entry point for current `Icod.Terminal` development and
 The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
 
 ## Latest accepted checkpoint
+
+`Icod.Terminal 1.24.0` was merged through [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69) at `04115b6ae45c6b1f5fc83468cac884bc904c66d1` and tagged `v1.24.0`. The 1.24.1 patch corrects persistent-raster verification after downstream Contour qualification showed that generic Kitty query support does not guarantee a valid terminal-assigned persistent image id.
 
 `Icod.Terminal 1.23.0` was merged through [PR #68](https://github.com/uniblab/Icod.Terminal/pull/68) at `65b8a82`, tagged `v1.23.0`, and published on 2026-10-02. It adds bounded RGB24/RGBA32 animation-frame region replacement, completes legacy Menu phase decoding, repairs malformed modern-keyboard end-of-input recovery, and expands the runnable raster-animation and rich-input guidance. The [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) preserves its implementation and qualification evidence.
 
@@ -59,7 +61,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency graph for the 1.24.0 planning branch is:
+The production dependency graph for the 1.24.1 patch branch is:
 
 ```text
 Icod.TermInfo 1.17.0
