@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** Planning PR; no 1.25 implementation or package metadata change yet.
+**Status:** T2500 contract frozen; `1.25.0-alpha` implementation underway in PR #71.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -40,7 +40,7 @@ public sealed class TerminalScreenOutputTransaction {
 }
 ```
 
-T2500 freezes the exact XML documentation, exception behavior, encoded-payload accounting, and maximum image budget. The initial target is the transaction's 64 MiB application-payload ceiling, with a test that demonstrates whether framing counts. `WriteRaster` retains an immutable image item for that one transaction only. `CommitAsync` remains single-use and returns `ValueTask`; precommit validation errors emit no bytes and committed output errors retain their existing uncertainty semantics.
+T2500 freezes the aggregate 64 MiB ceiling for encoded raster data, including APC/DCS framing and existing application text, in one transaction. `WriteRaster` retains an immutable image item for that one transaction only. Null input fails at addition with `ArgumentNullException`; no verified backend or unsupported image semantics fail at commit with `NotSupportedException`; encoded overflow fails with `InvalidOperationException`; stale epoch/evidence fails with `InvalidOperationException`. `CommitAsync` remains single-use and returns `ValueTask`; precommit failures emit no bytes and committed output errors retain their existing uncertainty semantics.
 
 ## Work sequence
 

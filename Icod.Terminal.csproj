@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.24.1 requires a successful persistent Kitty upload with a nonzero terminal-assigned image id before persistent raster graphics become usable, and cleans up the verification resource. Generic Kitty support no longer overstates persistent identity support. Release details: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.24.1.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.25.0-alpha develops ordered immediate raster output within session-bound screen transactions. It retains the published 1.24.1 persistent Kitty identity verification and the stable 1.0 compatibility floor. Release plan: https://github.com/uniblab/Icod.Terminal/blob/docs/1.25.0-screen-raster-transactions/Icod.Terminal-1.25.0-Development-Roadmap.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
