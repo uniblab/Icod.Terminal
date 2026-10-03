@@ -35,7 +35,7 @@ public sealed class TerminalCsiOversizedRecoveryTests {
 		RecoveryTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
-		Task<TerminalPixelSize> oversized = session.QueryTerminalPixelSizeAsync(
+		Task<TerminalPixelDimensions> oversized = session.QueryTerminalPixelDimensionsAsync(
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
@@ -51,7 +51,7 @@ public sealed class TerminalCsiOversizedRecoveryTests {
 
 		await Assert.ThrowsAsync<FormatException>( () => oversized );
 
-		Task<TerminalPixelSize> valid = session.QueryCellPixelSizeAsync(
+		Task<TerminalPixelDimensions> valid = session.QueryCellPixelDimensionsAsync(
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 2 );
@@ -61,7 +61,7 @@ public sealed class TerminalCsiOversizedRecoveryTests {
 			Encoding.ASCII.GetBytes( "\u001b[6;20;10t" )
 		);
 
-		TerminalPixelSize result = await valid;
+		TerminalPixelDimensions result = await valid;
 		Assert.Equal( 10, result.Width );
 		Assert.Equal( 20, result.Height );
 		Assert.Equal( 1, transport.MaximumConcurrentReads );

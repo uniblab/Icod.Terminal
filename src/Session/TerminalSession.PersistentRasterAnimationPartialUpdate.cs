@@ -91,6 +91,7 @@ public sealed partial class TerminalSession {
 				"The destination animation frame is no longer current for this session generation."
 			);
 		}
+		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 
 		KittyRasterData raster = KittyRasterAdapter.Adapt( region );
 		KittyGraphicsPersistentAnimationAppendCommitment commitment = new();
@@ -151,7 +152,22 @@ public sealed partial class TerminalSession {
 		this.RecordSemanticBackendEvidence(
 			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
 			TerminalCapabilitySupportState.Verified,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
+		);
+		this.RecordSemanticOperationEvidence(
+			region.PixelFormat switch {
+				TerminalRasterPixelFormat.Rgb24
+					=> TerminalSemanticOperation.RasterFrameRegionUpdateRgb24,
+				TerminalRasterPixelFormat.Rgba32
+					=> TerminalSemanticOperation.RasterFrameRegionUpdateRgba32,
+				_ => throw new InvalidOperationException(
+					"The validated partial-frame format is not recognized."
+				)
+			},
+			TerminalCapabilitySupportState.Verified,
+			TerminalCapabilityEvidenceSource.ProtocolResponse,
+			evidenceGeneration
 		);
 		return TerminalControlMutationResult.Success();
 	}

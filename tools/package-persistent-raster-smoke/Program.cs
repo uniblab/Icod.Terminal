@@ -348,6 +348,17 @@ Require(
 	"TerminalRasterResource must expose the 1.14 OwnershipState snapshot."
 );
 Require(
+	typeof( TerminalRasterResource ).GetProperty(
+		nameof( TerminalRasterResource.PixelWidth ),
+		BindingFlags.Instance | BindingFlags.Public
+	)?.PropertyType == typeof( int )
+		&& typeof( TerminalRasterResource ).GetProperty(
+			nameof( TerminalRasterResource.PixelHeight ),
+			BindingFlags.Instance | BindingFlags.Public
+		)?.PropertyType == typeof( int ),
+	"TerminalRasterResource must expose immutable intrinsic pixel geometry."
+);
+Require(
 	typeof( TerminalRasterPlacement ).GetProperty(
 		nameof( TerminalRasterPlacement.OwnershipState ),
 		BindingFlags.Instance | BindingFlags.Public
@@ -561,6 +572,10 @@ AssertOpaquePublicSurface( typeof( TerminalRasterPlacement ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderOptions ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholder ) );
 AssertOpaquePublicSurface( typeof( TerminalRasterPlaceholderCell ) );
+AssertOpaquePublicSurface( typeof( TerminalPixelDimensions ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterPlanningSnapshot ) );
+AssertOpaquePublicSurface( typeof( TerminalRasterOperationStatus ) );
+PersistentRasterTileAtlasScenario.AssertPublicContract();
 await PersistentRasterCompositionScenario.RunAsync();
 Require(
 	typeof( TerminalRasterPlacement ).GetProperty(

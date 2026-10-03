@@ -9,9 +9,11 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.23.0`.
+Current stable release: `Icod.Terminal 1.24.0`.
 
-The package is published separately after the repository merge. If you are reading this page on a pull-request branch, use the verified package artifact until version 1.23.0 is available on NuGet.
+The package is published separately after the repository merge. If you are reading this page on the 1.24 pull-request branch, use its verified package artifact until version 1.24.0 is available on NuGet.
+
+Version 1.24 adds direct and exactly derived terminal-pixel geometry, intrinsic persistent-resource geometry, advisory local raster-planning snapshots, and focused generation-scoped evidence for acknowledged composition and RGB24/RGBA32 frame-region updates. The [1.24 roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md), [release notes](docs/releases/1.24.0.md), [ownership guide](docs/Persistent-Raster-Ownership.md), and [tile-atlas witness](samples/Icod.Terminal.RasterAnimation.Sample/README.md) define the contract and its Terminal/DCurses/game boundary.
 
 Version 1.23 adds bounded caller-supplied partial frame replacement, completes current legacy Menu phase decoding, and fixes malformed modern-keyboard end-of-input recovery. See the [1.23 roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md), [release notes](docs/releases/1.23.0.md), and [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md).
 
@@ -25,9 +27,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.23 retains every 1.22 public signature and enum value, adding partial frame replacement. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.24 retains every 1.23 public signature and enum value. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
 
-See the [1.23.0 release notes](docs/releases/1.23.0.md) and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.24.0 release notes](docs/releases/1.24.0.md) and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -74,13 +76,13 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install version 1.23.0 after it is published:
+Install the current stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.23.0
+dotnet add package Icod.Terminal --version 1.24.0
 ```
 
-The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. While the pull request is open, use the source tree or its verified package artifact.
+The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
 
 Open a managed terminal session, write application text, and read through the authoritative event path:
 
@@ -193,6 +195,8 @@ The root README describes the current product by capability rather than by the r
 - **Persistent raster animation** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
 - **Animation frame composition (1.22)** — acknowledged bounded pixel composition between known frames of one current resource, with alpha blending or replacement; callers retain placement and playback control.
 - **Partial animation frame replacement (1.23)** — acknowledged RGB24/RGBA32 rectangle replacement in one known frame, with no new frame identity or hidden replay cache.
+- **Raster geometry and planning (1.24)** — live terminal/cell pixel queries, exact caller-selected derivation, immutable resource dimensions, fixed admission ceilings, advisory local ownership counts, and focused generation-scoped operation evidence.
+- **Tile-atlas witness (1.24)** — protocol-neutral two-frame regional editing and placeholder presentation with exercised 1/4/16/64-region workloads, separate package-only measurements, and explicit text fallback; tile retention, damage, layout, and game state remain above Terminal.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
@@ -264,6 +268,35 @@ if ( !result.Succeeded ) {
 }
 ```
 
+In 1.24, query cell pixels directly when possible. If that bounded query times out, a caller may combine a separately observed terminal-pixel size with `GetDimensions()` only when exact integer derivation succeeds:
+
+```csharp
+TerminalPixelDimensions cellPixels;
+try {
+    cellPixels = await session.QueryCellPixelDimensionsAsync(
+        TimeSpan.FromMilliseconds( 250 )
+    );
+} catch ( TimeoutException ) {
+    TerminalPixelDimensions terminalPixels =
+        await session.QueryTerminalPixelDimensionsAsync(
+            TimeSpan.FromMilliseconds( 250 )
+        );
+    TerminalDimensions cells = session.GetDimensions().GetRequiredValue();
+    if ( !TerminalPixelGeometry.TryDeriveCellDimensions(
+        cells, terminalPixels, out cellPixels
+    ) ) {
+        // Select a text presentation; never round or guess cell geometry.
+        return;
+    }
+}
+
+TerminalRasterPlanningSnapshot planning = session.GetRasterPlanningSnapshot();
+```
+
+The observations need not be simultaneous and are never cached. Re-query after resize. A planning snapshot exposes fixed library ceilings and advisory current local counts, not terminal memory, a reservation, or a guarantee that later creation succeeds. The create or append result remains authoritative under concurrency.
+
+After a successful acknowledged mutation, `InspectRasterOperation(...)` can report focused current-generation evidence for frame composition, RGB24 region replacement, or RGBA32 region replacement. Evidence for one operation does not verify another and is cleared by lifecycle-generation advance. Timeout, cancellation, transport loss, a generic rejection, or resource loss does not fabricate `Unsupported` evidence.
+
 Verify persistent raster graphics first; animation mutations have no passive support probe. The actual acknowledged operation determines success. If a committed attempt throws before a trustworthy acknowledgement, destination pixels may have changed: recreate the resource and frames from caller-owned art instead of replaying the operation blindly. Frame tokens must belong to the same current resource, and the caller still owns placement and playback. See the [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) and [ownership contract](docs/Persistent-Raster-Ownership.md) for recovery details.
 
 See [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) for lifecycle, capacity, failure, cleanup, relative-placement, and placeholder guarantees.
@@ -307,6 +340,8 @@ Recommended documentation entry points:
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — prior input and cursor visibility release notes;
 - [`docs/releases/1.22.0.md`](docs/releases/1.22.0.md) — frame composition release notes;
 - [`docs/releases/1.23.0.md`](docs/releases/1.23.0.md) — partial frame replacement and rich-input completion release notes;
+- [`docs/releases/1.24.0.md`](docs/releases/1.24.0.md) — raster geometry, planning, focused evidence, and tile-atlas qualification notes;
+- [`docs/Raster-Tile-Atlas-Measurement-1.24.md`](docs/Raster-Tile-Atlas-Measurement-1.24.md) — package-only 1/4/16/64-region witness and measurement limits;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
 - [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
@@ -314,7 +349,7 @@ Recommended documentation entry points:
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
 - [`docs/Architecture.md`](docs/Architecture.md) — permanent layer and ownership boundaries;
 - [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md) — persistent resource, physical/virtual placement, lifecycle, animation, and frame-sequence contract;
-- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation, 1.22 frame composition, and 1.23 partial replacement walkthrough;
+- [`samples/Icod.Terminal.RasterAnimation.Sample`](samples/Icod.Terminal.RasterAnimation.Sample) — backend-neutral animation, frame mutation, and the 1.24 two-frame tile-atlas witness;
 - [`docs/Capability-Inspection-and-Planning.md`](docs/Capability-Inspection-and-Planning.md) — semantic capability evidence and verification model;
 - [`docs/Input-and-Events.md`](docs/Input-and-Events.md) — authoritative input/event routing;
 - [`docs/Queries-and-Responses.md`](docs/Queries-and-Responses.md) — bounded query/response ownership and correlation;
@@ -322,8 +357,10 @@ Recommended documentation entry points:
 - [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md) — trust, disclosure, and protocol-security boundary;
 - [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md) — stable 1.x compatibility and release policy;
 - [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md) — guidance for pre-1.0 consumers;
-- [`docs/Public-API-Baseline-1.21.md`](docs/Public-API-Baseline-1.21.md) — current frozen API and additive 1.21 fingerprint;
+- [`docs/Public-API-Baseline-1.21.md`](docs/Public-API-Baseline-1.21.md) — historical rich-input and cursor-visibility API fingerprint;
 - [`docs/Public-API-Baseline-1.22.md`](docs/Public-API-Baseline-1.22.md) — additive composition API fingerprint;
+- [`docs/Public-API-Baseline-1.23.md`](docs/Public-API-Baseline-1.23.md) — additive partial-frame and rich-input completion API fingerprint;
+- [`docs/Public-API-Baseline-1.24.md`](docs/Public-API-Baseline-1.24.md) — current frozen API and additive geometry, planning, and focused-evidence fingerprint;
 - [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.

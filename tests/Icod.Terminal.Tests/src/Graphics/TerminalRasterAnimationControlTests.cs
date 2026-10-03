@@ -58,6 +58,18 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await update ).Succeeded );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgb24
+			).Support
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Unknown,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgba32
+			).Support
+		);
 	}
 
 	[Fact]
@@ -124,6 +136,10 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:invalid region\u001b\\" ) );
 		Assert.Equal( TerminalControlStatus.Failed, ( await invalid ).Status );
 		Assert.Equal( TerminalRasterOwnershipStatus.Current, resource.OwnershipState.Status );
+		AssertOperationUnknown(
+			session,
+			TerminalRasterOperation.FrameRegionUpdateRgb24
+		);
 
 		Task<TerminalControlMutationResult> missing = resource.Animation
 			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
@@ -131,6 +147,10 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;ENOENT:missing frame\u001b\\" ) );
 		Assert.Equal( TerminalControlStatus.Unavailable, ( await missing ).Status );
 		Assert.Equal( TerminalRasterOwnershipStatus.Stale, resource.OwnershipState.Status );
+		AssertOperationUnknown(
+			session,
+			TerminalRasterOperation.FrameRegionUpdateRgb24
+		);
 	}
 
 	[Fact]
@@ -294,6 +314,18 @@ public sealed class TerminalRasterAnimationControlTests {
 		Assert.True( ( await composition ).Succeeded );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
 		Assert.Equal( 2, destination.SequenceNumber );
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameComposition
+			).Support
+		);
+		Assert.Equal(
+			TerminalCapabilitySupport.Unknown,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgb24
+			).Support
+		);
 	}
 
 	[Fact]
@@ -386,6 +418,12 @@ public sealed class TerminalRasterAnimationControlTests {
 		);
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await update ).Succeeded );
+		Assert.Equal(
+			TerminalCapabilitySupport.Verified,
+			session.InspectRasterOperation(
+				TerminalRasterOperation.FrameRegionUpdateRgba32
+			).Support
+		);
 	}
 
 	[Fact]
@@ -499,6 +537,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		);
 		Assert.Equal( TerminalControlStatus.Failed, ( await invalid ).Status );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
 
 		Task<TerminalControlMutationResult> storage = resource.Animation
 			.ComposeFrameAsync( resource.Animation.RootFrame, destination, pixel, 0, 0 )
@@ -509,6 +548,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		);
 		Assert.Equal( TerminalControlStatus.Failed, ( await storage ).Status );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
 
 		Task<TerminalControlMutationResult> missing = resource.Animation
 			.ComposeFrameAsync( resource.Animation.RootFrame, destination, pixel, 0, 0 )
@@ -519,6 +559,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		);
 		Assert.Equal( TerminalControlStatus.Unavailable, ( await missing ).Status );
 		Assert.Equal( TerminalRasterOwnershipStatus.Stale, resource.OwnershipState.Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
 	}
 
 	[Fact]
@@ -540,6 +581,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;\u001b\\" ) );
 		await Assert.ThrowsAsync<FormatException>( () => composition );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
 	}
 
 	[Fact]
@@ -614,6 +656,7 @@ public sealed class TerminalRasterAnimationControlTests {
 			)
 		);
 		Assert.Equal( writesAfterDisposal, transport.Writes.Count );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
 	}
 
 	[Fact]
@@ -706,6 +749,32 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task LateCompositionAcknowledgementCannotSeedNextEvidenceGeneration() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource, transport, expectedWriteCount: 2
+		);
+		Task<TerminalControlMutationResult> composition = resource.Animation.ComposeFrameAsync(
+			resource.Animation.RootFrame,
+			destination,
+			new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+			0,
+			0
+		).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+
+		session.InvalidateState();
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
+
+		Assert.Equal( TerminalControlStatus.Unavailable, ( await composition ).Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
+	}
+
+	[Fact]
 	public async Task CommittedCompositionFlushFailureLeavesPixelsUncertainAndFramesKnown() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
@@ -725,6 +794,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		Assert.Equal( 3, transport.Writes.Count );
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
 		Assert.Equal( TerminalRasterOwnershipStatus.Current, resource.OwnershipState.Status );
+		AssertOperationUnknown( session, TerminalRasterOperation.FrameComposition );
 	}
 
 	[Fact]
@@ -824,6 +894,15 @@ public sealed class TerminalRasterAnimationControlTests {
 		TerminalControlResult<TerminalRasterAnimationFrame> result = await append;
 		Assert.Equal( TerminalControlStatus.Available, result.Status );
 		return Assert.IsType<TerminalRasterAnimationFrame>( result.Value );
+	}
+
+	private static void AssertOperationUnknown(
+		TerminalSession session,
+		TerminalRasterOperation operation
+	) {
+		TerminalRasterOperationStatus status = session.InspectRasterOperation( operation );
+		Assert.Equal( TerminalCapabilitySupport.Unknown, status.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.None, status.EvidenceKind );
 	}
 
 	private static async Task<TerminalRasterResource> CreateResourceAsync(

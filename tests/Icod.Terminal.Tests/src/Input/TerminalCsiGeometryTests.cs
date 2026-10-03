@@ -43,7 +43,7 @@ public sealed class TerminalCsiGeometryTests {
 
 	[Fact]
 	public void TerminalPixelResponseUsesHeightThenWidthWireOrder() {
-		TerminalPixelSize size = TerminalCsiGeometryProtocol.ParseTerminalPixelSize(
+		TerminalPixelDimensions size = TerminalCsiGeometryProtocol.ParseTerminalPixelSize(
 			CreateFrame( "\u001b[4;800;1200t" )
 		);
 
@@ -68,7 +68,7 @@ public sealed class TerminalCsiGeometryTests {
 			}
 		);
 
-		TerminalPixelSize size = TerminalCsiGeometryProtocol.ParseCellPixelSize( frame );
+		TerminalPixelDimensions size = TerminalCsiGeometryProtocol.ParseCellPixelSize( frame );
 
 		Assert.Equal( 10, size.Width );
 		Assert.Equal( 20, size.Height );
@@ -109,10 +109,10 @@ public sealed class TerminalCsiGeometryTests {
 
 	[Fact]
 	public void ExactCharacterGridDerivesCellPixels() {
-		bool success = TerminalPixelGeometry.TryDeriveCellPixelSize(
-			new TerminalSize( 120, 40 ),
-			new TerminalPixelSize( 1200, 800 ),
-			out TerminalPixelSize cellSize
+		bool success = TerminalPixelGeometry.TryDeriveCellDimensions(
+			new TerminalDimensions( 120, 40 ),
+			new TerminalPixelDimensions( 1200, 800 ),
+			out TerminalPixelDimensions cellSize
 		);
 
 		Assert.True( success );
@@ -122,9 +122,9 @@ public sealed class TerminalCsiGeometryTests {
 
 	[Fact]
 	public void FractionalCharacterGridDoesNotFabricateCellPixels() {
-		bool success = TerminalPixelGeometry.TryDeriveCellPixelSize(
-			new TerminalSize( 119, 40 ),
-			new TerminalPixelSize( 1200, 800 ),
+		bool success = TerminalPixelGeometry.TryDeriveCellDimensions(
+			new TerminalDimensions( 119, 40 ),
+			new TerminalPixelDimensions( 1200, 800 ),
 			out _
 		);
 

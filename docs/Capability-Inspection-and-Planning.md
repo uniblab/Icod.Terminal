@@ -302,3 +302,11 @@ Every included live observation records against the evidence generation in which
 See the [capability sample walkthrough](../samples/Icod.Terminal.CapabilityPlanning.Sample/README.md) for default inspection, concrete plan reporting, opt-in verification, and headless help.
 
 Keyboard support flags are observed only after that request begins emission. While an older cancelled request still owns its response, a queued request may drain the old flags but cannot treat them as its own positive evidence. The existing Primary DA barrier and transaction coordinator still determine response ownership. A negative Kitty result does not establish unsupported truth for an independent keyboard backend.
+
+## 15. Focused raster-operation evidence — 1.24
+
+`InspectRasterOperation(...)` complements the broad capability surface without adding pixel-format variants to `TerminalCapability`. It reports one of three focused semantic operations: frame composition, RGB24 frame-region replacement, or RGBA32 frame-region replacement. The returned immutable status separates current support knowledge, output-endpoint availability, evidence lifetime, and present usability.
+
+Inspection is side-effect free, and there is deliberately no `VerifyRasterOperationAsync(...)`. The actual mutation and its correlated acknowledgement are the truthful live verification path. A successful composition records only composition evidence; an acknowledged RGB24 update does not verify RGBA32, composition, or the complete animation backend.
+
+Focused live evidence is scoped to the session lifecycle generation. Suspend/resume or other generation advance clears it, and a late acknowledgement owned by an older generation cannot update the new one. Generic rejection, timeout, cancellation, transport loss, malformed response, and missing-resource invalidation remain non-decisive; they do not become permanent `Unsupported` evidence. Call `InspectRasterOperation(...)` again after lifecycle change because earlier statuses remain immutable snapshots.

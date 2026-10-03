@@ -2,6 +2,14 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.24.0
+
+- Adds bounded live terminal/cell pixel queries and exact, side-effect-free cell-pixel derivation without caching, rounding, terminal-brand inference, or a second reader.
+- Exposes immutable intrinsic pixel geometry on accepted persistent raster resources and an advisory local planning snapshot with fixed library ceilings and synchronized ownership/frame counts.
+- Adds focused current-generation evidence for acknowledged frame composition and RGB24/RGBA32 region replacement; evidence remains isolated by operation and expires across lifecycle generation changes.
+- Extends the raster-animation sample and fresh-package consumer with a two-frame, placeholder-backed tile-atlas witness, explicit text fallback, and measured 1/4/16/64-region workloads without claiming remote atomicity or physical rendering.
+- Preserves every 1.23 public signature and enum value, the .NET 8/9/10 target matrix, and production dependencies `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`.
+
 ## 1.23.0
 
 - Adds acknowledged bounded RGB24/RGBA32 replacement of a rectangle in one known persistent animation frame through `UpdateFrameRegionAsync`, with local validation, serialized output, no new frame identity, and conservative committed-failure recovery.

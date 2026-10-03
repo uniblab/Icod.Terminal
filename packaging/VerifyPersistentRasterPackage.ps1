@@ -128,7 +128,42 @@ $requiredMembers = @(
 	'M:Icod.Terminal.TerminalRasterPlacement.DisposeAsync',
 	'M:Icod.Terminal.TerminalSession.CreateRasterResourceAsync(Icod.Terminal.TerminalRasterImage,System.Threading.CancellationToken)',
 	'M:Icod.Terminal.TerminalSession.WriteRasterPlaceholderCellAsync(Icod.Terminal.TerminalRasterPlaceholderCell,System.Threading.CancellationToken)',
-	'M:Icod.Terminal.TerminalSession.WriteRasterPlaceholderCellsAsync(System.ReadOnlyMemory{Icod.Terminal.TerminalRasterPlaceholderCell},System.Threading.CancellationToken)'
+	'M:Icod.Terminal.TerminalSession.WriteRasterPlaceholderCellsAsync(System.ReadOnlyMemory{Icod.Terminal.TerminalRasterPlaceholderCell},System.Threading.CancellationToken)',
+	'T:Icod.Terminal.TerminalPixelDimensions',
+	'M:Icod.Terminal.TerminalPixelDimensions.#ctor(System.Int32,System.Int32)',
+	'P:Icod.Terminal.TerminalPixelDimensions.Width',
+	'P:Icod.Terminal.TerminalPixelDimensions.Height',
+	'T:Icod.Terminal.TerminalPixelGeometry',
+	'M:Icod.Terminal.TerminalPixelGeometry.TryDeriveCellDimensions(Icod.Terminal.TerminalDimensions,Icod.Terminal.TerminalPixelDimensions,Icod.Terminal.TerminalPixelDimensions@)',
+	'M:Icod.Terminal.TerminalSession.QueryTerminalPixelDimensionsAsync(System.TimeSpan,System.Threading.CancellationToken)',
+	'M:Icod.Terminal.TerminalSession.QueryCellPixelDimensionsAsync(System.TimeSpan,System.Threading.CancellationToken)',
+	'P:Icod.Terminal.TerminalRasterResource.PixelWidth',
+	'P:Icod.Terminal.TerminalRasterResource.PixelHeight',
+	'T:Icod.Terminal.TerminalRasterPlanningSnapshot',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumImageDimension',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumPixelCount',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumOwnedPixelBytes',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumPaletteEntries',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumResources',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumPlacements',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumRelativePlacementDepth',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumPlaceholderExtent',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.MaximumAnimationFrames',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.OwnedResourceCount',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.OwnedPlacementCount',
+	'P:Icod.Terminal.TerminalRasterPlanningSnapshot.AllocatedAnimationFrameCount',
+	'M:Icod.Terminal.TerminalSession.GetRasterPlanningSnapshot',
+	'T:Icod.Terminal.TerminalRasterOperation',
+	'F:Icod.Terminal.TerminalRasterOperation.FrameComposition',
+	'F:Icod.Terminal.TerminalRasterOperation.FrameRegionUpdateRgb24',
+	'F:Icod.Terminal.TerminalRasterOperation.FrameRegionUpdateRgba32',
+	'T:Icod.Terminal.TerminalRasterOperationStatus',
+	'P:Icod.Terminal.TerminalRasterOperationStatus.Operation',
+	'P:Icod.Terminal.TerminalRasterOperationStatus.Support',
+	'P:Icod.Terminal.TerminalRasterOperationStatus.EndpointAvailability',
+	'P:Icod.Terminal.TerminalRasterOperationStatus.EvidenceKind',
+	'P:Icod.Terminal.TerminalRasterOperationStatus.IsUsable',
+	'M:Icod.Terminal.TerminalSession.InspectRasterOperation(Icod.Terminal.TerminalRasterOperation)'
 )
 
 $archive = [System.IO.Compression.ZipFile]::OpenRead($packagePath)
@@ -168,6 +203,7 @@ try {
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/Icod.Terminal.PackagePersistentRasterSmoke.csproj') -Destination (Join-Path $smokeRoot 'Icod.Terminal.PackagePersistentRasterSmoke.csproj')
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/Program.cs') -Destination (Join-Path $smokeRoot 'Program.cs')
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/PersistentRasterCompositionScenario.cs') -Destination (Join-Path $smokeRoot 'PersistentRasterCompositionScenario.cs')
+	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'tools/package-persistent-raster-smoke/PersistentRasterTileAtlasScenario.cs') -Destination (Join-Path $smokeRoot 'PersistentRasterTileAtlasScenario.cs')
 	Copy-Item -LiteralPath (Join-Path $repositoryRoot 'samples/Icod.Terminal.RasterAnimation.Sample/RasterAnimationCompositionExample.cs') -Destination (Join-Path $smokeRoot 'RasterAnimationCompositionExample.cs')
 
 	$nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
@@ -214,4 +250,4 @@ try {
 	}
 }
 
-Write-Host "Persistent-raster animation, 1.23 partial replacement, composition, and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."
+Write-Host "Persistent-raster animation, tile-atlas planning, partial replacement, composition, and Unicode-placeholder package verification completed successfully for Icod.Terminal $ExpectedVersion ($Configuration)."

@@ -1,6 +1,6 @@
 # Icod.Terminal.RasterAnimation.Sample
 
-This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, and caller-supplied partial frame replacement added in 1.23.0.
+This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, caller-supplied partial frame replacement added in 1.23.0, and the geometry/planning contracts added in 1.24.0.
 
 Run it with, for example:
 
@@ -8,15 +8,31 @@ Run it with, for example:
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
 ```
 
+Pass `--tile-atlas` to run the 1.24 tile-presentation witness:
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
+```
+
+That path prefers a direct cell-pixel query. If it times out, it explicitly attempts exact derivation from a terminal-pixel query and the current character dimensions. It never rounds. It checks the local planning ceilings before allocating a generated 8-by-8 atlas, reads the accepted resource's intrinsic geometry, creates a placeholder grid, and runs 1-, 4-, 16-, and 64-region damage workloads against two reusable known frames. Every region update is acknowledged before the completed back frame is selected; only then are the front/back references swapped. This is ordered two-frame presentation, not remote atomicity or gapless display.
+
+The planning snapshot is local and advisory: it does not reserve capacity or report terminal memory, and the later create/append result remains authoritative. The preflight accepts focused RGB24 operation evidence that is unknown but presently usable. After the acknowledged regional work, the sample re-inspects that same operation and requires `Verified` support with `LiveObservation` evidence. That generation-scoped result does not prove composition, RGBA32 replacement, physical rendering, or future success.
+
+The interactive path exercises the 1-, 4-, 16-, and 64-region workloads but does not present them as a benchmark. Controlled package-only measurements of operation count, update-frame bytes, acknowledgement and total latency, CPU, and allocations are recorded in the [1.24 tile-atlas measurement report](../../docs/Raster-Tile-Atlas-Measurement-1.24.md).
+
+If geometry, planning, resource creation, placeholders, frame creation, an update, or selection is unavailable, the path prints a text-fallback reason and stops raster work. The generated colors and damage list are test presentation data. They are not a tile-map, camera, scene, asset decoder, or game rule.
+
 The sample keeps the ownership boundary explicit:
 
 ```text
 application / higher-level renderer
-    owns source frames, placement intent, and playback policy
+    owns tiles, source frames, layout, damage, placement intent,
+    text fallback, front/back policy, and playback policy
 
 Icod.Terminal
-    owns opaque terminal image/frame identity, acknowledged transfer,
-    frame-sequence certainty, serialized playback control, and cleanup
+    owns live queries, local admission ceilings/counts, opaque terminal
+    image/frame identity, acknowledged transfer, lifecycle certainty,
+    serialized playback control, and cleanup
 ```
 
 The executable flow:

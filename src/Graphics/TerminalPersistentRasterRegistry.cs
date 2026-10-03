@@ -95,6 +95,15 @@ internal sealed class TerminalPersistentRasterRegistry {
 		}
 	}
 
+	internal (int ResourceCount, int PlacementCount) CapturePlanningCounts() {
+		lock ( this.synchronization ) {
+			return (
+				this.resources.Count,
+				this.GetLivePlacementCountUnsafe()
+			);
+		}
+	}
+
 	internal bool TryReserveResource(
 		out TerminalPersistentRasterResourceState? resource
 	) {

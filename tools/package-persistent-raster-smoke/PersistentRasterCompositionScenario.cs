@@ -111,6 +111,13 @@ internal static class PersistentRasterCompositionScenario {
 			frameHeight,
 			deadline.Token
 		);
+		await PersistentRasterTileAtlasScenario.RunAsync(
+			session,
+			resource,
+			tile,
+			transport,
+			deadline.Token
+		);
 	}
 
 	private static async Task MeasurePartialTransferAsync(
@@ -232,7 +239,7 @@ internal static class PersistentRasterCompositionScenario {
 		if ( !condition ) throw new InvalidOperationException( message );
 	}
 
-	private sealed class ScriptedTerminal : ITerminalInput, ITerminalOutput {
+	internal sealed class ScriptedTerminal : ITerminalInput, ITerminalOutput {
 		private readonly Channel<byte[]> responses = Channel.CreateUnbounded<byte[]>(
 			new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }
 		);
@@ -253,17 +260,22 @@ internal static class PersistentRasterCompositionScenario {
 		}
 
 		internal long EndMeasurement( int expectedWrites ) {
+			long totalBytes = this.EndMeasurementTotal( expectedWrites );
+			Require(
+				0 == totalBytes % expectedWrites,
+				"Measured writes did not have a stable byte count."
+			);
+			return totalBytes / expectedWrites;
+		}
+
+		internal long EndMeasurementTotal( int expectedWrites ) {
 			Require( this.measuring, "No wire measurement is active." );
 			this.measuring = false;
 			Require(
 				expectedWrites == this.measuredWrites,
 				"The measured update did not emit exactly one write per operation."
 			);
-			Require(
-				0 == this.measuredBytes % expectedWrites,
-				"Measured writes did not have a stable byte count."
-			);
-			return this.measuredBytes / expectedWrites;
+			return this.measuredBytes;
 		}
 
 		public async ValueTask<int> ReadAsync(
@@ -319,6 +331,8 @@ internal static class PersistentRasterCompositionScenario {
 					"The package consumer emitted unexpected composition geometry or identities."
 				);
 				++this.Compositions;
+				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
+			} else if ( request.StartsWith( "\u001b_Ga=a,", StringComparison.Ordinal ) ) {
 				this.Publish( "\u001b_Gi=77;OK\u001b\\" );
 			} else if ( !request.StartsWith( "\u001b_Ga=d,", StringComparison.Ordinal ) ) {
 				throw new InvalidOperationException( "Unexpected package witness output: "

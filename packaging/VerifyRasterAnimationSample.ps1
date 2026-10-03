@@ -21,7 +21,12 @@ if (-not (Test-Path -LiteralPath $compositionPath -PathType Leaf)) {
     throw "Raster animation sample composition step '$compositionPath' does not exist."
 }
 $compositionText = [System.IO.File]::ReadAllText($compositionPath)
-$sampleText = $programText + $compositionText
+$tileAtlasPath = Join-Path $repositoryRoot 'samples/Icod.Terminal.RasterAnimation.Sample/RasterTileAtlasExample.cs'
+if (-not (Test-Path -LiteralPath $tileAtlasPath -PathType Leaf)) {
+    throw "Raster animation tile-atlas step '$tileAtlasPath' does not exist."
+}
+$tileAtlasText = [System.IO.File]::ReadAllText($tileAtlasPath)
+$sampleText = $programText + $compositionText + $tileAtlasText
 foreach ($forbidden in @(
     'Kitty',
     'Sixel',
@@ -56,7 +61,21 @@ foreach ($required in @(
     'StopAsync',
     'SelectFrameAsync',
     'RunAsync',
-    'TerminalRasterAnimationPlaybackOptions'
+    'TerminalRasterAnimationPlaybackOptions',
+	'TerminalPixelDimensions',
+	'QueryCellPixelDimensionsAsync',
+	'QueryTerminalPixelDimensionsAsync',
+	'TerminalPixelGeometry.TryDeriveCellDimensions',
+	'GetRasterPlanningSnapshot',
+	'InspectRasterOperation',
+	'TerminalRasterOperation.FrameRegionUpdateRgb24',
+	'TerminalCapabilitySupport.Verified',
+	'TerminalCapabilityEvidenceKind.LiveObservation',
+	'.PixelWidth',
+	'.PixelHeight',
+	'CreatePlaceholderAsync',
+	'GetCell',
+	'WriteRasterPlaceholderCellsAsync'
 )) {
     if (-not $sampleText.Contains($required, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample is missing required semantic API usage '$required'."
@@ -67,6 +86,25 @@ if (-not $programText.Contains('RasterAnimationCompositionExample.ComposeAsync',
 }
 if (-not $programText.Contains('RasterAnimationCompositionExample.VerifyPrerequisiteAsync', [System.StringComparison]::Ordinal)) {
     throw 'The executable raster animation sample must use the tested capability preflight.'
+}
+if (-not $programText.Contains('RasterTileAtlasExample.RunAsync', [System.StringComparison]::Ordinal)) {
+	throw 'The executable raster animation sample must expose the tile-atlas witness.'
+}
+foreach ($workload in @('1', '4', '16', '64')) {
+	if (-not $tileAtlasText.Contains($workload, [System.StringComparison]::Ordinal)) {
+		throw "The tile-atlas witness is missing workload '$workload'."
+	}
+}
+$workloadIndex = $tileAtlasText.IndexOf(
+	'foreach ( int regionCount in Workloads )',
+	[System.StringComparison]::Ordinal
+)
+$verifiedEvidenceIndex = $tileAtlasText.IndexOf(
+	'TerminalCapabilitySupport.Verified',
+	[System.StringComparison]::Ordinal
+)
+if ($workloadIndex -lt 0 -or $verifiedEvidenceIndex -le $workloadIndex) {
+	throw 'The tile-atlas witness must inspect verified focused evidence after its acknowledged workloads.'
 }
 
 Write-Host ''

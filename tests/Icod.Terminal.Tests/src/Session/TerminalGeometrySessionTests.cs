@@ -35,7 +35,7 @@ public sealed class TerminalGeometrySessionTests {
 		GeometryTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 
-		Task<TerminalPixelSize> terminalQuery = session.QueryTerminalPixelSizeAsync(
+		Task<TerminalPixelDimensions> terminalQuery = session.QueryTerminalPixelDimensionsAsync(
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 1 );
@@ -46,9 +46,9 @@ public sealed class TerminalGeometrySessionTests {
 		transport.Publish(
 			Encoding.ASCII.GetBytes( "\u001b[4;800;1200t" )
 		);
-		TerminalPixelSize terminalSize = await terminalQuery;
+		TerminalPixelDimensions terminalSize = await terminalQuery;
 
-		Task<TerminalPixelSize> cellQuery = session.QueryCellPixelSizeAsync(
+		Task<TerminalPixelDimensions> cellQuery = session.QueryCellPixelDimensionsAsync(
 			TimeSpan.FromSeconds( 30 )
 		).AsTask();
 		await WaitForWriteCountAsync( transport, 2 );
@@ -59,7 +59,7 @@ public sealed class TerminalGeometrySessionTests {
 		transport.Publish(
 			Encoding.ASCII.GetBytes( "\u001b[6;20;10t" )
 		);
-		TerminalPixelSize cellSize = await cellQuery;
+		TerminalPixelDimensions cellSize = await cellQuery;
 
 		Assert.Equal( 1200, terminalSize.Width );
 		Assert.Equal( 800, terminalSize.Height );
@@ -68,13 +68,152 @@ public sealed class TerminalGeometrySessionTests {
 		Assert.Equal( 1, transport.MaximumConcurrentReads );
 	}
 
+	[Fact]
+	public async Task MismatchedGeometryReplyRemainsOrdinaryInput() {
+		GeometryTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalPixelDimensions> query = session.QueryTerminalPixelDimensionsAsync(
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b[6;20;10t" )
+		);
+		await Task.Delay( TimeSpan.FromMilliseconds( 50 ) );
+		Assert.False( query.IsCompleted );
+
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b[4;800;1200t" )
+		);
+		Assert.Equal(
+			new TerminalPixelDimensions( 1200, 800 ),
+			await query
+		);
+	}
+
+	[Fact]
+	public async Task LateCellReplyCannotSatisfyLaterTerminalQuery() {
+		GeometryTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		await Assert.ThrowsAsync<TimeoutException>(
+			() => session.QueryCellPixelDimensionsAsync(
+				TimeSpan.FromMilliseconds( 50 )
+			).AsTask()
+		);
+
+		Task<TerminalPixelDimensions> terminal = session.QueryTerminalPixelDimensionsAsync(
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 2 );
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b[6;20;10t" )
+		);
+		await Task.Delay( TimeSpan.FromMilliseconds( 50 ) );
+		Assert.False( terminal.IsCompleted );
+
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b[4;800;1200t" )
+		);
+		Assert.Equal(
+			new TerminalPixelDimensions( 1200, 800 ),
+			await terminal
+		);
+	}
+
+	[Fact]
+	public async Task PreCanceledGeometryQueryWritesNoBytes() {
+		GeometryTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		using CancellationTokenSource cancellation = new();
+		cancellation.Cancel();
+
+		await Assert.ThrowsAnyAsync<OperationCanceledException>(
+			() => session.QueryCellPixelDimensionsAsync(
+				TimeSpan.FromSeconds( 30 ),
+				cancellation.Token
+			).AsTask()
+		);
+		Assert.Equal( 0, transport.WriteCount );
+	}
+
+	[Fact]
+	public async Task ResizeDoesNotRefreshOrCachePixelGeometry() {
+		GeometryTransport transport = new();
+		TestLifecycleSource lifecycle = new();
+		GeometryTerminalControlProvider controlProvider = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			lifecycle,
+			controlProvider
+		);
+
+		Task<TerminalPixelDimensions> first = session.QueryTerminalPixelDimensionsAsync(
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[4;800;1200t" ) );
+		Assert.Equal( new TerminalPixelDimensions( 1200, 800 ), await first );
+
+		controlProvider.Size = new TerminalSize( 121, 40 );
+		lifecycle.Publish( TerminalLifecycleSignalKind.Resize );
+		using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 5 ) );
+		TerminalLifecycleEvent resized = await session.ReadLifecycleEventAsync( timeout.Token );
+		Assert.Equal( TerminalLifecycleEventKind.Resize, resized.Kind );
+		Assert.Equal( 1, transport.WriteCount );
+
+		Task<TerminalPixelDimensions> second = session.QueryTerminalPixelDimensionsAsync(
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 2 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[4;900;1400t" ) );
+		Assert.Equal( new TerminalPixelDimensions( 1400, 900 ), await second );
+	}
+
+	[Fact]
+	public async Task CorrelatedMalformedGeometryReplyFailsWithoutRetry() {
+		GeometryTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+
+		Task<TerminalPixelDimensions> query = session.QueryTerminalPixelDimensionsAsync(
+			TimeSpan.FromSeconds( 30 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b[4;0;1200t" ) );
+
+		await Assert.ThrowsAsync<FormatException>( () => query );
+		Assert.Equal( 1, transport.WriteCount );
+	}
+
+	[Fact]
+	public void ExactDerivationHandlesMaximumValuesWithoutOverflow() {
+		Assert.True(
+			TerminalPixelGeometry.TryDeriveCellDimensions(
+				new TerminalDimensions( 1, 1 ),
+				new TerminalPixelDimensions( int.MaxValue, int.MaxValue ),
+				out TerminalPixelDimensions exact
+			)
+		);
+		Assert.Equal( new TerminalPixelDimensions( int.MaxValue, int.MaxValue ), exact );
+		Assert.False(
+			TerminalPixelGeometry.TryDeriveCellDimensions(
+				new TerminalDimensions( int.MaxValue, 2 ),
+				new TerminalPixelDimensions( int.MaxValue, int.MaxValue ),
+				out _
+			)
+		);
+	}
+
 	private static ValueTask<TerminalSession> OpenSessionAsync(
-		GeometryTransport transport
+		GeometryTransport transport,
+		ITerminalLifecycleSource? lifecycleSource = null,
+		GeometryTerminalControlProvider? controlProvider = null
 	) {
 		ArgumentNullException.ThrowIfNull( transport );
 
 		return TerminalSession.OpenAsync(
-			new GeometryTerminalControlProvider(),
+			controlProvider ?? new GeometryTerminalControlProvider(),
 			TerminalEndpoint.StandardInput,
 			TerminalEndpoint.StandardOutput,
 			transport,
@@ -82,11 +221,32 @@ public sealed class TerminalGeometrySessionTests {
 			new TerminalSessionOptions {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
+				LifecycleSource = lifecycleSource,
+				ObserveLifecycleEvents = false,
 				InputDecoderOptions = new TerminalInputDecoderOptions {
 					EscapeSequenceTimeout = TimeSpan.Zero
 				}
 			}
 		);
+	}
+
+	private sealed class TestLifecycleSource : ITerminalLifecycleSource {
+		private readonly Channel<TerminalLifecycleSignal> signals =
+			Channel.CreateUnbounded<TerminalLifecycleSignal>();
+
+		internal void Publish( TerminalLifecycleSignalKind kind ) {
+			Assert.True( this.signals.Writer.TryWrite( new TerminalLifecycleSignal( kind ) ) );
+		}
+
+		public ValueTask<TerminalLifecycleSignal> ReadAsync(
+			CancellationToken cancellationToken = default
+		) {
+			return this.signals.Reader.ReadAsync( cancellationToken );
+		}
+
+		public void Dispose() {
+			this.signals.Writer.TryComplete();
+		}
 	}
 
 	private static async Task WaitForWriteCountAsync(
@@ -120,6 +280,11 @@ public sealed class TerminalGeometrySessionTests {
 			new TerminalSpeed( 13, 9600 )
 		);
 
+		internal TerminalSize Size {
+			get;
+			set;
+		} = new TerminalSize( 120, 40 );
+
 		public TerminalControlResult<TerminalEndpointObservation> Observe(
 			TerminalEndpoint endpoint
 		) {
@@ -140,9 +305,7 @@ public sealed class TerminalGeometrySessionTests {
 			TerminalEndpoint endpoint
 		) {
 			ArgumentNullException.ThrowIfNull( endpoint );
-			return TerminalControlResult<TerminalSize>.Available(
-				new TerminalSize( 120, 40 )
-			);
+			return TerminalControlResult<TerminalSize>.Available( this.Size );
 		}
 
 		public TerminalControlResult<TerminalModeSnapshot> GetMode(
@@ -184,6 +347,14 @@ public sealed class TerminalGeometrySessionTests {
 		internal int MaximumConcurrentReads {
 			get {
 				return Volatile.Read( ref this.maximumConcurrentReads );
+			}
+		}
+
+		internal int WriteCount {
+			get {
+				lock ( this.sync ) {
+					return this.writes.Count;
+				}
 			}
 		}
 

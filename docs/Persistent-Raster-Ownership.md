@@ -2,7 +2,7 @@
 
 This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources, placements, placeholders, and animations.
 
-Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Versions 1.12 through 1.16 added crop/depth/observation/placeholders and resource-owned animation. Version 1.22 added bounded frame composition. Version 1.23 adds bounded caller-supplied replacement of existing frame pixels.
+Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Versions 1.12 through 1.16 added crop/depth/observation/placeholders and resource-owned animation. Version 1.22 added bounded frame composition. Version 1.23 added bounded caller-supplied replacement of existing frame pixels. Version 1.24 adds pixel/resource geometry, advisory local planning, and focused operation evidence.
 
 Historical tranche and versioned-roadmap documents explain how the design was developed and qualified. This document defines the supported semantic contract consumers should rely on.
 
@@ -755,3 +755,31 @@ The composition request uses the existing serialized graphics query path. A posi
 `TerminalRasterAnimation.UpdateFrameRegionAsync(destination, region, destinationX, destinationY, cancellationToken)` replaces one bounded rectangle in a known frame from immutable caller-owned RGB24 or RGBA32 pixels. The region must fit the resource's intrinsic dimensions. Indexed input, foreign tokens, negative or overflowing coordinates, stale ownership, disposal, and precommit cancellation are rejected before output. The operation creates no frame token and retains no source or delta cache.
 
 The request shares the animation output gate, frame/resource generation checks, and correlated acknowledgement path with append, playback, selection, timing, and composition. A definite rejection preserves known frame ownership. `ENOENT` conservatively invalidates the resource. A timeout, cancellation, or transport failure after the first output frame commits leaves the affected pixels uncertain while only frame identity remains known. Callers should dispose and recreate the resource and its frames from their own source art before retrying.
+
+## 38. Pixel and resource geometry — 1.24
+
+`QueryCellPixelDimensionsAsync(...)` and `QueryTerminalPixelDimensionsAsync(...)` are bounded live queries on the session's authoritative input/query path. They return positive `TerminalPixelDimensions` values or preserve the existing timeout, cancellation, malformed-response, endpoint, and transport behavior. They do not cache a result, infer support from silence, or install another reader.
+
+Callers should prefer the direct cell-pixel query. After a timeout they may query terminal pixels and combine that result with a caller-selected `GetDimensions()` observation through `TerminalPixelGeometry.TryDeriveCellDimensions(...)`. Derivation succeeds only when both observations are positive and each pixel axis divides exactly by its character axis. It never rounds or guesses. The observations are not guaranteed simultaneous; resize makes earlier observations unsuitable for new layout, so callers re-query or select a non-raster fallback.
+
+`TerminalRasterResource.PixelWidth` and `PixelHeight` are immutable intrinsic source dimensions recorded when Terminal accepts the resource. Reading them emits no I/O and retains that descriptive meaning after stale ownership, release, or wrapper disposal. They are not placement dimensions, terminal-cell dimensions, or proof that terminal-side pixels still exist.
+
+## 39. Advisory raster planning — 1.24
+
+`GetRasterPlanningSnapshot()` returns fixed library admission ceilings for one raster's dimensions, pixels, owned bytes, Indexed8 palette, session resources, combined physical/virtual placements, relative-placement depth, placeholder extent, and allocated animation frames. It also returns advisory current local counts for owned resources, combined placements, and allocated frames including in-flight append reservations.
+
+Each count is captured under its owning registry synchronization, but the combined value is not an atomic cross-registry snapshot. It does not query or authenticate terminal memory, reserve capacity, or guarantee a later allocation. Concurrent work and lifecycle cleanup can change counts immediately; the actual create or append result is always authoritative. The snapshot emits no terminal output and exposes no protocol identity.
+
+## 40. Focused raster-operation evidence — 1.24
+
+`InspectRasterOperation(...)` returns current generation-scoped evidence for exactly one `TerminalRasterOperation`: `FrameComposition`, `FrameRegionUpdateRgb24`, or `FrameRegionUpdateRgba32`. Initial support is unknown. A successful correlated acknowledgement for the matching operation records live verified evidence. RGB24 success does not verify RGBA32, composition, or the broad animation backend, and the reverse is equally true.
+
+The status separates support, output-endpoint availability, evidence lifetime, and present usability. Inspection is side-effect free; there is no separate probe because the actual mutation and acknowledgement are the truthful verification path. A generic rejection, timeout, cancellation, transport loss, missing-resource invalidation, or malformed response does not invent unsupported evidence. Lifecycle-generation advance clears prior live evidence, and a late old-generation acknowledgement cannot seed the new generation.
+
+## 41. Tile presentation boundary and fallback — 1.24
+
+The raster-animation sample's `--tile-atlas` path demonstrates a Terminal-only witness: obtain or exactly derive cell pixels, reject locally impossible atlas dimensions through the planning snapshot, create one uniformly partitioned resource and placeholder grid, retain two known frames, edit only the unselected frame, await every region result, select only after all edits succeed, swap caller-owned front/back references, and confirm matching post-acknowledgement RGB24 operation evidence. The interactive path exercises workloads of 1, 4, 16, and 64 regions without presenting them as a benchmark. The separate package-only scripted harness reports operation count, updated pixels, encoded update bytes, first acknowledgement, total time, CPU, and allocations in `Raster-Tile-Atlas-Measurement-1.24.md`.
+
+This ordering is not remote atomicity, rollback, a gapless-frame guarantee, or a batching API. Failure before selection leaves the prior selected frame; committed failure can leave back-frame pixels uncertain, so the caller rebuilds from its own art rather than replaying blindly. Missing or inconsistent geometry, impossible planning, unavailable placeholders, failed mutations, or failed selection selects an explicit text fallback.
+
+The application or `Icod.DCurses` owns tile identities, source assets, cell retention, viewport coordinates, clipping, damage, overlay order, refresh policy, and front/back selection policy. The game owns maps, actors, collision, visibility, time, persistence, and rules. Terminal owns live queries, bounded local admission, opaque resource/placement/frame identities, acknowledged execution, lifecycle certainty, and cleanup. Version 1.24 adds no tile map, scene graph, image decoder, damage tracker, batch edit, Indexed8 regional update, or game loop.

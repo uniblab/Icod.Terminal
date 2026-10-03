@@ -20,13 +20,12 @@
 */
 namespace Icod.Terminal;
 
-using Icod.TermInfo;
-
 /// <summary>
 /// Retains one positive pixel width and height observation.
 /// </summary>
-internal readonly record struct TerminalPixelSize {
-	internal TerminalPixelSize(
+public readonly record struct TerminalPixelDimensions {
+	/// <summary>Initializes positive pixel dimensions.</summary>
+	public TerminalPixelDimensions(
 		int width,
 		int height
 	) {
@@ -41,11 +40,13 @@ internal readonly record struct TerminalPixelSize {
 		this.Height = height;
 	}
 
-	internal int Width {
+	/// <summary>Gets the width in pixels.</summary>
+	public int Width {
 		get;
 	}
 
-	internal int Height {
+	/// <summary>Gets the height in pixels.</summary>
+	public int Height {
 		get;
 	}
 }
@@ -53,28 +54,37 @@ internal readonly record struct TerminalPixelSize {
 /// <summary>
 /// Provides exact geometry derivation helpers without fabricating fractional cell sizes.
 /// </summary>
-internal static class TerminalPixelGeometry {
-	internal static bool TryDeriveCellPixelSize(
-		TerminalSize characterSize,
-		TerminalPixelSize terminalPixelSize,
-		out TerminalPixelSize cellPixelSize
+public static class TerminalPixelGeometry {
+	/// <summary>
+	/// Attempts to derive exact character-cell pixel dimensions from one terminal
+	/// character-grid observation and one terminal pixel observation.
+	/// </summary>
+	/// <remarks>
+	/// This method performs no terminal I/O and never rounds or guesses. The two
+	/// observations are caller-selected and are not guaranteed to be simultaneous.
+	/// </remarks>
+	public static bool TryDeriveCellDimensions(
+		TerminalDimensions terminalDimensions,
+		TerminalPixelDimensions terminalPixelDimensions,
+		out TerminalPixelDimensions cellPixelDimensions
 	) {
-		cellPixelSize = default;
-		if ( 0 >= characterSize.Columns || 0 >= characterSize.Rows ) {
+		cellPixelDimensions = default;
+		if ( 0 >= terminalDimensions.Columns || 0 >= terminalDimensions.Rows
+			|| 0 >= terminalPixelDimensions.Width || 0 >= terminalPixelDimensions.Height ) {
 			return false;
 		}
-		if ( 0 != terminalPixelSize.Width % characterSize.Columns
-			|| 0 != terminalPixelSize.Height % characterSize.Rows ) {
+		if ( 0 != terminalPixelDimensions.Width % terminalDimensions.Columns
+			|| 0 != terminalPixelDimensions.Height % terminalDimensions.Rows ) {
 			return false;
 		}
 
-		int width = terminalPixelSize.Width / characterSize.Columns;
-		int height = terminalPixelSize.Height / characterSize.Rows;
+		int width = terminalPixelDimensions.Width / terminalDimensions.Columns;
+		int height = terminalPixelDimensions.Height / terminalDimensions.Rows;
 		if ( 0 >= width || 0 >= height ) {
 			return false;
 		}
 
-		cellPixelSize = new TerminalPixelSize(
+		cellPixelDimensions = new TerminalPixelDimensions(
 			width,
 			height
 		);
