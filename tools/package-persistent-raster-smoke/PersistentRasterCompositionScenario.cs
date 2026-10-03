@@ -93,7 +93,8 @@ internal static class PersistentRasterCompositionScenario {
 			.ComposeAsync( resource.Animation, tile, deadline.Token );
 		Require( composed.Succeeded, "Package-only frame composition failed." );
 		Require(
-			transport.Probes == 1 && transport.Roots == 1
+			transport.Probes == 1 && transport.PersistentProbes == 1
+				&& transport.Roots == 1
 				&& transport.Appends == 1 && transport.PartialUpdates == 1
 				&& transport.Compositions == 1,
 			"The sample did not execute exactly one verified graphics, partial update, and composition path."
@@ -244,6 +245,7 @@ internal static class PersistentRasterCompositionScenario {
 			new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }
 		);
 		internal int Probes;
+		internal int PersistentProbes;
 		internal int Roots;
 		internal int Appends;
 		internal int PartialUpdates;
@@ -302,7 +304,6 @@ internal static class PersistentRasterCompositionScenario {
 					end - "\u001b_Gi=".Length );
 				this.Publish( $"\u001b_Gi={id};OK\u001b\\\u001b[?64;4c" );
 			} else if ( request.StartsWith( "\u001b_Ga=t,", StringComparison.Ordinal ) ) {
-				++this.Roots;
 				int start = request.IndexOf( ",I=", StringComparison.Ordinal );
 				Require( start >= 0, "Root upload did not carry an opaque image number." );
 				start += 3;
@@ -311,6 +312,11 @@ internal static class PersistentRasterCompositionScenario {
 				Require( end > start, "Root upload image number was malformed." );
 				uint imageNumber = uint.Parse( request.AsSpan( start, end - start ),
 					NumberStyles.None, CultureInfo.InvariantCulture );
+				if ( 0 != ( imageNumber & 0x80000000u ) ) {
+					++this.PersistentProbes;
+				} else {
+					++this.Roots;
+				}
 				this.Publish( $"\u001b_Gi=77,I={imageNumber};OK\u001b\\" );
 			} else if ( request.StartsWith( "\u001b_Ga=f,", StringComparison.Ordinal )
 				&& request.Contains( ",r=", StringComparison.Ordinal ) ) {
