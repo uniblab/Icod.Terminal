@@ -31,6 +31,53 @@ using Xunit;
 /// Verifies the T24 public CSI query family on the T23 transaction substrate.
 /// </summary>
 public sealed class TerminalCsiQueryTests {
+	[Theory]
+	[InlineData( "\u001b[?62;c", 62 )]
+	[InlineData( "\u009b?62;c", 62 )]
+	[InlineData( "\u001b[?64;c", 64 )]
+	public async Task PrimaryDaAcceptsEmptyOptionalAttributeList( string response, int deviceCode ) {
+		CsiTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Task<TerminalPrimaryDeviceAttributes> query = session.QueryPrimaryDeviceAttributesAsync(
+			TimeSpan.FromSeconds( 5 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		// kitty 0.32.2 emits CSI ?62;c: a device code and an empty attribute list.
+		transport.Publish( Encoding.Latin1.GetBytes( response ) );
+		TerminalPrimaryDeviceAttributes result = await query.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( deviceCode, result.DeviceCode );
+		Assert.Empty( result.Attributes );
+		Assert.False( result.HasAttribute( 4 ) );
+	}
+
+	[Theory]
+	[InlineData( "\u001b[?c" )]
+	[InlineData( "\u001b[?;c" )]
+	[InlineData( "\u001b[?;4c" )]
+	[InlineData( "\u001b[?62;;c" )]
+	[InlineData( "\u001b[?62;;4c" )]
+	[InlineData( "\u001b[?62;4;c" )]
+	[InlineData( "\u001b[?62:1;c" )]
+	[InlineData( "\u001b[?1000001;c" )]
+	[InlineData( "\u001b[>62;c" )]
+	[InlineData( "\u001b[?62; c" )]
+	public void PrimaryDaStillRejectsMalformedRequiredFields( string response ) {
+		TerminalResponseFrame frame = new( TerminalResponseFrameKind.Csi, Encoding.ASCII.GetBytes( response ) );
+		Assert.Throws<FormatException>( () => TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( frame ) );
+	}
+
+	[Fact]
+	public void EmptyPrimaryAttributesDoNotDefaultOtherResponseFields() {
+		TerminalResponseFrame primary = new( TerminalResponseFrameKind.Csi, Encoding.ASCII.GetBytes( "\u001b[?62;0c" ) );
+		Assert.Equal( new[] { 0 }, TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( primary ).Attributes );
+		TerminalResponseFrame secondary = new( TerminalResponseFrameKind.Csi, Encoding.ASCII.GetBytes( "\u001b[>1;2;c" ) );
+		TerminalResponseFrame cursor = new( TerminalResponseFrameKind.Csi, Encoding.ASCII.GetBytes( "\u001b[1;R" ) );
+		TerminalResponseFrame status = new( TerminalResponseFrameKind.Csi, Encoding.ASCII.GetBytes( "\u001b[;n" ) );
+		Assert.Throws<FormatException>( () => TerminalCsiQueryProtocol.ParseSecondaryDeviceAttributes( secondary ) );
+		Assert.Throws<FormatException>( () => TerminalCsiQueryProtocol.ParseCursorPosition( cursor ) );
+		Assert.Throws<FormatException>( () => TerminalCsiQueryProtocol.ParseDeviceStatus( status ) );
+	}
+
 	[Fact]
 	public async Task PrimaryDeviceAttributesUsesTypedSevenBitTransaction() {
 		CsiTransport transport = new();

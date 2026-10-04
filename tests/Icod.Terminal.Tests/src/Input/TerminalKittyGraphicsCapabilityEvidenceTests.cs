@@ -36,6 +36,31 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		"\u001b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\u001b\\\u001b[c";
 
 	[Theory]
+	[InlineData( true )]
+	[InlineData( false )]
+	public async Task PublicRasterVerificationAcceptsKittyEmptyDaAttributesWithoutInventingSupport( bool graphicsReply ) {
+		ProbeTransport transport = new();
+		ManualMonotonicClock clock = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		Task<TerminalCapabilityStatus> verification = session.VerifyCapabilityAsync( TerminalCapability.RasterGraphics ).AsTask();
+		await transport.WaitForRequestAsync().WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		string request = Encoding.ASCII.GetString( transport.GetRequest() );
+		System.Text.RegularExpressions.Match id = System.Text.RegularExpressions.Regex.Match( request, "i=([0-9]+)," );
+		Assert.True( id.Success );
+		string response = graphicsReply ? "\u001b_Gi=" + id.Groups[ 1 ].Value + ";OK\u001b\\" : string.Empty;
+		transport.Publish( Encoding.ASCII.GetBytes( response + "\u001b[?62;c" ) );
+		TerminalCapabilityStatus result = await verification.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( graphicsReply, result.IsUsable );
+		Assert.Equal( graphicsReply ? TerminalCapabilitySupport.Verified : TerminalCapabilitySupport.Unsupported, result.Support );
+		Assert.Equal( TerminalCapabilitySupportState.Unsupported, ResolveSixelEvidence( session ).State );
+		if ( graphicsReply ) {
+			TerminalSemanticBackendResolution routing = session.ResolveSemanticBackend( TerminalSemanticOperation.RasterGraphics );
+			Assert.NotNull( routing.SelectedCandidate );
+			Assert.Equal( TerminalProtocolBackend.ApcKittyGraphics, routing.SelectedCandidate.Value.Backend );
+		}
+	}
+
+	[Theory]
 	[InlineData( TerminalCapability.KeyboardReporting )]
 	[InlineData( TerminalCapability.RasterGraphics )]
 	[InlineData( TerminalCapability.PersistentRasterGraphics )]
