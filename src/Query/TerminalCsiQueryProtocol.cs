@@ -95,7 +95,8 @@ internal static class TerminalCsiQueryProtocol {
 		int[] parameters = ParseParameters(
 			frame,
 			(byte)'c',
-			(byte)'?'
+			(byte)'?',
+			allowEmptyPrimaryAttributes: true
 		);
 		if ( 0 == parameters.Length ) {
 			throw new FormatException(
@@ -181,7 +182,8 @@ internal static class TerminalCsiQueryProtocol {
 	private static int[] ParseParameters(
 		TerminalResponseFrame frame,
 		byte finalByte,
-		byte? privateMarker
+		byte? privateMarker,
+		bool allowEmptyPrimaryAttributes = false
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
 		TerminalCsiSyntax syntax = TerminalCsiSyntax.Parse( frame );
@@ -201,6 +203,21 @@ internal static class TerminalCsiQueryProtocol {
 			);
 		} else {
 			TerminalCsiParameterSemantics.RequireNoPrivateParameterBytes( syntax );
+		}
+
+		// Older kitty versions report a device code followed by an empty DA1
+		// attribute list. This does not default empty fields in other responses.
+		if ( allowEmptyPrimaryAttributes
+			&& 2 == syntax.Parameters.Length
+			&& syntax.Parameters.Span[ 1 ].RawBytes.IsEmpty ) {
+			TerminalCsiNumericComponent device = TerminalCsiParameterSemantics.GetNumericParameter(
+				syntax,
+				0,
+				MaximumParameterValue
+			);
+			if ( device.HasValue ) {
+				return [ device.Value ];
+			}
 		}
 
 		return TerminalCsiParameterSemantics.GetRequiredNumericParameters(

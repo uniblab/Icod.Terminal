@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** 1.25.0-alpha.2 is published with cursor hardening and Sixel write coalescing. [PR #75](https://github.com/uniblab/Icod.Terminal/pull/75) prepares alpha.3 Unix byte-input correction. Physical kitty acceptance and stable closure remain open.
+**Status:** 1.25.0-alpha.3 is published; the maintainer accepts immediate WSL2/kitty input and clean exit. [PR #76](https://github.com/uniblab/Icod.Terminal/pull/76) prepares alpha.4 to accept kitty's empty optional DA1 attribute list. Physical kitty graphics acceptance and stable closure remain open.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -188,6 +188,37 @@ The observed graphics parser errors are not independently claimed fixed.
 The alpha.3 release includes version metadata, package release notes, changelog,
 and exact-version curated `docs/releases/1.25.0-alpha.3.md`. Merge/tag/publication
 remain maintainer actions.
+
+### Kitty DA1 compatibility: 1.25.0-alpha.4
+
+After the alpha.3 update, the maintainer confirmed correct input and clean exit in
+WSL2/kitty, but forced DCurses raster mode still selected TEXT. The captured
+exception identifies `ParsePrimaryDeviceAttributes` inside the ordinary Kitty
+graphics probe: `A CSI response contains an empty numeric parameter.`
+Kitty 0.32.2
+[source](https://github.com/kovidgoyal/kitty/blob/v0.32.2/kitty/screen.c)
+emits `CSI ?62;c`, containing a device code and an empty optional attribute list.
+
+PR #76 is limited to this DA1 shape. Accept exactly a numeric device code followed
+by one empty attribute-list field and return an empty `Attributes` collection.
+Apply the rule to any valid device code, never to a terminal brand. Keep the
+shared required-numeric semantics strict for all other response forms. Explicit
+zero attributes remain explicit; empty fields within a populated list, multiple
+empty fields, missing device codes, subparameters and oversized values still fail.
+
+Implementation and acceptance sequence:
+
+1. Reproduce the 7-bit/C1 DA1 reply through public queries and ordinary raster
+   verification. Without a graphics reply, the empty DA1 list must not invent
+   Kitty or Sixel support. Malformed DA1 and non-DA1 fixtures retain rejection.
+2. Add a private, DA1-only parsing policy after syntax/framing validation. No
+   public API, dependency, native input, image encoding or output changes.
+3. Prepare alpha.4 version metadata, package notes, changelog, README and curated
+   `docs/releases/1.25.0-alpha.4.md`. Record regression and fixed CI in PR #76.
+4. After maintainer publication, update DCurses and repeat forced FRAME and default
+   ATLAS selection in kitty. Live rendering, resize, help and cleanup remain
+   separate acceptance; the earlier payload-size report is not independently
+   claimed fixed by this parser correction.
 
 ## Scope limits
 
