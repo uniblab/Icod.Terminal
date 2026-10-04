@@ -96,7 +96,15 @@ static async Task RunParentAsync( TerminalInputMode mode ) {
 	using CancellationTokenSource deadline = new( TimeSpan.FromSeconds( 20 ) );
 	StringBuilder output = new();
 	try {
-		await ExpectAsync( "READY|" );
+		// Console initialization may emit keypad setup before application input.
+		// Establish the boundary first; every byte after it is checked exactly.
+		while ( !output.ToString().EndsWith( "READY|", StringComparison.Ordinal ) ) {
+			char[] initial = new char[1];
+			int count = await process.StandardOutput.ReadAsync( initial.AsMemory(), deadline.Token );
+			Require( count == 1, "Child exited before READY." );
+			output.Append( initial[0] );
+			Require( output.Length < 4096, "Unexpectedly large startup output." );
+		}
 		await SendAsync( "d" );
 		await ExpectAsync( "KEY|" );
 		// Split a UTF-8 scalar across writes to exercise the byte decoder.
