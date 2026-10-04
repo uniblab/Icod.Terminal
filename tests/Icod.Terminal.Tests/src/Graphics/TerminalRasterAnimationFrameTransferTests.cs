@@ -82,7 +82,6 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 		Assert.True( capability.IsUsable );
 	}
 
-
 	[Fact]
 	public async Task LargeAppendRetainsBoundedAcknowledgementWindowBeyondSmallControlDeadline() {
 		ManualMonotonicClock clock = new();
