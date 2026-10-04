@@ -28,8 +28,13 @@ if ( OperatingSystem.IsWindows() ) {
 	return 0;
 }
 if ( args.Length > 0 && args[0] == "--child" ) {
-	await RunChildAsync( Enum.Parse<TerminalInputMode>( args[1] ) );
-	return 0;
+	try {
+		await RunChildAsync( Enum.Parse<TerminalInputMode>( args[1] ) );
+		return 0;
+	} catch ( Exception exception ) {
+		File.WriteAllText( args[2], exception.ToString() );
+		return 1;
+	}
 }
 foreach ( TerminalInputMode mode in new[] { TerminalInputMode.CBreak, TerminalInputMode.Raw } ) {
 	await RunParentAsync( mode );
@@ -73,6 +78,7 @@ static async Task ExpectCharacterAsync( TerminalSession session, char expected )
 
 static async Task RunParentAsync( TerminalInputMode mode ) {
 	string assembly = Assembly.GetExecutingAssembly().Location;
+	string failurePath = Path.GetTempFileName();
 	ProcessStartInfo start = new( "script" ) {
 		RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
 		UseShellExecute = false
@@ -82,7 +88,7 @@ static async Task RunParentAsync( TerminalInputMode mode ) {
 	if ( OperatingSystem.IsLinux() ) {
 		start.ArgumentList.Add( "-e" );
 		start.ArgumentList.Add( "-c" );
-		start.ArgumentList.Add( "dotnet " + Quote( assembly ) + " --child " + mode );
+		start.ArgumentList.Add( "dotnet " + Quote( assembly ) + " --child " + mode + " " + Quote( failurePath ) );
 		start.ArgumentList.Add( "/dev/null" );
 	} else {
 		start.ArgumentList.Add( "/dev/null" );
@@ -90,6 +96,7 @@ static async Task RunParentAsync( TerminalInputMode mode ) {
 		start.ArgumentList.Add( assembly );
 		start.ArgumentList.Add( "--child" );
 		start.ArgumentList.Add( mode.ToString() );
+		start.ArgumentList.Add( failurePath );
 	}
 	using Process process = Process.Start( start ) ?? throw new InvalidOperationException( "Cannot start script." );
 	Task<string> errors = process.StandardError.ReadToEndAsync();
@@ -123,12 +130,13 @@ static async Task RunParentAsync( TerminalInputMode mode ) {
 		Require( process.ExitCode == 0, $"Child exited {process.ExitCode}: {await errors}" );
 		Console.WriteLine( $"{mode}: passed" );
 	} catch ( Exception exception ) {
-		throw new InvalidOperationException( $"Unix input ({mode}) failed. Captured output: {output}", exception );
+		throw new InvalidOperationException( $"Unix input ({mode}) failed. Captured output: {output}. Child failure: {File.ReadAllText( failurePath )}", exception );
 	} finally {
 		if ( !process.HasExited ) {
 			process.Kill( entireProcessTree: true );
 			await process.WaitForExitAsync();
 		}
+		File.Delete( failurePath );
 	}
 
 	async Task SendAsync( string text ) {
