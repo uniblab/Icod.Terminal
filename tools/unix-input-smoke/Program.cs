@@ -61,7 +61,8 @@ static async Task RunChildAsync( TerminalInputMode mode ) {
 	var restored = provider.GetMode( TerminalEndpoint.StandardInput ).GetRequiredValue();
 	Require( baseline.InputFlags == restored.InputFlags && baseline.OutputFlags == restored.OutputFlags
 		&& baseline.ControlFlags == restored.ControlFlags && baseline.LocalFlags == restored.LocalFlags
-		&& baseline.ControlCharacters.SequenceEqual( restored.ControlCharacters ), "Terminal mode was not restored." );
+		&& baseline.ControlCharacters.SequenceEqual( restored.ControlCharacters ),
+		$"Terminal mode was not restored. Before: {Describe( baseline )}; after: {Describe( restored )}" );
 	// The cancelled wait must not leave a reader stealing the next session's input.
 	await using ( TerminalSession reopened = await TerminalSession.OpenAsync() ) {
 		await reopened.WriteTextAsync( "REOPEN|" );
@@ -156,6 +157,8 @@ static async Task RunParentAsync( TerminalInputMode mode ) {
 }
 
 static string Quote( string value ) => "'" + value.Replace( "'", "'\"'\"'", StringComparison.Ordinal ) + "'";
+static string Describe( TerminalModeSnapshot mode ) =>
+	$"iflag={mode.InputFlags:X}, oflag={mode.OutputFlags:X}, cflag={mode.ControlFlags:X}, lflag={mode.LocalFlags:X}, cc={Convert.ToHexString( mode.ControlCharacters.ToArray() )}";
 static void Require( bool condition, string message ) {
 	if ( !condition ) throw new InvalidOperationException( message );
 }
