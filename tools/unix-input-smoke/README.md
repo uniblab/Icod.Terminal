@@ -18,5 +18,10 @@ flags and control characters, and opens a new session to check that an old reade
 does not steal its key. Both CBreak and Raw modes run under an external deadline.
 No physical terminal graphics are claimed by this test.
 
+On macOS, the restoration comparison excludes only `PENDIN` (`0x20000000`).
+Darwin's [terminal mode setter](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/tty.c)
+sets this transient pending-input state when restoring `ICANON`; it is not a
+configuration flag. All other flags and every control character must match.
+
 `packaging/VerifyRuntime.ps1` runs this regression on .NET 8, 9, and 10 on Unix
 runners. The tool has a source project reference and is not a shipped package.

@@ -59,8 +59,12 @@ static async Task RunChildAsync( TerminalInputMode mode ) {
 	}
 	await session.DisposeAsync().AsTask().WaitAsync( TimeSpan.FromSeconds( 3 ) );
 	var restored = provider.GetMode( TerminalEndpoint.StandardInput ).GetRequiredValue();
+	// Darwin sets PENDIN when restoring ICANON; this is transient kernel input
+	// state, not a configuration change. Compare every other flag and all cc bytes.
+	ulong transientLocalFlags = OperatingSystem.IsMacOS() ? 0x20000000UL : 0;
 	Require( baseline.InputFlags == restored.InputFlags && baseline.OutputFlags == restored.OutputFlags
-		&& baseline.ControlFlags == restored.ControlFlags && baseline.LocalFlags == restored.LocalFlags
+		&& baseline.ControlFlags == restored.ControlFlags
+		&& (baseline.LocalFlags & ~transientLocalFlags) == (restored.LocalFlags & ~transientLocalFlags)
 		&& baseline.ControlCharacters.SequenceEqual( restored.ControlCharacters ),
 		$"Terminal mode was not restored. Before: {Describe( baseline )}; after: {Describe( restored )}" );
 	// The cancelled wait must not leave a reader stealing the next session's input.
