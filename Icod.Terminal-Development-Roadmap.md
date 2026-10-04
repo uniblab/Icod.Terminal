@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
 - **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** 1.25.0-alpha is published; PR #73 prepares 1.25.0-alpha.1 to correct newline-dependent cursor planning exposed by downstream live testing
+- **Development status:** 1.25.0-alpha.1 is published; PR #74 prepares alpha.2 to coalesce prepared Sixel screen images after downstream progressive-redraw observations
 - **Active development target:** `1.25.0` — Ordered screen raster transactions for immediate Kitty/Sixel presentation
 - **Selected scope:** Add a backend-neutral raster item to the session-bound screen output transaction, with precommit capability/encoding validation and honest cursor/output uncertainty
 - **Stable compatibility floor:** `1.0.0`

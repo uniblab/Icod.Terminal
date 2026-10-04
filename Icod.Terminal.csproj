@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.25.0-alpha.1 corrects relative cursor planning on hosts that translate newlines, retaining ordered immediate Kitty/Sixel raster transactions and the stable 1.0 compatibility floor. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.25.0-alpha.1.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.25.0-alpha.2 coalesces prepared Sixel screen images into one bounded transport write to reduce progressive redraw, preserving exact wire bytes, precommit checks, and committed-failure cleanup. Includes alpha.1 newline-safe cursor planning. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.25.0-alpha.2.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
