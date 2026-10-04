@@ -24,9 +24,32 @@ namespace Icod.Terminal;
 /// Creates and owns persistent terminal-resident raster resources for a live session.
 /// </summary>
 public sealed partial class TerminalSession {
+	private const int PersistentRasterTransferBytesPerSecond = 512 * 1024;
+
 	private static TimeSpan PersistentRasterCreationTimeout {
 		get;
 	} = TimeSpan.FromSeconds( 1 );
+
+	private static TimeSpan GetPersistentRasterTransferTimeout(
+		KittyRasterData raster
+	) {
+		ArgumentNullException.ThrowIfNull( raster );
+
+		long encodedByteCount = checked(
+			( ( raster.Bytes.Length + 2L ) / 3L ) * 4L
+		);
+		long transferSeconds = checked(
+			( encodedByteCount + PersistentRasterTransferBytesPerSecond - 1L )
+				/ PersistentRasterTransferBytesPerSecond
+		);
+		TimeSpan timeout = PersistentRasterCreationTimeout
+			+ TimeSpan.FromSeconds( transferSeconds )
+		;
+		return timeout <= TerminalQueryTransactionManager.MaximumCallerTimeout
+			? timeout
+			: TerminalQueryTransactionManager.MaximumCallerTimeout
+		;
+	}
 
 	private readonly TerminalPersistentRasterRegistry persistentRasterRegistry = new();
 
@@ -100,7 +123,7 @@ public sealed partial class TerminalSession {
 					resourceState.ImageNumber
 				),
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
-				PersistentRasterCreationTimeout,
+				GetPersistentRasterTransferTimeout( raster ),
 				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
 				cancellationToken,
 				abandonedCleanup: () => {
