@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** `1.25.0-alpha.5` is merged and published. Graphics development and further Kitty live qualification are on hold at the maintainer's direction (2026-10-04). The missing animation-upload ACK is unresolved; persistent-ATLAS live acceptance is deferred and stable 1.25 closure remains pending.
+**Status:** Stable `1.25.0` source is prepared in [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) from published alpha.5 behavior. Exact stable-version qualification is required before integration. Graphics development remains on hold; the missing Kitty animation-upload ACK is unresolved and persistent-ATLAS live acceptance is deferred.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -26,7 +26,7 @@ confirmed evidence, limits, and conditions for a separately approved reopening.
 This decision supersedes the live-test follow-ups below that ask for additional
 Kitty retests. It does not mark those checks accepted or automatically close T2507
 and T2508. Existing ordinary Kitty/Sixel selection and caller-owned text fallback
-remain available; stable release disposition is a separate maintainer decision.
+remain available; the subsequent maintainer instruction to finish 1.25 authorizes stable release preparation with these limits retained.
 
 ## Release decision
 
@@ -279,4 +279,19 @@ No Sixel persistent resource, Unicode placeholder, frame copy/update/select, spa
 | Alpha.5 transfer-deadline regression | [run 37216285886](https://github.com/uniblab/Icod.Terminal/actions/runs/37216285886) | Matching large root/frame fixture fails at the intended two-second pending assertion under the fixed one-second deadline |
 | Alpha.5 transfer-deadline fix | [run 37216475686](https://github.com/uniblab/Icod.Terminal/actions/runs/37216475686) | Windows/Linux/macOS runtime, all package shards and validated package artifact pass |
 | Graphics hold, 2026-10-04 | Maintainer decision; [hold record](docs/Graphics-Development-Hold.md) | Alpha.5 published; missing Kitty animation-upload ACK unresolved; further graphics development/live qualification deferred |
-| Stable candidate | Pending | Separate release disposition and exact-head qualification required; no promotion made by the hold |
+| Stable source preparation | [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) / [closure record](docs/T2508-1.25-Stable-Source-Closure.md) | Stable metadata and consumer release notes; exact stable-version matrix required; no runtime change or Kitty workaround |
+
+## Stable release preparation — 2026-10-04
+
+The maintainer subsequently directs completion of 1.25.0. Promote the published
+alpha.5 implementation to stable package metadata with the documented graphics
+limits, without reopening graphics development. This decision supersedes any
+older requirement to obtain persistent Kitty ATLAS live acceptance before stable
+preparation; it does not count that acceptance as passed.
+
+The [closure record](docs/T2508-1.25-Stable-Source-Closure.md) defines the scoped
+release boundary and exact-head gates. Runtime, package/API/XML, fresh consumer
+and dependency checks must all pass at the stable-version source in PR #78.
+Merge, mainline Release validation, tag and publication remain separate maintainer
+steps after qualification. Historical alpha checkpoints remain evidence for those
+versions, rather than stable-source proof.

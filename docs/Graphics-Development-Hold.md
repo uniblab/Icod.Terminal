@@ -13,7 +13,7 @@ currently be properly tested and qualified.
   parsing correction, alpha.3's immediate Unix byte input, and the earlier cursor
   and coalesced Sixel corrections.
 - No version bump, runtime change, dependency change, merge or publication is
-  implied by this documentation decision. Stable 1.25 closure remains pending.
+  implied by this documentation decision. The subsequent instruction to finish 1.25 authorizes stable release preparation with these limits retained; exact-head qualification and publication remain separate steps.
 
 ## Confirmed evidence and remaining limits
 
@@ -69,8 +69,10 @@ clean-config/current-version observations and actual upload/control/rendering
 results before making stronger support claims; retain controlled-failure and
 uncertainty semantics until those results justify a reviewed change.
 
-Stable 1.25 promotion, exact release-head qualification and treatment of the known
-graphics limits require a separate release decision. The hold itself neither
+The maintainer subsequently requested completion of stable 1.25.0. Its release
+preparation retains these graphics limits and the alpha.5 runtime implementation;
+see [the closure record](T2508-1.25-Stable-Source-Closure.md). Exact release-head
+qualification, mainline validation and publication remain required. The hold itself neither
 accepts the untested persistent path nor forbids release with explicitly documented
 limits. Icod.DCurses can retain its existing published alpha.5 dependency while
 its own release disposition is reviewed.

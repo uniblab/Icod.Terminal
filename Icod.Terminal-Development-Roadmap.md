@@ -6,8 +6,8 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
 - **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** Graphics development is on hold by maintainer decision (2026-10-04). `1.25.0-alpha.5` is merged and published; Kitty 0.32.2 persistent-animation ACK failure remains unresolved, and live persistent-ATLAS acceptance is deferred. See [graphics development hold](docs/Graphics-Development-Hold.md).
-- **Active development target:** No further graphics feature implementation selected; retain the published `1.25.0-alpha.5` behavior and existing contracts. Stable 1.25 closure remains a separate decision.
+- **Development status:** Stable `1.25.0` source is being qualified in [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78), carrying the published alpha.5 implementation with documented graphics limits. Further graphics development remains on hold; Kitty persistent-ATLAS acceptance is deferred. See [the closure record](docs/T2508-1.25-Stable-Source-Closure.md).
+- **Active development target:** Complete stable `1.25.0` release preparation; no further graphics feature implementation selected.
 - **Selected scope:** Preserve the implemented ordered Kitty/Sixel screen raster transactions; defer graphics expansion, Kitty-specific changes and further live qualification.
 - **Stable compatibility floor:** `1.0.0`
 
@@ -99,7 +99,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.23.0  partial frame transfer + rich-input completion           PUBLISHED
 1.24.0  raster geometry and planning contracts                 PUBLISHED
 1.24.1  persistent Kitty identity verification                PUBLISHED
-1.25.0  ordered screen raster transactions                    ALPHA.5 / GRAPHICS HOLD
+1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -436,7 +436,7 @@ The governing rule is:
 
 > Terminal owns raster backend evidence, protocol-private encoding, bounded transaction preflight, serialized output, and commitment uncertainty. DCurses owns raster-surface placement, source-image provision, clipping, overlay policy, damage, and refresh. Applications own assets and viewport content.
 
-The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Merged PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) introduced the alpha API, tests, sample, package verifier and release documentation. Follow-up PRs #73–#77 are merged; alpha.5 is published. Further graphics development and Kitty live qualification are now on hold; stable closure remains pending.
+The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Merged PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) introduced the alpha API, tests, sample, package verifier and release documentation. Follow-up PRs #73–#77 are merged; alpha.5 is published. Further graphics development and Kitty live qualification are now on hold; stable source qualification now proceeds in PR #78 with those limits retained.
 
 ```text
 T2500  published baseline, placement assumptions, and API-regret gate

@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.25.0-alpha.5 gives bounded size-aware deadlines to persistent Kitty raster uploads, animation-frame appends and partial-frame edits while retaining one-second control-command deadlines. Includes alpha.4 Kitty DA1 compatibility and the earlier 1.25 prerelease corrections. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.25.0-alpha.5.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.25.0 adds ordered complete raster images to screen transactions and includes immediate Unix byte input, newline-safe cursor planning, coalesced Sixel writes, Kitty DA1 compatibility and bounded persistent-transfer deadlines. Graphics expansion is on hold; Kitty 0.32.2 chunked animation-upload ACK failure remains unresolved. Preserves the stable 1.x compatibility floor. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.25.0.md. Compatibility: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

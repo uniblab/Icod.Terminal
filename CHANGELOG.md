@@ -2,9 +2,9 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
-## 1.25.0 (development)
+## 1.25.0
 
-- Graphics development and further Kitty live qualification are on hold by maintainer decision (2026-10-04). Published alpha.5 behavior and public contracts remain intact; no workaround is added. Persistent-ATLAS live acceptance is deferred, ordinary-frame flicker remains documented, and stable closure is pending. See [graphics development hold](docs/Graphics-Development-Hold.md).
+- Graphics development and further Kitty live qualification are on hold by maintainer decision (2026-10-04). Published alpha.5 behavior and public contracts remain intact; no workaround is added. Persistent-ATLAS live acceptance is deferred, ordinary-frame flicker remains documented, and stable release preparation retains these limits. See [graphics development hold](docs/Graphics-Development-Hold.md).
 
 - `1.25.0-alpha.5` gives chunked persistent Kitty raster resource uploads, animation-frame appends and partial-frame edits a bounded deadline derived from their Base64 wire size. Small control-only transactions retain their one-second deadline, and all query deadlines remain capped at one minute. This allows more bounded transfer time before awaiting a correlated acknowledgement. The live Kitty 0.32.2 retest still times out because a chunked animation upload receives no ACK; alpha.5 does not resolve that defect.
 
