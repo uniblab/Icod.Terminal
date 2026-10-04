@@ -2,6 +2,20 @@
 
 This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, caller-supplied partial frame replacement added in 1.23.0, and the geometry/planning contracts added in 1.24.0.
 
+## Current live-test limitation
+
+Graphics development and further Kitty qualification are on hold (2026-10-04).
+The downstream Kitty 0.32.2 test confirms that a documented chunked animation-frame
+upload can create the frame without returning its ACK. Published Terminal alpha.5
+bounds transfer waits but cannot make that missing response arrive. A graphics
+resource probe or scripted-terminal test does not establish successful live
+animation, composition, selection or playback in this environment.
+
+This sample remains available with its existing behavior and cleanup contract.
+Do not treat a timeout as proof that no pixels changed, or infer persistent support
+from ordinary Kitty/Sixel output. No Kitty workaround is included. See
+[the hold record and reproducer](../../docs/Graphics-Development-Hold.md).
+
 Run it with, for example:
 
 ```text

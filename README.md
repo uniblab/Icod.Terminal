@@ -9,11 +9,22 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.24.1`.
+Current stable release: `Icod.Terminal 1.25.0`.
 
-The [1.25 development branch](Icod.Terminal-1.25.0-Development-Roadmap.md) adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a complete, caller-owned image in the same ordered commit as cursor plans and text. Call `VerifyCapabilityAsync(TerminalCapability.RasterGraphics)` before building the transaction. The commit uses already verified Kitty Graphics or Sixel evidence, encodes all frames within the aggregate 64 MiB bound before output, and does not infer placement or cursor position after the raster. The latest published prerelease is `1.25.0-alpha.4`, including kitty DA1 compatibility and the earlier immediate-input, cursor and Sixel corrections. [PR #77](https://github.com/uniblab/Icod.Terminal/pull/77) prepares alpha.5 with bounded size-aware deadlines for persistent Kitty raster transfers.
+Version 1.25 adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a complete, caller-owned image in the same ordered commit as cursor plans and text. Call `VerifyCapabilityAsync(TerminalCapability.RasterGraphics)` before building the transaction. The commit uses already verified Kitty Graphics or Sixel evidence, encodes all frames within the aggregate 64 MiB bound before output, and does not infer placement or cursor position after the raster. It includes the alpha.1–alpha.5 corrections: newline-safe cursor planning, coalesced Sixel writes, immediate Unix byte input, Kitty DA1 compatibility and bounded persistent-transfer deadlines. See the [1.25 release notes](docs/releases/1.25.0.md).
 
-The alpha.5 candidate derives persistent upload, animation-append and partial-frame-edit deadlines from their Base64 wire size, adds one second for correlated acknowledgement, and caps the result at one minute. Small control-only transactions remain at one second. See the [alpha.5 release notes](docs/releases/1.25.0-alpha.5.md).
+Version 1.25 derives persistent upload, animation-append and partial-frame-edit deadlines from their Base64 wire size, adds one second for correlated acknowledgement, and caps the result at one minute. Small control-only transactions remain at one second. See the [alpha.5 release notes](docs/releases/1.25.0-alpha.5.md).
+
+**Graphics development is on hold** at the maintainer's direction. Kitty 0.32.2
+on WSL2 still omits the acknowledgement for a documented chunked animation upload.
+Alpha.5 bounds the wait; it does not fix the defect. Downstream ordinary FRAME input
+and display work with command-driven flicker; persistent ATLAS is not live accepted.
+No Kitty workaround or new graphics behavior is included. See the
+[hold record and evidence](docs/Graphics-Development-Hold.md).
+
+Ordinary raster capability selection prefers verified Kitty, then verified Sixel.
+A failed write is not automatically retried through another backend. Applications
+own text fallback; Sixel does not emulate persistent Kitty identities or animation.
 
 Version 1.24.1 verifies the persistent Kitty resource-identity path independently from generic Kitty graphics support. A terminal must accept a bounded 1x1 persistent upload and return a nonzero terminal-assigned image id before `PersistentRasterGraphics` becomes usable; the probe resource is then deleted. Zero ids and other malformed acknowledgements no longer escape from capability verification as raw format failures. See the [1.24.1 release notes](docs/releases/1.24.1.md).
 
@@ -31,9 +42,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.24.1 changes no public signature or enum value. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.25 retains every 1.24.1 public signature and enum value and adds one screen-transaction method. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
 
-See the [1.24.1 release notes](docs/releases/1.24.1.md), [1.24.0 release notes](docs/releases/1.24.0.md), and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.25 release notes](docs/releases/1.25.0.md), [1.25 API baseline](docs/Public-API-Baseline-1.25.md), and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -83,7 +94,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the current stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.24.1
+dotnet add package Icod.Terminal --version 1.25.0
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.

@@ -28,7 +28,7 @@ The 1.20 line retains every 1.19 signature and enum value with twelve additive s
 
 Every API-bearing stable minor release records a deterministic reflection snapshot and SHA-256 fingerprint. Historical baselines are immutable evidence and are never rewritten merely because a later release adds compatible members.
 
-The 1.25 alpha candidate adds one member, `TerminalScreenOutputTransaction.WriteRaster(TerminalRasterImage)`, while retaining every 1.24.1 public signature and enum value. Its [reviewed API baseline](Public-API-Baseline-1.25.md) is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`, equal across the three target frameworks in CI. Stable qualification is tracked separately.
+The 1.25 release adds one member, `TerminalScreenOutputTransaction.WriteRaster(TerminalRasterImage)`, while retaining every 1.24.1 public signature and enum value. Its [reviewed API baseline](Public-API-Baseline-1.25.md) is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`, equal across the three target frameworks in CI. Exact-source qualification is recorded in [the 1.25 closure record](T2508-1.25-Stable-Source-Closure.md) and PR #78. Known Kitty animation limitations and the graphics hold remain explicit.
 
 Relevant fingerprints include:
 

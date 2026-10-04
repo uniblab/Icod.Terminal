@@ -6,9 +6,9 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
 - **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** 1.25.0-alpha.4 is published; live WSL2/kitty testing reaches persistent atlas creation, and [PR #77](https://github.com/uniblab/Icod.Terminal/pull/77) prepares alpha.5 with bounded size-aware deadlines for chunked persistent raster transfers
-- **Active development target:** `1.25.0` — Ordered screen raster transactions for immediate Kitty/Sixel presentation
-- **Selected scope:** Add a backend-neutral raster item to the session-bound screen output transaction, with precommit capability/encoding validation and honest cursor/output uncertainty
+- **Development status:** Stable `1.25.0` source is being qualified in [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78), carrying the published alpha.5 implementation with documented graphics limits. Further graphics development remains on hold; Kitty persistent-ATLAS acceptance is deferred. See [the closure record](docs/T2508-1.25-Stable-Source-Closure.md).
+- **Active development target:** Complete stable `1.25.0` release preparation; no further graphics feature implementation selected.
+- **Selected scope:** Preserve the implemented ordered Kitty/Sixel screen raster transactions; defer graphics expansion, Kitty-specific changes and further live qualification.
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -18,6 +18,8 @@ This file is the concise entry point for current `Icod.Terminal` development and
 The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
 
 ## Latest accepted checkpoint
+
+`Icod.Terminal 1.25.0-alpha.5` was merged through [PR #77](https://github.com/uniblab/Icod.Terminal/pull/77) and published. It includes bounded payload-transfer deadlines plus the earlier Unix byte-input, DA1, cursor and Sixel corrections. The downstream Kitty 0.32.2 retest still lacks an animation-upload ACK; the longer deadline bounds the wait without fixing that defect. The maintainer has put this graphics track on hold. This checkpoint does not promote 1.25 to stable or qualify persistent ATLAS from ordinary FRAME fallback.
 
 `Icod.Terminal 1.24.1` was merged through [PR #70](https://github.com/uniblab/Icod.Terminal/pull/70) at `b6830ce4d7f6c97ffd9bf5e8fcbcf822febf59ea` and published. It corrects persistent-raster verification after downstream Contour qualification showed that generic Kitty query support does not guarantee a valid terminal-assigned persistent image id. The new 1.25 track responds to the distinct need for immediate raster output that can be ordered with screen operations when persistence is unavailable.
 
@@ -97,7 +99,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.23.0  partial frame transfer + rich-input completion           PUBLISHED
 1.24.0  raster geometry and planning contracts                 PUBLISHED
 1.24.1  persistent Kitty identity verification                PUBLISHED
-1.25.0  ordered screen raster transactions                    ALPHA / QUALIFICATION
+1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -434,7 +436,7 @@ The governing rule is:
 
 > Terminal owns raster backend evidence, protocol-private encoding, bounded transaction preflight, serialized output, and commitment uncertainty. DCurses owns raster-surface placement, source-image provision, clipping, overlay policy, damage, and refresh. Applications own assets and viewport content.
 
-The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Draft PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) carries the alpha API, tests, sample, package verifier, and release documentation; stable closure and physical Sixel evidence remain separate gates.
+The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Merged PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) introduced the alpha API, tests, sample, package verifier and release documentation. Follow-up PRs #73–#77 are merged; alpha.5 is published. Further graphics development and Kitty live qualification are now on hold; stable source qualification now proceeds in PR #78 with those limits retained.
 
 ```text
 T2500  published baseline, placement assumptions, and API-regret gate
@@ -451,6 +453,8 @@ T2508  stable 1.25.0 closure and evidence record
 This feature permits a caller-supplied complete viewport image per repaint without a Terminal-side source cache. It makes no claim that Sixel supports persistent identity, sparse frame edits, portable clipping or terminal-independent post-display cursor behavior. Real terminal acceptance must qualify any stronger visual claim separately.
 
 ## Later development candidates
+
+**Graphics hold:** The graphics candidates below are deferred, including frame-edit batching, Indexed8 regional parity, gapless frames, placement expansion and image codecs. No Kitty workaround, new backend replay or additional probe is authorized by this hold. Existing APIs remain available; unrelated input, lifecycle, profile and operational work may be considered under a separate future scope decision. See [the hold and reopening criteria](docs/Graphics-Development-Hold.md).
 
 The deferred bounded frame-edit execution candidate may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when a real DCurses workload demonstrates a material benefit. It must not claim remote atomicity or rollback.
 
