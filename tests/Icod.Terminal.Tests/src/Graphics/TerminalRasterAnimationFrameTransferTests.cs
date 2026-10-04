@@ -82,6 +82,54 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 		Assert.True( capability.IsUsable );
 	}
 
+
+	[Fact]
+	public async Task LargeAppendRetainsBoundedAcknowledgementWindowBeyondSmallControlDeadline() {
+		ManualMonotonicClock clock = new();
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport,
+			imageId: 77u
+		);
+		const int width = 1024;
+		const int height = 342;
+		int rawByteCount = checked( width * height * 3 );
+		TerminalRasterImage image = TerminalRasterImage.CreateRgb24(
+			width,
+			height,
+			new byte[ rawByteCount ]
+		);
+		int chunkCount = checked(
+			( rawByteCount + KittyGraphicsDirectEncoder.MaximumRawChunkBytes - 1 )
+				/ KittyGraphicsDirectEncoder.MaximumRawChunkBytes
+		);
+
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				image,
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( checked( 1 + chunkCount ) );
+		clock.Advance( TimeSpan.FromSeconds( 2 ) );
+		await YieldSeveralTimesAsync();
+
+		Assert.False(
+			append.IsCompleted,
+			"A bounded bulk-transfer deadline must leave time for acknowledgement after a large frame upload."
+		);
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		);
+		TerminalControlResult<TerminalRasterAnimationFrame> result = await append;
+		Assert.Equal( TerminalControlStatus.Available, result.Status );
+		Assert.Equal(
+			2,
+			Assert.IsType<TerminalRasterAnimationFrame>( result.Value ).SequenceNumber
+		);
+	}
+
 	[Fact]
 	public async Task WrongImageAcknowledgementDoesNotPublishFrame() {
 		ManualMonotonicClock clock = new();
