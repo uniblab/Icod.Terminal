@@ -118,7 +118,7 @@ public sealed partial class TerminalSession {
 					);
 				},
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
-				PersistentRasterCreationTimeout,
+				GetPersistentRasterTransferTimeout( raster ),
 				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
 				cancellationToken
 			).ConfigureAwait( false );

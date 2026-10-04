@@ -83,6 +83,55 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 	}
 
 	[Fact]
+	public async Task LargeAppendRetainsBoundedAcknowledgementWindowBeyondSmallControlDeadline() {
+		ManualMonotonicClock clock = new();
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		const int width = 1024;
+		const int height = 342;
+		int rawByteCount = checked( width * height * 3 );
+		TerminalRasterImage image = TerminalRasterImage.CreateRgb24(
+			width,
+			height,
+			new byte[ rawByteCount ]
+		);
+		int chunkCount = checked(
+			( rawByteCount + KittyGraphicsDirectEncoder.MaximumRawChunkBytes - 1 )
+				/ KittyGraphicsDirectEncoder.MaximumRawChunkBytes
+		);
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport,
+			imageId: 77u,
+			image,
+			expectedWriteCount: chunkCount
+		);
+
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				image,
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( checked( 2 * chunkCount ) );
+		clock.Advance( TimeSpan.FromSeconds( 2 ) );
+		await YieldSeveralTimesAsync();
+
+		Assert.False(
+			append.IsCompleted,
+			"A bounded bulk-transfer deadline must leave time for acknowledgement after a large frame upload."
+		);
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		);
+		TerminalControlResult<TerminalRasterAnimationFrame> result = await append;
+		Assert.Equal( TerminalControlStatus.Available, result.Status );
+		Assert.Equal(
+			2,
+			Assert.IsType<TerminalRasterAnimationFrame>( result.Value ).SequenceNumber
+		);
+	}
+
+	[Fact]
 	public async Task WrongImageAcknowledgementDoesNotPublishFrame() {
 		ManualMonotonicClock clock = new();
 		ScriptedTransport transport = new();
@@ -386,15 +435,31 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 		ScriptedTransport transport,
 		uint imageId
 	) {
+		return await CreateResourceAsync(
+			session,
+			transport,
+			imageId,
+			TerminalRasterImage.CreateRgb24(
+				1,
+				1,
+				[ 1, 2, 3 ]
+			),
+			expectedWriteCount: 1
+		).ConfigureAwait( false );
+	}
+
+	private static async Task<TerminalRasterResource> CreateResourceAsync(
+		TerminalSession session,
+		ScriptedTransport transport,
+		uint imageId,
+		TerminalRasterImage image,
+		int expectedWriteCount
+	) {
 		Task<TerminalControlResult<TerminalRasterResource>> creation =
 			session.CreateRasterResourceAsync(
-				TerminalRasterImage.CreateRgb24(
-					1,
-					1,
-					[ 1, 2, 3 ]
-				)
+				image
 			).AsTask();
-		await transport.WaitForWriteCountAsync( 1 );
+		await transport.WaitForWriteCountAsync( expectedWriteCount );
 		transport.Publish(
 			Encoding.ASCII.GetBytes(
 				$"\u001b_Gi={imageId},I=1;OK\u001b\\"

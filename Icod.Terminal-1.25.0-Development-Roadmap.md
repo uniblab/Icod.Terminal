@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** 1.25.0-alpha.3 is published; the maintainer accepts immediate WSL2/kitty input and clean exit. [PR #76](https://github.com/uniblab/Icod.Terminal/pull/76) prepares alpha.4 to accept kitty's empty optional DA1 attribute list. Physical kitty graphics acceptance and stable closure remain open.
+**Status:** 1.25.0-alpha.4 is published; the maintainer confirms correct FRAME input/display and persistent ATLAS setup now reaches its large second-frame upload. [PR #77](https://github.com/uniblab/Icod.Terminal/pull/77) prepares alpha.5 with bounded size-aware deadlines for chunked persistent raster transfers. Live ATLAS acceptance and stable closure remain open.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -220,6 +220,31 @@ Implementation and acceptance sequence:
    separate acceptance; the earlier payload-size report is not independently
    claimed fixed by this parser correction.
 
+### Persistent raster transfer deadlines: 1.25.0-alpha.5
+
+Live DCurses testing with alpha.4 verified ordinary Kitty raster output and then
+timed out while adding the second frame to a persistent raster animation. The
+root resource and placeholder had already succeeded. The captured stack trace
+ended in `AddPersistentRasterAnimationFrameAsync`, and the fixed one-second query
+deadline included queueing plus every chunk of the Base64 frame transfer before
+Kitty could return its correlated acknowledgement.
+
+PR #77 retains the existing one-second deadline for control-only transactions.
+Only payload-bearing persistent resource uploads, animation-frame appends and
+partial-frame edits receive a transfer allowance derived from Base64 wire size
+at 512 KiB/s, plus the existing one-second acknowledgement window. The result is
+capped by the query manager's existing one-minute caller ceiling. Queue-time
+deadline semantics, response correlation, late-response ownership, cancellation,
+commitment and failure-state rules are unchanged.
+
+Regression coverage creates matching 1024x342 RGB24 root and appended frames,
+waits until every chunk is written, advances the manual monotonic clock two
+seconds, and requires the append to remain pending until its correlated `OK`.
+The test-only head first failed at the intended deadline assertion; the fixed
+head passed Windows, Linux and macOS runtime validation plus every package gate.
+After publication, DCurses must consume alpha.5 and repeat live default ATLAS
+startup and command-driven rendering under WSL2/kitty.
+
 ## Scope limits
 
 No Sixel persistent resource, Unicode placeholder, frame copy/update/select, sparse hidden cache, full-screen scene compositor, application pixel ownership, protocol selector, image decoder, public native terminal API, layout policy, automatic clipping/scaling, alpha-compositing guarantee, frame-edit batching API, or PTY/ConPTY hosting is introduced in 1.25.
@@ -235,4 +260,6 @@ No Sixel persistent resource, Unicode placeholder, frame copy/update/select, spa
 | T2501 red fixtures | [run 37127265959](https://github.com/uniblab/Icod.Terminal/actions/runs/37127265959) | Expected missing `WriteRaster`; test fixture typo also found and corrected |
 | T2502/T2503 first implementation | [run 37127551967](https://github.com/uniblab/Icod.Terminal/actions/runs/37127551967) | Windows/Linux/macOS runtime passed; package API baseline gate rejected intentional new member |
 | T2504–T2506 alpha qualification | [run 37127949385](https://github.com/uniblab/Icod.Terminal/actions/runs/37127949385) | Package candidate passed; full matrix in progress; API fingerprint `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146` |
+| Alpha.5 transfer-deadline regression | [run 37216285886](https://github.com/uniblab/Icod.Terminal/actions/runs/37216285886) | Matching large root/frame fixture fails at the intended two-second pending assertion under the fixed one-second deadline |
+| Alpha.5 transfer-deadline fix | [run 37216475686](https://github.com/uniblab/Icod.Terminal/actions/runs/37216475686) | Windows/Linux/macOS runtime, all package shards and validated package artifact pass |
 | Stable candidate | Pending | Record exact-head evidence at closure |

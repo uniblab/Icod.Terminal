@@ -108,7 +108,7 @@ public sealed partial class TerminalSession {
 					commitment
 				),
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
-				PersistentRasterCreationTimeout,
+				GetPersistentRasterTransferTimeout( raster ),
 				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
 				cancellationToken,
 				abandonedCleanup: () => this.CleanupAbandonedAnimationAppend(
