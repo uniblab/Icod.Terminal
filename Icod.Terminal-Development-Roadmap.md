@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
 - **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** 1.25.0-alpha.3 is published and live WSL2/kitty input/exit is accepted; [PR #76](https://github.com/uniblab/Icod.Terminal/pull/76) prepares alpha.4 for kitty's empty optional DA1 attribute list, which currently blocks graphics verification
+- **Development status:** 1.25.0-alpha.4 is published; live WSL2/kitty testing reaches persistent atlas creation, and [PR #77](https://github.com/uniblab/Icod.Terminal/pull/77) prepares alpha.5 with bounded size-aware deadlines for chunked persistent raster transfers
 - **Active development target:** `1.25.0` — Ordered screen raster transactions for immediate Kitty/Sixel presentation
 - **Selected scope:** Add a backend-neutral raster item to the session-bound screen output transaction, with precommit capability/encoding validation and honest cursor/output uncertainty
 - **Stable compatibility floor:** `1.0.0`

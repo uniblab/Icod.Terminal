@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.25.0-alpha.4 accepts an empty optional Primary Device Attributes list, as emitted by kitty 0.32.2, without inferring graphics support or relaxing other CSI validation. Includes alpha.3 Unix byte input, alpha.2 Sixel write coalescing and alpha.1 cursor planning. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.25.0-alpha.4.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.25.0-alpha.5 gives bounded size-aware deadlines to persistent Kitty raster uploads, animation-frame appends and partial-frame edits while retaining one-second control-command deadlines. Includes alpha.4 Kitty DA1 compatibility and the earlier 1.25 prerelease corrections. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.25.0-alpha.5.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

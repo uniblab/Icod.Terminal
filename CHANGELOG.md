@@ -4,6 +4,8 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 ## 1.25.0 (development)
 
+- `1.25.0-alpha.5` gives chunked persistent Kitty raster resource uploads, animation-frame appends and partial-frame edits a bounded deadline derived from their Base64 wire size. Small control-only transactions retain their one-second deadline, and all query deadlines remain capped at one minute. This prevents large atlas frames from timing out before their correlated acknowledgement under WSL2/kitty.
+
 - `1.25.0-alpha.4` accepts a Primary Device Attributes device code followed by an empty optional attribute list, as emitted by kitty 0.32.2 (`CSI ?62;c`). Ordinary raster verification can retain its independently correlated Kitty reply instead of failing DA1 parsing. Missing device codes, malformed fields and non-DA1 replies remain strictly validated; no graphics capability is inferred from a device code.
 
 - `1.25.0-alpha.3` replaces the process-standard-input Unix console line reader with a session-owned nonblocking byte transport on Linux and macOS. Individual keys and terminal replies no longer wait for Enter or acquire managed echo. Adds real pseudo-terminal regression coverage for immediate input, UTF-8, response routing, cancellation, restoration, and session reopening.
