@@ -12,6 +12,12 @@ $solutionPath = Get-RepositorySolution -RepositoryRoot $repositoryRoot
 
 Push-Location $repositoryRoot
 try {
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) {
+        foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
+            Invoke-DotNet -Arguments @('run', '--project', 'tools/unix-input-smoke/Icod.Terminal.UnixInputSmoke.csproj', '-c', $Configuration, '-f', $framework)
+        }
+    }
+
     Write-Host ''
     Write-Host "=== Restore runtime graph ($Configuration) ==="
     Invoke-DotNet -Arguments @('restore', $solutionPath)

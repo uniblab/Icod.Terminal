@@ -29,7 +29,8 @@ using Icod.TermInfo;
 /// terminal endpoints and byte transports supplied by the caller.
 /// </summary>
 /// <remarks>
-/// A session owns terminal state transitions, not endpoint or stream lifetime.
+/// Caller-supplied endpoints and byte services are borrowed. The process-standard-input
+/// overload also owns its private Linux/macOS input descriptor.
 /// Dispose the session asynchronously to flush pending output, restore output
 /// setup, and restore the captured input mode exactly once.
 /// </remarks>
@@ -43,6 +44,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 
 	private TerminalModeSnapshot? baselineMode;
 	private IDisposable? outputModeLease;
+	private IDisposable? ownedProcessInput;
 	private Task<Exception?>? restoreTask;
 	private bool restoreRequired;
 	private int? outputBaudRate;
@@ -194,21 +196,32 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// <param name="options">Optional identity, input-mode, output, and encoding policy.</param>
 	/// <param name="cancellationToken">Cancellation for session initialization.</param>
 	/// <returns>The initialized terminal session.</returns>
-	public static ValueTask<TerminalSession> OpenAsync(
+	public static async ValueTask<TerminalSession> OpenAsync(
 		TerminalSessionOptions? options = null,
 		CancellationToken cancellationToken = default
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 
-		return OpenAsync(
-			SystemTerminalControlProvider.Instance,
-			TerminalEndpoint.StandardInput,
-			TerminalEndpoint.StandardOutput,
-			new StreamTerminalInput( Console.OpenStandardInput() ),
-			new StreamTerminalOutput( Console.OpenStandardOutput() ),
-			options,
-			cancellationToken
-		);
+		PosixTerminalInput? ownedInput = null;
+		try {
+			ITerminalInput input = OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()
+				? ownedInput = PosixTerminalInput.OpenStandardInput()
+				: new StreamTerminalInput( Console.OpenStandardInput() );
+			TerminalSession session = await OpenAsync(
+				SystemTerminalControlProvider.Instance,
+				TerminalEndpoint.StandardInput,
+				TerminalEndpoint.StandardOutput,
+				input,
+				new StreamTerminalOutput( Console.OpenStandardOutput() ),
+				options,
+				cancellationToken
+			).ConfigureAwait( false );
+			session.ownedProcessInput = ownedInput;
+			return session;
+		} catch {
+			ownedInput?.Dispose();
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -432,6 +445,9 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		}
 
 		await this.StopLifecycleAsync().ConfigureAwait( false );
+		// StopLifecycleAsync cancels the coordinator's transport read. Close the
+		// private descriptor before restoring modes or allowing a new session.
+		this.ownedProcessInput?.Dispose();
 
 		Exception? inputProtocolException =
 			await this.CloseInputProtocolStateAsync().ConfigureAwait( false );

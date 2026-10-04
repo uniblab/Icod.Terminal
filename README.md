@@ -315,6 +315,8 @@ net10.0
 
 The repository uses C# 13. Release qualification covers Windows, Linux, and macOS.
 
+`TerminalSession.OpenAsync(options)` reads interactive Unix input through a session-owned byte transport on Linux and macOS. It bypasses .NET console line editing so keys and terminal replies reach the decoder without waiting for Enter or acquiring managed echo. The existing input-mode and echo options still control native terminal behavior. Dispose the session to restore modes and release its input descriptor. The overload accepting explicit byte services continues to borrow them; callers retain their lifetime responsibility.
+
 `Icod.Terminal` is a managed library but intentionally uses native platform facilities where terminal modes or console behavior require them. Protocol and feature availability still depends on the terminal endpoint attached to the process; operating-system identity or terminal brand is not treated as sufficient support proof.
 
 ## Design Boundaries and Guarantees

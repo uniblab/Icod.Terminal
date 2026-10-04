@@ -2,7 +2,7 @@
 
 **Goal:** Put an immediate, backend-neutral raster image into the existing ordered screen-output transaction so DCurses can use verified Kitty or Sixel for caller-supplied full-frame repaint.
 
-**Status:** 1.25.0-alpha.1 is published with cursor hardening from [PR #73](https://github.com/uniblab/Icod.Terminal/pull/73). [PR #74](https://github.com/uniblab/Icod.Terminal/pull/74) prepares alpha.2 Sixel screen-write coalescing. Physical terminal acceptance and stable closure remain open.
+**Status:** 1.25.0-alpha.2 is published with cursor hardening and Sixel write coalescing. [PR #75](https://github.com/uniblab/Icod.Terminal/pull/75) prepares alpha.3 Unix byte-input correction. Physical kitty acceptance and stable closure remain open.
 
 **Release theme:** Ordered Screen Raster Transactions.
 
@@ -28,7 +28,7 @@ The 1.24 roadmap's conditional frame-edit batching proposal did not meet its rea
 - Ordinary `RasterGraphics` can be verified through Kitty or Sixel; `PersistentRasterGraphics` remains separately verified through persistent Kitty identity. Sixel does not acquire placeholder or frame semantics.
 - `CommitAsync` does not run a new probe while holding its output gate. Capability verification occurs before transaction construction; current evidence and epoch are rechecked before output.
 - Terminal cannot promise portable graphics clipping, pixel placement, post-raster cursor state, or physical display acknowledgement. Callers include semantic cursor plans after raster output when they need a known text position.
-- No native terminal calls, raw escape APIs, asset caches, automatic replay, or remote atomicity.
+- Raster transactions add no native terminal calls, raw escape APIs, asset caches, automatic replay, or remote atomicity. The approved alpha.3 input correction uses a private Linux/macOS byte transport alongside the existing native mode provider.
 
 ## Public contract gate
 
@@ -156,9 +156,42 @@ literal bytes and 2,566 other unit cases passed. The alpha.2 candidate has curat
 exact-version release notes. A new physical Windows Terminal/Contour retest remains
 required after publication; WezTerm text-glyph shaping is a separate hypothesis.
 
+### Unix interactive byte input: 1.25.0-alpha.3
+
+Live Ubuntu 24.04/WSL2 testing with kitty 0.32.2 and .NET 10 showed that the
+text sample moved only after Enter and echoed a typed character into the map.
+The standard-input overload used `Console.OpenStandardInput()`. The .NET Unix
+implementation selects `StdInReader.ReadLine` for interactive input, including
+managed echo and key interpretation. Disabling native canonical input and echo
+cannot remove that managed layer. This is a Terminal transport defect, not
+DCurses terrain rendering or TermInfo capability lookup.
+
+PR #75 opens the observed stdin terminal device independently, in nonblocking
+mode, on Linux and macOS. It passes raw bytes to the existing decoder, with
+cancellable bounded waits when no bytes are available. It does not change the
+process stdin file flags, acquire a new controlling terminal, or add a public
+transport API. The session closes its owned descriptor on disposal and failed
+initialization; caller-supplied transports remain borrowed. Windows retains its
+existing console transport. Canonical/CBreak/Raw and echo policy remain owned
+by the existing mode provider.
+
+Acceptance: a real pseudo-terminal child on Linux and macOS, across .NET 8/9/10,
+must receive an individual key and fragmented UTF-8 without Enter, route a query
+response without echo, cancel an idle wait, restore native flags/control
+characters, and reopen without the previous reader consuming the next key.
+The regression-only [run 37179121040](https://github.com/uniblab/Icod.Terminal/actions/runs/37179121040)
+reproduced the unwanted echoed `d` on both Linux and macOS after the existing
+2,567 unit and 15 integration cases passed on each target framework. Record
+fixed-candidate CI results in PR #75; physical WSL2/kitty graphics must be retested after publication.
+The observed graphics parser errors are not independently claimed fixed.
+
+The alpha.3 release includes version metadata, package release notes, changelog,
+and exact-version curated `docs/releases/1.25.0-alpha.3.md`. Merge/tag/publication
+remain maintainer actions.
+
 ## Scope limits
 
-No Sixel persistent resource, Unicode placeholder, frame copy/update/select, sparse hidden cache, full-screen scene compositor, application pixel ownership, protocol selector, image decoder, native terminal API, layout policy, automatic clipping/scaling, alpha-compositing guarantee, frame-edit batching API, or PTY/ConPTY hosting is introduced in 1.25.
+No Sixel persistent resource, Unicode placeholder, frame copy/update/select, sparse hidden cache, full-screen scene compositor, application pixel ownership, protocol selector, image decoder, public native terminal API, layout policy, automatic clipping/scaling, alpha-compositing guarantee, frame-edit batching API, or PTY/ConPTY hosting is introduced in 1.25.
 
 ## Evidence log
 
