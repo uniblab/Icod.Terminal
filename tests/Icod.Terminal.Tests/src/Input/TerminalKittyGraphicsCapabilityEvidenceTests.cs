@@ -51,8 +51,9 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		transport.Publish( Encoding.ASCII.GetBytes( response + "\u001b[?62;c" ) );
 		TerminalCapabilityStatus result = await verification.WaitAsync( TimeSpan.FromSeconds( 5 ) );
 		Assert.Equal( graphicsReply, result.IsUsable );
-		Assert.Equal( graphicsReply ? TerminalCapabilitySupport.Verified : TerminalCapabilitySupport.Unsupported, result.Support );
-		Assert.Equal( TerminalCapabilitySupportState.Unsupported, ResolveSixelEvidence( session ).State );
+		Assert.Equal( graphicsReply ? TerminalCapabilitySupport.Verified : TerminalCapabilitySupport.Unknown, result.Support );
+		// An absent Sixel attribute supplies no positive or negative support claim.
+		Assert.Equal( TerminalCapabilitySupportState.Unknown, ResolveSixelEvidence( session ).State );
 		if ( graphicsReply ) {
 			TerminalSemanticBackendResolution routing = session.ResolveSemanticBackend( TerminalSemanticOperation.RasterGraphics );
 			Assert.NotNull( routing.SelectedCandidate );
