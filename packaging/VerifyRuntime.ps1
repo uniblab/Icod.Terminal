@@ -35,6 +35,12 @@ try {
         '--logger', 'trx'
     )
 
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) {
+        foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
+            Invoke-DotNet -Arguments @('run', '--project', 'tools/unix-input-smoke/Icod.Terminal.UnixInputSmoke.csproj', '-c', $Configuration, '-f', $framework)
+        }
+    }
+
     foreach ($script in @(
         'VerifyNotificationSample.ps1',
         'VerifyITerm2ShellIntegrationSample.ps1',
