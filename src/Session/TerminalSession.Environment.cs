@@ -24,6 +24,8 @@ namespace Icod.Terminal;
 /// Provides bounded terminal-environment queries and reporting ownership.
 /// </summary>
 public sealed partial class TerminalSession {
+	private readonly TerminalEnvironmentReportingManager environmentReportingManager;
+
 	/// <summary>
 	/// Requests one dark or light appearance observation from the attached terminal.
 	/// </summary>
@@ -55,5 +57,37 @@ public sealed partial class TerminalSession {
 			cancellationToken
 		).ConfigureAwait( false );
 		return TerminalEnvironmentProtocol.ParseAppearance( frame );
+	}
+
+	/// <summary>
+	/// Acquires one independently owned request for unsolicited appearance reports.
+	/// </summary>
+	/// <param name="timeout">The caller-visible private-mode query timeout.</param>
+	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
+	/// <returns>
+	/// An available result containing the reporting lease, or an unavailable result
+	/// when the terminal explicitly reports that mode 2031 cannot be enabled.
+	/// </returns>
+	/// <remarks>
+	/// Acquisition observes the mode with DECRQM before changing it. Overlapping
+	/// owners share one captured baseline; releasing the last owner disables reporting
+	/// only when this session enabled a previously reset mode.
+	/// </remarks>
+	public async ValueTask<TerminalControlResult<TerminalAppearanceReportingLease>>
+		AcquireAppearanceReportingAsync(
+			TimeSpan timeout,
+			CancellationToken cancellationToken = default
+		) {
+		ValidateCsiQueryTimeout( timeout );
+		cancellationToken.ThrowIfCancellationRequested();
+
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		this.ThrowIfStateAcquisitionUnavailable();
+		return await this.environmentReportingManager.AcquireAppearanceAsync(
+			timeout,
+			cancellationToken
+		).ConfigureAwait( false );
 	}
 }

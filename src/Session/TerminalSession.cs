@@ -90,6 +90,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		this.Options = options;
 		this.inputProtocolManager = new TerminalInputProtocolManager( this );
 		this.presentationManager = new TerminalPresentationManager( this );
+		this.environmentReportingManager = new TerminalEnvironmentReportingManager( this );
 	}
 
 	/// <summary>Gets the terminal input endpoint borrowed by the session.</summary>
