@@ -2,7 +2,7 @@
 
 **Goal:** Publish a versioned, evidence-backed compatibility matrix and a public-only executable acceptance sample for the established nongraphics Icod.Terminal surface.
 
-**Status:** Implementation through T2608 is complete locally. Live qualification (T2609) and exact-candidate stable closure (T2610) remain pending in [PR #79](https://github.com/uniblab/Icod.Terminal/pull/79).
+**Status:** Implementation through T2608 is complete. Initial reviewed live qualification is recorded under T2609; broader terminal/transport qualification and exact-candidate stable closure (T2610) remain pending in [PR #79](https://github.com/uniblab/Icod.Terminal/pull/79).
 
 **Release theme:** Terminal Compatibility Qualification.
 
@@ -180,10 +180,10 @@ The only evidence outcomes are `Pass`, `Fail`, `Inconclusive`, `NotRun`, and `No
 
 ### T2609 — Live terminal qualification
 
-- [ ] Run the approved scenario groups on each primary terminal at an exact version and record the host and transport identities.
+- [x] Record reviewed `identity.session/v1` and `query.dimensions/v1` results for Windows Terminal 1.24.11911.0 on Windows Version 10.0.26200.9457 and Kitty 0.32.2 on Ubuntu 24.04 through WSL 2.6.1.0.
+- [ ] Run the remaining approved scenario groups on each primary terminal at an exact version and record the host and transport identities.
 - [ ] Run the OSC 633 subset in the VS Code companion lane and at least one mediated transport lane without treating it as a primary emulator result.
-- [ ] Review every generated report before accepting it into the evidence directory and regenerate the matrix.
-- [ ] Record unavailable environments as `NotRun`; do not invent positive or negative conclusions to fill cells.
+- [x] Review the accepted reports, regenerate the matrix, and preserve every unrecorded scenario and lane as `NotRun`.
 
 **Acceptance:** Every matrix cell traces to accepted evidence or explicitly remains unqualified.
 
@@ -209,3 +209,4 @@ Version 1.26 does not add OSC 21, OSC 5522, DEC mode 2031, DEC mode 2048, OSC 13
 | Planning qualification | `f4a28acaceae3e48ce0e1633ed90cda56a285d96` / [run 37238480941](https://github.com/uniblab/Icod.Terminal/actions/runs/37238480941) | All nine jobs passed before implementation |
 | Development identity | `1.26.0-alpha` | Public API remains frozen at the 1.25 fingerprint; new work is sample, evidence, documentation, and qualification infrastructure |
 | Implementation through T2607 | `6df6485e8d7be9ad9fb6de561463ae529f6828b5` | Local full net10 suite passed 2,638 tests; focused tests and fresh-package headless smoke passed on net8/net9/net10 |
+| Initial live qualification | `95f1258b0220ee3453b52125042b2881381972f3` / [run 37325582594](https://github.com/uniblab/Icod.Terminal/actions/runs/37325582594) | All nine jobs passed. Accepted `Pass` evidence records `identity.session/v1` and `query.dimensions/v1` for Windows Terminal 1.24.11911.0 on Windows Version 10.0.26200.9457 and Kitty 0.32.2 on Ubuntu 24.04 via WSL 2.6.1.0. |
