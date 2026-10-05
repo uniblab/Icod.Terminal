@@ -30,6 +30,8 @@ Every API-bearing stable minor release records a deterministic reflection snapsh
 
 The 1.25 release adds one member, `TerminalScreenOutputTransaction.WriteRaster(TerminalRasterImage)`, while retaining every 1.24.1 public signature and enum value. Its [reviewed API baseline](Public-API-Baseline-1.25.md) is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`, equal across the three target frameworks in CI. Exact-source qualification is recorded in [the 1.25 closure record](T2508-1.25-Stable-Source-Closure.md) and PR #78. Known Kitty animation limitations and the graphics hold remain explicit.
 
+Version 1.26 adds no production public member. Its qualification infrastructure must retain the exact 1.25 fingerprint on all three target frameworks. The [versioned terminal matrix](compatibility/1.26.0.md) records existing nongraphics behavior and cannot promote terminal branding, static advertisement, successful output emission, timeout, or missing evidence into a stronger claim.
+
 Relevant fingerprints include:
 
 ```text
@@ -272,12 +274,21 @@ Package Foundation
 Package Presentation
 Package Semantic and hardening
 Package Stable 1.x release line
+Compatibility sample package acceptance
 Validated package artifact
 ```
 
 The package/public-API gates verify the frozen API fingerprint, generated XML documentation, fresh package-only consumption, dependency boundaries, and downstream acceptance/hardening defined by the repository release contract.
 
 Any post-closure pre-merge code or documentation change requires the same exact-head matrix again before the PR is considered merge-ready.
+
+## 12.1 Versioned terminal compatibility evidence
+
+Compatibility evidence is narrower than package/platform support. Each accepted live result identifies one package/source commit, terminal and version, operating system and version, optional transport and version, scenario revision, UTC observation time, outcome, and bounded note.
+
+The outcome vocabulary is `Pass`, `Fail`, `Inconclusive`, `NotRun`, and `NotApplicable`. A query timeout, permission denial, desktop policy, or ambiguous visible result is `Inconclusive`. A lane or scenario without accepted evidence is `NotRun`. One direct result does not qualify WSL, ConPTY, SSH, tmux, or another intermediary.
+
+The executable [compatibility sample](../samples/Icod.Terminal.Compatibility.Sample/README.md) uses the public package surface and the authoritative `TerminalSession` event reader. CI runs only its headless discovery, schema, rendering, and fresh-package contracts. Interactive results require maintainer review before inclusion under [`docs/compatibility/evidence`](compatibility/README.md).
 
 ## 13. Maintainer release actions
 

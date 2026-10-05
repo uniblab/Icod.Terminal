@@ -350,10 +350,12 @@ Security and privacy details are maintained in [`docs/Security-and-Privacy.md`](
 
 ## Samples and Documentation
 
-The [`samples`](samples/README.md) directory contains focused examples for session construction, semantic screen frames and explicit recovery, rich input, bounded queries, semantic capability planning, terminal colors and reversible state, notifications and metadata, backend-neutral raster display, persistent raster ownership, Unicode raster placeholders, persistent raster animation, and optional TermInfo planning integration.
+The [`samples`](samples/README.md) directory contains focused examples for session construction, semantic screen frames and explicit recovery, rich input, bounded queries, semantic capability planning, terminal colors and reversible state, notifications and metadata, backend-neutral raster display, persistent raster ownership, Unicode raster placeholders, persistent raster animation, optional TermInfo planning integration, and the public-only [terminal compatibility acceptance sample](samples/Icod.Terminal.Compatibility.Sample/README.md).
 
 Recommended documentation entry points:
 
+- [`docs/compatibility/1.26.0.md`](docs/compatibility/1.26.0.md) — versioned terminal compatibility matrix; absent reviewed evidence remains explicitly `NotRun`;
+- [`samples/Icod.Terminal.Compatibility.Sample/README.md`](samples/Icod.Terminal.Compatibility.Sample/README.md) — headless commands, live scenarios, side effects, privacy, and evidence contribution workflow;
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — prior input and cursor visibility release notes;
 - [`docs/releases/1.22.0.md`](docs/releases/1.22.0.md) — frame composition release notes;
 - [`docs/releases/1.23.0.md`](docs/releases/1.23.0.md) — partial frame replacement and rich-input completion release notes;
@@ -393,6 +395,8 @@ The frozen 1.21 public API fingerprint is:
 ```
 
 Public API, package, target-framework, release-qualification, and compatibility policy is maintained in [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md). Consumers upgrading from the pre-1.0 line should also review [`docs/Migration-to-1.0.md`](docs/Migration-to-1.0.md).
+
+The [1.26 compatibility matrix](docs/compatibility/1.26.0.md) is evidence-scoped rather than a terminal-brand promise. A `Pass` qualifies one exact scenario revision and environment; a successful write alone does not prove visible behavior, and timeout or silence remains `Inconclusive` rather than unsupported.
 
 This README is maintained as a current product and contributor entry point. Release-by-release chronology belongs in [`CHANGELOG.md`](CHANGELOG.md), curated release notes, versioned roadmaps, public-API baselines, and release audits rather than accumulating here.
 

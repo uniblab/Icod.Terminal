@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "terminalPackageVersion": "1.26.0-alpha",
+  "sourceCommit": "0123456789abcdef0123456789abcdef01234567",
+  "terminalId": "apple-terminal",
+  "terminalVersion": "2.14",
+  "operatingSystem": "macOS",
+  "operatingSystemVersion": "15.6",
+  "transport": null,
+  "transportVersion": null,
+  "scenarioId": "query.dimensions",
+  "scenarioRevision": 1,
+  "observedAtUtc": "2026-10-04T16:00:00+00:00",
+  "outcome": "NotRun",
+  "automatedObservation": null,
+  "operatorObservation": null,
+  "note": "No reviewed live result exists."
+}

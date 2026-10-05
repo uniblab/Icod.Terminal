@@ -102,8 +102,28 @@ jobs:
           -Shard '${{ matrix.shard }}'
           -Configuration '${{ env.CONFIGURATION }}'
 
+  compatibility-sample:
+    needs: package-prep
+    name: Compatibility sample package acceptance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_CANDIDATE_ARTIFACT }}
+          path: artifacts/candidate
+      - name: Verify compatibility sample against package candidate
+        shell: pwsh
+        run: >-
+          ./packaging/VerifyCompatibilitySample.ps1
+          -ArtifactDirectory artifacts/candidate/package
+          -Configuration '${{ env.CONFIGURATION }}'
+
   validated-package:
-    needs: [package-contracts]
+    needs: [package-contracts, compatibility-sample]
     name: Validated package artifact
     runs-on: ubuntu-latest
     steps:

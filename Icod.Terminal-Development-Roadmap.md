@@ -6,8 +6,8 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
 - **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** Stable `1.25.0` source was merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`; publication remains a separate maintainer action. Further graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred. See [the closure record](docs/T2508-1.25-Stable-Source-Closure.md).
-- **Active development target:** Plan `1.26.0` terminal compatibility qualification.
+- **Development status:** Stable `1.25.0` source was merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`; publication remains a separate maintainer action. `1.26.0-alpha` development is active in [PR #79](https://github.com/uniblab/Icod.Terminal/pull/79). Further graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
+- **Active development target:** Implement `1.26.0` terminal compatibility qualification.
 - **Selected scope:** **Versioned compatibility matrix and executable acceptance sample** for the established nongraphics surface, with no new public runtime API or Icod.TermInfo change.
 - **Stable compatibility floor:** `1.0.0`
 

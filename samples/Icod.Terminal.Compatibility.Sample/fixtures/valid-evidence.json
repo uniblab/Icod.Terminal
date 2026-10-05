@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "terminalPackageVersion": "1.26.0-alpha",
+  "sourceCommit": "0123456789abcdef0123456789abcdef01234567",
+  "terminalId": "kitty",
+  "terminalVersion": "0.32.2",
+  "operatingSystem": "Ubuntu",
+  "operatingSystemVersion": "24.04",
+  "transport": "WSL",
+  "transportVersion": "2",
+  "scenarioId": "identity.session",
+  "scenarioRevision": 1,
+  "observedAtUtc": "2026-10-04T16:00:00+00:00",
+  "outcome": "Pass",
+  "automatedObservation": true,
+  "operatorObservation": null,
+  "note": "Session opened and reported bounded identity data."
+}
