@@ -79,15 +79,16 @@ public sealed class TerminalEnvironmentProtocolTests {
 	}
 
 	[Theory]
-	[InlineData( 0, TerminalPrivateModeState.NotRecognized )]
-	[InlineData( 1, TerminalPrivateModeState.Set )]
-	[InlineData( 2, TerminalPrivateModeState.Reset )]
-	[InlineData( 3, TerminalPrivateModeState.PermanentlySet )]
-	[InlineData( 4, TerminalPrivateModeState.PermanentlyReset )]
+	[InlineData( 0, 0 )]
+	[InlineData( 1, 1 )]
+	[InlineData( 2, 2 )]
+	[InlineData( 3, 3 )]
+	[InlineData( 4, 4 )]
 	public void ParsesEveryPrivateModeState(
 		int wireState,
-		TerminalPrivateModeState expected
+		int expectedState
 	) {
+		TerminalPrivateModeState expected = (TerminalPrivateModeState)expectedState;
 		TerminalResponseFrame sevenBit = CreateCsiFrame(
 			$"\u001b[?2031;{wireState}$y"
 		);
