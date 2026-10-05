@@ -16,6 +16,15 @@ dotnet run --project samples/Icod.Terminal.Compatibility.Sample -f net10.0 -- --
 
 These commands do not open a `TerminalSession`. The package acceptance gate runs them on `net8.0`, `net9.0`, and `net10.0` against a freshly produced package.
 
+Two safe operator launchers perform these headless checks and then capture only `identity.session` and `query.dimensions` as separate reports. They do not overwrite evidence or exercise clipboard, notifications, metadata, or input scenarios.
+
+```text
+Run-WindowsTerminal.cmd
+run-kitty-wsl.sh
+```
+
+Run the Windows launcher from a Windows Terminal session. Run the Kitty launcher from a Kitty session inside WSL; it asks once for the exact WSL version unless `WSL_VERSION` is already set. Both preserve the generated files in a new temporary directory and print its report paths.
+
 ## Live execution
 
 Live commands require interactive standard input and output. Supply exact labels; the sample never treats an environment variable or product name as proof of support.
