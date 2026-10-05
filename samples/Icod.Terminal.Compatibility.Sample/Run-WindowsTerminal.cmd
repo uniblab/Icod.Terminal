@@ -21,7 +21,7 @@ if errorlevel 1 (
 )
 
 set "TERMINAL_VERSION="
-for /f "usebackq delims=" %%V in (`powershell.exe -NoProfile -NonInteractive -Command "$package = Get-AppxPackage -Name Microsoft.WindowsTerminal* ^| Sort-Object Version -Descending ^| Select-Object -First 1; if ($null -ne $package) { $package.Version.ToString() }"`) do if not defined TERMINAL_VERSION set "TERMINAL_VERSION=%%V"
+for /f "usebackq delims=" %%V in (`powershell.exe -NoProfile -NonInteractive -Command "$packages = @(Get-AppxPackage -Name Microsoft.WindowsTerminal*); if (0 -lt $packages.Count) { $packages[0].Version.ToString() }"`) do if not defined TERMINAL_VERSION set "TERMINAL_VERSION=%%V"
 for /f "usebackq delims=" %%V in (`git rev-parse HEAD`) do set "SOURCE_COMMIT=%%V"
 for /f "tokens=2 delims=[]" %%V in ('ver') do set "OS_VERSION=%%V"
 if not defined TERMINAL_VERSION (
