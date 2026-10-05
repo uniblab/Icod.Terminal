@@ -13,6 +13,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Inspect rich input, lifecycle, and semantic events | [`Icod.Terminal.RichInput.Sample`](Icod.Terminal.RichInput.Sample/README.md) |
 | Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
 | Compare static advertisement, concrete plans, and live capability knowledge | [`Icod.Terminal.CapabilityPlanning.Sample`](Icod.Terminal.CapabilityPlanning.Sample/README.md) |
+| Generate and review versioned nongraphics terminal compatibility evidence | [`Icod.Terminal.Compatibility.Sample`](Icod.Terminal.Compatibility.Sample/README.md) |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
 | Verify and commit a complete backend-neutral raster in a screen transaction | `Icod.Terminal.RasterGraphics.Sample` |
 | Create/update/observe/dispose terminal-resident raster ownership with source crops, z-order, and relative parent/child placement ownership | [`Icod.Terminal.PersistentRaster.Sample`](Icod.Terminal.PersistentRaster.Sample/README.md) |
@@ -104,6 +105,18 @@ dotnet run --project samples/Icod.Terminal.CapabilityPlanning.Sample/Icod.Termin
 ```
 
 The sample does not inspect terminal brand, `TERM`, protocol family, backend identity, or `Icod.TermInfo` provenance.
+
+### `Icod.Terminal.Compatibility.Sample`
+
+Provides headless scenario discovery and deterministic matrix generation plus consented live qualification of the established nongraphics API surface. Live reports identify exact terminal, OS, optional transport, scenario revision, source commit, and observation time without recording clipboard payloads, key streams, command lines, environment dumps, or arbitrary reply bytes.
+
+```sh
+dotnet run --project samples/Icod.Terminal.Compatibility.Sample -f net10.0 -- --help
+dotnet run --project samples/Icod.Terminal.Compatibility.Sample -f net10.0 -- --list-scenarios
+dotnet run --project samples/Icod.Terminal.Compatibility.Sample -f net10.0 -- --describe notifications
+```
+
+Live `--run` and `--run-all` commands require interactive endpoints and exact identity options. Every side-effecting scenario asks before its first effect; output completion alone cannot establish a visible-behavior pass. See the [walkthrough](Icod.Terminal.Compatibility.Sample/README.md) and [1.26 matrix](../docs/compatibility/1.26.0.md).
 
 ## Raster graphics
 

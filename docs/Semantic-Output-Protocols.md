@@ -387,3 +387,11 @@ The stable 1.x public surface intentionally does not provide:
 - protocol-specific competing input readers.
 
 A new terminal protocol belongs in `Icod.Terminal` only when it has a defensible semantic contract, bounded framing/parsing, truthful support and ownership behavior, and a clear security posture.
+
+## 25. Compatibility qualification
+
+The [1.26 compatibility sample](../samples/Icod.Terminal.Compatibility.Sample/README.md) exercises the existing nongraphics semantic surface through the public methods described above. It emits no raw escape strings and does not select protocols from terminal branding.
+
+Each visible or desktop scenario separates successful frame emission from operator observation. Queries and input scenarios record bounded typed observations through the authoritative session reader. Missing replies, permission denial, policy suppression, and ambiguity remain `Inconclusive`; missing reviewed evidence remains `NotRun`.
+
+The [versioned matrix](compatibility/1.26.0.md) qualifies only the exact scenario revision and environment linked to accepted evidence. It is not a general claim that a terminal product supports every form of an OSC/CSI/DCS protocol, and it does not include graphics while the graphics-development hold remains active.

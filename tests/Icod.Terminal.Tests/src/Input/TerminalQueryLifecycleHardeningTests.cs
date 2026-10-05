@@ -23,6 +23,7 @@ namespace Icod.Terminal.Tests.Input;
 using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
+using Icod.Terminal.Tests.Graphics;
 using Icod.TermInfo;
 using Xunit;
 
@@ -154,6 +155,7 @@ public sealed class TerminalQueryLifecycleHardeningTests {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
 				ObserveLifecycleEvents = false,
+				MonotonicClock = new FrozenMonotonicClock(),
 				InputDecoderOptions = new TerminalInputDecoderOptions {
 					EscapeSequenceTimeout = TimeSpan.Zero
 				}

@@ -1,0 +1,20 @@
+[
+  {
+    "schemaVersion": "1",
+    "terminalPackageVersion": "1.26.0-alpha",
+    "sourceCommit": "de1bd1b260ca05a26fda2635374ffff0437db111",
+    "terminalId": "kitty",
+    "terminalVersion": "kitty 0.32.2 created by Kovid Goyal",
+    "operatingSystem": "Ubuntu",
+    "operatingSystemVersion": "24.04",
+    "transport": "WSL",
+    "transportVersion": "2.6.1.0",
+    "scenarioId": "identity.session",
+    "scenarioRevision": 1,
+    "observedAtUtc": "2026-10-05T14:09:24.5876437+00:00",
+    "outcome": "Pass",
+    "automatedObservation": true,
+    "operatorObservation": null,
+    "note": "The public terminal session opened with interactive endpoints."
+  }
+]
