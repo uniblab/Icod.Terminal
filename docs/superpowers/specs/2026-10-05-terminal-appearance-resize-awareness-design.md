@@ -145,7 +145,7 @@ The implementation recognizes both 7-bit `ESC [` and 8-bit CSI introducers consi
 | Mode response | `CSI ? Pm ; Ps $ y`, with the queried mode in `Pm` |
 | Resize report | `CSI 48 ; rows ; columns ; pixelHeight ; pixelWidth t` |
 
-Required primary fields may carry colon-delimited subparameters. The first value remains authoritative; unknown nonempty subparameters are ignored. Missing primary values, empty subparameters, extra semicolon fields, wrong private markers/intermediates/finals, signed values, nondecimal values, and values above `Int32.MaxValue` are invalid.
+Only resize-report fields may carry colon-delimited subparameters. The first value remains authoritative; unknown nonempty subparameters are ignored. Appearance and mode reports reject subparameters. Missing primary values, empty subparameters, extra semicolon fields, wrong private markers/intermediates/finals, signed values, nondecimal values, and values above `Int32.MaxValue` are invalid. DECRPM state values outside 0 through 4 are invalid.
 
 Rows and columns are each `1..Int32.MaxValue`. Pixel height and width must either both be zero or both be `1..Int32.MaxValue`; a mixed zero/nonzero pair is malformed. Pixel values are text-area pixels and never outer-window pixels. The library performs no division to invent cell dimensions.
 
@@ -162,6 +162,8 @@ The existing routing order is retained:
 Appearance query replies and unsolicited appearance reports have identical grammar and no request identifier. While an appearance query owns that grammar, the first matching report completes it and is not also emitted as an event. Later matching reports are semantic events. This is a protocol limitation, not proof of uniquely correlated causation. Timeout/cancellation retains the existing one-second late-response ownership window so a late response cannot become ordinary input or complete the next ambiguous query.
 
 Mode queries are ambiguity-sensitive and run through the existing transaction manager. The existing maximum of 32 pending transactions is unchanged. No new reader, background transport loop, or independent response buffer is added.
+
+An unclaimed valid DECRPM response for mode 2031 or 2048 is consumed as an orphaned protocol response and produces no public event. This prevents a reply arriving after late-response ownership expires from becoming keyboard input. Other unmatched CSI handling is unchanged.
 
 Malformed unsolicited frames recognized by a semantic prefix are consumed only through a proven frame boundary or the existing bounded oversized-frame recovery. They cannot complete an unrelated query or consume bytes following that boundary.
 
@@ -200,12 +202,14 @@ Resume ordering remains the repository's established sequence:
 1. host input/output state, presentation state, and input protocols re-enter;
 2. the internal lifecycle-observation query window opens while public queries remain suspended;
 3. the reporting manager re-queries only facilities with active owners;
-4. reset states are re-enabled during participant resume; set/permanently-set states require no write;
+4. reset states are re-enabled during participant resume; set/permanently-set appearance state requires no write, while set/permanently-set resize state is re-enabled to request its required fresh size report;
 5. public query transactions resume.
 
 An unsupported/permanently-reset/malformed/silent refresh with active owners fails lifecycle re-entry rather than claiming reporting resumed. All queries occur outside the output gate and no reply is awaited while holding a gate required by the decoder or query writer.
 
 `InvalidateState()` also invalidates reporting baselines and retained freshness. Active leases remain logical owners, but no retained appearance or resize observation is exposed as “current.” An explicit invalidation cannot preserve the prior epoch's exact restoration promise. The next acquisition or lifecycle refresh establishes a new observed baseline; until then, final release performs no blind mode write. This conservative behavior may leave an externally changed reporting mode enabled, but never disables a mode whose current ownership is unknown.
+
+Reports contain no generation token. Bytes delayed across invalidation or resume can still be decoded as observations, and the library cannot authenticate them as belonging to the old or new lifecycle epoch. Applications that need a fresh appearance value issue `QueryAppearanceAsync(...)`; resize owners use the immediate report requested during re-entry and reconcile by provenance rather than treating an earlier event as current.
 
 Session disposal keeps the existing outer order: stop accepting ordinary session output, close query transactions, stop lifecycle input, then close environment reporting before input-protocol and presentation state and before restoring the host mode. Reporting close performs no query. With a still-valid reset baseline, it emits the one owned disable and aggregates cleanup failure into the session disposal error. With invalidated ownership it emits no speculative toggle. All leases are marked released when manager closure completes. A successful write means only local emission completed, not that the terminal applied the restoration.
 
@@ -230,6 +234,45 @@ The implementation adds focused files rather than expanding unrelated protocol c
 | `src/Session/TerminalSession.cs` | Manager construction, invalidation, and disposal integration only. |
 
 No Icod.TermInfo capability, parser, database, or package-version change is required. The protocols are runtime-negotiated and cannot be truthfully inferred from terminfo.
+
+## Consumer flow
+
+The public shape supports independent use. A consumer may query appearance without enabling reports:
+
+```csharp
+TerminalAppearance appearance = await session.QueryAppearanceAsync(
+	TimeSpan.FromSeconds( 1 ),
+	cancellationToken
+);
+```
+
+Reporting is acquired separately and observations still arrive through the unified reader:
+
+```csharp
+TerminalControlResult<TerminalInBandResizeReportingLease> acquisition =
+	await session.AcquireInBandResizeReportingAsync(
+		TimeSpan.FromSeconds( 1 ),
+		cancellationToken
+	);
+
+if ( acquisition.IsAvailable ) {
+	await using TerminalInBandResizeReportingLease lease =
+		acquisition.GetRequiredValue();
+
+	TerminalEvent terminalEvent = await session.ReadEventAsync(
+		Timeout.InfiniteTimeSpan,
+		cancellationToken
+	);
+	if ( terminalEvent.Semantic?.Kind
+		== TerminalSemanticEventKind.InBandResize ) {
+		TerminalInBandResizeEvent resize =
+			terminalEvent.Semantic.InBandResize!;
+		// Reconcile resize.Dimensions and resize.PixelDimensions by provenance.
+	}
+}
+```
+
+An unavailable reporting result leaves the native lifecycle path and synchronous geometry methods untouched.
 
 ## Test contract
 
