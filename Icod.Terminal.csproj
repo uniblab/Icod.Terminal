@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.26.0 adds a public-only terminal compatibility acceptance sample, bounded reviewed evidence, and a versioned nongraphics compatibility matrix. It adds no public runtime API and retains Icod.TermInfo 1.17.0, Icod.Timing 1.0.0 and the stable 1.x compatibility floor. Graphics development remains on hold. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.26.0.md. Compatibility matrix: https://github.com/uniblab/Icod.Terminal/blob/main/docs/compatibility/1.26.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>Icod.Terminal 1.27.0-alpha.1 begins the approved terminal appearance and in-band resize awareness release with additive typed environment-event contracts. It retains Icod.TermInfo 1.17.0, Icod.Timing 1.0.0, the stable 1.x compatibility floor, and the graphics hold. Live terminal support remains evidence-based and is not implied by this prerelease. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.27.0-alpha.1.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
