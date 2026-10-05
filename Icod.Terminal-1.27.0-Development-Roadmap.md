@@ -130,10 +130,10 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 ### T2702 — One-shot appearance observation
 
-- [ ] Add public query-result fixtures covering dark, light, timeout, unavailable endpoint, cancellation, and malformed/unknown values.
-- [ ] Implement the bounded semantic query through the existing transaction manager.
-- [ ] Test one-shot operation with reporting disabled, concurrent queries, a racing unsolicited observation, and late response behavior.
-- [ ] Document that a received value is an observation, not proof of uniquely correlated causation or host theme.
+- [x] Add public query-result fixtures covering dark, light, timeout, unavailable endpoint, cancellation, and malformed/unknown values.
+- [x] Implement the bounded semantic query through the existing transaction manager.
+- [x] Test one-shot operation with reporting disabled, concurrent queries, a racing unsolicited observation, and late response behavior.
+- [x] Document that a received value is an observation, not proof of uniquely correlated causation or host theme.
 
 **Acceptance:** Consumers can request appearance without enabling reporting, guessing, or introducing another reader.
 

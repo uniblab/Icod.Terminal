@@ -94,13 +94,13 @@
 - Consumes: `TerminalEnvironmentProtocol.AppearanceQueryRequest`, `.AppearanceReportMatcher`, `.ParseAppearance(...)`, and `TerminalSession.ExecuteQueryAsync(...)`.
 - Produces: `public ValueTask<TerminalAppearance> QueryAppearanceAsync(TimeSpan timeout, CancellationToken cancellationToken = default)`.
 
-- [ ] **Step 1: Write failing query tests.** Assert exact request bytes; `Dark`/`Light`; zero and one-minute accepted timeouts; negative/over-one-minute rejection; endpoint failure; caller cancellation; timeout; correlated malformed/unknown values as `FormatException`; and no mode-enable bytes.
-- [ ] **Step 2: Add the race tests from Review Focus 1.** The first matching report completes the active query and is not duplicated as an event; a matching frame in the one-second late window cannot complete the next ambiguous query or become input; a later report becomes a semantic event.
-- [ ] **Step 3: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalAppearanceQueryTests`. Expected: FAIL because `QueryAppearanceAsync` is absent.
-- [ ] **Step 4: Implement the public query in `TerminalSession.Environment.cs`.** Validate the timeout with the existing query bound, execute exactly one environment query, and return only `Dark` or `Light`; never substitute `Unknown` for an exception.
-- [ ] **Step 5: Run the Step 3 command to verify GREEN.** Expected: all appearance query tests pass.
-- [ ] **Step 6: Run all query-manager lifecycle tests.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~TerminalQueryTransaction|FullyQualifiedName~TerminalQueryLifecycle"`. Expected: all selected tests pass.
-- [ ] **Step 7: Commit.** Commit as `feat: add bounded terminal appearance query`.
+- [x] **Step 1: Write failing query tests.** Assert exact request bytes; `Dark`/`Light`; zero and one-minute accepted timeouts; negative/over-one-minute rejection; endpoint failure; caller cancellation; timeout; correlated malformed/unknown values as `FormatException`; and no mode-enable bytes.
+- [x] **Step 2: Add the race tests from Review Focus 1.** The first matching report completes the active query and is not duplicated as an event; a matching frame in the one-second late window cannot complete the next ambiguous query or become input; a later report becomes a semantic event.
+- [x] **Step 3: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalAppearanceQueryTests`. Expected: FAIL because `QueryAppearanceAsync` is absent.
+- [x] **Step 4: Implement the public query in `TerminalSession.Environment.cs`.** Validate the timeout with the existing query bound, execute exactly one environment query, and return only `Dark` or `Light`; never substitute `Unknown` for an exception.
+- [x] **Step 5: Run the Step 3 command to verify GREEN.** Expected: all appearance query tests pass.
+- [x] **Step 6: Run all query-manager lifecycle tests.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~TerminalQueryTransaction|FullyQualifiedName~TerminalQueryLifecycle"`. Expected: all selected tests pass.
+- [x] **Step 7: Commit.** Commit as `feat: add bounded terminal appearance query`.
 
 ### Task 4: Add independently owned appearance reporting
 
