@@ -76,7 +76,7 @@ public sealed class TerminalEnvironmentCorrelationTests {
 			Assert.IsAssignableFrom<ICorrelatedTerminalResponseMatcher>(
 				TerminalEnvironmentProtocol.AppearanceReportMatcher
 			);
-		IReadOnlyList<byte> encoded = bytes.StartsWith( '?', StringComparison.Ordinal )
+		IReadOnlyList<byte> encoded = bytes.StartsWith( "?", StringComparison.Ordinal )
 			? [ 0x9B, .. Encoding.ASCII.GetBytes( bytes ) ]
 			: Encoding.ASCII.GetBytes( bytes );
 
@@ -97,7 +97,7 @@ public sealed class TerminalEnvironmentCorrelationTests {
 			Assert.IsAssignableFrom<ICorrelatedTerminalResponseMatcher>(
 				TerminalEnvironmentProtocol.CreatePrivateModeReportMatcher( mode )
 			);
-		IReadOnlyList<byte> encoded = bytes.StartsWith( '?', StringComparison.Ordinal )
+		IReadOnlyList<byte> encoded = bytes.StartsWith( "?", StringComparison.Ordinal )
 			? [ 0x9B, .. Encoding.ASCII.GetBytes( bytes ) ]
 			: Encoding.ASCII.GetBytes( bytes );
 
