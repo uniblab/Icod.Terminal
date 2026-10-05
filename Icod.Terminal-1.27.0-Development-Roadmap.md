@@ -139,10 +139,10 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 ### T2703 — Appearance reporting ownership
 
-- [ ] Add fixtures for observed baseline enabled/disabled, permanent mode states, unsupported response, and unknown baseline.
-- [ ] Implement independently acquired reporting and additive semantic appearance events.
-- [ ] Exercise nested and concurrent owners, out-of-order release, failed enable, failed restore, and repeated same-value notifications.
-- [ ] Verify mode writes use session serialization and previous mode ownership is preserved.
+- [x] Add fixtures for observed baseline enabled/disabled, permanent mode states, unsupported response, and unknown baseline.
+- [x] Implement independently acquired reporting and additive semantic appearance events.
+- [x] Exercise nested and concurrent owners, out-of-order release, failed enable, failed restore, and repeated same-value notifications.
+- [x] Verify mode writes use session serialization and previous mode ownership is preserved.
 
 **Acceptance:** Reporting is opt-in and composable, and restoration promises match captured evidence.
 

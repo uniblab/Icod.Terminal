@@ -116,15 +116,15 @@
 - Consumes: mode 2031 codecs, `ExecuteQueryAsync(...)`, `TerminalControlResult<T>`, and serialized control output.
 - Produces: `public ValueTask<TerminalControlResult<TerminalAppearanceReportingLease>> AcquireAppearanceReportingAsync(TimeSpan, CancellationToken = default)`; sealed idempotent `TerminalAppearanceReportingLease : IAsyncDisposable`; manager `AcquireAppearanceAsync(...)`, `ReleaseAsync(TerminalEnvironmentReportingKind, long)`, `Invalidate()`, and `CloseAsync()` entry points.
 
-- [ ] **Step 1: Write failing mode-table tests.** Pin all five DECRPM states: 0/4 return `Unavailable`; 1/3 return a lease without mode output; 2 emits one `CSI ?2031h` and final release emits one `CSI ?2031l`; malformed, silence, cancellation, and endpoint failure remain exceptions.
-- [ ] **Step 2: Add failing ownership tests.** Cover nested/concurrent owners, monotonic IDs, out-of-order disposal, repeated disposal, enable failure, restoration failure retaining ownership for retry, and acquisition cleanup only when a captured reset baseline makes disable correct.
-- [ ] **Step 3: Add the already-enabled test from Review Focus 2.** Acquire from Set and PermanentlySet, dispose every owner, and assert no disable bytes.
-- [ ] **Step 4: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalAppearanceReportingTests`. Expected: FAIL because acquisition, manager, and lease are absent.
-- [ ] **Step 5: Implement appearance ownership.** Query outside the control-output gate; serialize committed writes; store independent baseline/owner state behind the manager gate; return controlled unavailable only for states 0/4; preserve same-value semantic reports.
-- [ ] **Step 6: Integrate manager construction only.** Add one session-owned manager, but defer lifecycle registration and disposal-order changes to Task 6.
-- [ ] **Step 7: Run the Step 4 command to verify GREEN.** Expected: all appearance reporting tests pass.
-- [ ] **Step 8: Run existing lease/output-certainty tests.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~LeaseTests|FullyQualifiedName~OutputCertainty"`. Expected: all selected tests pass.
-- [ ] **Step 9: Commit.** Commit as `feat: add scoped appearance reporting`.
+- [x] **Step 1: Write failing mode-table tests.** Pin all five DECRPM states: 0/4 return `Unavailable`; 1/3 return a lease without mode output; 2 emits one `CSI ?2031h` and final release emits one `CSI ?2031l`; malformed, silence, cancellation, and endpoint failure remain exceptions.
+- [x] **Step 2: Add failing ownership tests.** Cover nested/concurrent owners, monotonic IDs, out-of-order disposal, repeated disposal, enable failure, restoration failure retaining ownership for retry, and acquisition cleanup only when a captured reset baseline makes disable correct.
+- [x] **Step 3: Add the already-enabled test from Review Focus 2.** Acquire from Set and PermanentlySet, dispose every owner, and assert no disable bytes.
+- [x] **Step 4: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalAppearanceReportingTests`. Expected: FAIL because acquisition, manager, and lease are absent.
+- [x] **Step 5: Implement appearance ownership.** Query outside the control-output gate; serialize committed writes; store independent baseline/owner state behind the manager gate; return controlled unavailable only for states 0/4; preserve same-value semantic reports.
+- [x] **Step 6: Integrate manager construction only.** Add one session-owned manager, but defer lifecycle registration and disposal-order changes to Task 6.
+- [x] **Step 7: Run the Step 4 command to verify GREEN.** Expected: all appearance reporting tests pass.
+- [x] **Step 8: Run existing lease/output-certainty tests.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~LeaseTests|FullyQualifiedName~OutputCertainty"`. Expected: all selected tests pass.
+- [x] **Step 9: Commit.** Commit as `feat: add scoped appearance reporting`.
 
 ### Task 5: Add independently owned in-band resize reporting
 
