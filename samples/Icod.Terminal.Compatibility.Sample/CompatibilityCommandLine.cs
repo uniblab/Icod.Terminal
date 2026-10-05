@@ -125,14 +125,31 @@ internal static class CompatibilityCommandLine {
 		var evidence = new List<CompatibilityEvidence>();
 		foreach ( string path in Directory.EnumerateFiles( evidenceDirectory, "*.json" ).Order( StringComparer.Ordinal ) ) {
 			cancellationToken.ThrowIfCancellationRequested();
-			CompatibilityEvidence? item = JsonSerializer.Deserialize<CompatibilityEvidence>(
-				await File.ReadAllTextAsync( path, cancellationToken ).ConfigureAwait( false ),
-				CompatibilityReportWriter.JsonOptions
+			using JsonDocument document = JsonDocument.Parse(
+				await File.ReadAllTextAsync( path, cancellationToken ).ConfigureAwait( false )
 			);
-			if ( null == item ) {
-				throw new FormatException( $"Evidence file '{path}' contains no result." );
+			switch ( document.RootElement.ValueKind ) {
+				case JsonValueKind.Object:
+					CompatibilityEvidence? item = document.RootElement.Deserialize<CompatibilityEvidence>(
+						CompatibilityReportWriter.JsonOptions
+					);
+					if ( null == item ) {
+						throw new FormatException( $"Evidence file '{path}' contains no result." );
+					}
+					evidence.Add( item );
+					break;
+				case JsonValueKind.Array:
+					IReadOnlyList<CompatibilityEvidence>? report = document.RootElement.Deserialize<IReadOnlyList<CompatibilityEvidence>>(
+						CompatibilityReportWriter.JsonOptions
+					);
+					if ( null == report || 0 == report.Count ) {
+						throw new FormatException( $"Evidence file '{path}' contains no result." );
+					}
+					evidence.AddRange( report );
+					break;
+				default:
+					throw new FormatException( $"Evidence file '{path}' must contain an evidence object or report array." );
 			}
-			evidence.Add( item );
 		}
 		string matrix = CompatibilityMatrixRenderer.Render( evidence, "1.26.0" );
 		await File.WriteAllTextAsync( outputPath, matrix, cancellationToken ).ConfigureAwait( false );

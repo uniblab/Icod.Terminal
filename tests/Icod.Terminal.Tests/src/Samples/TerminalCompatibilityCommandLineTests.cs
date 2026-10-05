@@ -132,6 +132,36 @@ public sealed class TerminalCompatibilityCommandLineTests {
 	}
 
 	[Fact]
+	public async Task MatrixRenderingAcceptsAReportProducedByTheLiveReportWriter() {
+		Invocation invocation = new();
+		string directory = Path.Combine( Path.GetTempPath(), $"icod-array-evidence-{Guid.NewGuid():N}" );
+		string evidence = Path.Combine( directory, "live-report.json" );
+		string output = Path.Combine( Path.GetTempPath(), $"icod-array-matrix-{Guid.NewGuid():N}.md" );
+		Directory.CreateDirectory( directory );
+		try {
+			await CompatibilityReportWriter.WriteAsync(
+				evidence,
+				[ TerminalCompatibilityEvidenceTests.Valid() ],
+				overwrite: false,
+				CancellationToken.None
+			);
+
+			int exitCode = await invocation.RunAsync(
+				"--render-matrix", directory, output
+			);
+
+			Assert.Equal( 0, exitCode );
+			Assert.Contains( "| Kitty via WSL 2 | `identity.session/v1` | `Pass` | [1] |", File.ReadAllText( output ), StringComparison.Ordinal );
+			Assert.Equal( 0, invocation.SessionFactoryCalls );
+		} finally {
+			if ( File.Exists( output ) ) {
+				File.Delete( output );
+			}
+			Directory.Delete( directory, recursive: true );
+		}
+	}
+
+	[Fact]
 	public async Task EmptyEvidenceDirectoryRendersExplicitNotRunLanes() {
 		Invocation invocation = new();
 		string directory = Path.Combine( Path.GetTempPath(), $"icod-empty-evidence-{Guid.NewGuid():N}" );

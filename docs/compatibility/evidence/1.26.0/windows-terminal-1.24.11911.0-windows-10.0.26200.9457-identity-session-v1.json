@@ -1,0 +1,20 @@
+[
+  {
+    "schemaVersion": "1",
+    "terminalPackageVersion": "1.26.0-alpha",
+    "sourceCommit": "32cb250ddf1e35aef7afa3fc1071c85d47dcf7a3",
+    "terminalId": "windows-terminal",
+    "terminalVersion": "1.24.11911.0",
+    "operatingSystem": "Windows",
+    "operatingSystemVersion": "Version 10.0.26200.9457",
+    "transport": null,
+    "transportVersion": null,
+    "scenarioId": "identity.session",
+    "scenarioRevision": 1,
+    "observedAtUtc": "2026-10-05T14:22:02.2632944+00:00",
+    "outcome": "Pass",
+    "automatedObservation": true,
+    "operatorObservation": null,
+    "note": "The public terminal session opened with interactive endpoints."
+  }
+]
