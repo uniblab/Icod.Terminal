@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
+using Icod.Timing;
 using Xunit;
 
 /// <summary>
@@ -276,7 +277,8 @@ public sealed class TerminalKittyKeyboardProtocolLeaseTests {
 				TerminalOverride = terminal
 					?? new TerminalDescriptionBuilder( "kitty-keyboard-test" ).Build(),
 				ConfigureOutput = false,
-				ObserveLifecycleEvents = false
+				ObserveLifecycleEvents = false,
+				MonotonicClock = new NonAdvancingMonotonicClock()
 			}
 		);
 	}
@@ -439,6 +441,28 @@ public sealed class TerminalKittyKeyboardProtocolLeaseTests {
 				throw new ArgumentOutOfRangeException( nameof( timing ) );
 			}
 			return TerminalControlMutationResult.Success();
+		}
+	}
+
+	private sealed class NonAdvancingMonotonicClock : IMonotonicClock {
+		public long GetTimestamp() {
+			return 0;
+		}
+
+		public TimeSpan GetElapsedTime(
+			long startingTimestamp,
+			long endingTimestamp
+		) {
+			return TimeSpan.Zero;
+		}
+
+		public ValueTask DelayAsync(
+			TimeSpan delay,
+			CancellationToken cancellationToken = default
+		) {
+			return new ValueTask(
+				Task.Delay( Timeout.InfiniteTimeSpan, cancellationToken )
+			);
 		}
 	}
 }
