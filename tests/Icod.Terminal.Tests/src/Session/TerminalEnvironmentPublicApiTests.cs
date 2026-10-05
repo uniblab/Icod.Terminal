@@ -96,6 +96,18 @@ public sealed class TerminalEnvironmentPublicApiTests {
 			new TerminalDimensions( 120, 40 ),
 			new TerminalPixelDimensions( 1200, 800 )
 		);
+		Assert.Equal(
+			dark,
+			appearanceEventType.GetProperty( "Appearance" )!.GetValue( appearanceEvent )
+		);
+		Assert.Equal(
+			new TerminalDimensions( 120, 40 ),
+			resizeEventType.GetProperty( "Dimensions" )!.GetValue( resizeEvent )
+		);
+		Assert.Equal(
+			new TerminalPixelDimensions( 1200, 800 ),
+			resizeEventType.GetProperty( "PixelDimensions" )!.GetValue( resizeEvent )
+		);
 
 		TerminalSemanticEvent appearance = InvokeSemanticFactory(
 			"FromAppearance",
@@ -125,6 +137,22 @@ public sealed class TerminalEnvironmentPublicApiTests {
 			resizeEvent,
 			typeof( TerminalSemanticEvent ).GetProperty( "InBandResize" )!.GetValue( resize )
 		);
+	}
+
+	[Fact]
+	public void AppearanceEventRejectsUnknownAppearance() {
+		Type appearanceValueType = GetRequiredType(
+			"Icod.Terminal.TerminalAppearance"
+		);
+		Type appearanceEventType = GetRequiredType(
+			"Icod.Terminal.TerminalAppearanceEvent"
+		);
+		object unknown = Enum.Parse( appearanceValueType, "Unknown" );
+
+		TargetInvocationException exception = Assert.Throws<TargetInvocationException>(
+			() => InvokeInternalConstructor( appearanceEventType, unknown )
+		);
+		Assert.IsType<ArgumentOutOfRangeException>( exception.InnerException );
 	}
 
 	[Fact]
