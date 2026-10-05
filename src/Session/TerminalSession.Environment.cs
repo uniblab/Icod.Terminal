@@ -90,4 +90,35 @@ public sealed partial class TerminalSession {
 			cancellationToken
 		).ConfigureAwait( false );
 	}
+
+	/// <summary>
+	/// Acquires one independently owned request for in-band resize reports.
+	/// </summary>
+	/// <param name="timeout">The caller-visible private-mode query timeout.</param>
+	/// <param name="cancellationToken">Cancellation for acquisition only.</param>
+	/// <returns>
+	/// An available result containing the reporting lease, or an unavailable result
+	/// when the terminal explicitly reports that mode 2048 cannot be enabled.
+	/// </returns>
+	/// <remarks>
+	/// Acquisition enables or re-enables the mode so the terminal requests an
+	/// immediate report. That report remains on the authoritative semantic input path.
+	/// Native lifecycle and synchronous geometry APIs retain their own provenance.
+	/// </remarks>
+	public async ValueTask<TerminalControlResult<TerminalInBandResizeReportingLease>>
+		AcquireInBandResizeReportingAsync(
+			TimeSpan timeout,
+			CancellationToken cancellationToken = default
+		) {
+		ValidateCsiQueryTimeout( timeout );
+		cancellationToken.ThrowIfCancellationRequested();
+		using IDisposable composition = await this.AcquireStateCompositionAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		this.ThrowIfStateAcquisitionUnavailable();
+		return await this.environmentReportingManager.AcquireInBandResizeAsync(
+			timeout,
+			cancellationToken
+		).ConfigureAwait( false );
+	}
 }

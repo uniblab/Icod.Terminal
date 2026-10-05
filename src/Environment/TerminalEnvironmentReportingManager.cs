@@ -25,6 +25,7 @@ namespace Icod.Terminal;
 /// </summary>
 internal sealed class TerminalEnvironmentReportingManager {
 	private const int AppearanceMode = 2031;
+	private const int InBandResizeMode = 2048;
 
 	private readonly TerminalSession session;
 	private readonly SemaphoreSlim gate = new( 1, 1 );
@@ -109,6 +110,69 @@ internal sealed class TerminalEnvironmentReportingManager {
 			this.ClearInvalidated();
 			return TerminalControlResult<TerminalAppearanceReportingLease>.Available(
 				this.AddAppearanceOwner( state )
+			);
+		} finally {
+			this.gate.Release();
+		}
+	}
+
+	internal async ValueTask<TerminalControlResult<TerminalInBandResizeReportingLease>>
+		AcquireInBandResizeAsync(
+			TimeSpan timeout,
+			CancellationToken cancellationToken
+		) {
+		cancellationToken.ThrowIfCancellationRequested();
+		await this.gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
+		try {
+			this.ThrowIfClosed();
+			if ( long.MaxValue == this.nextOwnerId ) {
+				throw new InvalidOperationException(
+					"The terminal environment-reporting owner identifier space has been exhausted."
+				);
+			}
+			if ( this.states.TryGetValue(
+				TerminalEnvironmentReportingKind.InBandResize,
+				out FacilityState? current
+			) && 0 < current.Owners.Count ) {
+				return TerminalControlResult<TerminalInBandResizeReportingLease>.Available(
+					this.AddInBandResizeOwner( current )
+				);
+			}
+
+			TerminalResponseFrame frame = await this.session.ExecuteQueryAsync(
+				TerminalEnvironmentProtocol.CreatePrivateModeQuery( InBandResizeMode ),
+				TerminalEnvironmentProtocol.CreatePrivateModeReportMatcher( InBandResizeMode ),
+				timeout,
+				cancellationToken
+			).ConfigureAwait( false );
+			TerminalPrivateModeState baseline =
+				TerminalEnvironmentProtocol.ParsePrivateModeState(
+					frame,
+					InBandResizeMode
+				);
+			if ( baseline is TerminalPrivateModeState.NotRecognized
+				or TerminalPrivateModeState.PermanentlyReset ) {
+				return TerminalControlResult<TerminalInBandResizeReportingLease>.Unavailable(
+					"The terminal reported that in-band resize reporting cannot be enabled."
+				);
+			}
+
+			cancellationToken.ThrowIfCancellationRequested();
+			await this.EnableForAcquisitionAsync(
+				InBandResizeMode,
+				cleanupToReset: TerminalPrivateModeState.Reset == baseline,
+				cancellationToken
+			).ConfigureAwait( false );
+
+			FacilityState state = new(
+				TerminalEnvironmentReportingKind.InBandResize,
+				InBandResizeMode,
+				baseline
+			);
+			this.states[ TerminalEnvironmentReportingKind.InBandResize ] = state;
+			this.ClearInvalidated();
+			return TerminalControlResult<TerminalInBandResizeReportingLease>.Available(
+				this.AddInBandResizeOwner( state )
 			);
 		} finally {
 			this.gate.Release();
@@ -218,8 +282,29 @@ internal sealed class TerminalEnvironmentReportingManager {
 		return lease;
 	}
 
+	private TerminalInBandResizeReportingLease AddInBandResizeOwner(
+		FacilityState state
+	) {
+		long ownerId = ++this.nextOwnerId;
+		TerminalInBandResizeReportingLease lease = new( this, ownerId );
+		state.Owners.Add( ownerId, lease );
+		return lease;
+	}
+
 	private async ValueTask EnableFromResetBaselineAsync(
 		int mode,
+		CancellationToken cancellationToken
+	) {
+		await this.EnableForAcquisitionAsync(
+			mode,
+			cleanupToReset: true,
+			cancellationToken
+		).ConfigureAwait( false );
+	}
+
+	private async ValueTask EnableForAcquisitionAsync(
+		int mode,
+		bool cleanupToReset,
 		CancellationToken cancellationToken
 	) {
 		bool emissionAttempted = false;
@@ -233,7 +318,9 @@ internal sealed class TerminalEnvironmentReportingManager {
 				TerminalEnvironmentProtocol.CreatePrivateModeSet( mode, enabled: true ),
 				CancellationToken.None
 			).ConfigureAwait( false );
-		} catch ( Exception acquisitionFailure ) when ( emissionAttempted ) {
+		} catch ( Exception acquisitionFailure ) when (
+			emissionAttempted && cleanupToReset
+		) {
 			try {
 				await this.WriteCleanupModeAsync(
 					mode,
