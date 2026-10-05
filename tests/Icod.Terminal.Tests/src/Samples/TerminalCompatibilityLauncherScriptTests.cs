@@ -35,6 +35,7 @@ public sealed class TerminalCompatibilityLauncherScriptTests {
 		Assert.Contains( "git rev-parse HEAD", script, StringComparison.Ordinal );
 		Assert.Contains( "Get-AppxPackage", script, StringComparison.Ordinal );
 		Assert.Contains( "TERMINAL_VERSION=unknown", script, StringComparison.Ordinal );
+		Assert.DoesNotContain( "fc /b", script, StringComparison.Ordinal );
 		Assert.DoesNotContain( "--overwrite", script, StringComparison.Ordinal );
 	}
 
@@ -48,6 +49,7 @@ public sealed class TerminalCompatibilityLauncherScriptTests {
 		Assert.Contains( "--run query.dimensions", script, StringComparison.Ordinal );
 		Assert.Contains( "--render-matrix", script, StringComparison.Ordinal );
 		Assert.Contains( "mktemp -d", script, StringComparison.Ordinal );
+		Assert.DoesNotContain( "cmp -s", script, StringComparison.Ordinal );
 		Assert.DoesNotContain( "--overwrite", script, StringComparison.Ordinal );
 	}
 

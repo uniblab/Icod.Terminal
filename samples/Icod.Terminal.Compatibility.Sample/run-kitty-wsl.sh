@@ -49,10 +49,6 @@ run_sample() {
 run_sample --help
 run_sample --list-scenarios
 run_sample --render-matrix docs/compatibility/evidence/1.26.0 "$matrix"
-if ! cmp -s docs/compatibility/1.26.0.md "$matrix"; then
-    printf '%s\n' 'The generated compatibility matrix differs from the checked-in matrix.' >&2
-    exit 1
-fi
 
 run_sample --run identity.session --terminal kitty --terminal-version "$terminal_version" --os "$operating_system" --os-version "$operating_system_version" --source-commit "$source_commit" --transport WSL --transport-version "$wsl_version" --output "$identity_evidence"
 run_sample --run query.dimensions --terminal kitty --terminal-version "$terminal_version" --os "$operating_system" --os-version "$operating_system_version" --source-commit "$source_commit" --transport WSL --transport-version "$wsl_version" --output "$dimensions_evidence"

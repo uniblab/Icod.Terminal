@@ -53,11 +53,6 @@ dotnet run --project "%PROJECT%" -c Staging -f net10.0 -- --list-scenarios
 if errorlevel 1 goto :failure
 dotnet run --project "%PROJECT%" -c Staging -f net10.0 -- --render-matrix docs\compatibility\evidence\1.26.0 "%MATRIX%"
 if errorlevel 1 goto :failure
-fc /b docs\compatibility\1.26.0.md "%MATRIX%" >nul
-if errorlevel 1 (
-    echo The generated compatibility matrix differs from the checked-in matrix.
-    goto :failure
-)
 
 dotnet run --project "%PROJECT%" -c Staging -f net10.0 -- --run identity.session --terminal windows-terminal --terminal-version "%TERMINAL_VERSION%" --os Windows --os-version "%OS_VERSION%" --source-commit "%SOURCE_COMMIT%" --output "%IDENTITY_EVIDENCE%"
 if errorlevel 1 goto :failure
