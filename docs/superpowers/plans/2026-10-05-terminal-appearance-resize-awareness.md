@@ -52,13 +52,13 @@
 - Consumes: existing `TerminalDimensions`, `TerminalPixelDimensions`, `TerminalEventKind.Semantic`, XML-doc and public-API conventions.
 - Produces: `TerminalAppearance { Unknown = 0, Dark = 1, Light = 2 }`; sealed `TerminalAppearanceEvent` and `TerminalInBandResizeEvent`; appended `TerminalSemanticEventKind.Appearance = 1` and `InBandResize = 2`; nullable `TerminalSemanticEvent.Appearance` and `.InBandResize`; internal `FromAppearance(...)` and `FromInBandResize(...)` factories.
 
-- [ ] **Step 1: Write the failing public-contract tests.** Assert exact enum numeric values; internal-only payload constructors; read-only payload properties; exactly one non-null semantic payload; existing `Notification = 0`; and unchanged existing public members.
-- [ ] **Step 2: Run the focused test to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalEnvironmentPublicApiTests`. Expected: FAIL because the environment types and semantic members do not exist.
-- [ ] **Step 3: Set `VersionPrefix` to `1.27.0` and `VersionSuffix` to `alpha.1`.** Add alpha notes stating that publication is not implied and live support remains evidence-based; update `PackageReleaseNotes` to identify `1.27.0-alpha.1` and link those notes without changing dependency versions.
-- [ ] **Step 4: Implement the value and event types.** Keep `Unknown` out of parser-produced events; map resize constructor inputs to existing `(columns, rows)` and `(width, height)` types; retain exact-one-payload construction inside `TerminalSemanticEvent`.
-- [ ] **Step 5: Run the focused test to verify GREEN.** Use the Step 2 command. Expected: all `TerminalEnvironmentPublicApiTests` pass on net10.0.
-- [ ] **Step 6: Run the existing semantic-event contracts.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~TerminalSemanticEventContractTests|FullyQualifiedName~TerminalSemanticEventSubstrateTests"`. Expected: all selected tests pass and notification behavior is unchanged.
-- [ ] **Step 7: Commit.** Commit as `feat: establish Terminal 1.27 environment event contract`.
+- [x] **Step 1: Write the failing public-contract tests.** Assert exact enum numeric values; internal-only payload constructors; read-only payload properties; exactly one non-null semantic payload; existing `Notification = 0`; and unchanged existing public members.
+- [x] **Step 2: Run the focused test to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalEnvironmentPublicApiTests`. Expected: FAIL because the environment types and semantic members do not exist.
+- [x] **Step 3: Set `VersionPrefix` to `1.27.0` and `VersionSuffix` to `alpha.1`.** Add alpha notes stating that publication is not implied and live support remains evidence-based; update `PackageReleaseNotes` to identify `1.27.0-alpha.1` and link those notes without changing dependency versions.
+- [x] **Step 4: Implement the value and event types.** Keep `Unknown` out of parser-produced events; map resize constructor inputs to existing `(columns, rows)` and `(width, height)` types; retain exact-one-payload construction inside `TerminalSemanticEvent`.
+- [x] **Step 5: Run the focused test to verify GREEN.** Use the Step 2 command. Expected: all `TerminalEnvironmentPublicApiTests` pass on net10.0.
+- [x] **Step 6: Run the existing semantic-event contracts.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~TerminalSemanticEventContractTests|FullyQualifiedName~TerminalSemanticEventSubstrateTests"`. Expected: all selected tests pass and notification behavior is unchanged.
+- [x] **Step 7: Commit.** Commit as `feat: establish Terminal 1.27 environment event contract`.
 
 ### Task 2: Implement bounded environment protocol parsing and routing
 

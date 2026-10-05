@@ -8,7 +8,7 @@
 
 **Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
 
-**Status:** T2700 implementation-plan review. The maintainer approved the [detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) on 2026-10-05. The [task-level implementation plan](docs/superpowers/plans/2026-10-05-terminal-appearance-resize-awareness.md) now freezes files, interfaces, RED/GREEN witnesses, verification commands, and commit boundaries for review. No 1.27 runtime implementation, public API, dependency change, or development-version change is included yet.
+**Status:** T2701 bounded protocol parsing and routing. The maintainer approved the [detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) and [task-level implementation plan](docs/superpowers/plans/2026-10-05-terminal-appearance-resize-awareness.md) on 2026-10-05. Task 1 established the `1.27.0-alpha.1` identity and additive environment-event contract; protocol recognition and routing are now active.
 
 **Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Stable workflow `37337222940` passed. Its release artifact ZIP SHA-256 is `4fe00b74d451a8c96b326f1fe4b4c46390392288d1be03ee6a6296608ab7dbc4`; the contained `.nupkg` and `.snupkg` SHA-256 values are `49a019d9ee8c8861ba97aeb23b6fd7f1f6b446812ad7b80cd9fd4d56cb0ace80` and `b9e17324e65efdb5dc3b684cccfdc1144154acb273589ef0df169db13042995d`.
 
@@ -115,7 +115,7 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 - [x] Write the task-level implementation plan under `docs/superpowers/plans/`; maintainer review remains pending.
 - [x] Freeze exact public names/signatures, additive enum values, event projection, mode-state table, numeric/buffer/deadline bounds, correlation limits, and suspend/re-entry order.
 - [x] Name every new source/test file and define the failing fixtures and exact verification commands before implementation.
-- [ ] Obtain maintainer approval of the implementation plan; then introduce the `1.27.0-alpha.1` development identity with matching metadata.
+- [x] Obtain maintainer approval of the implementation plan; then introduce the `1.27.0-alpha.1` development identity with matching metadata.
 
 **Acceptance:** A reviewed, executable design exists with no unresolved ownership or compatibility decision. This planning PR alone does not satisfy the gate.
 
@@ -241,4 +241,5 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | T2700 detailed design | `docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md` | Approved by maintainer on 2026-10-05 |
 | T2700 implementation plan | `docs/superpowers/plans/2026-10-05-terminal-appearance-resize-awareness.md` | Proposed; maintainer review required before runtime implementation |
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
-| Runtime implementation and acceptance | T2700-T2710 checklists above | Not started |
+| Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
+| Runtime implementation and acceptance | T2701-T2710 checklists above | In progress |
