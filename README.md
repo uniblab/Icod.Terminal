@@ -9,7 +9,9 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.25.0`.
+Current stable release: `Icod.Terminal 1.26.0`.
+
+Version 1.26 adds no production runtime API. It adds a public-only executable compatibility sample, bounded reviewed JSON evidence, deterministic matrix generation, and fresh-package acceptance across .NET 8, 9, and 10. The initial matrix records exact, scenario-scoped identity and dimension observations for Windows Terminal and Kitty through WSL; every unrecorded scenario remains `NotRun`. See the [1.26 release notes](docs/releases/1.26.0.md), [compatibility matrix](docs/compatibility/1.26.0.md), and [sample walkthrough](samples/Icod.Terminal.Compatibility.Sample/README.md).
 
 Version 1.25 adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a complete, caller-owned image in the same ordered commit as cursor plans and text. Call `VerifyCapabilityAsync(TerminalCapability.RasterGraphics)` before building the transaction. The commit uses already verified Kitty Graphics or Sixel evidence, encodes all frames within the aggregate 64 MiB bound before output, and does not infer placement or cursor position after the raster. It includes the alpha.1–alpha.5 corrections: newline-safe cursor planning, coalesced Sixel writes, immediate Unix byte input, Kitty DA1 compatibility and bounded persistent-transfer deadlines. See the [1.25 release notes](docs/releases/1.25.0.md).
 
@@ -42,9 +44,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.25 retains every 1.24.1 public signature and enum value and adds one screen-transaction method. Existing screen planning, transactions, rendition, raster, input, and lifecycle contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.26 retains every 1.25.0 public signature and enum value and adds no production runtime API. Existing screen planning, transactions, rendition, raster, input, lifecycle, and compatibility contracts remain available.
 
-See the [1.25 release notes](docs/releases/1.25.0.md), [1.25 API baseline](docs/Public-API-Baseline-1.25.md), and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.26 release notes](docs/releases/1.26.0.md), unchanged [1.25 API baseline](docs/Public-API-Baseline-1.25.md), and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -94,7 +96,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the current stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.25.0
+dotnet add package Icod.Terminal --version 1.26.0
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.

@@ -2,6 +2,15 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.26.0
+
+- Adds a public-API-only compatibility sample with headless discovery, consented live scenarios, bounded JSON reports, and deterministic Markdown matrix generation.
+- Records initial reviewed `Pass` evidence for `identity.session/v1` and `query.dimensions/v1` in Windows Terminal 1.24.11911.0 on Windows Version 10.0.26200.9457 and Kitty 0.32.2 on Ubuntu 24.04 through WSL 2.6.1.0. Every unrecorded scenario and lane remains `NotRun`.
+- Adds safe Windows Terminal and Kitty/WSL launchers for collecting the two initial reports without overwriting existing files or exercising side-effecting scenarios.
+- Keeps terminal branding, successful output, silence, and absent evidence from becoming broader compatibility claims; reviewed results qualify only their exact scenario revision and environment.
+- Preserves every 1.25 public signature and enum value, the .NET 8/9/10 target matrix, and production dependencies `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`. No consumer migration or Icod.TermInfo change is required.
+- Keeps graphics qualification outside the matrix while the graphics-development hold remains active. See [1.26.0 release notes](docs/releases/1.26.0.md).
+
 ## 1.25.0
 
 - Graphics development and further Kitty live qualification are on hold by maintainer decision (2026-10-04). Published alpha.5 behavior and public contracts remain intact; no workaround is added. Persistent-ATLAS live acceptance is deferred, ordinary-frame flicker remains documented, and stable release preparation retains these limits. See [graphics development hold](docs/Graphics-Development-Hold.md).
