@@ -21,13 +21,12 @@ if errorlevel 1 (
 )
 
 set "TERMINAL_VERSION="
-for /f "usebackq delims=" %%V in (`wt --version`) do if not defined TERMINAL_VERSION set "TERMINAL_VERSION=%%V"
+for /f "usebackq delims=" %%V in (`powershell.exe -NoProfile -NonInteractive -Command "$package = Get-AppxPackage -Name Microsoft.WindowsTerminal* ^| Sort-Object Version -Descending ^| Select-Object -First 1; if ($null -ne $package) { $package.Version.ToString() }"`) do if not defined TERMINAL_VERSION set "TERMINAL_VERSION=%%V"
 for /f "usebackq delims=" %%V in (`git rev-parse HEAD`) do set "SOURCE_COMMIT=%%V"
 for /f "tokens=2 delims=[]" %%V in ('ver') do set "OS_VERSION=%%V"
 if not defined TERMINAL_VERSION (
-    echo Unable to determine the Windows Terminal version.
-    popd
-    exit /b 1
+    set "TERMINAL_VERSION=unknown"
+    echo Warning: Windows Terminal version could not be determined; recording "unknown".
 )
 if not defined SOURCE_COMMIT (
     echo Unable to determine the source commit.
