@@ -33,13 +33,19 @@ try {
 
     Write-Host ''
     Write-Host "=== Test runtime graph ($Configuration) ==="
-    Invoke-DotNet -Arguments @(
+    $testArguments = @(
         'test', $solutionPath,
         '-c', $Configuration,
         '--no-build',
         '--no-restore',
         '--logger', 'trx'
     )
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        # Hosted Windows runners can starve real-time test continuations when
+        # every target-framework test host executes concurrently.
+        $testArguments += '--maxcpucount:1'
+    }
+    Invoke-DotNet -Arguments $testArguments
 
     foreach ($script in @(
         'VerifyNotificationSample.ps1',
