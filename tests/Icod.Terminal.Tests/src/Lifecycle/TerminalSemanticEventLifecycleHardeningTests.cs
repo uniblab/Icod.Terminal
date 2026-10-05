@@ -24,6 +24,7 @@ using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
 using Icod.TermInfo;
+using Icod.Timing;
 using Xunit;
 
 /// <summary>
@@ -189,13 +190,18 @@ public sealed class TerminalSemanticEventLifecycleHardeningTests {
 	[Fact]
 	public async Task LateTimedOutQueryResponseDoesNotLeakIntoSemanticLane() {
 		ScriptedTransport transport = new();
-		await using TerminalSession session = await OpenSessionAsync( transport );
+		ManualMonotonicClock clock = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			transport,
+			monotonicClock: clock
+		);
 
 		Task<KittyNotificationSupport> query = session.QueryKittyNotificationSupportAsync(
 			TimeSpan.FromMilliseconds( 100 )
 		).AsTask();
 		await transport.WaitForWriteCountAsync( 1 );
 		string identifier = GetSupportQueryIdentifier( transport.GetWrite( 0 ) );
+		clock.Advance( TimeSpan.FromMilliseconds( 100 ) );
 		await Assert.ThrowsAsync<TimeoutException>(
 			() => query.WaitAsync( TimeSpan.FromSeconds( 5 ) )
 		);
@@ -268,7 +274,8 @@ public sealed class TerminalSemanticEventLifecycleHardeningTests {
 
 	private static ValueTask<TerminalSession> OpenSessionAsync(
 		ScriptedTransport transport,
-		TestTerminalLifecycleSource? lifecycle = null
+		TestTerminalLifecycleSource? lifecycle = null,
+		IMonotonicClock? monotonicClock = null
 	) {
 		ArgumentNullException.ThrowIfNull( transport );
 
@@ -282,9 +289,91 @@ public sealed class TerminalSemanticEventLifecycleHardeningTests {
 				TerminalOverride = TerminalProfiles.Dumb,
 				ConfigureOutput = false,
 				ObserveLifecycleEvents = false,
-				LifecycleSource = lifecycle
+				LifecycleSource = lifecycle,
+				MonotonicClock = monotonicClock ?? SystemMonotonicClock.Instance
 			}
 		);
+	}
+
+	private sealed class ManualMonotonicClock : IMonotonicClock {
+		private readonly object sync = new();
+		private readonly List<DelayWaiter> waiters = [];
+		private long timestamp;
+
+		public long GetTimestamp() {
+			lock ( this.sync ) {
+				return this.timestamp;
+			}
+		}
+
+		public TimeSpan GetElapsedTime(
+			long startingTimestamp,
+			long endingTimestamp
+		) {
+			return TimeSpan.FromTicks( endingTimestamp - startingTimestamp );
+		}
+
+		public ValueTask DelayAsync(
+			TimeSpan delay,
+			CancellationToken cancellationToken = default
+		) {
+			if ( TimeSpan.Zero > delay ) {
+				throw new ArgumentOutOfRangeException( nameof( delay ) );
+			}
+			cancellationToken.ThrowIfCancellationRequested();
+			if ( TimeSpan.Zero == delay ) {
+				return ValueTask.CompletedTask;
+			}
+
+			var waiter = new DelayWaiter();
+			lock ( this.sync ) {
+				waiter.DueTimestamp = checked( this.timestamp + delay.Ticks );
+				this.waiters.Add( waiter );
+			}
+			return new ValueTask( waiter.WaitAsync( cancellationToken ) );
+		}
+
+		internal void Advance(
+			TimeSpan elapsed
+		) {
+			if ( TimeSpan.Zero > elapsed ) {
+				throw new ArgumentOutOfRangeException( nameof( elapsed ) );
+			}
+
+			DelayWaiter[] due;
+			lock ( this.sync ) {
+				this.timestamp = checked( this.timestamp + elapsed.Ticks );
+				due = this.waiters
+					.Where( waiter => waiter.DueTimestamp <= this.timestamp )
+					.ToArray();
+				this.waiters.RemoveAll( waiter => waiter.DueTimestamp <= this.timestamp );
+			}
+
+			foreach ( DelayWaiter waiter in due ) {
+				waiter.Completion.TrySetResult();
+			}
+		}
+
+		private sealed class DelayWaiter {
+			internal TaskCompletionSource Completion {
+				get;
+			} = new( TaskCreationOptions.RunContinuationsAsynchronously );
+
+			internal long DueTimestamp {
+				get;
+				set;
+			}
+
+			internal async Task WaitAsync(
+				CancellationToken cancellationToken
+			) {
+				using CancellationTokenRegistration registration = cancellationToken.Register(
+					static state => ( (TaskCompletionSource)state! ).TrySetCanceled(),
+					this.Completion
+				);
+				await this.Completion.Task.ConfigureAwait( false );
+			}
+		}
 	}
 
 	private sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
