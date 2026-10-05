@@ -8,9 +8,9 @@
 
 **Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
 
-**Status:** Planning only. No 1.27 runtime implementation, public API, dependency change, or development-version change is included in this planning PR.
+**Status:** T2700 contract review. The [detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) freezes the proposed public surface and runtime semantics for maintainer review. No 1.27 runtime implementation, public API, dependency change, or development-version change is included yet.
 
-**Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Capture the published package/symbol identities and exact validation evidence at T2700 rather than substituting earlier alpha or PR artifacts.
+**Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Stable workflow `37337222940` passed. Its release artifact ZIP SHA-256 is `4fe00b74d451a8c96b326f1fe4b4c46390392288d1be03ee6a6296608ab7dbc4`; the contained `.nupkg` and `.snupkg` SHA-256 values are `49a019d9ee8c8861ba97aeb23b6fd7f1f6b446812ad7b80cd9fd4d56cb0ace80` and `b9e17324e65efdb5dc3b684cccfdc1144154acb273589ef0df169db13042995d`.
 
 **Architecture:** Extend the existing bounded query, semantic-event, output-serialization, and lifecycle ownership mechanisms. Appearance and resize reporting are independent opt-in facilities. Terminal reports observations; applications choose themes, layout, and repaint policy.
 
@@ -42,10 +42,10 @@ The release adds an explicit bounded appearance query, an opt-in appearance repo
 
 ## Protocol reference baseline
 
-Reviewed on 2026-10-05; pin reference revisions/content evidence at T2700 before freezing fixtures.
+Reviewed and pinned on 2026-10-05.
 
-- [Contour appearance reporting specification](https://contour-terminal.org/vt-extensions/color-palette-update-notifications/): query `CSI ? 996 n`; replies `CSI ? 997 ; 1 n` (dark) and `CSI ? 997 ; 2 n` (light); private mode 2031 enables unsolicited reports with the same reply grammar.
-- [In-band resize specification](https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83): query mode 2048 with DECRQM; enable/disable with DECSET/DECRST. Reports are `CSI 48 ; height_chars ; width_chars ; height_pix ; width_pix t`. Zero pixel fields mean unavailable pixel information. Ignore unknown subparameters according to the specification while validating primary values. Enabling, including re-enabling, requests an immediate size report.
+- [Contour appearance reporting specification](https://contour-terminal.org/vt-extensions/color-palette-update-notifications/), repository commit `d8ce17bc34c653a3368d45f52bd7eea67452d673`, document blob `009a502852ebed2f4b0576fe1585fc9d1dc73aaa`: query `CSI ? 996 n`; replies `CSI ? 997 ; 1 n` (dark) and `CSI ? 997 ; 2 n` (light); private mode 2031 enables unsolicited reports with the same reply grammar.
+- [In-band resize specification](https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83), revision `a1e61ea1782326e975b6e4cfe0c538bac54c1f42`: query mode 2048 with DECRQM; enable/disable with DECSET/DECRST. Reports are `CSI 48 ; height_chars ; width_chars ; height_pix ; width_pix t`. Zero pixel fields mean unavailable pixel information. Ignore unknown subparameters according to the specification while validating primary values. Enabling, including re-enabling, requests an immediate size report.
 
 Protocol documentation is not live Icod.Terminal compatibility evidence. In particular, the previously tested Kitty 0.32.2 lane is not qualification for these new features.
 
@@ -109,9 +109,9 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 ### T2700 — Baseline, detailed design, and API-regret gate
 
-- [ ] Record the tagged 1.26.0 source, package/symbol hashes, API fingerprint, dependencies, and exact baseline CI results.
-- [ ] Pin the two protocol references and map current mode-query, parser, query-manager, semantic-event, lifecycle and lease behavior.
-- [ ] Write and review the detailed design and task-level implementation plan under `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+- [x] Record the tagged 1.26.0 source, package/symbol hashes, API fingerprint, dependencies, and exact baseline CI results.
+- [x] Pin the two protocol references and map current mode-query, parser, query-manager, semantic-event, lifecycle and lease behavior.
+- [ ] Review the detailed design under `docs/superpowers/specs/`, then write and review the task-level implementation plan under `docs/superpowers/plans/`.
 - [ ] Freeze exact public names/signatures, additive enum values, event projection, mode-state table, numeric/buffer/deadline bounds, correlation limits, and suspend/re-entry order.
 - [ ] Name every new source/test file and define the failing fixtures and exact verification commands before implementation.
 - [ ] Obtain maintainer approval of that contract; then introduce the 1.27.0-alpha development identity with matching metadata.
@@ -236,6 +236,7 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 
 | Checkpoint | Evidence | State |
 | --- | --- | --- |
-| Published baseline | Maintainer publication confirmation; v1.26.0 at `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` | Recorded; artifact/CI identity audit belongs to T2700 |
+| Published baseline | Maintainer publication confirmation; v1.26.0 at `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`; release workflow `37337222940`; package hashes in this roadmap and the detailed design | Recorded and audited |
+| T2700 detailed design | `docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md` | Proposed; maintainer review required before implementation planning |
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Runtime implementation and acceptance | T2700-T2710 checklists above | Not started |

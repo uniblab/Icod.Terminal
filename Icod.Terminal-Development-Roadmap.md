@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.26.0` — Terminal Compatibility Qualification
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). `1.27.0` is in documentation-only planning; implementation awaits review. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
+- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). `1.27.0` is at the documentation-only T2700 contract-review gate; implementation awaits approval of the detailed design and implementation plan. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
 - **Active development target:** `1.27.0` — Live Terminal Environment Awareness.
 - **Selected scope:** **Options 2 + 3: terminal appearance and resize awareness**, with focused compatibility scenarios, public-only samples, and no planned Icod.TermInfo change. See the [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md).
 - **Stable compatibility floor:** `1.0.0`
@@ -548,7 +548,7 @@ T2709  focused live-terminal acceptance
 T2710  stable release closure and exact evidence
 ```
 
-The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) defines scope, protocol references, ownership requirements, integration points, acceptance criteria and release gates. T2700 freezes the detailed design and exact public signatures for approval before runtime changes. Implementation remains inline without subagents.
+The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) defines scope, protocol references, ownership requirements, integration points, acceptance criteria and release gates. The [T2700 detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) freezes the proposed public signatures and runtime semantics for approval before implementation planning and runtime changes. Implementation remains inline without subagents.
 
 Stable acceptance requires positive live evidence for both selected features and evidence that unavailable reporting preserves the existing path. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links are checked together before the stable tag.
 
