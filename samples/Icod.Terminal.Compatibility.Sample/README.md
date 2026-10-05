@@ -23,7 +23,7 @@ Run-WindowsTerminal.cmd
 run-kitty-wsl.sh
 ```
 
-Run the Windows launcher from a Windows Terminal session. It obtains the installed package version through `Get-AppxPackage`; if that query is unavailable, it records `unknown` and continues. Run the Kitty launcher from a Kitty session inside WSL; it asks once for the exact WSL version unless `WSL_VERSION` is already set. Both preserve the generated files in a new temporary directory and print its report paths.
+Run the Windows launcher from a Windows Terminal session. It obtains the installed package version through `Get-AppxPackage`; if that query is unavailable, it records `unknown` and continues. Run the Kitty launcher from a Kitty session inside WSL; it requires Kitty's `KITTY_WINDOW_ID` session marker and asks once for the exact WSL version unless `WSL_VERSION` is already set. Both preserve the generated files in a new temporary directory and print its report paths.
 
 ## Live execution
 

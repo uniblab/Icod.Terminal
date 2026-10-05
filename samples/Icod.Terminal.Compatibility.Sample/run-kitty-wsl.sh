@@ -13,6 +13,10 @@ command -v kitty >/dev/null 2>&1 || {
     printf '%s\n' 'kitty is required but was not found on PATH.' >&2
     exit 1
 }
+if [ -z "${KITTY_WINDOW_ID:-}" ]; then
+    printf '%s\n' 'This launcher must be run from an active Kitty terminal session.' >&2
+    exit 1
+fi
 
 source_commit=$(git rev-parse HEAD)
 terminal_version=$(kitty --version)

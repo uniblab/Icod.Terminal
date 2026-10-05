@@ -50,6 +50,7 @@ public sealed class TerminalCompatibilityLauncherScriptTests {
 		Assert.Contains( "--run query.dimensions", script, StringComparison.Ordinal );
 		Assert.Contains( "--render-matrix", script, StringComparison.Ordinal );
 		Assert.Contains( "mktemp -d", script, StringComparison.Ordinal );
+		Assert.Contains( "KITTY_WINDOW_ID", script, StringComparison.Ordinal );
 		Assert.DoesNotContain( "cmp -s", script, StringComparison.Ordinal );
 		Assert.DoesNotContain( "--overwrite", script, StringComparison.Ordinal );
 	}
