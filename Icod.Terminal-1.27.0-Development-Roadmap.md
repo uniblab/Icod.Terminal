@@ -1,0 +1,241 @@
+# Icod.Terminal 1.27.0 Development Roadmap
+
+> **Execution:** Use the executing-plans workflow task by task, in the main session without subagents. This is a release roadmap for review, not authorization to implement unreviewed public signatures. T2700 produces the detailed contract and implementation plan before runtime changes.
+
+**Goal:** Let terminal applications observe appearance and text-area resize changes through bounded semantic APIs and the existing authoritative event path.
+
+**Release theme:** Live Terminal Environment Awareness.
+
+**Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
+
+**Status:** Planning only. No 1.27 runtime implementation, public API, dependency change, or development-version change is included in this planning PR.
+
+**Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Capture the published package/symbol identities and exact validation evidence at T2700 rather than substituting earlier alpha or PR artifacts.
+
+**Architecture:** Extend the existing bounded query, semantic-event, output-serialization, and lifecycle ownership mechanisms. Appearance and resize reporting are independent opt-in facilities. Terminal reports observations; applications choose themes, layout, and repaint policy.
+
+**Tech stack:** C# 13; .NET 8/9/10; managed Windows/Linux/macOS; PowerShell 5.1-compatible packaging scripts and cmd/sh launchers. No Python or native companion component.
+
+**Design authorities:** [Architecture](docs/Architecture.md), [compatibility policy](docs/Compatibility-and-Versioning.md), [security and privacy](docs/Security-and-Privacy.md), and the scope/contract requirements below. T2700 must record an approved detailed design and implementation plan before introducing public API.
+
+## Scope and alternatives
+
+| Approach | Decision and reason |
+| --- | --- |
+| Appearance alone | Smaller alternative, but does not meet the selected resize goal. |
+| Appearance plus negotiated in-band resize | **Selected.** Both improve live environment awareness using existing session authority. They remain independently usable and testable. |
+| Broad environment/clipboard/color/transport expansion | Deferred. OSC 5522, OSC 21, ReportCellSize, and transport forwarding would add independent contracts and qualification requirements. |
+
+The release adds an explicit bounded appearance query, an opt-in appearance reporting lifetime, and an opt-in in-band resize reporting lifetime. It does not automatically enable either mode when opening a session.
+
+## Global constraints
+
+- Preserve the stable 1.0.0 compatibility floor and every existing public signature and enum value; additions are reviewed and appended without renumbering.
+- Retain `net8.0`, `net9.0`, and `net10.0` and Windows/Linux/macOS support.
+- Keep production dependencies at `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`. Neither selected feature inherently needs a TermInfo API/parser change.
+- Keep one authoritative input/query/event reader; active-query ownership precedes unsolicited semantic-event recognition, then ordinary input decoding.
+- Preserve serialized session output and existing commitment/cancellation rules.
+- Keep terminal branding, environment variables, host theme, and successful writes separate from support evidence.
+- Timeouts, missing replies, unavailable endpoints, and permission/policy effects do not establish unsupported behavior.
+- Retain the graphics-development hold: no raster changes, Kitty workarounds, codecs, replay, or graphics qualification.
+- Keep PTY/process hosting in Icod.Pty and cells, theme selection, layout, damage, and repaint policy above Terminal.
+
+## Protocol reference baseline
+
+Reviewed on 2026-10-05; pin reference revisions/content evidence at T2700 before freezing fixtures.
+
+- [Contour appearance reporting specification](https://contour-terminal.org/vt-extensions/color-palette-update-notifications/): query `CSI ? 996 n`; replies `CSI ? 997 ; 1 n` (dark) and `CSI ? 997 ; 2 n` (light); private mode 2031 enables unsolicited reports with the same reply grammar.
+- [In-band resize specification](https://gist.github.com/rockorager/e695fb2924d36b2bcf1fff4a3704bd83): query mode 2048 with DECRQM; enable/disable with DECSET/DECRST. Reports are `CSI 48 ; height_chars ; width_chars ; height_pix ; width_pix t`. Zero pixel fields mean unavailable pixel information. Ignore unknown subparameters according to the specification while validating primary values. Enabling, including re-enabling, requests an immediate size report.
+
+Protocol documentation is not live Icod.Terminal compatibility evidence. In particular, the previously tested Kitty 0.32.2 lane is not qualification for these new features.
+
+## Contract requirements
+
+### Appearance
+
+- Expose a semantic dark/light observation and a truthful unknown/no-observation state. Keep query outcome distinct from the appearance value.
+- Never infer appearance from RGB luminance, terminal branding, environment variables, or the host operating system.
+- A one-shot query does not silently enable ongoing reporting.
+- Reporting is independently acquired and released. Query support does not prove reporting-mode support or successful acquisition.
+- Notifications mean an appearance/palette observation, not proof that the application theme changed. Preserve valid repeated same-value reports because a palette update need not change light/dark preference.
+- Solicited and unsolicited reports share wire grammar. A response cannot be authenticated as a particular request by an invented request ID; document this limitation and test concurrent query/report routing and timeout recovery.
+
+### Resize
+
+- Expose character dimensions and optional text-area pixel dimensions with explicit observation provenance. Do not substitute outer-window pixels or invent cell dimensions by lossy division.
+- Validate numeric ranges, required fields, zero/unknown pixel values, and permitted subparameters without changing existing CSI query grammars.
+- Preserve native lifecycle resize handling and existing synchronous `GetSize()`/`GetDimensions()` behavior. An in-band report must not silently turn those host observations into cached wire observations.
+- Proposed event projection is an additive semantic resize observation through `ReadEventAsync(...)`; native resize remains a lifecycle event. Freeze this additive projection at T2700, including consumer examples and API review.
+- Do not republish a single in-band report as both a semantic and native lifecycle event. Native and in-band observations can independently describe the same resize; document source-aware reconciliation rather than promise impossible total ordering between host signals and terminal bytes.
+- Do not discard a pixel-only change merely because rows and columns are unchanged. Do not convert a resize into process suspend/resume or a broad raster-generation invalidation.
+- Initial reporting works without an OS lifecycle source. Lack of in-band support leaves the existing native path intact.
+
+### Reporting ownership, uncertainty, and cleanup
+
+- Establish support and observable prior mode state before promising exact restoration. Define DECRQM values 0/1/2/3/4, malformed replies, and silence explicitly for each facility.
+- Unknown baseline state must not produce an exact-restoration lease. Permanent-set and permanent-reset states need explicit behavior, not an unconditional toggle.
+- Nested/concurrent acquisitions share session-local ownership; releasing one owner must not disable another. The last release restores only the baseline actually captured and owned.
+- Acquire, release, suspend, resume, invalidation, endpoint loss, and disposal participate in established state-composition ordering. Never await a reply while holding a lock/gate needed by the input router or query writer.
+- Specify re-entry order against suspended query transactions. Renegotiation requiring live queries must not run while the query manager is suspended.
+- Bound negotiation time, retained observations, pending queries, and event buffering. Define overflow/coalescing policy explicitly without introducing a global event-system rewrite.
+- Reports contain no wire generation token. Invalidate local knowledge on lifecycle loss and do not present retained observations as current; document that untagged delayed bytes cannot always be distinguished from fresh observations.
+- Cleanup failures are surfaced; successful byte emission does not prove remote restoration. No blind retry after ambiguous committed output.
+
+## Source and test map
+
+These are reviewed integration points, not permission for broad refactoring. Confirm exact file placement and freeze new names in T2700.
+
+| Area | Existing files or locations | Planned responsibility |
+| --- | --- | --- |
+| Session queries | `src/Session/TerminalSession.CsiQueries.cs`, `src/Session/TerminalQueryTransactionManager.cs`, `src/Query/` | Focused appearance/mode query codecs and bounded correlation. |
+| Input projection | `src/Input/TerminalInputDecoder.SemanticEvents.cs`, `src/Input/TerminalSemanticEvent.cs`, `src/Input/TerminalEvent.cs` | Additive appearance/resize semantic payloads without changing existing enum values. |
+| Reporting state | `src/Session/TerminalSession.InputProtocols.cs`, `src/Input/TerminalInputProtocolManager.cs`, `src/Session/TerminalSession.LifecycleParticipants.cs` | Follow existing ownership patterns; place new protocol-specific logic in focused files. |
+| Lifecycle and dimensions | `src/Session/TerminalSession.Lifecycle.cs`, `src/Session/TerminalSession.Screen.cs`, `src/Session/TerminalSession.Geometry.cs` | Preserve native behavior and qualify interactions; avoid silently replacing its authority. |
+| Tests | `tests/Icod.Terminal.Tests/src/Input/`, `src/Session/`, `src/Query/` beneath that test project | Fragmentation, correlation, ownership, lifecycle, and public-contract fixtures. |
+| Consumer acceptance | `samples/Icod.Terminal.Compatibility.Sample/`, `samples/README.md`, `docs/compatibility/` | Focused new scenarios, safe launchers, reviewed evidence and deterministic matrices. |
+| Packaging | `packaging/VerifyPackageContractShard.ps1`, `packaging/VerifyReleaseLinePackage.ps1`, `packaging/VerifyPublicApiBaseline.ps1` | Fresh-package usage, additive API qualification, coherent stable metadata. |
+
+## Review focus
+
+1. Appearance reports racing a query or arriving after timeout: no duplicate delivery, false causal attribution, or ordinary-input corruption (T2701/T2702/T2706).
+2. Reporting already enabled before acquisition: disposal must not disable the previous owner (T2703/T2705).
+3. Pixel-only resize, unavailable pixels, and native/in-band disagreement: preserve facts and provenance without fabricating geometry (T2704/T2706).
+4. Suspend/resume while a negotiation or cleanup is pending: bounded completion and no query/output/state-lock deadlock (T2706).
+5. Bursts of reports mixed with keyboard input: bounded retention and no loss caused by misclassifying ordinary input (T2701/T2706).
+
+## Development sequence
+
+Each implementation tranche uses failing regression tests first, a witnessed red run, the smallest implementation, a green focused run, and a coherent commit. Do not mark a tranche complete solely because code was written.
+
+### T2700 — Baseline, detailed design, and API-regret gate
+
+- [ ] Record the tagged 1.26.0 source, package/symbol hashes, API fingerprint, dependencies, and exact baseline CI results.
+- [ ] Pin the two protocol references and map current mode-query, parser, query-manager, semantic-event, lifecycle and lease behavior.
+- [ ] Write and review the detailed design and task-level implementation plan under `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+- [ ] Freeze exact public names/signatures, additive enum values, event projection, mode-state table, numeric/buffer/deadline bounds, correlation limits, and suspend/re-entry order.
+- [ ] Name every new source/test file and define the failing fixtures and exact verification commands before implementation.
+- [ ] Obtain maintainer approval of that contract; then introduce the 1.27.0-alpha development identity with matching metadata.
+
+**Acceptance:** A reviewed, executable design exists with no unresolved ownership or compatibility decision. This planning PR alone does not satisfy the gate.
+
+### T2701 — Bounded protocol parsing and routing fixtures
+
+- [ ] Add fixtures for appearance replies, mode responses and resize reports, including every byte split, concatenated controls, and interleaved input.
+- [ ] Cover invalid/missing fields, numeric overflow, unexpected private markers/finals, and permitted resize subparameters.
+- [ ] Prove malformed or incomplete reports cannot complete an unrelated query or consume following valid input.
+- [ ] Implement focused private codecs/recognizers and verify existing CSI, keyboard, semantic-notification, and geometry tests remain unchanged.
+
+**Acceptance:** Valid frames have one owner; parsing is bounded and recovery preserves subsequent input.
+
+### T2702 — One-shot appearance observation
+
+- [ ] Add public query-result fixtures covering dark, light, timeout, unavailable endpoint, cancellation, and malformed/unknown values.
+- [ ] Implement the bounded semantic query through the existing transaction manager.
+- [ ] Test one-shot operation with reporting disabled, concurrent queries, a racing unsolicited observation, and late response behavior.
+- [ ] Document that a received value is an observation, not proof of uniquely correlated causation or host theme.
+
+**Acceptance:** Consumers can request appearance without enabling reporting, guessing, or introducing another reader.
+
+### T2703 — Appearance reporting ownership
+
+- [ ] Add fixtures for observed baseline enabled/disabled, permanent mode states, unsupported response, and unknown baseline.
+- [ ] Implement independently acquired reporting and additive semantic appearance events.
+- [ ] Exercise nested and concurrent owners, out-of-order release, failed enable, failed restore, and repeated same-value notifications.
+- [ ] Verify mode writes use session serialization and previous mode ownership is preserved.
+
+**Acceptance:** Reporting is opt-in and composable, and restoration promises match captured evidence.
+
+### T2704 — In-band resize observations
+
+- [ ] Add fixtures for initial size, row/column changes, pixel-only changes, unavailable pixels, and documented subparameters.
+- [ ] Implement validated typed resize payloads and the reviewed event projection.
+- [ ] Test operation without a native lifecycle source and preservation of synchronous dimensions APIs.
+- [ ] Demonstrate that one wire report is not emitted twice through separate event families.
+
+**Acceptance:** Consumers receive bounded text-area observations without changing native resize semantics.
+
+### T2705 — Negotiated resize reporting ownership
+
+- [ ] Add fixtures for each mode 2048 state, timeout, cancellation, immediate initial report, and re-enable report.
+- [ ] Implement support negotiation and mode acquisition with independent ownership from appearance reporting.
+- [ ] Test nested owners, already-enabled baseline, last-owner cleanup, partial failures, and failed enable.
+- [ ] Confirm unsupported/unknown acquisition leaves the native resize path intact and does not claim live reporting success.
+
+**Acceptance:** Mode negotiation, observation, and remote state certainty remain distinct.
+
+### T2706 — Cross-feature lifecycle and concurrency hardening
+
+- [ ] Test every acquire/release combination with both modes active and with existing input/presentation leases.
+- [ ] Test suspend, resume, invalidation, disposal, input EOF, endpoint failure, and cancellation during negotiation or cleanup.
+- [ ] Pin the query/state/output lock order with deterministic interleaving fixtures, not timing-dependent sleeps.
+- [ ] Test native/in-band disagreement, duplicate observations, unknown-to-known pixels, report bursts, and interleaved keyboard/query traffic.
+- [ ] Verify bounded retention, stale-state handling, failure aggregation, and documented untagged late-report limitations.
+
+**Acceptance:** No new deadlocks, unbounded queues, fabricated freshness, or changes to existing lifecycle guarantees.
+
+### T2707 — Public-only sample and compatibility scenarios
+
+- [ ] Add a public-only environment-awareness walkthrough with bounded duration, clean exit, cancellation, and deterministic lease disposal.
+- [ ] Extend the existing compatibility sample with separately revisioned appearance query, appearance reporting, and in-band resize scenarios.
+- [ ] Keep help/list/describe headless; provide cmd/sh launchers with exact emulator/OS/transport identity.
+- [ ] Obtain explicit consent before enabling reporting; ask the operator to change theme or resize only after negotiation.
+- [ ] Keep raw keystrokes, environment dumps, host identity, and arbitrary reply bytes out of evidence.
+- [ ] Preserve historical 1.26 evidence and scenario revisions; generate the new versioned matrix separately.
+
+**Acceptance:** A package consumer can reproduce the success conditions without source internals or raw escapes.
+
+### T2708 — Package, API, documentation, and regression qualification
+
+- [ ] Run focused and complete tests on all three target frameworks and supported CI operating systems.
+- [ ] Add a fresh-package consumer exercising query, acquisition, event payloads, and cleanup with controlled transports.
+- [ ] Verify additive public API, unchanged existing enum values, XML documentation, dependency graph, licenses, and downstream DCurses compatibility.
+- [ ] Update README, sample index, architecture/input/query/lifecycle guidance, security notes, changelog and curated release notes for actual delivered behavior.
+- [ ] Add or extend a gate that checks version metadata, packed README, curated notes, and all release-line required tokens together.
+
+**Acceptance:** Runtime and distribution checks agree; documentation does not claim unobserved emulator support.
+
+### T2709 — Focused live-terminal acceptance
+
+- [ ] Record a successful bounded appearance query and an operator-induced appearance reporting change on an exact supporting environment.
+- [ ] Record initial and changed in-band resize observations on an exact supporting environment, including unknown-pixel behavior where observable.
+- [ ] Exercise a missing/unsupported-reporting lane while preserving native resize and ordinary input behavior.
+- [ ] Test one mediated lane if available; report it separately and leave unavailable lanes NotRun.
+- [ ] Review reports and regenerate the 1.27 matrix; retain Fail/Inconclusive outcomes rather than converting them to unsupported.
+- [ ] If a positive live witness cannot be obtained for either selected feature, present that gap to the maintainer before stable release; do not silently waive acceptance or infer success from CI.
+
+**Acceptance:** Both features have a positive live witness and the fallback path has evidence. This does not require all ten emulators to implement either protocol.
+
+### T2710 — Stable release closure
+
+- [ ] Reconcile every tranche, open defect, compatibility limit and main-roadmap status.
+- [ ] Set stable 1.27.0 metadata only after acceptance; verify empty prerelease suffix, README/install version, changelog and `docs/releases/1.27.0.md`.
+- [ ] Verify package release notes include `1.27.0`, `docs/releases/1.27.0.md`, and `Compatibility-and-Versioning.md`; inspect the packed README against the complete current release-line contract.
+- [ ] Run the entire runtime/source-integration/sample/package/API/matrix/artifact workflow at one exact stable candidate.
+- [ ] Record source SHA, workflow IDs, test counts, failures and same-head reruns, package/symbol hashes, API fingerprint, and dependencies.
+- [ ] Present the candidate for maintainer review. Merge, tag, GitHub release, and NuGet publication remain separate maintainer actions.
+
+**Acceptance:** One exact stable candidate is qualified and documented before tagging; no stale metadata or earlier-head test result substitutes for release validation.
+
+## Execution and verification policy
+
+The detailed T2700 plan must retain inline execution without subagents. Start with focused tests and then run the complete suite, for example:
+
+```sh
+dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net8.0
+dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net9.0
+dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0
+```
+
+Zero failures are required. Fresh-package, integration, API and artifact checks supplement these commands; they are not replaced by unit tests. Headless CI cannot certify visible terminal behavior. Use existing workflow invocations and record exact commands/results in each tranche checkpoint.
+
+## Explicit non-goals
+
+No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palette mutation, automatic theme selection, background polling service, raw protocol extension API, multiplexer passthrough, PTY hosting, scene/layout ownership, broad query-router rewrite, or graphics feature. Findings outside the selected scope are recorded for later decisions.
+
+## Evidence log
+
+| Checkpoint | Evidence | State |
+| --- | --- | --- |
+| Published baseline | Maintainer publication confirmation; v1.26.0 at `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` | Recorded; artifact/CI identity audit belongs to T2700 |
+| Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
+| Runtime implementation and acceptance | T2700-T2710 checklists above | Not started |
