@@ -18,6 +18,10 @@ if [ -z "${KITTY_WINDOW_ID:-}" ]; then
     exit 1
 fi
 
+if [ -n "$(git status --porcelain)" ]; then
+    printf '%s\n' 'Live evidence requires a clean checkout so the source commit identifies the tested code.' >&2
+    exit 1
+fi
 source_commit=$(git rev-parse HEAD)
 terminal_version=$(kitty --version)
 if [ -r /etc/os-release ]; then

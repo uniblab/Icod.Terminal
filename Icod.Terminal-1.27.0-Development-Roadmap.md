@@ -8,7 +8,7 @@
 
 **Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
 
-**Status:** The approved `1.27.0-alpha.1` runtime, lifecycle hardening, public-only compatibility scenarios, and package/API/document gates are implemented. Qualification is underway. Tasks 9–10 remain gated on reviewed live-terminal witnesses and stable closure. Execution continues inline without subagents.
+**Status:** The approved `1.27.0-alpha.1` runtime, lifecycle hardening, public-only compatibility scenarios, and package/API/document gates are implemented. Qualification passed at `0da49e0cb436eb3bc339c93819819b8b0e1bce3b` in workflow `37453595429` (all ten jobs). Tasks 9–10 remain gated on reviewed live-terminal witnesses and stable closure. Execution continues inline without subagents.
 
 **Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Stable workflow `37337222940` passed. Its release artifact ZIP SHA-256 is `4fe00b74d451a8c96b326f1fe4b4c46390392288d1be03ee6a6296608ab7dbc4`; the contained `.nupkg` and `.snupkg` SHA-256 values are `49a019d9ee8c8861ba97aeb23b6fd7f1f6b446812ad7b80cd9fd4d56cb0ace80` and `b9e17324e65efdb5dc3b684cccfdc1144154acb273589ef0df169db13042995d`.
 
@@ -166,32 +166,32 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 ### T2706 — Cross-feature lifecycle and concurrency hardening
 
-- [ ] Test every acquire/release combination with both modes active and with existing input/presentation leases.
-- [ ] Test suspend, resume, invalidation, disposal, input EOF, endpoint failure, and cancellation during negotiation or cleanup.
-- [ ] Pin the query/state/output lock order with deterministic interleaving fixtures, not timing-dependent sleeps.
-- [ ] Test native/in-band disagreement, duplicate observations, unknown-to-known pixels, report bursts, and interleaved keyboard/query traffic.
-- [ ] Verify bounded retention, stale-state handling, failure aggregation, and documented untagged late-report limitations.
+- [x] Test every acquire/release combination with both modes active and with existing input/presentation leases.
+- [x] Test suspend, resume, invalidation, disposal, input EOF, endpoint failure, and cancellation during negotiation or cleanup.
+- [x] Pin the query/state/output lock order with deterministic interleaving fixtures, not timing-dependent sleeps.
+- [x] Test native/in-band disagreement, duplicate observations, unknown-to-known pixels, report bursts, and interleaved keyboard/query traffic.
+- [x] Verify bounded retention, stale-state handling, failure aggregation, and documented untagged late-report limitations.
 
 **Acceptance:** No new deadlocks, unbounded queues, fabricated freshness, or changes to existing lifecycle guarantees.
 
 ### T2707 — Public-only sample and compatibility scenarios
 
-- [ ] Add a public-only environment-awareness walkthrough with bounded duration, clean exit, cancellation, and deterministic lease disposal.
-- [ ] Extend the existing compatibility sample with separately revisioned appearance query, appearance reporting, and in-band resize scenarios.
-- [ ] Keep help/list/describe headless; provide cmd/sh launchers with exact emulator/OS/transport identity.
-- [ ] Obtain explicit consent before enabling reporting; ask the operator to change theme or resize only after negotiation.
-- [ ] Keep raw keystrokes, environment dumps, host identity, and arbitrary reply bytes out of evidence.
-- [ ] Preserve historical 1.26 evidence and scenario revisions; generate the new versioned matrix separately.
+- [x] Add a public-only environment-awareness walkthrough with bounded duration, clean exit, cancellation, and deterministic lease disposal.
+- [x] Extend the existing compatibility sample with separately revisioned appearance query, appearance reporting, and in-band resize scenarios.
+- [x] Keep help/list/describe headless; provide cmd/sh launchers with exact emulator/OS/transport identity.
+- [x] Obtain explicit consent before enabling reporting; ask the operator to change theme or resize only after negotiation.
+- [x] Keep raw keystrokes, environment dumps, host identity, and arbitrary reply bytes out of evidence.
+- [x] Preserve historical 1.26 evidence and scenario revisions; generate the new versioned matrix separately.
 
 **Acceptance:** A package consumer can reproduce the success conditions without source internals or raw escapes.
 
 ### T2708 — Package, API, documentation, and regression qualification
 
-- [ ] Run focused and complete tests on all three target frameworks and supported CI operating systems.
-- [ ] Add a fresh-package consumer exercising query, acquisition, event payloads, and cleanup with controlled transports.
-- [ ] Verify additive public API, unchanged existing enum values, XML documentation, dependency graph, licenses, and downstream DCurses compatibility.
-- [ ] Update README, sample index, architecture/input/query/lifecycle guidance, security notes, changelog and curated release notes for actual delivered behavior.
-- [ ] Add or extend a gate that checks version metadata, packed README, curated notes, and all release-line required tokens together.
+- [x] Run focused and complete tests on all three target frameworks and supported CI operating systems.
+- [x] Add a fresh-package consumer exercising query, acquisition, event payloads, and cleanup with controlled transports.
+- [x] Verify additive public API, unchanged existing enum values, XML documentation, dependency graph, licenses, and downstream DCurses compatibility.
+- [x] Update README, sample index, architecture/input/query/lifecycle guidance, security notes, changelog and curated release notes for actual delivered behavior.
+- [x] Add or extend a gate that checks version metadata, packed README, curated notes, and all release-line required tokens together.
 
 **Acceptance:** Runtime and distribution checks agree; documentation does not claim unobserved emulator support.
 
@@ -242,4 +242,24 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | T2700 implementation plan | `docs/superpowers/plans/2026-10-05-terminal-appearance-resize-awareness.md` | Approved by maintainer on 2026-10-05; executing inline without subagents |
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
-| Runtime implementation and acceptance | T2701-T2710 checklists above | In progress |
+| Runtime and distribution qualification | Head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; [workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) | All ten jobs passed; T2701–T2708 complete |
+| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | Pending; every live lane remains NotRun |
+
+
+## Qualified alpha checkpoint — 2026-10-06
+
+The interrupted work was recovered at `64bb4707e8038699e6ab86ac02c3ec0463b32d3e` (runtime tasks 1–5). Continuation commits are `2c68b06afaf7053de70dfcfedcc207ffdb28b7e3` (lifecycle/concurrency), `806aea634ddadab255ad172c7bad9866997d0aae` (public compatibility scenarios), and `0da49e0cb436eb3bc339c93819819b8b0e1bce3b` (package/API/docs).
+
+[Workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) passed all ten jobs: Windows/Linux/macOS runtime; package candidate; foundation, presentation, semantic/hardening and stable 1.x shards; both compatibility matrices; validated artifact. Each OS passed 2,807 unit tests plus 15 TermInfo integration tests per net8.0/net9.0/net10.0 target. License checks covered 626 C# and 66 project files, including Windows PowerShell 5.1. The API snapshots are byte-identical with fingerprint `356f455ec27065c63a642ae3d5b02125d2aed408d728cb6fadd0d47aeab12487`; the wrong historical baseline was deliberately rejected and the correct baseline passed.
+
+The GitHub Actions synthetic merge commit is `30f10117d9a5139d6162e5aa3068f53f4879eb48`. Its tree exactly matches implementation head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b` (tree `1f444ff2481fefb1b574f8a8782f68f75c4bb499`). CI packages embed the synthetic merge source; the separately built local candidate embeds the implementation head. Keep these identities separate when reviewing live reports.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| CI validated artifact ZIP (`icod-terminal-pr-packages`, artifact `11408047031`) | `f08932a0975264a2c2a58fad4b001906682c19a8eb7e12d79875ba34af3a3b79` |
+| CI `Icod.Terminal.1.27.0-alpha.1.nupkg` | `436da3ebe7c762f4adbf5625f2eea987b6f11c5a5757041d8d413c93f4a1d6d8` |
+| CI `Icod.Terminal.1.27.0-alpha.1.snupkg` | `403a28e0e37d6d76788ae1ccce341c80fab4cc8316d4d4083716b9c853ba9923` |
+| Local implementation-head `.nupkg` | `d66b1b06f70d8443983dba805fa68faaa0eaf6bff07d2646f3e000f416858a4b` |
+| Local implementation-head `.snupkg` | `f57aa347d3f28b1cb4bd5289b02abf29dd2013a9ed15b1f305a7a19d02fb2d1c` |
+
+Dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Historical 1.26 evidence/matrix is unchanged. Required live evidence remains missing for appearance query/operator-induced reporting, initial/changed resize, and unavailable/missing reporting with ordinary input/native resize intact. Use the environment cmd/sh launchers in the compatibility sample at the exact source head and review their temporary JSON before acceptance. No stable promotion is authorized by these automated results.

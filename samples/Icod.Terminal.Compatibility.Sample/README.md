@@ -130,7 +130,7 @@ samples\Icod.Terminal.Compatibility.Sample\Run-Environment-WindowsTerminal.cmd
 sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
 ```
 
-These launchers collect exact version identity and save review-only JSON under a temporary directory. Terminal branding is not support evidence. Publication of the alpha is not required: the source sample uses the candidate project. The fresh-package gate verifies the same scenarios against a newly packed package.
+Use a clean checkout so the recorded commit identifies the tested source. These launchers collect exact version identity and save review-only JSON under a temporary directory. The Windows launcher asks for the active terminal version from Settings / About; selecting the first installed stable/preview package could identify a different terminal. The Kitty/WSL launcher records the Kitty command version and asks for the exact WSL version. Terminal branding is not support evidence. Publication of the alpha is not required: the source sample uses the candidate project. The fresh-package gate verifies the same scenarios against a newly packed package.
 
 Render the separate development matrix with:
 

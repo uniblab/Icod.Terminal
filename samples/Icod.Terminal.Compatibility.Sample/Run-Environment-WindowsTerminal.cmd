@@ -19,15 +19,35 @@ if errorlevel 1 (
     popd
     exit /b 1
 )
+if not defined WT_SESSION (
+    echo This launcher must be run from an active Windows Terminal session.
+    popd
+    exit /b 1
+)
+
+set "DIRTY_CHECKOUT="
+for /f "delims=" %%S in ('git status --porcelain') do set "DIRTY_CHECKOUT=1"
+if defined DIRTY_CHECKOUT (
+    echo Live evidence requires a clean checkout so the source commit identifies the tested code.
+    popd
+    exit /b 1
+)
 
 set "TERMINAL_VERSION="
-for /f "usebackq delims=" %%V in (`powershell.exe -NoProfile -NonInteractive -Command "$packages = @(Get-AppxPackage -Name Microsoft.WindowsTerminal*); if (0 -lt $packages.Count) { $packages[0].Version.ToString() }"`) do if not defined TERMINAL_VERSION set "TERMINAL_VERSION=%%V"
+set /p "TERMINAL_VERSION=Exact active Windows Terminal version (Settings / About): "
+if not defined TERMINAL_VERSION (
+    echo The active terminal version is required to qualify this environment.
+    popd
+    exit /b 1
+)
+powershell.exe -NoProfile -NonInteractive -Command "if ($env:TERMINAL_VERSION -notmatch '^\d+(\.\d+){2,3}$') { exit 1 }"
+if errorlevel 1 (
+    echo Enter the numeric version displayed by the active terminal.
+    popd
+    exit /b 1
+)
 for /f "usebackq delims=" %%V in (`git rev-parse HEAD`) do set "SOURCE_COMMIT=%%V"
 for /f "tokens=2 delims=[]" %%V in ('ver') do set "OS_VERSION=%%V"
-if not defined TERMINAL_VERSION (
-    set "TERMINAL_VERSION=unknown"
-    echo Warning: Windows Terminal version could not be determined; recording "unknown".
-)
 if not defined SOURCE_COMMIT (
     echo Unable to determine the source commit.
     popd
