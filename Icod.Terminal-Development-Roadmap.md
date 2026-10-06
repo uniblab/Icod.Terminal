@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.26.0` — Terminal Compatibility Qualification
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). The approved `1.27` appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package contracts are implemented. All selected live witnesses at alpha source `6c3bcdb` are reviewed: Kitty 0.49.2 positive features and Windows Terminal hosting Bash through WSL with unavailable reporting and native input/resize intact. Stable `1.27.0` metadata is prepared; exact-candidate qualification is in progress before separate maintainer promotion. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
+- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). The approved `1.27` appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package contracts are implemented. All selected live witnesses at alpha source `6c3bcdb` are reviewed: Kitty 0.49.2 positive features and Windows Terminal hosting Bash through WSL with unavailable reporting and native input/resize intact. Stable `1.27.0` candidate `cfd9126` passed all ten jobs in workflow `37480014921`; Tasks 1–10 are complete and prepared for maintainer review before separate promotion. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
 - **Active development target:** `1.27.0` — Live Terminal Environment Awareness.
 - **Selected scope:** **Options 2 + 3: terminal appearance and resize awareness**, with focused compatibility scenarios, public-only samples, and no planned Icod.TermInfo change. See the [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md).
 - **Stable compatibility floor:** `1.0.0`
@@ -503,9 +503,9 @@ T2610  cross-platform qualification and stable release closure
 
 The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md), [implementation plan](docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md), and [versioned development roadmap](Icod.Terminal-1.26.0-Development-Roadmap.md) define the full evidence model, scenario groups, privacy rules, failure semantics, and release gates. The published 1.26 feature adds no production runtime API and preserves the graphics-development hold. Remaining live-terminal coverage is a continuing qualification backlog, not an unimplemented runtime feature.
 
-## 1.27 planned line — Live Terminal Environment Awareness
+## 1.27 prepared line — Live Terminal Environment Awareness
 
-The maintainer selected **options 2 + 3: terminal appearance and resize awareness** on 2026-10-05. This documentation-only planning PR does not change package versions, public API, runtime code, dependencies, or the graphics hold.
+The maintainer selected **options 2 + 3: terminal appearance and resize awareness** on 2026-10-05. PR #83 implements the approved additive API, runtime ownership/lifecycle behavior, and compatibility/package contracts, then prepares stable `1.27.0` after the selected live acceptance and exact-head qualification. Production dependencies and the graphics hold remain unchanged.
 
 The current full nongraphics feature menu preserves the original option numbers:
 
@@ -548,9 +548,9 @@ T2709  focused live-terminal acceptance
 T2710  stable release closure and exact evidence
 ```
 
-The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) defines scope, protocol references, ownership requirements, integration points, acceptance criteria and release gates. The [T2700 detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) freezes the proposed public signatures and runtime semantics for approval before implementation planning and runtime changes. Implementation remains inline without subagents.
+The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) records completed scope, exact source/artifact/workflow identities, live versions, known limits, and review decisions. The approved [T2700 detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) governs the additive public signatures and runtime semantics. Implementation remained inline without subagents; final review is an author self-review.
 
-Stable acceptance requires positive live evidence for both selected features and evidence that unavailable reporting preserves the existing path. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links are checked together before the stable tag.
+Stable acceptance now includes positive Kitty 0.49.2 evidence for both selected features and same-environment Windows Terminal/WSL evidence that unavailable reporting preserves native input and lifecycle. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links passed together before separate maintainer promotion.
 
 ## Later development candidates
 

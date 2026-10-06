@@ -8,7 +8,7 @@
 
 **Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
 
-**Status:** Tasks 1–9 are complete: runtime/lifecycle/package contracts and all selected live witnesses are reviewed. Live source remains `6c3bcdb` / `1.27.0-alpha.1`; matching-source workflow `37459014319` passed all ten jobs. Stable `1.27.0` metadata is prepared and Task 10 exact-candidate qualification is in progress. Merge, tag, release, and NuGet publication remain separate maintainer actions. Execution continues inline without subagents.
+**Status:** Tasks 1–10 are complete. All selected live witnesses are reviewed at source `6c3bcdb` / `1.27.0-alpha.1`. Stable `1.27.0` candidate `cfd91266b324de84152c2bd0de181cc920751da9` passed all ten jobs in workflow `37480014921` and is prepared for maintainer review. Merge, tag, release, and NuGet publication remain separate maintainer actions. Execution remained inline without subagents; final review is an author self-review.
 
 **Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Stable workflow `37337222940` passed. Its release artifact ZIP SHA-256 is `4fe00b74d451a8c96b326f1fe4b4c46390392288d1be03ee6a6296608ab7dbc4`; the contained `.nupkg` and `.snupkg` SHA-256 values are `49a019d9ee8c8861ba97aeb23b6fd7f1f6b446812ad7b80cd9fd4d56cb0ace80` and `b9e17324e65efdb5dc3b684cccfdc1144154acb273589ef0df169db13042995d`.
 
@@ -210,10 +210,10 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 - [x] Reconcile every tranche, open defect, compatibility limit and main-roadmap status.
 - [x] Set stable 1.27.0 metadata only after acceptance; verify empty prerelease suffix, README/install version, changelog and `docs/releases/1.27.0.md`.
-- [ ] Verify package release notes include `1.27.0`, `docs/releases/1.27.0.md`, and `Compatibility-and-Versioning.md`; inspect the packed README against the complete current release-line contract.
-- [ ] Run the entire runtime/source-integration/sample/package/API/matrix/artifact workflow at one exact stable candidate.
-- [ ] Record source SHA, workflow IDs, test counts, failures and same-head reruns, package/symbol hashes, API fingerprint, and dependencies.
-- [ ] Present the candidate for maintainer review. Merge, tag, GitHub release, and NuGet publication remain separate maintainer actions.
+- [x] Verify package release notes include `1.27.0`, `docs/releases/1.27.0.md`, and `Compatibility-and-Versioning.md`; inspect the packed README against the complete current release-line contract.
+- [x] Run the entire runtime/source-integration/sample/package/API/matrix/artifact workflow at one exact stable candidate.
+- [x] Record source SHA, workflow IDs, test counts, failures and same-head reruns, package/symbol hashes, API fingerprint, and dependencies.
+- [x] Present the candidate for maintainer review. Merge, tag, GitHub release, and NuGet publication remain separate maintainer actions.
 
 **Acceptance:** One exact stable candidate is qualified and documented before tagging; no stale metadata or earlier-head test result substitutes for release validation.
 
@@ -243,7 +243,7 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
 | Runtime and distribution qualification | Head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; [workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) | All ten jobs passed; T2701–T2708 complete |
-| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | All selected alpha source live witnesses complete: Kitty 0.49.2 positive features and Windows Terminal/WSL unavailable modes with native input/lifecycle Pass; stable exact-candidate qualification in progress |
+| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix; workflow `37480014921` at `cfd9126` | All selected alpha source live witnesses complete; stable candidate qualified and prepared for maintainer review |
 
 
 ## Qualified alpha checkpoint — 2026-10-06
@@ -293,5 +293,43 @@ Windows Terminal / WSL native checkpoint: the five unchanged revision-1 reports 
 Verification: original JSON bytes and a repeated matrix render match; fresh-package compatibility verification passed on net8.0/net9.0/net10.0 against the matching-source CI artifact. No runtime code or alpha metadata changed.
 
 Completed live acceptance: the consented Windows Terminal / WSL rerun at `6c3bcdb`, alpha.1, Windows Terminal 1.24.11911.0 / Ubuntu 24.04 / WSL 2.6.1.0 explicitly reports appearance and in-band resize modes Unavailable. This exact source/environment already passed ordinary input and native resize/suspend/resume in the preceding native run. Together with all three Kitty 0.49.2 positive feature reports, T2709 and Task 9 live witnesses are complete. The two new JSON files are unchanged; all five first-run Windows Terminal/WSL files, including NotRun reporting, remain unchanged in evidence history. Stable metadata and exact-candidate gates follow in T2710; alpha source observations are not represented as stable-package live testing.
+
+## Stable candidate qualification — 2026-10-06
+
+Stable metadata was prepared at `145b67b378ba188a9ad23975a8c6fa06ec66762d`. Workflow [37479150687](https://github.com/uniblab/Icod.Terminal/actions/runs/37479150687) failed job `112323069270`, Package Stable 1.x release line: `VerifyReleaseLinePackage.ps1:195` rejected forbidden candidate wording in the packed README. The local Release verifier reproduced the failure. README-only corrective commit `cfd91266b324de84152c2bd0de181cc920751da9` passed the unchanged gate locally, followed by a complete new exact-head workflow rather than reuse of an earlier head.
+
+[Workflow 37480014921](https://github.com/uniblab/Icod.Terminal/actions/runs/37480014921) passed all ten jobs at `cfd91266b324de84152c2bd0de181cc920751da9`. Windows, Linux, and macOS each passed 2,808 unit tests and 15 TermInfo integration tests on every target framework (`net8.0`, `net9.0`, `net10.0`), with zero failures or skips. Source samples, real Unix-input regression, downstream DCurses ownership/lifecycle acceptance and eight-cycle hardening soak, all four fresh-package shards, compatibility acceptance for both 1.26 and 1.27, dependency/license/document/API/XML checks, and validated artifact creation passed. Windows license verification also passed under PowerShell 5.1. Both matrices rerender byte-identically.
+
+The CI packages use Staging configuration and embed synthetic merge `b0c6727911da51b1447b98cf4148420d9eee4a68`; its Git tree `7dd18ad43e6f84be3aed28b7e18c018072768b34` exactly equals `cfd9126`. Validated artifact `icod-terminal-pr-packages` is ID `11420808304`. Its downloaded ZIP hash matches the Actions digest, and its three API snapshots all match `356f455ec27065c63a642ae3d5b02125d2aed408d728cb6fadd0d47aeab12487`.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Validated CI ZIP | `70376f1b19ed21a52011e1d9c3e18bcd217ea8b7ed0ebc1eeb48800694a319d9` |
+| CI Icod.Terminal.1.27.0.nupkg | `ac25e351f387ce2c2ed2b439b179a705a063c0de941064b49ae2e957db52b4fa` |
+| CI Icod.Terminal.1.27.0.snupkg | `032279bd5a0468c8782422ece38fa0be8bfeff4702fc61e19a3c05e1e48577c0` |
+| Release Icod.Terminal.1.27.0.nupkg | `4aaee4e1b8b6c289050b17addbea79ab6aa52d2bbd0029310c4fd5a0a194c6a3` |
+| Release Icod.Terminal.1.27.0.snupkg | `dd60209b8a71b3944890165204d6db4c21e84b322963c17aa2ad1b86c15a268e` |
+
+The separate Release build embeds the branch head `cfd9126` directly and passed the frozen API build gate with zero build warnings/errors. The full local Release runtime/source/downstream run also passed; it began at `145b67b` and completed after the README-only corrective commit, so the exact-head cross-platform workflow supplies the primary runtime source qualification. Runtime, tests, and executable sample sources remain unchanged from the live-tested `6c3bcdb` tree. Dependency floors remain `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`.
+
+Against that exact-head Release package, `VerifyPackageArtifact.ps1`, `VerifyEnvironmentAwarenessPackage.ps1`, `VerifyReleaseLinePackage.ps1`, and `VerifyCompatibilitySample.ps1` for both evidence versions 1.26 and 1.27 all passed on net8.0/net9.0/net10.0. The five-verifier run exited zero. A separate Release source-sample build and both matrix renders/cmp checks also passed. The final documentation closure records this qualified candidate; its current-head CI is linked from PR #83 rather than replacing these immutable artifact identities.
+
+Live evidence remains source alpha.1, not stable-package live qualification: Kitty 0.49.2 supplies positive query, operator-induced Light reporting, and initial/changed resize; Windows Terminal 1.24.11911.0 hosting Bash in Ubuntu 24.04 / WSL 2.6.1.0 supplies explicit unavailable modes and earlier same-environment native input/lifecycle Pass. Query silence remains Inconclusive. Historical original bytes and chronology are retained. Automatic Windows-to-WSLg theme propagation, a separately exposed unknown-pixel resize witness, untested terminal lanes, and graphics remain unqualified; the graphics-development hold stands.
+
+### Inline review and execution decisions
+
+The author reviewed the whole `2c0fafa..cfd9126` branch against the approved design and all five review-focus classes: query/report races, external mode ownership, resize provenance, pending negotiation/cleanup across lifecycle, and report bursts mixed with input. The packed-README finding was reproduced RED and fixed GREEN against the unchanged release-line gate. No Critical, Important, or deferred Minor source/package findings remain. Per the maintainer's no-subagent instruction, this is an author self-review rather than an independent review; that limitation remains visible before promotion.
+
+Execution rulings, in order:
+
+- Initially unavailable local .NET/PowerShell tooling required exact-head CI RED/GREEN evidence. Cost: slower remote diagnostic feedback; local tooling was subsequently installed.
+- The additive API baseline remained intentionally stale until Task 8, as assigned by the plan. Cost: package jobs during Tasks 1–7 could not qualify distributable artifacts; final package qualification is green.
+- Local builds used serial MSBuild and disabled shared compilation because compiler-server Unix sockets were unavailable. Cost: slower local builds; normal CI tooling remains unchanged.
+- Ordinary acquisition preserves the approved state/manager gate order while awaiting a bounded reply; decoder and query writing require neither gate. Lifecycle refresh releases both. Cost: bounded serialization of other state operations; concurrency and lifecycle regressions passed.
+- External-resume and partial re-entry rollback required two lifecycle coordinator hooks omitted from the plan's file list. Cost: potential lifecycle-order regression; complete runtime/downstream checks passed.
+- Existing runner/confirmation and recursive dependency guards cover the new flow/project, so no duplicate implementation or mirror tests were added. Cost: reliance on that existing coverage; final package/runtime gates passed.
+- Live launchers consumed a source checkout, not a package. Matching-source CI artifacts and equal Git trees are recorded without inventing a local package identity. Cost: source-versus-package provenance distinction; no stable-package live claim is made.
+
+Tasks 1–10 are complete and the stable candidate is presented in PR #83. Merge, tagging, GitHub release creation, and NuGet publication remain separate maintainer actions.
 
 Live-closure verification: new and historical upload bytes compare identically, the matrix rerenders identically, and matching-source alpha package compatibility verification passed on net8.0/net9.0/net10.0. No runtime behavior changed.

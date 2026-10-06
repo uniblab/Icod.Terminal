@@ -286,12 +286,12 @@ Task 9 complete (2026-10-06): subsequent consented appearance and resize reporti
 
 - [x] **Step 1: Reconcile every T2700-T2709 checkbox, defect, limitation, and evidence link.** No unresolved positive-witness or restoration-safety gap may be waived silently.
 - [x] **Step 2: Set stable metadata.** Empty `VersionSuffix`; synchronize README installation version, package release notes, changelog, main roadmap, and curated `docs/releases/1.27.0.md`; retain exact dependency floors and graphics hold.
-- [ ] **Step 3: Build one stable candidate.** Run `pwsh -File packaging/BuildPackageArtifact.ps1 -ArtifactDirectory artifacts/package -Configuration Release -ApiOutputDirectory artifacts/public-api` and record source/package/symbol hashes.
-- [ ] **Step 4: Run complete exact-head verification.** Run runtime, package shards, public API/XML, source integration, compatibility sample/matrix, documentation, dependency, license, artifact, and downstream DCurses gates on the same SHA across GitHub Actions Windows/Linux/macOS lanes.
-- [ ] **Step 5: Require clean reruns for any failure.** Record workflow IDs, failing job/test, corrective commit, and same-head rerun; do not cite an earlier head as release evidence.
-- [ ] **Step 6: Record release evidence.** Add exact test counts, workflow IDs, source SHA, API fingerprint, dependencies, package/symbol hashes, live terminal versions, and known limitations to the roadmap and curated notes.
-- [ ] **Step 7: Request final review and commit.** Resolve all Critical/Important findings, then commit as `docs: close Terminal 1.27 release candidate`.
-- [ ] **Step 8: Stop before promotion.** Present the stable candidate to the maintainer; do not merge, tag, publish a GitHub release, or push NuGet without separate approval.
+- [x] **Step 3: Build one stable candidate.** Run `pwsh -File packaging/BuildPackageArtifact.ps1 -ArtifactDirectory artifacts/package -Configuration Release -ApiOutputDirectory artifacts/public-api` and record source/package/symbol hashes.
+- [x] **Step 4: Run complete exact-head verification.** Run runtime, package shards, public API/XML, source integration, compatibility sample/matrix, documentation, dependency, license, artifact, and downstream DCurses gates on the same SHA across GitHub Actions Windows/Linux/macOS lanes.
+- [x] **Step 5: Require clean reruns for any failure.** Record workflow IDs, failing job/test, corrective commit, and same-head rerun; do not cite an earlier head as release evidence.
+- [x] **Step 6: Record release evidence.** Add exact test counts, workflow IDs, source SHA, API fingerprint, dependencies, package/symbol hashes, live terminal versions, and known limitations to the roadmap and curated notes.
+- [x] **Step 7: Request final review and commit.** Resolve all Critical/Important findings, then commit as `docs: close Terminal 1.27 release candidate`.
+- [x] **Step 8: Stop before promotion.** Present the stable candidate to the maintainer; do not merge, tag, publish a GitHub release, or push NuGet without separate approval.
 
 ## Self-review record
 
