@@ -151,6 +151,18 @@ git status --short
 sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
 ```
 
+If the shared Windows checkout still reports widespread modifications, use a separate worktree in WSL's Linux filesystem for the live run. This also keeps Linux build outputs separate from Windows build outputs. Run these commands from anywhere inside the existing repository in WSL; they reuse its already-fetched HEAD, require no SSH key or network access, and preserve the original working directory and any stashed edits:
+
+```sh
+terminal_checkout=$(mktemp -d "$HOME/icod-terminal-live.XXXXXX")
+git worktree add --detach "$terminal_checkout" HEAD
+cd "$terminal_checkout"
+git status --short
+sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
+```
+
+The worktree is detached intentionally: it tests the exact existing commit. Its index and checkout are separate from the Windows working directory. The launcher records that HEAD and saves JSON in its usual temporary output directory.
+
 Render the separate development matrix with:
 
 ```sh
