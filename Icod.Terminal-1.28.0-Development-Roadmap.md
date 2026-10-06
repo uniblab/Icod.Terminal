@@ -48,6 +48,10 @@ terminal-name branch or environment-variable support inference.
 [graphics hold/reopening record](docs/Graphics-Development-Hold.md). T2800 must
 write the detailed design and implementation plan before runtime changes.
 
+**T2800 design candidate:**
+[Published-Spec Kitty Graphics Transactions Design](docs/superpowers/specs/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions-design.md),
+awaiting maintainer review before implementation planning.
+
 ## Decision
 
 Icod.Terminal will implement the published Kitty Graphics Protocol, not reproduce
