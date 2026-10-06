@@ -8,7 +8,7 @@
 
 **Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
 
-**Status:** Tasks 1–10 are complete. All selected live witnesses are reviewed at source `6c3bcdb` / `1.27.0-alpha.1`. Stable `1.27.0` candidate `cfd91266b324de84152c2bd0de181cc920751da9` passed all ten jobs in workflow `37480014921` and is prepared for maintainer review. Merge, tag, release, and NuGet publication remain separate maintainer actions. Execution remained inline without subagents; final review is an author self-review.
+**Status:** Tasks 1–10 are complete. All selected live witnesses are reviewed at source `6c3bcdb` / `1.27.0-alpha.1`. Stable `1.27.0` release-polish head `791aaf18da7cca372c8da49d3a2623ca86df8e78` passed all ten jobs in workflow `37506963844` and is prepared for maintainer review. Merge, tag, release, and NuGet publication remain separate maintainer actions. Execution remained inline without subagents; final review is an author self-review.
 
 **Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Stable workflow `37337222940` passed. Its release artifact ZIP SHA-256 is `4fe00b74d451a8c96b326f1fe4b4c46390392288d1be03ee6a6296608ab7dbc4`; the contained `.nupkg` and `.snupkg` SHA-256 values are `49a019d9ee8c8861ba97aeb23b6fd7f1f6b446812ad7b80cd9fd4d56cb0ace80` and `b9e17324e65efdb5dc3b684cccfdc1144154acb273589ef0df169db13042995d`.
 
@@ -243,7 +243,7 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
 | Runtime and distribution qualification | Head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; [workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) | All ten jobs passed; T2701–T2708 complete |
-| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix; workflow `37480014921` at `cfd9126` | All selected alpha source live witnesses complete; stable candidate qualified and prepared for maintainer review |
+| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix; workflow `37506963844` at `791aaf1` | All selected alpha source live witnesses complete; stable release-polish head qualified and prepared for maintainer review |
 
 
 ## Qualified alpha checkpoint — 2026-10-06
@@ -319,6 +319,22 @@ Live evidence remains source alpha.1, not stable-package live qualification: Kit
 ### Inline review and execution decisions
 
 The author reviewed the whole `2c0fafa..cfd9126` branch against the approved design and all five review-focus classes: query/report races, external mode ownership, resize provenance, pending negotiation/cleanup across lifecycle, and report bursts mixed with input. The packed-README finding was reproduced RED and fixed GREEN against the unchanged release-line gate. No Critical, Important, or deferred Minor source/package findings remain. Per the maintainer's no-subagent instruction, this is an author self-review rather than an independent review; that limitation remains visible before promotion.
+
+## Release README and sample polish qualification — 2026-10-06
+
+Release-polish head `791aaf18da7cca372c8da49d3a2623ca86df8e78` brings the root README and sample documentation forward to the completed 1.27 state, adds the bounded `QueryAppearanceAsync` demonstration to the query sample, and pins that sample contract with a regression test. It does not change the library runtime or public API. Historical candidate evidence above remains immutable; this checkpoint qualifies the later user-facing documentation and sample-source changes.
+
+[Workflow 37506963844](https://github.com/uniblab/Icod.Terminal/actions/runs/37506963844) passed all ten jobs. Windows, Linux, and macOS each passed 2,809 managed tests and 15 TermInfo integration tests on every target framework (`net8.0`, `net9.0`, `net10.0`), with zero failures or skips. Source samples, downstream DCurses checks, all package shards, both compatibility versions, documentation/dependency/license/API/XML gates, and validated artifact creation passed. The three packaged API snapshots remain byte-identical at `356f455ec27065c63a642ae3d5b02125d2aed408d728cb6fadd0d47aeab12487`.
+
+The CI package embeds synthetic merge `62a69761a0ed4c287084b29007f2c0af67098e0c`; its tree `f21bc79d2ab83ce314fa54f394d87acb39f4b5aa` exactly equals the release-polish head. Validated artifact `icod-terminal-pr-packages` is ID `11432057591`; its downloaded ZIP hash matches the Actions digest.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Validated CI ZIP | `f054c2c2892c3b34ff1bf82e3ed14152cc4cccc2a01e556fc948b55f544c2cd5` |
+| CI Icod.Terminal.1.27.0.nupkg | `ed401028cc95ca0c5eff619122730a15c814293b97e59c40ccdd65a898a54a53` |
+| CI Icod.Terminal.1.27.0.snupkg | `fff75dbfcf2bbcaa9f347b1e965172834a28f42dcf5d59bf32c254c04bf46881` |
+
+Local Staging verification at the same source passed the full 2,809-test managed suite on all three target frameworks plus `BuildPackageArtifact.ps1`, `VerifyPackageArtifact.ps1`, `VerifyEnvironmentAwarenessPackage.ps1`, and `VerifyReleaseLinePackage.ps1`. The author self-review found no Critical, Important, or deferred Minor issue in the five-file polish change. No independent-review claim is made, and no merge, tag, release, or publication action is implied.
 
 Execution rulings, in order:
 
