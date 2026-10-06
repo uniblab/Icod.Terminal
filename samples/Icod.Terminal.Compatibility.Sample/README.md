@@ -132,6 +132,18 @@ sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
 
 Use a clean checkout so the recorded commit identifies the tested source. These launchers collect exact version identity and save review-only JSON under a temporary directory. The Windows launcher asks for the active terminal version from Settings / About; selecting the first installed stable/preview package could identify a different terminal. The Kitty/WSL launcher records the Kitty command version and asks for the exact WSL version. Terminal branding is not support evidence. Publication of the alpha is not required: the source sample uses the candidate project. The fresh-package gate verifies the same scenarios against a newly packed package.
 
+Git attributes give text files an explicit LF checkout policy across Windows and WSL, including when Windows Git uses `core.autocrlf=true`. EditorConfig uses the same policy. Reviewed JSON reports retain their exact submitted bytes. EditorConfig alone does not control checkout conversion. A shared checkout without these attributes can appear clean to Windows Git but modified to WSL Git across Markdown, C#, project, solution, and other text files. If an older Windows checkout produced `sh\r: No such file or directory`, manually converting the scripts may then trigger the launcher's clean-checkout guard. That guard reports local modifications, not a wrong branch; the changed paths are printed before the launcher stops.
+
+For an existing checkout, run the following from the repository root in WSL. The stash preserves local changes, including untracked files. Do not reapply line-ending-only edits after updating; saved content edits remain in the stash for review. The forced checkout refreshes tracked files under the new attributes.
+
+```sh
+git stash push -u -m "Preserve local changes before line-ending fix"
+git pull --ff-only
+git checkout-index --all --force
+git status --short
+sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
+```
+
 Render the separate development matrix with:
 
 ```sh

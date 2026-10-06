@@ -1,0 +1,8 @@
+# Normalize text comparisons across Windows and WSL Git settings.
+* text=auto eol=lf
+
+# Shell entry points must run in Unix/WSL even from a Windows checkout.
+*.sh text eol=lf
+
+# Reviewed live reports retain their exact submitted bytes.
+docs/compatibility/evidence/**/*.json -text -eol

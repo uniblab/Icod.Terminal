@@ -19,7 +19,9 @@ if [ -z "${KITTY_WINDOW_ID:-}" ]; then
 fi
 
 if [ -n "$(git status --porcelain)" ]; then
-    printf '%s\n' 'Live evidence requires a clean checkout so the source commit identifies the tested code.' >&2
+    printf '%s\n' 'Local changes prevent live evidence collection; this is not a branch or repository mismatch.' >&2
+    printf '%s\n' 'The tested source commit must identify a clean checkout. Changed paths:' >&2
+    git status --short --untracked-files=normal >&2
     exit 1
 fi
 source_commit=$(git rev-parse HEAD)
