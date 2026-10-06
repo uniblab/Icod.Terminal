@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.26.0` — Terminal Compatibility Qualification
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). `1.27.0` is at the documentation-only T2700 contract-review gate; implementation awaits approval of the detailed design and implementation plan. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
+- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). `1.27.0-alpha.1` implements the approved appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package gates. Source and package qualification is underway; reviewed live witnesses remain required before stable closure. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
 - **Active development target:** `1.27.0` — Live Terminal Environment Awareness.
 - **Selected scope:** **Options 2 + 3: terminal appearance and resize awareness**, with focused compatibility scenarios, public-only samples, and no planned Icod.TermInfo change. See the [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md).
 - **Stable compatibility floor:** `1.0.0`

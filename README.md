@@ -11,6 +11,8 @@
 
 Current stable release: `Icod.Terminal 1.26.0`.
 
+Current development candidate: `Icod.Terminal 1.27.0-alpha.1`. The candidate adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. Live acceptance is pending; the [alpha notes](docs/releases/1.27.0-alpha.1.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) describe the delivered candidate. Publication is a separate maintainer action.
+
 Version 1.26 adds no production runtime API. It adds a public-only executable compatibility sample, bounded reviewed JSON evidence, deterministic matrix generation, and fresh-package acceptance across .NET 8, 9, and 10. The initial matrix records exact, scenario-scoped identity and dimension observations for Windows Terminal and Kitty through WSL; every unrecorded scenario remains `NotRun`. See the [1.26 release notes](docs/releases/1.26.0.md), [compatibility matrix](docs/compatibility/1.26.0.md), and [sample walkthrough](samples/Icod.Terminal.Compatibility.Sample/README.md).
 
 Version 1.25 adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a complete, caller-owned image in the same ordered commit as cursor plans and text. Call `VerifyCapabilityAsync(TerminalCapability.RasterGraphics)` before building the transaction. The commit uses already verified Kitty Graphics or Sixel evidence, encodes all frames within the aggregate 64 MiB bound before output, and does not infer placement or cursor position after the raster. It includes the alpha.1–alpha.5 corrections: newline-safe cursor planning, coalesced Sixel writes, immediate Unix byte input, Kitty DA1 compatibility and bounded persistent-transfer deadlines. See the [1.25 release notes](docs/releases/1.25.0.md).
@@ -417,3 +419,29 @@ Copyright (c) 2026 Timothy J. Bruce
 `Icod.Terminal` is licensed under the GNU Lesser General Public License, version 3 or later. Sample applications are licensed under the GNU General Public License, version 3 or later, as stated in their source headers.
 
 See `LICENSE` and the per-project/source declarations for the applicable terms.
+
+## Terminal appearance and in-band resize (1.27 candidate)
+
+`QueryAppearanceAsync(timeout, cancellationToken)` returns a terminal-reported Dark or Light observation without enabling ongoing reports. Unknown is a consumer default, never a substitute for timeout, malformed reply, cancellation, or unavailable endpoints. Appearance replies and unsolicited reports share untagged grammar: the first matching report belongs to an active query; timed-out or canceled queries retain the existing one-second late-response window. Neither terminal branding nor a successful write establishes support or host theme.
+
+`AcquireAppearanceReportingAsync(...)` and `AcquireInBandResizeReportingAsync(...)` independently query their private mode. States 0/4 return controlled Unavailable; silence, malformed replies, endpoint loss and cancellation remain exceptions. Nested asynchronous leases share one enable and restore only a known reset baseline. A previously enabled mode stays enabled. Resize acquisition and re-entry request an immediate report, which remains on the authoritative `ReadEventAsync(...)` path.
+
+```csharp
+TerminalControlResult<TerminalInBandResizeReportingLease> result =
+    await session.AcquireInBandResizeReportingAsync(TimeSpan.FromSeconds(2), cancellationToken);
+if (result.IsAvailable) {
+    await using TerminalInBandResizeReportingLease lease = result.GetRequiredValue();
+    TerminalEvent item = await session.ReadEventAsync(TimeSpan.FromSeconds(5), cancellationToken);
+    if (item.Semantic?.InBandResize is { } resize) {
+        TerminalDimensions cells = resize.Dimensions;
+        TerminalPixelDimensions? pixels = resize.PixelDimensions;
+        // The application owns layout and repaint. Native geometry is a separate fact.
+    }
+}
+```
+
+Appearance and InBandResize append to Notification in the semantic-event family; exactly one payload is non-null. Repeated appearance reports and pixel-only resize changes remain distinct observations. Unknown pixel dimensions are null. In-band reports do not replace native lifecycle resize events, `GetSize()`, or `GetDimensions()`, and do not synthesize another lifecycle event. Reconcile conflicting observations by provenance in the application.
+
+Suspend disables owned reporting before input/presentation and host restoration. Resume reobserves active modes in the internal query window and re-enables reporting before public queries resume. `InvalidateState()` preserves logical owners but invalidates each baseline; final release then performs no speculative toggle until that facility is reobserved. Untagged delayed bytes cannot prove freshness across an epoch change. Session disposal closes queries and lifecycle input, then reporting, input protocols, presentation, and host state. Cleanup errors are aggregated; successful local emission does not prove remote restoration.
+
+The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Graphics development remains on hold.

@@ -301,3 +301,9 @@ Relative placement, lifecycle observation, Unicode placeholder virtual placement
 Static screen advertisement neither probes a terminal nor authenticates its implementation. It checks representation presence; consumers must separately request concrete plans and account for endpoint availability. The capability sample does not commit demonstration plans or mutate clipboard, persistent resources, or reporting modes. Its opt-in verification uses only the existing three support paths, not a new fingerprinting mechanism.
 
 Replies to included support queries carry the generation in which observation began. A ledger update from an expired generation is ignored, preventing an old reply from establishing support in the current state. This is evidence hygiene, not peer authentication. Cancellation still respects committed response ownership; it does not promise that terminal traffic can be recalled.
+
+## Environment observations (1.27)
+
+Reporting is explicitly opt-in and independently owned. Appearance is a terminal report, not host-theme inference, and resize is text-area geometry, not window or host identity. The protocol parser accepts bounded decimal fields and rejects overflow and malformed structure. Requests use the existing single input/query authority and serialized output. No arbitrary reply bytes or raw-mode API is exposed.
+
+Compatibility reporting scenarios require consent before acquisition and before operator-visible confirmation. Evidence contains exact manually supplied terminal/OS/transport versions, scenario revision, bounded typed outcomes and notes. It omits raw replies, raw keys, environment dumps and host identity. Review JSON before accepting it; preserve explicit Unavailable versus missing/deadline Inconclusive outcomes.

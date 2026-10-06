@@ -285,3 +285,13 @@ For lifecycle-safe consumers:
 - surface disposal/restoration failures rather than treating them as successful cleanup.
 
 These rules are part of the durable 1.x ownership model.
+
+## Environment reporting ownership (1.27)
+
+Appearance and resize have independent asynchronous leases with monotonic session-local owner identities. Nested owners share a captured baseline; non-final release changes no mode. Final release disables only a valid reset baseline the session enabled. An external Set/PermanentlySet baseline stays set; failed lease cleanup retains ownership for an explicit retry.
+
+Public queries suspend first. Owned reset modes disable before input/presentation and host state leave. Resume restores host/input/presentation according to existing ordering, opens the internal observation window, requeries only active facilities, and re-enables reporting before public queries resume. Unsupported, malformed or silent refresh fails re-entry; partial mode re-entry rolls back before host restoration. External Resume signals also suspend public queries before observation.
+
+InvalidateState invalidates each facility's baseline without removing logical owners. A new acquisition reobserves only its own facility; it cannot revalidate the other baseline. Until refresh, final release and session close make no speculative mode change. Invalidation during a committed enable also prevents claiming an available fresh lease or restoring a now-unknown baseline. Untagged late bytes cannot authenticate an epoch.
+
+Disposal stops ordinary output, closes query transactions, stops lifecycle input, then closes environment reporting before input protocols, presentation and host restoration. Reporting close never queries and aggregates cleanup errors while retiring leases. Local emission is not remote acknowledgement.

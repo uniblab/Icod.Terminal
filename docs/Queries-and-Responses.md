@@ -264,3 +264,11 @@ The 1.x query system does not promise:
 - a guarantee that every emulator implements every typed query.
 
 Future query families must use the same bounded correlation, emission-commit, stale-response ownership, lifecycle-generation, and authoritative routing model unless a new protocol provides a stronger transaction identity that can be integrated without weakening these guarantees.
+
+## Bounded appearance and reporting-mode queries (1.27)
+
+QueryAppearanceAsync accepts zero through one minute and emits only CSI ?996n. Valid CSI ?997;1n / ?997;2n observations return Dark / Light. Unknown is reserved for consumer state. Invalid timeouts, unusable endpoints, cancellation, deadlines and malformed correlated responses preserve ArgumentOutOfRangeException, InvalidOperationException, OperationCanceledException, TimeoutException and FormatException respectively.
+
+The reply grammar is identical to unsolicited appearance reports and carries no request identifier. The active query owns the first matching frame without also emitting an event. The one-second late-response window and maximum 32 pending transactions remain unchanged. Later unclaimed valid reports become semantic events; unclaimed valid DECRPM replies for 2031/2048 are consumed. Delayed reports crossing invalidation or resume remain observations with unprovable generation.
+
+AcquireAppearanceReportingAsync and AcquireInBandResizeReportingAsync negotiate separate modes by DECRQM. Explicit states 0/4 mean Unavailable; states 1/3 preserve an external enabled baseline; state 2 enables and final release disables. Resize always re-enables on first acquisition or resume to request its initial report. That initial report is left for ReadEventAsync. Silent, malformed or failed negotiation is exceptional rather than guessed support.

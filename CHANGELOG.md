@@ -2,6 +2,14 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.27.0-alpha.1 (development candidate)
+
+- Add bounded appearance query, typed appearance/in-band resize semantic events and independent reporting leases.
+- Negotiate private-mode baselines, preserve externally enabled modes and nested ownership, and restore through suspend/resume/disposal.
+- Invalidate baselines independently, reject invalidation during negotiation and roll back partial re-entry. Preserve native geometry, repeated reports and pixel-only changes.
+- Extend consented compatibility scenarios and cmd/sh launchers; add fresh-package/API/XML verification. Positive live-terminal acceptance and stable promotion remain pending.
+
+
 ## 1.26.0
 
 - Adds a public-API-only compatibility sample with headless discovery, consented live scenarios, bounded JSON reports, and deterministic Markdown matrix generation.

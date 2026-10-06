@@ -346,3 +346,9 @@ The 1.x input model does not promise:
 - terminal-emulator behavior.
 
 New protocol support must preserve the same single-reader, bounded-decoder, semantic-normalization, deterministic ownership, and truthful-state rules.
+
+## Appearance and in-band resize observations (1.27)
+
+TerminalSemanticEventKind appends Appearance=1 and InBandResize=2 after Notification=0. Exactly one of Notification, Appearance or InBandResize is populated. Recognition is always active, including externally enabled reporting; session opening enables neither facility. ReadEventAsync returns one observation at a time. Repeated appearance values can signal palette updates, and pixel-only resize changes remain visible. Reports are bounded to min(4096, MaximumBufferedBytes), share the existing input buffer and backpressure, and are not coalesced. Malformed environment-prefix frames are discarded only through a proven boundary; following keyboard input survives.
+
+TerminalInBandResizeEvent retains in-band provenance. Dimensions are columns/rows, pixels are text-area width/height or null when both wire pixel fields are zero. Mixed-zero pixels are malformed; no cell size is invented by division. Native lifecycle Resize and synchronous GetSize/GetDimensions remain separate host facts. Applications own reconciliation, layout and repaint.

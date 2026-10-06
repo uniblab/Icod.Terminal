@@ -138,21 +138,22 @@
 - Consumes: Task 4 manager owner records and mode 2048 protocol codecs.
 - Produces: `public ValueTask<TerminalControlResult<TerminalInBandResizeReportingLease>> AcquireInBandResizeReportingAsync(TimeSpan, CancellationToken = default)` and sealed idempotent `TerminalInBandResizeReportingLease : IAsyncDisposable`; independent manager state for `TerminalEnvironmentReportingKind.InBandResize`.
 
-- [ ] **Step 1: Write failing mode-table tests.** Pin states 0/4 unavailable; Reset enables and final release disables; Set/PermanentlySet re-enable once to request the initial report and never disable on final release.
-- [ ] **Step 2: Write failing observation tests.** Cover initial report, row/column change, pixel-only change, repeated report, `0,0` pixels, operation without a native lifecycle source, and exactly one semantic event per wire report.
-- [ ] **Step 3: Add Review Focus 2 and 3 tests.** Verify already-enabled ownership survives disposal; synchronous `GetSize()`/`GetDimensions()` remain native; native/in-band disagreement remains two provenance-bearing facts; no lifecycle event is synthesized.
-- [ ] **Step 4: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalInBandResizeReportingTests`. Expected: FAIL because resize acquisition and lease are absent.
-- [ ] **Step 5: Implement resize ownership.** Reuse manager mechanics without coupling its owner set or baseline to appearance. Re-enable Set/PermanentlySet to request a report, but leave that report on the authoritative input path.
-- [ ] **Step 6: Run the Step 4 command to verify GREEN.** Expected: all resize reporting tests pass.
-- [ ] **Step 7: Run geometry/lifecycle regression tests.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~Geometry|FullyQualifiedName~Lifecycle"`. Expected: all selected tests pass.
-- [ ] **Step 8: Commit.** Commit as `feat: add scoped in-band resize reporting`.
+- [x] **Step 1: Write failing mode-table tests.** Pin states 0/4 unavailable; Reset enables and final release disables; Set/PermanentlySet re-enable once to request the initial report and never disable on final release.
+- [x] **Step 2: Write failing observation tests.** Cover initial report, row/column change, pixel-only change, repeated report, `0,0` pixels, operation without a native lifecycle source, and exactly one semantic event per wire report.
+- [x] **Step 3: Add Review Focus 2 and 3 tests.** Verify already-enabled ownership survives disposal; synchronous `GetSize()`/`GetDimensions()` remain native; native/in-band disagreement remains two provenance-bearing facts; no lifecycle event is synthesized.
+- [x] **Step 4: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter FullyQualifiedName~TerminalInBandResizeReportingTests`. Expected: FAIL because resize acquisition and lease are absent.
+- [x] **Step 5: Implement resize ownership.** Reuse manager mechanics without coupling its owner set or baseline to appearance. Re-enable Set/PermanentlySet to request a report, but leave that report on the authoritative input path.
+- [x] **Step 6: Run the Step 4 command to verify GREEN.** Expected: all resize reporting tests pass.
+- [x] **Step 7: Run geometry/lifecycle regression tests.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~Geometry|FullyQualifiedName~Lifecycle"`. Expected: all selected tests pass.
+- [x] **Step 8: Commit.** Commit as `feat: add scoped in-band resize reporting`.
 
 ### Task 6: Harden lifecycle, invalidation, disposal, and concurrency
 
 **Files:**
 - Modify: `src/Environment/TerminalEnvironmentReportingManager.cs`
 - Modify: `src/Session/TerminalSession.cs`
-- Modify: `src/Session/TerminalSession.LifecycleParticipants.cs` only if the frozen participant order needs a focused hook
+- Modify: `src/Session/TerminalSession.Lifecycle.cs` for external resume and partial reporting re-entry rollback
+- Create: `tests/Icod.Terminal.Tests/src/Session/EnvironmentTestContext.cs`
 - Create: `tests/Icod.Terminal.Tests/src/Session/TerminalEnvironmentLifecycleTests.cs`
 - Create: `tests/Icod.Terminal.Tests/src/Session/TerminalEnvironmentConcurrencyTests.cs`
 
@@ -165,7 +166,7 @@
 - [ ] **Step 3: Write deterministic concurrency tests for Review Focus 4.** Use controlled gates—not sleeps—to interleave acquire/release, both modes, query timeout/cancellation, suspend/resume, input EOF, endpoint failure, committed-write failure, and disposal; assert completion and the frozen gate order.
 - [ ] **Step 4: Add Review Focus 5 burst tests.** Feed alternating appearance, resize, partial/malformed frames, and keyboard events beyond a single consumer turn; assert bounded one-event-at-a-time delivery, no deduplication, and keyboard preservation.
 - [ ] **Step 5: Run to verify RED.** Run `dotnet test tests/Icod.Terminal.Tests/Icod.Terminal.Tests.csproj -c Staging -f net10.0 --filter "FullyQualifiedName~TerminalEnvironmentLifecycleTests|FullyQualifiedName~TerminalEnvironmentConcurrencyTests"`. Expected: FAIL on absent lifecycle/invalidation/disposal behavior.
-- [ ] **Step 6: Implement lifecycle participant behavior and session ordering.** Register the manager once as a core observed participant. Do not await replies while holding manager/state/output gates. Aggregate cleanup errors through the existing session restoration mechanism. Mark leases released only after manager closure completes.
+- [ ] **Step 6: Implement lifecycle participant behavior and session ordering.** Register the manager once as a core observed participant. Lifecycle refresh must release manager/state gates before awaiting replies, and all queries await replies outside the output gate. Ordinary acquisition retains the approved state/manager ordering; neither gate is required by the decoder or query writer. Aggregate cleanup errors through the existing session restoration mechanism. Mark leases released only after manager closure completes.
 - [ ] **Step 7: Run the Step 5 command to verify GREEN.** Expected: all selected tests pass deterministically.
 - [ ] **Step 8: Run the complete environment slice on every target.** Run the same command with `-f net8.0`, `-f net9.0`, and `-f net10.0` and filter `FullyQualifiedName~TerminalEnvironment|FullyQualifiedName~TerminalAppearance|FullyQualifiedName~TerminalInBandResize`. Expected: zero failures on each target.
 - [ ] **Step 9: Run the full runtime gate.** Run `pwsh -File packaging/VerifyRuntime.ps1 -Configuration Staging`. Expected: restore, build, all tests, samples, and downstream runtime checks complete successfully.
@@ -251,7 +252,7 @@
 - [ ] **Step 3: Collect positive resize evidence.** Consent to `environment.in-band-resize/v1`, record the initial report, resize once, and retain optional-pixel behavior exactly as observed.
 - [ ] **Step 4: Collect the fallback lane.** Use an exact environment that times out or explicitly reports unavailable; verify ordinary input and native resize still work; preserve `Inconclusive` versus `Unavailable` truthfully.
 - [ ] **Step 5: Review before acceptance.** Reject reports with mismatched source SHA/scenario revision, unbounded notes, raw bytes/input, environment dumps, host identity, or claims inferred from branding.
-- [ ] **Step 6: Regenerate and verify the matrix.** Run `dotnet run --project samples/Icod.Terminal.Compatibility.Sample/Icod.Terminal.Compatibility.Sample.csproj -c Staging -- --render-matrix docs/compatibility/evidence/1.27.0 docs/compatibility/1.27.0.md`, then rerun the package compatibility verifier. Expected: byte-identical rerender and explicit `NotRun` for untested lanes.
+- [ ] **Step 6: Regenerate and verify the matrix.** Run `dotnet run --project samples/Icod.Terminal.Compatibility.Sample/Icod.Terminal.Compatibility.Sample.csproj -c Staging -- --render-matrix docs/compatibility/evidence/1.27.0 docs/compatibility/1.27.0.md --release-version 1.27.0`, then rerun the package compatibility verifier. Expected: byte-identical rerender and explicit `NotRun` for untested lanes.
 - [ ] **Step 7: Stop if either positive witness is missing.** Present the exact gap to the maintainer; do not convert CI, protocol documentation, or terminal branding into live support evidence.
 - [ ] **Step 8: Commit.** Commit as `docs: record Terminal 1.27 live compatibility evidence`.
 
