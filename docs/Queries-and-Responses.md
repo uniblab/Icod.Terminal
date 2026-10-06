@@ -37,6 +37,15 @@ The 1.x query surface includes typed operations in these protocol families:
 
 The presence of a protocol family does not create a generic public CSI/OSC/DCS query builder. Public operations remain typed and bounded.
 
+Primary Device Attributes replies may end with one trailing separator after the
+device code or a populated attribute list. For example, `CSI ?62;52;c` yields
+device code `62` and attribute `52`; no zero attribute is invented for the final
+empty field. Empty interior fields, subparameters, missing device codes and
+out-of-range values remain errors. The ceiling remains 32 numeric values,
+including the device code. This DA1-specific allowance does not relax secondary
+device attributes, status reports or cursor-position replies. DA1 attributes do
+not establish Kitty graphics or animation support without independent evidence.
+
 ## 3. Query availability
 
 A public query is available only when the session can support a bidirectional live-terminal conversation for that operation.

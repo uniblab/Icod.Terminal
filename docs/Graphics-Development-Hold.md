@@ -63,6 +63,25 @@ hold does not remove or disable existing public APIs or regress unrelated behavi
 
 ## Reopening and release disposition
 
+### Approved DA1 parser follow-up — 2026-10-06
+
+The maintainer revisited the existing graphics path on Kitty 0.49.2 through WSL.
+The independent two-pixel reproducer again received root and single-chunk `OK`
+replies, no reply for the documented `a=f,m=0` continuation, and frame-4 `OK` when
+the final continuation repeated the image identifier. This reproduces the missing
+upload acknowledgement on that exact version; clean-config provenance was not
+captured in the submitted screenshot. No upstream resolution is established.
+
+The persistent-raster sample at stable 1.26 source `2c0fafaf` separately failed
+before resource creation while parsing Primary Device Attributes. The captured
+reply was `CSI ?62;52;c`. The existing special case accepted an empty attribute
+list (`?62;c`) but rejected a trailing separator after populated attributes.
+The maintainer approved the narrow DA1 parser correction for PR #83 / 1.27.0.
+It preserves all numeric attributes and bounds, rejects interior empty fields,
+and does not alter other CSI grammars, graphics wire encoding, ACK assumptions,
+fallback selection or public signatures. This approval is limited to that parser
+correction; persistent ATLAS and animation-control live acceptance remain deferred.
+
 Reopening requires a new maintainer scope decision and an environment where
 Kitty graphics behavior can be properly reproduced and tested. Establish
 clean-config/current-version observations and actual upload/control/rendering

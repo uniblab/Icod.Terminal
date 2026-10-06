@@ -505,6 +505,14 @@ The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibilit
 
 ## 1.27 prepared line — Live Terminal Environment Awareness
 
+The maintainer approved a narrow DA1 parser follow-up on 2026-10-06 after Kitty
+0.49.2 returned `CSI ?62;52;c`: accept a single trailing separator after populated
+attributes while retaining all attributes and numeric validation. Regression
+coverage exercises public query and graphics-capability verification. The later
+source requires its own exact-head qualification on PR #83; earlier green heads
+remain historical. The independently reproduced missing chunked animation ACK
+is unresolved, and persistent-ATLAS acceptance remains deferred.
+
 The maintainer selected **options 2 + 3: terminal appearance and resize awareness** on 2026-10-05. PR #83 implements the approved additive API, runtime ownership/lifecycle behavior, and compatibility/package contracts, then prepares stable `1.27.0` after the selected live acceptance and exact-head qualification. Production dependencies and the graphics hold remain unchanged.
 
 The current full nongraphics feature menu preserves the original option numbers:

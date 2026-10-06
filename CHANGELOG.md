@@ -4,6 +4,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 
 ## 1.27.0
 
+- Accept one trailing separator in Primary Device Attributes replies with populated attributes, including Kitty 0.49.2's `CSI ?62;52;c`. Preserve every numeric attribute and the existing value/count bounds; reject empty interior fields and keep other CSI query grammars unchanged. This corrects capability-probe parsing, not the unresolved animation-frame acknowledgement defect.
 - Add bounded appearance query, typed appearance/in-band resize semantic events and independent reporting leases.
 - Negotiate private-mode baselines, preserve externally enabled modes and nested ownership, and restore through suspend/resume/disposal.
 - Invalidate baselines independently, reject invalidation during negotiation and roll back partial re-entry. Preserve native geometry, repeated reports and pixel-only changes.

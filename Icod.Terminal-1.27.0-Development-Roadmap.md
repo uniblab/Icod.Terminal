@@ -20,6 +20,16 @@
 
 ## Scope and alternatives
 
+**Approved follow-up (2026-10-06):** Correct DA1 parsing of one trailing separator
+after populated attributes, as observed in Kitty 0.49.2's `CSI ?62;52;c` reply.
+The parser and public query/capability regressions preserve attributes, numeric
+bounds, rejection of interior empty fields and other CSI grammars. This scope
+does not authorize graphics encoding workarounds or animation ACK changes.
+The earlier qualified source/artifact identities remain historical; exact-head
+requalification of the added parser correction is recorded on PR #83. Further
+local persistent-raster samples must consume the corrected PR source before
+making graphics acceptance claims.
+
 | Approach | Decision and reason |
 | --- | --- |
 | Appearance alone | Smaller alternative, but does not meet the selected resize goal. |
