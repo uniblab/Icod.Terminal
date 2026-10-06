@@ -11,7 +11,7 @@ All samples target `net8.0`, `net9.0`, and `net10.0`.
 | Open a session and read an event | `Icod.Terminal.Sample` |
 | Plan/commit a screen frame, refresh on input with a temporary hidden cursor, and demonstrate stale-work recovery | [`Icod.Terminal.ScreenOutput.Sample`](Icod.Terminal.ScreenOutput.Sample/README.md), [consumer guide](../docs/Screen-Output.md) |
 | Inspect rich input, lifecycle, and semantic events | [`Icod.Terminal.RichInput.Sample`](Icod.Terminal.RichInput.Sample/README.md) |
-| Run bounded terminal queries | `Icod.Terminal.Query.Sample` |
+| Run bounded terminal queries, including terminal appearance | `Icod.Terminal.Query.Sample` |
 | Compare static advertisement, concrete plans, and live capability knowledge | [`Icod.Terminal.CapabilityPlanning.Sample`](Icod.Terminal.CapabilityPlanning.Sample/README.md) |
 | Generate and review versioned nongraphics terminal compatibility evidence | [`Icod.Terminal.Compatibility.Sample`](Icod.Terminal.Compatibility.Sample/README.md) |
 | Observe or temporarily own terminal colors | `Icod.Terminal.Color.Sample` |
@@ -86,7 +86,7 @@ dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichIn
 
 ### `Icod.Terminal.Query.Sample`
 
-Demonstrates explicit bounded terminal queries through the same authoritative session stream used for application input and semantic/lifecycle events.
+Demonstrates explicit bounded terminal queries, including terminal appearance, through the same authoritative session stream used for application input and semantic/lifecycle events. The appearance query enables no ongoing reporting; timeout or endpoint unavailability remains distinct from a successful Dark or Light observation.
 
 ```text
 dotnet run --project samples/Icod.Terminal.Query.Sample/Icod.Terminal.Query.Sample.csproj -f net10.0
@@ -116,7 +116,7 @@ dotnet run --project samples/Icod.Terminal.Compatibility.Sample -f net10.0 -- --
 dotnet run --project samples/Icod.Terminal.Compatibility.Sample -f net10.0 -- --describe notifications
 ```
 
-Live `--run` and `--run-all` commands require interactive endpoints and exact identity options. Every side-effecting scenario asks before its first effect; output completion alone cannot establish a visible-behavior pass. See the [walkthrough](Icod.Terminal.Compatibility.Sample/README.md) and [1.26 matrix](../docs/compatibility/1.26.0.md).
+Live `--run` and `--run-all` commands require interactive endpoints and exact identity options. Every side-effecting scenario asks before its first effect; output completion alone cannot establish a visible-behavior pass. See the [walkthrough](Icod.Terminal.Compatibility.Sample/README.md), [1.27 matrix](../docs/compatibility/1.27.0.md), and historical [1.26 matrix](../docs/compatibility/1.26.0.md).
 
 ## Raster graphics
 
@@ -336,4 +336,4 @@ Higher-level full-screen applications normally consume these contracts through `
 
 ### 1.27 environment awareness
 
-The [compatibility sample](Icod.Terminal.Compatibility.Sample/README.md#environment-awareness-127-development-candidate) includes a bounded appearance query and independently consented appearance/resize reporting. Its cmd and sh launchers collect exact environment versions without claiming support from identity. Native resize and synchronous dimensions retain their own provenance. The candidate remains `1.27.0-alpha.1` pending live acceptance.
+The [compatibility sample](Icod.Terminal.Compatibility.Sample/README.md#environment-awareness-127) includes a bounded appearance query and independently consented appearance/resize reporting. Its cmd and sh launchers collect exact environment versions without claiming support from identity. Native resize and synchronous dimensions retain their own provenance. Reviewed evidence includes successful appearance query/reporting and initial/changed in-band resize in Kitty 0.49.2 through WSL, plus explicit unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL; see the [1.27 matrix](../docs/compatibility/1.27.0.md) for exact scope and limits.
