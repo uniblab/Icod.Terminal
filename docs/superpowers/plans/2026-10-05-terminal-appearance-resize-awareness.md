@@ -258,6 +258,8 @@
 
 Partial checkpoint (2026-10-06): reviewed the three Windows Terminal `1.24.11911.0` / Windows `10.0.26200.9457` reports at source `a2bd1553765dee585607ea63de2ac6440f343fec`. Appearance query is Inconclusive; both reporting modes are Unavailable. Original JSON is retained and the 1.27 matrix regenerated. Byte-identical rerender and the compatibility verifier against the qualified alpha CI package passed on net8.0/net9.0/net10.0. Native fallback observations and both positive feature witnesses remain missing, so Task 9 is not complete and Task 10 has not started. The renderer preserves existing output files; regeneration used a fresh temporary destination followed by copying the verified result into place.
 
+Further partial checkpoint (2026-10-06): reviewed the three Kitty 0.32.2 / Ubuntu 24.04 / WSL 2.6.1.0 reports at clean source `6c3bcdb5b209c30129bb23ec924f7ab031cd8542`. The recording confirms the detached Linux worktree and completed launcher run. Appearance query is Inconclusive; both reporting modes are Unavailable. Original JSON is retained and the 1.27 matrix includes this mediated lane. Positive feature witnesses and native fallback observations remain missing, so Tasks 9–10 remain incomplete. The corresponding qualified CI artifact identity and Kitty's later protocol introduction versions are recorded in the evidence README; no untested version is promoted to live support.
+
 ### Task 10: Close the stable 1.27.0 candidate
 
 **Files:**

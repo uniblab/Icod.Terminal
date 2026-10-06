@@ -1,0 +1,20 @@
+[
+  {
+    "schemaVersion": "1",
+    "terminalPackageVersion": "1.27.0-alpha.1",
+    "sourceCommit": "6c3bcdb5b209c30129bb23ec924f7ab031cd8542",
+    "terminalId": "kitty",
+    "terminalVersion": "kitty 0.32.2 created by Kovid Goyal",
+    "operatingSystem": "Ubuntu",
+    "operatingSystemVersion": "24.04",
+    "transport": "WSL",
+    "transportVersion": "2.6.1.0",
+    "scenarioId": "environment.in-band-resize",
+    "scenarioRevision": 1,
+    "observedAtUtc": "2026-10-06T12:44:24.1719874+00:00",
+    "outcome": "Unavailable",
+    "automatedObservation": false,
+    "operatorObservation": null,
+    "note": "The terminal explicitly reported mode state 0 or 4; native input and geometry retain their existing behavior."
+  }
+]

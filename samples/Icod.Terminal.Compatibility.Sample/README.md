@@ -169,4 +169,15 @@ Render the separate development matrix with:
 dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- --render-matrix docs/compatibility/evidence/1.27.0 /tmp/terminal-1.27-matrix.md --release-version 1.27.0
 ```
 
-Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix records the reviewed Windows Terminal query as Inconclusive and both reporting modes as Unavailable; other untested lanes remain NotRun.
+Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix records the reviewed Windows Terminal and Kitty/WSL queries as Inconclusive and both reporting modes as Unavailable; other untested lanes remain NotRun.
+
+The reviewed Kitty 0.32.2 build predates these protocols: Kitty's [official changelog](https://sw.kovidgoyal.net/kitty/changelog/) adds in-band resize in 0.36.0 and dark/light appearance notifications in 0.38.1. For another live attempt, use a current released Kitty with both additions. The [official binary installer](https://sw.kovidgoyal.net/kitty/binary/) installs separately under `~/.local/kitty.app` on Linux. Put its `bin` directory first on PATH when opening the test terminal and inside that terminal before running the launcher, so `kitty --version` identifies the executable actually under test:
+
+```sh
+curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+export PATH="$HOME/.local/kitty.app/bin:$PATH"
+kitty --version
+kitty
+```
+
+Inside the new window, set the same PATH, verify `kitty --version`, and run the environment launcher from the clean Linux worktree. A newer version is a test target, not accepted compatibility evidence; appearance changes may still depend on the WSLg desktop environment. Record native fallback separately using `input.text-key` and `lifecycle.resize-suspend` on the unavailable lane.
