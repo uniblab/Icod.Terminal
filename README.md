@@ -9,9 +9,11 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.26.0`.
+Current stable release: `Icod.Terminal 1.27.0`.
 
-Current development candidate: `Icod.Terminal 1.27.0-alpha.1`. The candidate adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. Live acceptance is pending; the [alpha notes](docs/releases/1.27.0-alpha.1.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) describe the delivered candidate. Publication is a separate maintainer action.
+Release preparation: `1.27.0` has stable metadata and completed selected live acceptance; exact-candidate validation is in progress. The last published version is `1.26.0` until the maintainer promotes this candidate. Merge, tag, GitHub release, and NuGet publication are separate actions.
+
+Version 1.27 adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. Reviewed alpha source observations record positive appearance query/reporting and initial/changed resize in Kitty 0.49.2 through WSL, plus unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL. See the [1.27 release notes](docs/releases/1.27.0.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) for exact versions and limits. Reporting is opt-in; applications own theme selection and repaint policy.
 
 Version 1.26 adds no production runtime API. It adds a public-only executable compatibility sample, bounded reviewed JSON evidence, deterministic matrix generation, and fresh-package acceptance across .NET 8, 9, and 10. The initial matrix records exact, scenario-scoped identity and dimension observations for Windows Terminal and Kitty through WSL; every unrecorded scenario remains `NotRun`. See the [1.26 release notes](docs/releases/1.26.0.md), [compatibility matrix](docs/compatibility/1.26.0.md), and [sample walkthrough](samples/Icod.Terminal.Compatibility.Sample/README.md).
 
@@ -46,9 +48,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.26 retains every 1.25.0 public signature and enum value and adds no production runtime API. Existing screen planning, transactions, rendition, raster, input, lifecycle, and compatibility contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.27 preserves every 1.26.0 public signature and enum value while adding typed environment observations and independently scoped reporting. Existing screen planning, transactions, rendition, raster, input, lifecycle, and compatibility contracts remain available.
 
-See the [1.26 release notes](docs/releases/1.26.0.md), unchanged [1.25 API baseline](docs/Public-API-Baseline-1.25.md), and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.27 release notes](docs/releases/1.27.0.md), additive [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -95,10 +97,10 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install the current stable release:
+Install the stable release after publication:
 
 ```text
-dotnet add package Icod.Terminal --version 1.26.0
+dotnet add package Icod.Terminal --version 1.27.0
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.

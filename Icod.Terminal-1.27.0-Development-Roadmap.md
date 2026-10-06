@@ -8,7 +8,7 @@
 
 **Selection:** Options **2 + 3: terminal appearance and resize awareness**. Focused compatibility acceptance accompanies these features; the entire ten-emulator qualification backlog is not added to this release.
 
-**Status:** The approved `1.27.0-alpha.1` runtime, lifecycle hardening, public-only compatibility scenarios, and package/API/document gates are implemented. Qualification passed at `0da49e0cb436eb3bc339c93819819b8b0e1bce3b` in workflow `37453595429` (all ten jobs). Tasks 9–10 remain gated on reviewed live-terminal witnesses and stable closure. Execution continues inline without subagents.
+**Status:** Tasks 1–9 are complete: runtime/lifecycle/package contracts and all selected live witnesses are reviewed. Live source remains `6c3bcdb` / `1.27.0-alpha.1`; matching-source workflow `37459014319` passed all ten jobs. Stable `1.27.0` metadata is prepared and Task 10 exact-candidate qualification is in progress. Merge, tag, release, and NuGet publication remain separate maintainer actions. Execution continues inline without subagents.
 
 **Baseline:** Stable `1.26.0`, confirmed published to NuGet by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`, the merge of PR #82. The unchanged 1.25/1.26 API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`. Stable workflow `37337222940` passed. Its release artifact ZIP SHA-256 is `4fe00b74d451a8c96b326f1fe4b4c46390392288d1be03ee6a6296608ab7dbc4`; the contained `.nupkg` and `.snupkg` SHA-256 values are `49a019d9ee8c8861ba97aeb23b6fd7f1f6b446812ad7b80cd9fd4d56cb0ace80` and `b9e17324e65efdb5dc3b684cccfdc1144154acb273589ef0df169db13042995d`.
 
@@ -208,8 +208,8 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 ### T2710 — Stable release closure
 
-- [ ] Reconcile every tranche, open defect, compatibility limit and main-roadmap status.
-- [ ] Set stable 1.27.0 metadata only after acceptance; verify empty prerelease suffix, README/install version, changelog and `docs/releases/1.27.0.md`.
+- [x] Reconcile every tranche, open defect, compatibility limit and main-roadmap status.
+- [x] Set stable 1.27.0 metadata only after acceptance; verify empty prerelease suffix, README/install version, changelog and `docs/releases/1.27.0.md`.
 - [ ] Verify package release notes include `1.27.0`, `docs/releases/1.27.0.md`, and `Compatibility-and-Versioning.md`; inspect the packed README against the complete current release-line contract.
 - [ ] Run the entire runtime/source-integration/sample/package/API/matrix/artifact workflow at one exact stable candidate.
 - [ ] Record source SHA, workflow IDs, test counts, failures and same-head reruns, package/symbol hashes, API fingerprint, and dependencies.
@@ -243,7 +243,7 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
 | Runtime and distribution qualification | Head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; [workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) | All ten jobs passed; T2701–T2708 complete |
-| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | Kitty 0.49.2 query, appearance reporting, and initial/changed resize passed; native fallback observations remain pending |
+| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | All selected alpha source live witnesses complete: Kitty 0.49.2 positive features and Windows Terminal/WSL unavailable modes with native input/lifecycle Pass; stable exact-candidate qualification in progress |
 
 
 ## Qualified alpha checkpoint — 2026-10-06

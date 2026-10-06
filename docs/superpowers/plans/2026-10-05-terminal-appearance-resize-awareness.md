@@ -284,8 +284,8 @@ Task 9 complete (2026-10-06): subsequent consented appearance and resize reporti
 - Consumes: one exact fully qualified alpha/RC head, its reviewed live evidence, 1.27 API fingerprint, and package gates.
 - Produces: stable `1.27.0` metadata and curated release record. Merge, tag, GitHub release, and NuGet publication remain separate maintainer actions.
 
-- [ ] **Step 1: Reconcile every T2700-T2709 checkbox, defect, limitation, and evidence link.** No unresolved positive-witness or restoration-safety gap may be waived silently.
-- [ ] **Step 2: Set stable metadata.** Empty `VersionSuffix`; synchronize README installation version, package release notes, changelog, main roadmap, and curated `docs/releases/1.27.0.md`; retain exact dependency floors and graphics hold.
+- [x] **Step 1: Reconcile every T2700-T2709 checkbox, defect, limitation, and evidence link.** No unresolved positive-witness or restoration-safety gap may be waived silently.
+- [x] **Step 2: Set stable metadata.** Empty `VersionSuffix`; synchronize README installation version, package release notes, changelog, main roadmap, and curated `docs/releases/1.27.0.md`; retain exact dependency floors and graphics hold.
 - [ ] **Step 3: Build one stable candidate.** Run `pwsh -File packaging/BuildPackageArtifact.ps1 -ArtifactDirectory artifacts/package -Configuration Release -ApiOutputDirectory artifacts/public-api` and record source/package/symbol hashes.
 - [ ] **Step 4: Run complete exact-head verification.** Run runtime, package shards, public API/XML, source integration, compatibility sample/matrix, documentation, dependency, license, artifact, and downstream DCurses gates on the same SHA across GitHub Actions Windows/Linux/macOS lanes.
 - [ ] **Step 5: Require clean reruns for any failure.** Record workflow IDs, failing job/test, corrective commit, and same-head rerun; do not cite an earlier head as release evidence.

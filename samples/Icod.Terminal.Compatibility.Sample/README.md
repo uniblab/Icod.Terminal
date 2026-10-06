@@ -114,7 +114,7 @@ cmp docs/compatibility/1.26.0.md /tmp/Icod.Terminal-1.26.0-compatibility.md
 
 The output path must not already exist. Regeneration validates every evidence file, rejects duplicates, applies stable lane/environment ordering, and never manufactures live results.
 
-## Environment awareness (1.27 development candidate)
+## Environment awareness (1.27)
 
 The three revision-1 scenarios are `query.appearance`, `environment.appearance-reporting`, and `environment.in-band-resize`. Querying appearance enables no reporting. Both reporting scenarios ask consent before negotiation; only a successful acquisition prompts a theme/palette change or resize. Resize must first receive the required initial report, then observe changed character or pixel dimensions. Repeated appearance values remain valid palette observations. Escape or Q exits an observation; each wait is bounded and reporting leases are disposed before evidence is returned. Caller cancellation uses the same cleanup path.
 
@@ -130,7 +130,7 @@ samples\Icod.Terminal.Compatibility.Sample\Run-Environment-WindowsTerminal.cmd
 sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
 ```
 
-Use a clean checkout so the recorded commit identifies the tested source. These launchers collect exact version identity and save review-only JSON under a temporary directory. The Windows launcher asks for the active terminal version from Settings / About; selecting the first installed stable/preview package could identify a different terminal. The Kitty/WSL launcher records the Kitty command version and asks for the exact WSL version. Terminal branding is not support evidence. Publication of the alpha is not required: the source sample uses the candidate project. The fresh-package gate verifies the same scenarios against a newly packed package.
+Use a clean checkout so the recorded commit identifies the tested source. These launchers collect exact version identity and save review-only JSON under a temporary directory. The Windows launcher asks for the active terminal version from Settings / About; selecting the first installed stable/preview package could identify a different terminal. The Kitty/WSL launcher records the Kitty command version and asks for the exact WSL version. Terminal branding is not support evidence. Package publication is not required: the source sample uses the candidate project. The fresh-package gate verifies the same scenarios against a newly packed package. Accepted live reports retain their original alpha package/source identity when stable metadata is prepared.
 
 Git attributes give text files an explicit LF checkout policy across Windows and WSL, including when Windows Git uses `core.autocrlf=true`. EditorConfig uses the same policy. Reviewed JSON reports retain their exact submitted bytes. EditorConfig alone does not control checkout conversion. A shared checkout without these attributes can appear clean to Windows Git but modified to WSL Git across Markdown, C#, project, solution, and other text files. If an older Windows checkout produced `sh\r: No such file or directory`, manually converting the scripts may then trigger the launcher's clean-checkout guard. That guard reports local modifications, not a wrong branch; the changed paths are printed before the launcher stops.
 

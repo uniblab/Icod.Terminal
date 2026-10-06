@@ -6,7 +6,7 @@
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
 - **Current published feature line:** `1.26.0` — Terminal Compatibility Qualification
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). `1.27.0-alpha.1` implements the approved appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package gates. All ten jobs in workflow `37453595429` passed at implementation head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; reviewed live witnesses remain required before stable closure. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
+- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). The approved `1.27` appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package contracts are implemented. All selected live witnesses at alpha source `6c3bcdb` are reviewed: Kitty 0.49.2 positive features and Windows Terminal hosting Bash through WSL with unavailable reporting and native input/resize intact. Stable `1.27.0` metadata is prepared; exact-candidate qualification is in progress before separate maintainer promotion. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
 - **Active development target:** `1.27.0` — Live Terminal Environment Awareness.
 - **Selected scope:** **Options 2 + 3: terminal appearance and resize awareness**, with focused compatibility scenarios, public-only samples, and no planned Icod.TermInfo change. See the [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md).
 - **Stable compatibility floor:** `1.0.0`
@@ -111,7 +111,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.24.1  persistent Kitty identity verification                PUBLISHED
 1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
 1.26.0  terminal compatibility qualification                  PUBLISHED
-1.27.0  appearance and resize awareness                       PLANNING / OPTIONS 2 + 3
+1.27.0  appearance and resize awareness                       STABLE CANDIDATE / OPTIONS 2 + 3
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
