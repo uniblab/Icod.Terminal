@@ -201,7 +201,7 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 - [ ] Record initial and changed in-band resize observations on an exact supporting environment, including unknown-pixel behavior where observable.
 - [ ] Exercise a missing/unsupported-reporting lane while preserving native resize and ordinary input behavior.
 - [ ] Test one mediated lane if available; report it separately and leave unavailable lanes NotRun.
-- [ ] Review reports and regenerate the 1.27 matrix; retain Fail/Inconclusive outcomes rather than converting them to unsupported.
+- [x] Review reports and regenerate the 1.27 matrix; retain Fail/Inconclusive outcomes rather than converting them to unsupported. Windows Terminal source reports at `a2bd155` are accepted; see the partial checkpoint below.
 - [ ] If a positive live witness cannot be obtained for either selected feature, present that gap to the maintainer before stable release; do not silently waive acceptance or infer success from CI.
 
 **Acceptance:** Both features have a positive live witness and the fallback path has evidence. This does not require all ten emulators to implement either protocol.
@@ -243,7 +243,7 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
 | Runtime and distribution qualification | Head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; [workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) | All ten jobs passed; T2701–T2708 complete |
-| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | Pending; every live lane remains NotRun |
+| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | Partial Windows Terminal evidence accepted; positive witnesses and native fallback observations remain pending |
 
 
 ## Qualified alpha checkpoint — 2026-10-06
@@ -263,3 +263,11 @@ The GitHub Actions synthetic merge commit is `30f10117d9a5139d6162e5aa3068f53f48
 | Local implementation-head `.snupkg` | `f57aa347d3f28b1cb4bd5289b02abf29dd2013a9ed15b1f305a7a19d02fb2d1c` |
 
 Dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Historical 1.26 evidence/matrix is unchanged. Required live evidence remains missing for appearance query/operator-induced reporting, initial/changed resize, and unavailable/missing reporting with ordinary input/native resize intact. Use the environment cmd/sh launchers in the compatibility sample at the exact source head and review their temporary JSON before acceptance. No stable promotion is authorized by these automated results.
+
+## Partial live checkpoint — 2026-10-06
+
+Reviewed source-launcher reports for `a2bd1553765dee585607ea63de2ac6440f343fec`, `1.27.0-alpha.1`, Windows Terminal `1.24.11911.0`, Windows `10.0.26200.9457`, no separately recorded transport, and scenario revision 1. `query.appearance` is Inconclusive; `environment.appearance-reporting` and `environment.in-band-resize` are Unavailable after explicit mode state 0 or 4. The [evidence record](docs/compatibility/evidence/1.27.0/README.md) preserves the original JSON and the separate CI package identity; the [matrix](docs/compatibility/1.27.0.md) is regenerated from those reports.
+
+The submitted all-NotRun matrix predates report acceptance and is superseded by the generated matrix. No positive appearance or resize witness is present. The unavailable report's fallback note is not an input/geometry observation: `input.text-key/v1` and `lifecycle.resize-suspend/v1` must still be exercised in this environment. Tasks 9–10 remain incomplete and the package remains alpha.1.
+
+Verification for this evidence update: original JSON SHA-256 values match the uploads; a second render is byte-identical to the checked-in matrix; `packaging/VerifyCompatibilitySample.ps1 -Configuration Staging -ArtifactDirectory <qualified-CI-package-directory> -ExpectedVersion 1.27.0-alpha.1 -EvidenceVersion 1.27.0` passed fresh-package compatibility smoke on net8.0, net9.0, and net10.0. These checks use the qualified CI artifact described in the evidence record and do not claim a new runtime qualification or positive terminal support.

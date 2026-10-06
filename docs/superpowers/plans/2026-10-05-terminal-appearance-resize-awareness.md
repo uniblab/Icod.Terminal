@@ -256,6 +256,8 @@
 - [ ] **Step 7: Stop if either positive witness is missing.** Present the exact gap to the maintainer; do not convert CI, protocol documentation, or terminal branding into live support evidence.
 - [ ] **Step 8: Commit.** Commit as `docs: record Terminal 1.27 live compatibility evidence`.
 
+Partial checkpoint (2026-10-06): reviewed the three Windows Terminal `1.24.11911.0` / Windows `10.0.26200.9457` reports at source `a2bd1553765dee585607ea63de2ac6440f343fec`. Appearance query is Inconclusive; both reporting modes are Unavailable. Original JSON is retained and the 1.27 matrix regenerated. Byte-identical rerender and the compatibility verifier against the qualified alpha CI package passed on net8.0/net9.0/net10.0. Native fallback observations and both positive feature witnesses remain missing, so Task 9 is not complete and Task 10 has not started. The renderer preserves existing output files; regeneration used a fresh temporary destination followed by copying the verified result into place.
+
 ### Task 10: Close the stable 1.27.0 candidate
 
 **Files:**
