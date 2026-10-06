@@ -1,0 +1,20 @@
+[
+  {
+    "schemaVersion": "1",
+    "terminalPackageVersion": "1.27.0-alpha.1",
+    "sourceCommit": "6c3bcdb5b209c30129bb23ec924f7ab031cd8542",
+    "terminalId": "windows-terminal",
+    "terminalVersion": "1.24.11911.0",
+    "operatingSystem": "Ubuntu",
+    "operatingSystemVersion": "24.04",
+    "transport": "WSL",
+    "transportVersion": "2.6.1.0",
+    "scenarioId": "environment.in-band-resize",
+    "scenarioRevision": 1,
+    "observedAtUtc": "2026-10-06T14:01:04.064185+00:00",
+    "outcome": "NotRun",
+    "automatedObservation": null,
+    "operatorObservation": null,
+    "note": "Reporting was not acquired because consent was declined or unavailable."
+  }
+]

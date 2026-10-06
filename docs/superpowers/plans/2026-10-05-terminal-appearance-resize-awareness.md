@@ -264,6 +264,8 @@ Kitty 0.49.2 partial checkpoint (2026-10-06): the subsequent clean run at the sa
 
 Kitty 0.49.2 successful rerun (2026-10-06): the same clean `6c3bcdb` source/environment now passed query, typed Light appearance reporting with operator confirmation, and initial/changed in-band resize with operator confirmation. Both selected feature witnesses are complete. The successful rerun is the active exact-environment matrix record; unchanged first-run JSON, including appearance Inconclusive, remains in evidence history. Native fallback observations are still required. Task 9 remains partial; Task 10 has not started and alpha metadata is unchanged.
 
+Windows Terminal / WSL native checkpoint (2026-10-06): the five reviewed revision-1 reports at `6c3bcdb`, alpha.1, Windows Terminal 1.24.11911.0 / Ubuntu 24.04 / WSL 2.6.1.0 include Pass for ordinary text/key input and typed native resize/suspending/resumed lifecycle. Appearance query is Inconclusive. Both reporting scenarios are NotRun because consent was not accepted, so unavailable reporting from the separate direct Windows lane is not inferred here. Only those two consented reporting attempts remain needed for this fallback environment; keep Kitty 0.49.2 or later. Original JSON and generated matrix are preserved and verified. Task 9 remains partial; Task 10 has not started.
+
 ### Task 10: Close the stable 1.27.0 candidate
 
 **Files:**

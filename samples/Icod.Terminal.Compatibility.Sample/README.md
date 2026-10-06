@@ -197,23 +197,29 @@ Inside that new window, verify Kitty's version and start the environment launche
 
 For everyday theme selection, `kitten themes` opens Kitty's [theme picker](https://sw.kovidgoyal.net/kitty/kittens/themes/). The temporary shortcut above avoids searching for a theme during the bounded test.
 
-### Native fallback on the older Kitty/WSL lane
+### Native fallback in Windows Terminal with WSL
 
-The unavailable Kitty 0.32.2 environment still needs ordinary input and native resize observations. From the clean Linux worktree, open the distro-installed Kitty explicitly with `/usr/bin/kitty --directory "$PWD"`. Inside that window, check `/usr/bin/kitty --version` still identifies 0.32.2 and `git status --short` is empty. Run the existing public scenarios with exact identity and fresh temporary output:
+Keep Kitty 0.49.2 or later. To collect a separate fallback environment, open an Ubuntu/WSL tab in Windows Terminal, change to the clean Linux worktree created above, and check `git status --short` is empty. Read Windows Terminal's exact active version from Settings / About. Run the reporting checks and native scenarios in that same environment; direct Windows observations do not establish reporting availability through WSL.
 
 ```sh
-fallback_version=$(/usr/bin/kitty --version)
+printf 'Windows Terminal version from Settings / About: '
+IFS= read -r fallback_version
 fallback_source=$(git rev-parse HEAD)
 fallback_reports=$(mktemp -d /tmp/Icod.Terminal-Fallback.XXXXXX)
 run_fallback() {
   dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- \
-    --run "$1" --terminal kitty --terminal-version "$fallback_version" \
+    --run "$1" --terminal windows-terminal --terminal-version "$fallback_version" \
     --os Ubuntu --os-version 24.04 --transport WSL --transport-version 2.6.1.0 \
     --source-commit "$fallback_source" --output "$fallback_reports/$1.json"
 }
+run_fallback query.appearance
+run_fallback environment.appearance-reporting
+run_fallback environment.in-band-resize
 run_fallback input.text-key
 run_fallback lifecycle.resize-suspend
 printf '%s\n' "$fallback_reports"
 ```
 
-Consent to each scenario. For input, type a printable character and press an arrow key. For lifecycle, resize the window, press Ctrl+Z to suspend, then type `fg` at the shell prompt to resume promptly. The default CBreak session preserves POSIX signal keys; this scenario requires native resize, suspending, and resumed events. Confirm observations truthfully and submit both JSON files. These scenarios do not acquire appearance or in-band resize reporting. Run them at the already-qualified clean `6c3bcdb` checkout when completing its recorded unavailable lane. If the distro Kitty version or OS/transport has changed, record the actual identity and requalify reporting availability there rather than attributing it to 0.32.2.
+Consent to each live scenario by pressing `y` once at `[y/N]`; no Enter is needed, and Enter selects No. For input, type a printable character and press an arrow key. For lifecycle, resize the window, press Ctrl+Z to suspend, then type `fg` at the shell prompt to resume promptly. The default CBreak session preserves POSIX signal keys; this scenario requires native resize, suspending, and resumed events. Confirm observations truthfully and submit all five JSON files. The native input/lifecycle scenarios do not acquire appearance or in-band resize reporting.
+
+Run at the already-qualified clean `6c3bcdb` checkout when completing its current source observations, and record the actual terminal/OS/transport identity. A reporting result of NotRun means negotiation was not attempted; it cannot establish unavailable reporting. If only those two attempts need repeating, create a fresh output directory with `fallback_reports=$(mktemp -d /tmp/Icod.Terminal-Fallback.XXXXXX)` and rerun only `run_fallback environment.appearance-reporting` and `run_fallback environment.in-band-resize`. Existing report files are preserved rather than overwritten.

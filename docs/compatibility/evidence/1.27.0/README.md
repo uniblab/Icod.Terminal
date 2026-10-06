@@ -76,6 +76,22 @@ Original JSON bytes are retained unchanged. The first run's Pass/Inconclusive/Pa
 
 Verification: all six current/history JSON files compare byte-identically with their corresponding uploads; a repeated matrix render matches; fresh-package compatibility smoke against the matching-source CI package passed on net8.0/net9.0/net10.0. The next fallback commands passed shell syntax checking; their live results remain outstanding.
 
+## Reviewed Windows Terminal / WSL native observations — 2026-10-06
+
+These five revision-1 reports identify source `6c3bcdb5b209c30129bb23ec924f7ab031cd8542`, alpha.1, Windows Terminal `1.24.11911.0`, Ubuntu `24.04`, and WSL `2.6.1.0`. They are a separate exact environment from the earlier direct Windows lane; unavailable reporting in that lane is not attributed to WSL.
+
+| Report | Outcome | What was observed |
+| --- | --- | --- |
+| [Appearance query](windows-terminal-wsl-appearance-query.json) | Inconclusive | The bounded query did not establish a typed appearance observation. |
+| [Appearance reporting](windows-terminal-wsl-appearance-reporting.json) | NotRun | Consent was not accepted; reporting acquisition was not attempted. |
+| [In-band resize](windows-terminal-wsl-in-band-resize.json) | NotRun | Consent was not accepted; reporting acquisition was not attempted. |
+| [Ordinary input](windows-terminal-wsl-input-text-key.json) | Pass | Distinct typed text and key events. |
+| [Native lifecycle](windows-terminal-wsl-lifecycle-resize-suspend.json) | Pass | Typed native resize, suspending, and resumed events. |
+
+All five JSON files passed exact source/version/scenario and bounded-content review and are retained byte-for-byte. Their matching-source CI package identity is the `6c3bcdb` checkpoint above. Native input and resize now have live observations in this WSL environment. The two NotRun reports do not establish unavailable reporting: rerun those two scenarios with explicit consent before closing the reporting fallback requirement. Task 9 remains partial; Task 10 has not started. Kitty stays at 0.49.2 or later; no downgrade is required.
+
+Verification: all five JSON files compare byte-identically with the uploads; a second matrix render matches the checked-in matrix; fresh-package compatibility smoke against the matching-source CI package passed on net8.0/net9.0/net10.0. No runtime behavior or alpha metadata changed.
+
 ## Collecting further evidence
 
 Run the environment launchers at the exact candidate commit. Review reports before adding JSON here: require exact package version, source SHA, terminal/OS/transport versions, scenario revision 1, and bounded observations. Do not accept raw replies, escape bytes, keystrokes, environment dumps, or host identity. Record package and symbol SHA-256 hashes beside the reviewed source checkpoint.
