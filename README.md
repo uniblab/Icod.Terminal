@@ -11,7 +11,7 @@
 
 Current stable release: `Icod.Terminal 1.27.0`.
 
-Release preparation: `1.27.0` has stable metadata and completed selected live acceptance; exact-candidate validation is in progress. The last published version is `1.26.0` until the maintainer promotes this candidate. Merge, tag, GitHub release, and NuGet publication are separate actions.
+Release preparation: `1.27.0` has stable metadata and completed selected live acceptance; validation of this release is in progress. The last published version is `1.26.0` until the maintainer promotes this release. Merge, tag, GitHub release, and NuGet publication are separate actions.
 
 Version 1.27 adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. Reviewed alpha source observations record positive appearance query/reporting and initial/changed resize in Kitty 0.49.2 through WSL, plus unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL. See the [1.27 release notes](docs/releases/1.27.0.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) for exact versions and limits. Reporting is opt-in; applications own theme selection and repaint policy.
 
@@ -422,7 +422,7 @@ Copyright (c) 2026 Timothy J. Bruce
 
 See `LICENSE` and the per-project/source declarations for the applicable terms.
 
-## Terminal appearance and in-band resize (1.27 candidate)
+## Terminal appearance and in-band resize (1.27)
 
 `QueryAppearanceAsync(timeout, cancellationToken)` returns a terminal-reported Dark or Light observation without enabling ongoing reports. Unknown is a consumer default, never a substitute for timeout, malformed reply, cancellation, or unavailable endpoints. Appearance replies and unsolicited reports share untagged grammar: the first matching report belongs to an active query; timed-out or canceled queries retain the existing one-second late-response window. Neither terminal branding nor a successful write establishes support or host theme.
 
