@@ -9,12 +9,12 @@
     "operatingSystemVersion": "24.04",
     "transport": "WSL",
     "transportVersion": "2.6.1.0",
-    "scenarioId": "environment.appearance-reporting",
+    "scenarioId": "query.appearance",
     "scenarioRevision": 1,
-    "observedAtUtc": "2026-10-06T14:18:50.4617208+00:00",
-    "outcome": "Unavailable",
-    "automatedObservation": false,
+    "observedAtUtc": "2026-10-06T14:00:20.4891758+00:00",
+    "outcome": "Inconclusive",
+    "automatedObservation": null,
     "operatorObservation": null,
-    "note": "The terminal explicitly reported mode state 0 or 4; native input and geometry retain their existing behavior."
+    "note": "The environment, endpoint, or bounded response deadline prevented a conclusion."
   }
 ]

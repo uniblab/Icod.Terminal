@@ -83,14 +83,29 @@ These five revision-1 reports identify source `6c3bcdb5b209c30129bb23ec924f7ab03
 | Report | Outcome | What was observed |
 | --- | --- | --- |
 | [Appearance query](windows-terminal-wsl-appearance-query.json) | Inconclusive | The bounded query did not establish a typed appearance observation. |
-| [Appearance reporting](windows-terminal-wsl-appearance-reporting.json) | NotRun | Consent was not accepted; reporting acquisition was not attempted. |
-| [In-band resize](windows-terminal-wsl-in-band-resize.json) | NotRun | Consent was not accepted; reporting acquisition was not attempted. |
+| [Appearance reporting](history/2026-10-06-windows-terminal-wsl-first-run/windows-terminal-wsl-appearance-reporting.json) | NotRun | Consent was not accepted; reporting acquisition was not attempted. |
+| [In-band resize](history/2026-10-06-windows-terminal-wsl-first-run/windows-terminal-wsl-in-band-resize.json) | NotRun | Consent was not accepted; reporting acquisition was not attempted. |
 | [Ordinary input](windows-terminal-wsl-input-text-key.json) | Pass | Distinct typed text and key events. |
 | [Native lifecycle](windows-terminal-wsl-lifecycle-resize-suspend.json) | Pass | Typed native resize, suspending, and resumed events. |
 
 All five JSON files passed exact source/version/scenario and bounded-content review and are retained byte-for-byte. Their matching-source CI package identity is the `6c3bcdb` checkpoint above. Native input and resize now have live observations in this WSL environment. The two NotRun reports do not establish unavailable reporting: rerun those two scenarios with explicit consent before closing the reporting fallback requirement. Task 9 remains partial; Task 10 has not started. Kitty stays at 0.49.2 or later; no downgrade is required.
 
 Verification: all five JSON files compare byte-identically with the uploads; a second matrix render matches the checked-in matrix; fresh-package compatibility smoke against the matching-source CI package passed on net8.0/net9.0/net10.0. No runtime behavior or alpha metadata changed.
+
+## Completed Windows Terminal / WSL fallback witness — 2026-10-06
+
+The two subsequent consented revision-1 reporting attempts identify the same source `6c3bcdb5b209c30129bb23ec924f7ab031cd8542`, alpha.1, Windows Terminal `1.24.11911.0`, Ubuntu `24.04`, and WSL `2.6.1.0` as the native observations above. The submitted console transcript confirms both attempts completed with Unavailable, and the original JSON records explicit private-mode state 0 or 4.
+
+| Report | Outcome | What was observed |
+| --- | --- | --- |
+| [Appearance reporting](windows-terminal-wsl-appearance-reporting.json) | Unavailable | Explicit mode state 0 or 4 at 14:18:50 UTC; no reporting lease could be acquired. |
+| [In-band resize](windows-terminal-wsl-in-band-resize.json) | Unavailable | Explicit mode state 0 or 4 at 14:18:56 UTC; no reporting lease could be acquired. |
+| [Ordinary input](windows-terminal-wsl-input-text-key.json) | Pass | Distinct typed text and key events in the same source/environment, observed in the earlier native run. |
+| [Native lifecycle](windows-terminal-wsl-lifecycle-resize-suspend.json) | Pass | Native resize, suspending, and resumed events in the same source/environment, observed in the earlier native run. |
+
+These results complete the selected missing/unavailable fallback witness. Together with the Kitty 0.49.2 positive query, appearance-reporting, and initial/changed resize observations, all selected Task 9 live witnesses are complete. This qualifies only the recorded source, scenario revisions, and exact environments; automatic host-theme propagation and other terminals remain untested. Kitty can remain 0.49.2 or later.
+
+The active matrix uses the two consented Unavailable reports. All five first-run Windows Terminal/WSL JSON files remain unchanged in `history/2026-10-06-windows-terminal-wsl-first-run`, including the two NotRun observations. Both new reporting files compare byte-identically with their uploads; all first-run files compare byte-identically with the earlier uploads. A repeated matrix render matches and the matching-source alpha package compatibility verifier passed on net8.0/net9.0/net10.0. Stable candidate metadata and exact-candidate qualification are the next task; these source observations do not claim testing of a future stable package.
 
 ## Collecting further evidence
 
