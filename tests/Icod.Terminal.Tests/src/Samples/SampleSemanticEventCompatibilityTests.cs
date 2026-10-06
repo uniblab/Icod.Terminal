@@ -60,6 +60,27 @@ public sealed class SampleSemanticEventCompatibilityTests {
 		Assert.Contains( "Generate one terminal event", source );
 	}
 
+	[Fact]
+	public void QuerySampleDemonstratesBoundedAppearanceQuery() {
+		string source = File.ReadAllText(
+			Path.Combine(
+				FindRepositoryRoot(),
+				"samples",
+				"Icod.Terminal.Query.Sample",
+				"Program.cs"
+			)
+		);
+
+		Assert.Contains(
+			"await session.QueryAppearanceAsync( probeTimeout )",
+			source
+		);
+		Assert.Contains(
+			"Appearance query enables no ongoing reporting.",
+			source
+		);
+	}
+
 	private static string FindRepositoryRoot() {
 		DirectoryInfo? directory = new( AppContext.BaseDirectory );
 		while ( directory is not null ) {

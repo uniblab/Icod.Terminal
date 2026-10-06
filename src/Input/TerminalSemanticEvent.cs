@@ -25,7 +25,13 @@ namespace Icod.Terminal;
 /// </summary>
 public enum TerminalSemanticEventKind {
 	/// <summary>A desktop-notification interaction or state report is available.</summary>
-	Notification
+	Notification = 0,
+
+	/// <summary>A terminal appearance or palette observation is available.</summary>
+	Appearance = 1,
+
+	/// <summary>An in-band text-area resize observation is available.</summary>
+	InBandResize = 2
 }
 
 /// <summary>
@@ -34,10 +40,14 @@ public enum TerminalSemanticEventKind {
 public sealed class TerminalSemanticEvent {
 	private TerminalSemanticEvent(
 		TerminalSemanticEventKind kind,
-		TerminalNotificationEvent? notification
+		TerminalNotificationEvent? notification,
+		TerminalAppearanceEvent? appearance,
+		TerminalInBandResizeEvent? inBandResize
 	) {
 		this.Kind = kind;
 		this.Notification = notification;
+		this.Appearance = appearance;
+		this.InBandResize = inBandResize;
 	}
 
 	/// <summary>Gets the semantic event family.</summary>
@@ -53,6 +63,22 @@ public sealed class TerminalSemanticEvent {
 		get;
 	}
 
+	/// <summary>
+	/// Gets the appearance event when <see cref="Kind"/> is
+	/// <see cref="TerminalSemanticEventKind.Appearance"/>.
+	/// </summary>
+	public TerminalAppearanceEvent? Appearance {
+		get;
+	}
+
+	/// <summary>
+	/// Gets the resize event when <see cref="Kind"/> is
+	/// <see cref="TerminalSemanticEventKind.InBandResize"/>.
+	/// </summary>
+	public TerminalInBandResizeEvent? InBandResize {
+		get;
+	}
+
 	internal static TerminalSemanticEvent FromNotification(
 		TerminalNotificationEvent notification
 	) {
@@ -60,7 +86,35 @@ public sealed class TerminalSemanticEvent {
 
 		return new TerminalSemanticEvent(
 			TerminalSemanticEventKind.Notification,
-			notification
+			notification,
+			appearance: null,
+			inBandResize: null
+		);
+	}
+
+	internal static TerminalSemanticEvent FromAppearance(
+		TerminalAppearanceEvent appearance
+	) {
+		ArgumentNullException.ThrowIfNull( appearance );
+
+		return new TerminalSemanticEvent(
+			TerminalSemanticEventKind.Appearance,
+			notification: null,
+			appearance: appearance,
+			inBandResize: null
+		);
+	}
+
+	internal static TerminalSemanticEvent FromInBandResize(
+		TerminalInBandResizeEvent inBandResize
+	) {
+		ArgumentNullException.ThrowIfNull( inBandResize );
+
+		return new TerminalSemanticEvent(
+			TerminalSemanticEventKind.InBandResize,
+			notification: null,
+			appearance: null,
+			inBandResize: inBandResize
 		);
 	}
 }

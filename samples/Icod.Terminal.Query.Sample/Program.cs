@@ -83,7 +83,21 @@ try {
 	);
 	await WriteLineAsync(
 		session,
+		"Appearance query enables no ongoing reporting."
+	);
+	await WriteLineAsync(
+		session,
 		string.Empty
+	);
+
+	await ReportProbeAsync(
+		session,
+		"Terminal appearance",
+		async () => {
+			TerminalAppearance value =
+				await session.QueryAppearanceAsync( probeTimeout );
+			return value.ToString();
+		}
 	);
 
 	await ReportProbeAsync(

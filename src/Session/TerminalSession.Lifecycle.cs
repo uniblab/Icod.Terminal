@@ -269,6 +269,7 @@ public sealed partial class TerminalSession {
 	}
 
 	private async ValueTask HandleResumeAsync() {
+		this.SuspendQueryTransactions();
 		this.InvalidateState();
 		await this.ReapplySessionStateAsync().ConfigureAwait( false );
 
@@ -405,6 +406,11 @@ public sealed partial class TerminalSession {
 			Interlocked.Exchange( ref this.lifecycleStateReleased, 1 );
 
 			List<Exception> rollbackExceptions = [];
+			try {
+				await this.environmentReportingManager.PrepareForTerminalSuspendAsync().ConfigureAwait( false );
+			} catch ( Exception rollbackException ) {
+				rollbackExceptions.Add( rollbackException );
+			}
 			try {
 				await this.SuspendInputProtocolStateAsync().ConfigureAwait( false );
 			} catch ( Exception rollbackException ) {

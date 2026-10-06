@@ -26,5 +26,6 @@ internal enum CompatibilityOutcome {
 	Fail,
 	Inconclusive,
 	NotRun,
-	NotApplicable
+	NotApplicable,
+	Unavailable
 }

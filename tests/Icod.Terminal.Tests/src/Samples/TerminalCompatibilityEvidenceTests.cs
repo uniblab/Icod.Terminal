@@ -109,6 +109,21 @@ public sealed class TerminalCompatibilityEvidenceTests {
 		);
 	}
 
+	[Theory]
+	[InlineData( "query.appearance", "Pass" )]
+	[InlineData( "environment.appearance-reporting", "Pass" )]
+	[InlineData( "environment.in-band-resize", "Unavailable" )]
+	public void EnvironmentEvidenceAcceptsRevisionOne( string scenarioId, string outcome ) {
+		CompatibilityEvidence evidence = Valid() with {
+			TerminalPackageVersion = "1.27.0-alpha.1",
+			ScenarioId = scenarioId,
+			Outcome = Enum.Parse<CompatibilityOutcome>( outcome ),
+			Note = "Bounded typed environment observation."
+		};
+
+		CompatibilityEvidenceValidator.Validate( evidence );
+	}
+
 	private static CompatibilityEvidence ReadFixture() {
 		string root = FindRepositoryRoot();
 		string json = File.ReadAllText(

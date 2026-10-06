@@ -47,9 +47,12 @@ public sealed class TerminalCompatibilityCommandLineTests {
 			Environment.NewLine,
 			StringSplitOptions.RemoveEmptyEntries
 		);
-		Assert.Equal( 21, lines.Length );
+		Assert.Equal( 24, lines.Length );
 		Assert.StartsWith( "identity.session/v1", lines[ 0 ], StringComparison.Ordinal );
-		Assert.StartsWith( "presentation.pointer-colors/v1", lines[ ^1 ], StringComparison.Ordinal );
+		Assert.StartsWith( "presentation.pointer-colors/v1", lines[ 20 ], StringComparison.Ordinal );
+		Assert.StartsWith( "query.appearance/v1", lines[ 21 ], StringComparison.Ordinal );
+		Assert.StartsWith( "environment.appearance-reporting/v1", lines[ 22 ], StringComparison.Ordinal );
+		Assert.StartsWith( "environment.in-band-resize/v1", lines[ 23 ], StringComparison.Ordinal );
 		Assert.Equal( 0, invocation.SessionFactoryCalls );
 	}
 

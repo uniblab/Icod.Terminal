@@ -1,0 +1,20 @@
+[
+  {
+    "schemaVersion": "1",
+    "terminalPackageVersion": "1.27.0-alpha.1",
+    "sourceCommit": "a2bd1553765dee585607ea63de2ac6440f343fec",
+    "terminalId": "windows-terminal",
+    "terminalVersion": "1.24.11911.0",
+    "operatingSystem": "Windows",
+    "operatingSystemVersion": "Version 10.0.26200.9457",
+    "transport": null,
+    "transportVersion": null,
+    "scenarioId": "environment.in-band-resize",
+    "scenarioRevision": 1,
+    "observedAtUtc": "2026-10-06T11:26:11.8581099+00:00",
+    "outcome": "Unavailable",
+    "automatedObservation": false,
+    "operatorObservation": null,
+    "note": "The terminal explicitly reported mode state 0 or 4; native input and geometry retain their existing behavior."
+  }
+]

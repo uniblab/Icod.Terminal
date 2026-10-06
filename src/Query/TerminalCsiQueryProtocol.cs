@@ -205,19 +205,32 @@ internal static class TerminalCsiQueryProtocol {
 			TerminalCsiParameterSemantics.RequireNoPrivateParameterBytes( syntax );
 		}
 
-		// Older kitty versions report a device code followed by an empty DA1
-		// attribute list. This does not default empty fields in other responses.
+		// kitty can terminate an empty or populated DA1 attribute list with a
+		// separator. Ignore only that final empty field, never an interior one.
 		if ( allowEmptyPrimaryAttributes
-			&& 2 == syntax.Parameters.Length
-			&& syntax.Parameters.Span[ 1 ].RawBytes.IsEmpty ) {
-			TerminalCsiNumericComponent device = TerminalCsiParameterSemantics.GetNumericParameter(
-				syntax,
-				0,
-				MaximumParameterValue
-			);
-			if ( device.HasValue ) {
-				return [ device.Value ];
+			&& 2 <= syntax.Parameters.Length
+			&& syntax.Parameters.Span[ ^1 ].RawBytes.IsEmpty ) {
+			int numericCount = syntax.Parameters.Length - 1;
+			if ( MaximumParameterCount < numericCount ) {
+				throw new FormatException(
+					$"A CSI response cannot contain more than {MaximumParameterCount} numeric parameters."
+				);
 			}
+			int[] values = new int[ numericCount ];
+			for ( int index = 0; index < numericCount; ++index ) {
+				TerminalCsiNumericComponent component = TerminalCsiParameterSemantics.GetNumericParameter(
+					syntax,
+					index,
+					MaximumParameterValue
+				);
+				if ( !component.HasValue ) {
+					throw new FormatException(
+						"A CSI response contains an empty numeric parameter."
+					);
+				}
+				values[ index ] = component.Value;
+			}
+			return values;
 		}
 
 		return TerminalCsiParameterSemantics.GetRequiredNumericParameters(

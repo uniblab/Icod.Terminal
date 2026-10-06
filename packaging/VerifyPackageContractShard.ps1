@@ -51,6 +51,7 @@ $scripts = switch ($Shard) {
     }
     'semantic' {
         @(
+            'VerifyEnvironmentAwarenessPackage.ps1',
             'VerifySemanticMetadataPackage.ps1',
             'VerifySafeOsc9Package.ps1',
             'VerifyOsc777Package.ps1',

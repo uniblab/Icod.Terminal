@@ -306,3 +306,9 @@ For each stable or patch release, the maintainer/release workflow remains respon
 The [1.20 API baseline](Public-API-Baseline-1.20.md) adds nine read-only advertisement properties and three kind-based queries to `TerminalScreenCapabilities`. Every 1.19 public signature and enum value is retained. Default values advertise nothing; unknown operation enum values throw `ArgumentOutOfRangeException`. Existing `Supports...` members keep their meaning. Advertisement includes present empty/malformed representations and does not promise a concrete plan.
 
 Live support observations now remain in their originating evidence generation. A pending old reply cannot promote current support after invalidation. Existing per-query deadlines, exception contracts, and the twelve-capability/three-probe boundary are retained. Dependencies remain TermInfo 1.16.0 and Timing 1.0.0; optional Inspection remains 1.16.0.
+
+## 1.27 environment-awareness candidate
+
+The 1.27 additions preserve the 1.0 compatibility floor and existing enum values. The [1.27 public API baseline](Public-API-Baseline-1.27.md) freezes the additive surface identically across net8.0/net9.0/net10.0. Production dependencies are unchanged; no Icod.TermInfo feature or version change is required.
+
+The [separate 1.27 matrix](compatibility/1.27.0.md) currently marks every live lane NotRun. Protocol documents, CI and branding do not establish emulator support. Stable closure requires a positive appearance query/reporting witness, initial and changed in-band resize witness, and missing/unavailable reporting evidence with native input/resize intact. Historical 1.26 evidence and rendering remain unchanged. Untagged replies limit causal correlation and freshness; applications continue to own theme/layout decisions and provenance reconciliation.

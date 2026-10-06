@@ -113,3 +113,113 @@ cmp docs/compatibility/1.26.0.md /tmp/Icod.Terminal-1.26.0-compatibility.md
 ```
 
 The output path must not already exist. Regeneration validates every evidence file, rejects duplicates, applies stable lane/environment ordering, and never manufactures live results.
+
+## Environment awareness (1.27)
+
+The three revision-1 scenarios are `query.appearance`, `environment.appearance-reporting`, and `environment.in-band-resize`. Querying appearance enables no reporting. Both reporting scenarios ask consent before negotiation; only a successful acquisition prompts a theme/palette change or resize. Resize must first receive the required initial report, then observe changed character or pixel dimensions. Repeated appearance values remain valid palette observations. Escape or Q exits an observation; each wait is bounded and reporting leases are disposed before evidence is returned. Caller cancellation uses the same cleanup path.
+
+Explicit private-mode states 0/4 produce `Unavailable`; silence, endpoint loss and incomplete observation produce `Inconclusive`; correlated malformed responses or failed cleanup produce `Fail`. A reporting result does not replace native resize or synchronous geometry. After an unavailable result, use `input.text-key` and `lifecycle.resize-suspend` to record native fallback separately.
+
+From the repository root, inside the indicated terminal:
+
+```cmd
+samples\Icod.Terminal.Compatibility.Sample\Run-Environment-WindowsTerminal.cmd
+```
+
+```sh
+sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
+```
+
+Use a clean checkout so the recorded commit identifies the tested source. These launchers collect exact version identity and save review-only JSON under a temporary directory. The Windows launcher asks for the active terminal version from Settings / About; selecting the first installed stable/preview package could identify a different terminal. The Kitty/WSL launcher records the Kitty command version and asks for the exact WSL version. Terminal branding is not support evidence. Package publication is not required: the source sample uses the checked-out project. The fresh-package gate verifies the same scenarios against a newly packed package. Accepted live reports retain their original package/source identity when later release metadata is prepared.
+
+Git attributes give text files an explicit LF checkout policy across Windows and WSL, including when Windows Git uses `core.autocrlf=true`. EditorConfig uses the same policy. Reviewed JSON reports retain their exact submitted bytes. EditorConfig alone does not control checkout conversion. A shared checkout without these attributes can appear clean to Windows Git but modified to WSL Git across Markdown, C#, project, solution, and other text files. If an older Windows checkout produced `sh\r: No such file or directory`, manually converting the scripts may then trigger the launcher's clean-checkout guard. That guard reports local modifications, not a wrong branch; the changed paths are printed before the launcher stops.
+
+For an existing shared checkout, use Windows Git for network operations when the SSH key is available only in Windows. The stash preserves local changes, including untracked files. Do not reapply line-ending-only edits after updating; saved content edits remain in the stash for review.
+
+From the repository root in Windows:
+
+```cmd
+git stash push -u -m "Preserve local changes before line-ending fix"
+git pull --ff-only
+```
+
+Then refresh tracked files in WSL. This is entirely local and needs no SSH key. The `:/` pathspec selects the whole repository even when invoked from the sample directory; restoring from HEAD rewrites an older CRLF checkout under the current attributes, including exact historical JSON bytes. Use the repository root for the relative launcher path shown below. `checkout-index --all --force` is insufficient for this existing-checkout recovery.
+
+```sh
+git restore --source=HEAD --worktree -- :/
+git status --short
+sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
+```
+
+If the shared Windows checkout still reports widespread modifications, use a separate worktree in WSL's Linux filesystem for the live run. This also keeps Linux build outputs separate from Windows build outputs. Run these commands from anywhere inside the existing repository in WSL; they reuse its already-fetched HEAD, require no SSH key or network access, and preserve the original working directory and any stashed edits:
+
+```sh
+terminal_checkout=$(mktemp -d "$HOME/icod-terminal-live.XXXXXX")
+git worktree add --detach "$terminal_checkout" HEAD
+cd "$terminal_checkout"
+git status --short
+sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
+```
+
+The worktree is detached intentionally: it tests the exact existing commit. Its index and checkout are separate from the Windows working directory. The launcher records that HEAD and saves JSON in its usual temporary output directory.
+
+Render the separate development matrix with:
+
+```sh
+dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- --render-matrix docs/compatibility/evidence/1.27.0 /tmp/terminal-1.27-matrix.md --release-version 1.27.0
+```
+
+Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix preserves Windows Terminal and Kitty 0.32.2 Inconclusive/Unavailable results separately from Kitty 0.49.2's successful query, appearance reporting, and in-band resize rerun. Earlier 0.49.2 reports, including appearance Inconclusive, remain unchanged in the evidence history; only top-level JSON participates in the matrix. Other untested lanes remain NotRun.
+
+The reviewed Kitty 0.32.2 build predates these protocols: Kitty's [official changelog](https://sw.kovidgoyal.net/kitty/changelog/) adds in-band resize in 0.36.0 and dark/light appearance notifications in 0.38.1. For another live attempt, use a current released Kitty with both additions. The [official binary installer](https://sw.kovidgoyal.net/kitty/binary/) installs separately under `~/.local/kitty.app` on Linux. Put its `bin` directory first on PATH when opening the test terminal and inside that terminal before running the launcher, so `kitty --version` identifies the executable actually under test:
+
+```sh
+curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin launch=n
+export PATH="$HOME/.local/kitty.app/bin:$PATH"
+kitty --version
+kitty
+```
+
+Inside the new window, set the same PATH, verify `kitty --version`, and run the environment launcher from the clean Linux worktree. Kitty 0.49.2 is accepted exact-version evidence in the 1.27 matrix; any later version is a new test target until its own report is reviewed. Appearance changes may still depend on the WSLg desktop environment. Record native fallback separately using `input.text-key` and `lifecycle.resize-suspend` on an unavailable lane.
+
+### Changing Kitty colors during the appearance wait
+
+Prepare the controls before starting the 45-second appearance wait. From the clean Linux worktree, open a test window with two temporary shortcuts:
+
+```sh
+export PATH="$HOME/.local/kitty.app/bin:$PATH"
+kitty --directory "$PWD" \
+  -o 'map ctrl+shift+f6 remote_control set-colors background=white foreground=black' \
+  -o 'map ctrl+shift+f7 remote_control set-colors background=black foreground=white'
+```
+
+Inside that new window, verify Kitty's version and start the environment launcher from the worktree root. When appearance reporting asks consent, answer Yes. Once the change prompt appears, press Ctrl+Shift+F6 to change to a white background with black text. If the background was already white, press Ctrl+Shift+F7 instead to change to black with white text. Answer Yes to the observation confirmation only if you made and saw the change. These controls invoke Kitty's [color command](https://sw.kovidgoyal.net/kitty/remote-control/#kitten-set-colors) through a [key action](https://sw.kovidgoyal.net/kitty/actions/#remote-control); the shortcut works while the sample owns terminal input. Command-line overrides do not edit your Kitty configuration file, and the key action requires no global remote-control setting. The resulting report remains the evidence; a visible color change alone is not a Pass.
+
+For everyday theme selection, `kitten themes` opens Kitty's [theme picker](https://sw.kovidgoyal.net/kitty/kittens/themes/). The temporary shortcut above avoids searching for a theme during the bounded test.
+
+### Native fallback in Windows Terminal with WSL
+
+Keep Kitty 0.49.2 or later. To collect a separate fallback environment, open an Ubuntu/WSL tab in Windows Terminal, change to the clean Linux worktree created above, and check `git status --short` is empty. Read Windows Terminal's exact active version from Settings / About. Run the reporting checks and native scenarios in that same environment; direct Windows observations do not establish reporting availability through WSL.
+
+```sh
+printf 'Windows Terminal version from Settings / About: '
+IFS= read -r fallback_version
+fallback_source=$(git rev-parse HEAD)
+fallback_reports=$(mktemp -d /tmp/Icod.Terminal-Fallback.XXXXXX)
+run_fallback() {
+  dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- \
+    --run "$1" --terminal windows-terminal --terminal-version "$fallback_version" \
+    --os Ubuntu --os-version 24.04 --transport WSL --transport-version 2.6.1.0 \
+    --source-commit "$fallback_source" --output "$fallback_reports/$1.json"
+}
+run_fallback query.appearance
+run_fallback environment.appearance-reporting
+run_fallback environment.in-band-resize
+run_fallback input.text-key
+run_fallback lifecycle.resize-suspend
+printf '%s\n' "$fallback_reports"
+```
+
+Consent to each live scenario by pressing `y` once at `[y/N]`; no Enter is needed, and Enter selects No. For input, type a printable character and press an arrow key. For lifecycle, resize the window, press Ctrl+Z to suspend, then type `fg` at the shell prompt to resume promptly. The default CBreak session preserves POSIX signal keys; this scenario requires native resize, suspending, and resumed events. Confirm observations truthfully and submit all five JSON files. The native input/lifecycle scenarios do not acquire appearance or in-band resize reporting.
+
+The retained 1.27 evidence was collected from the clean alpha source checkout at `6c3bcdb`; use that commit only when reproducing those historical observations. New testing should use the intended source revision and record its actual commit plus terminal/OS/transport identity as new evidence. A reporting result of NotRun means negotiation was not attempted; it cannot establish unavailable reporting. If only the two reporting attempts need repeating, create a fresh output directory with `fallback_reports=$(mktemp -d /tmp/Icod.Terminal-Fallback.XXXXXX)` and rerun only `run_fallback environment.appearance-reporting` and `run_fallback environment.in-band-resize`. Existing report files are preserved rather than overwritten.

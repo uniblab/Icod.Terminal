@@ -90,6 +90,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		this.Options = options;
 		this.inputProtocolManager = new TerminalInputProtocolManager( this );
 		this.presentationManager = new TerminalPresentationManager( this );
+		this.environmentReportingManager = new TerminalEnvironmentReportingManager( this );
 	}
 
 	/// <summary>Gets the terminal input endpoint borrowed by the session.</summary>
@@ -427,6 +428,7 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	/// </remarks>
 	public void InvalidateState() {
 		Volatile.Write( ref this.stateValid, 0 );
+		this.environmentReportingManager.Invalidate();
 		this.InvalidateInputProtocolState();
 		this.InvalidatePresentationState();
 	}
@@ -448,6 +450,11 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 		// StopLifecycleAsync cancels the coordinator's transport read. Close the
 		// private descriptor before restoring modes or allowing a new session.
 		this.ownedProcessInput?.Dispose();
+
+		try {
+			using IDisposable composition = await this.AcquireStateCompositionAsync( CancellationToken.None ).ConfigureAwait( false );
+			await this.environmentReportingManager.CloseAsync().ConfigureAwait( false );
+		} catch ( Exception reportingException ) { exceptions.Add( reportingException ); }
 
 		Exception? inputProtocolException =
 			await this.CloseInputProtocolStateAsync().ConfigureAwait( false );

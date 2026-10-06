@@ -24,7 +24,7 @@ using Icod.Terminal.Compatibility.Sample;
 await VerifyAsync( [ "--help" ], output =>
 	output == CompatibilityCommandLine.HelpText + Environment.NewLine );
 await VerifyAsync( [ "--list-scenarios" ], output =>
-	21 == output.Split( Environment.NewLine, StringSplitOptions.RemoveEmptyEntries ).Length );
+	24 == output.Split( Environment.NewLine, StringSplitOptions.RemoveEmptyEntries ).Length );
 await VerifyAsync( [ "--describe", "clipboard.osc52" ], output =>
 	output.Contains( "clipboard.osc52/v1", StringComparison.Ordinal ) );
 
@@ -57,7 +57,9 @@ try {
 		[
 			"--render-matrix",
 			Path.Combine( AppContext.BaseDirectory, "versioned-evidence" ),
-			versionedMatrixPath
+			versionedMatrixPath,
+			"--release-version",
+			Environment.GetEnvironmentVariable( "ICOD_COMPATIBILITY_MATRIX_VERSION" ) ?? "1.26.0"
 		],
 		static _ => true
 	);

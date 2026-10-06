@@ -8,6 +8,20 @@ Run the sample with, for example:
 dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
 ```
 
+## Expected live result
+
+On a terminal that accepts the persistent-raster operations, the generated gradient
+may appear only as a brief flash. This is expected: the sample performs its ownership
+transitions without an interactive pause and deterministically disposes every remaining
+placement and resource before returning to the shell. A successful run prints the
+resource/placement update, cascade and fresh-placement messages and exits without a
+failure diagnostic.
+
+That result establishes the basic persistent resource, physical placement, relative
+placement, update, ownership-observation and cleanup path exercised below. It does not
+exercise animation-frame upload, frame composition/selection or persistent ATLAS.
+Those operations have separate acknowledgement requirements and live qualification.
+
 The executable flow is:
 
 ```text

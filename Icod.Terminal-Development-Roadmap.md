@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Latest patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** Stable `1.25.0` source was merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`; publication remains a separate maintainer action. `1.26.0-alpha` development is active in [PR #79](https://github.com/uniblab/Icod.Terminal/pull/79). Further graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
-- **Active development target:** Implement `1.26.0` terminal compatibility qualification.
-- **Selected scope:** **Versioned compatibility matrix and executable acceptance sample** for the established nongraphics surface, with no new public runtime API or Icod.TermInfo change.
+- **Current published feature line:** `1.26.0` — Terminal Compatibility Qualification
+- **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
+- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). The approved `1.27` appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package contracts are implemented. All selected live witnesses at alpha source `6c3bcdb` are reviewed: Kitty 0.49.2 positive features and Windows Terminal hosting Bash through WSL with unavailable reporting and native input/resize intact. Stable `1.27.0` release-polish head `791aaf1` passed all ten jobs in workflow `37506963844`; Tasks 1–10 and the final README/sample corrections are complete and prepared for maintainer review before separate promotion. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
+- **Active development target:** `1.27.0` — Live Terminal Environment Awareness.
+- **Selected scope:** **Options 2 + 3: terminal appearance and resize awareness**, with focused compatibility scenarios, public-only samples, and no planned Icod.TermInfo change. See the [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md).
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -18,6 +18,14 @@ This file is the concise entry point for current `Icod.Terminal` development and
 The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
 
 ## Latest accepted checkpoint
+
+`Icod.Terminal 1.26.0` is published. Its release comprises the compatibility sample, bounded evidence model, deterministic versioned matrix, and fresh-package acceptance, with no production runtime API additions. [PR #79](https://github.com/uniblab/Icod.Terminal/pull/79) delivered the feature; PRs #80–#82 completed curated notes and stable package metadata. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`. See the [release notes](docs/releases/1.26.0.md) and [reviewed matrix](docs/compatibility/1.26.0.md). Initial live passes cover identity and dimensions on the two recorded environments only; all unrecorded scenarios remain unqualified.
+
+The maintainer selected **options 2 + 3** for `1.27.0` on 2026-10-05. The [development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) defines T2700–T2710 and a contract-review gate before implementation.
+
+### Historical checkpoints
+
+The entries below preserve earlier source/qualification milestones; their then-pending publication wording is historical, not the current release status.
 
 Stable `Icod.Terminal 1.25.0` source was merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`. The stable source preserves the documented graphics hold and does not claim successful Kitty persistent-ATLAS qualification. Stable publication remains a separate maintainer action; the [T2508 closure record](docs/T2508-1.25-Stable-Source-Closure.md) records the exact limits.
 
@@ -65,7 +73,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency baseline for the 1.26 planning branch is:
+The production dependency baseline for published 1.26 and planned 1.27 is:
 
 ```text
 Icod.TermInfo 1.17.0
@@ -102,7 +110,8 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.24.0  raster geometry and planning contracts                 PUBLISHED
 1.24.1  persistent Kitty identity verification                PUBLISHED
 1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
-1.26.0  terminal compatibility qualification                  PLANNED
+1.26.0  terminal compatibility qualification                  PUBLISHED
+1.27.0  appearance and resize awareness                       STABLE CANDIDATE / OPTIONS 2 + 3
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -455,11 +464,11 @@ T2508  stable 1.25.0 closure and evidence record
 
 This feature permits a caller-supplied complete viewport image per repaint without a Terminal-side source cache. It makes no claim that Sixel supports persistent identity, sparse frame edits, portable clipping or terminal-independent post-display cursor behavior. Real terminal acceptance must qualify any stronger visual claim separately.
 
-## 1.26 development line — Terminal Compatibility Qualification
+## 1.26 released line — Terminal Compatibility Qualification
 
-The selected post-1.25 feature set is **Versioned compatibility matrix and executable acceptance sample**. It will qualify existing nongraphics behavior through a public-only sample and a deterministic, evidence-backed matrix covering Windows Terminal, Apple Terminal, iTerm2, Kitty, WezTerm, Ghostty, Alacritty, GNOME Terminal/VTE, Konsole, and XTerm. VS Code is an additional OSC 633 integration lane; WSL, ConPTY, SSH, tmux, and similar layers are recorded as exact transport identities.
+The delivered post-1.25 feature set is **Versioned compatibility matrix and executable acceptance sample**. It provides a public-only sample and a deterministic, evidence-backed matrix with lanes for Windows Terminal, Apple Terminal, iTerm2, Kitty, WezTerm, Ghostty, Alacritty, GNOME Terminal/VTE, Konsole, and XTerm. Lane inclusion is not a support claim; initial accepted evidence covers only identity and dimensions in the two recorded environments. VS Code is an additional OSC 633 integration lane; WSL, ConPTY, SSH, tmux, and similar layers are recorded as exact transport identities.
 
-The evaluated feature menu is:
+The historical 1.26 selection menu was (the current decisions are recorded under 1.27 below):
 
 | Option | Feature or feature set | Decision |
 | --- | --- | --- |
@@ -492,7 +501,64 @@ T2609  reviewed live-terminal qualification
 T2610  cross-platform qualification and stable release closure
 ```
 
-The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md), [implementation plan](docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md), and [versioned development roadmap](Icod.Terminal-1.26.0-Development-Roadmap.md) define the full evidence model, scenario groups, privacy rules, failure semantics, and release gates. This planning selection adds no runtime code, changes no public API, and preserves the graphics-development hold.
+The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md), [implementation plan](docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md), and [versioned development roadmap](Icod.Terminal-1.26.0-Development-Roadmap.md) define the full evidence model, scenario groups, privacy rules, failure semantics, and release gates. The published 1.26 feature adds no production runtime API and preserves the graphics-development hold. Remaining live-terminal coverage is a continuing qualification backlog, not an unimplemented runtime feature.
+
+## 1.27 prepared line — Live Terminal Environment Awareness
+
+The maintainer approved a narrow DA1 parser follow-up on 2026-10-06 after Kitty
+0.49.2 returned `CSI ?62;52;c`: accept a single trailing separator after populated
+attributes while retaining all attributes and numeric validation. Regression
+coverage exercises public query and graphics-capability verification. The later
+source requires its own exact-head qualification on PR #83; earlier green heads
+remain historical. The independently reproduced missing chunked animation ACK
+is unresolved, and persistent-ATLAS acceptance remains deferred.
+
+The maintainer selected **options 2 + 3: terminal appearance and resize awareness** on 2026-10-05. PR #83 implements the approved additive API, runtime ownership/lifecycle behavior, and compatibility/package contracts, then prepares stable `1.27.0` after the selected live acceptance and exact-head qualification. Production dependencies and the graphics hold remain unchanged.
+
+The current full nongraphics feature menu preserves the original option numbers:
+
+| Option | Feature or feature set | Current decision |
+| --- | --- | --- |
+| 1 | Compatibility qualification expansion | Infrastructure shipped in 1.26; focused new-feature acceptance accompanies 1.27, broader coverage remains ongoing |
+| 2 | Appearance queries and change events, including reviewed DEC mode 2031 | **Selected for 1.27.0** |
+| 3 | Negotiated in-band resize notifications through DEC private mode 2048 | **Selected for 1.27.0** |
+| 4 | MIME-aware, permission-reporting OSC 5522 clipboard support | Deferred |
+| 5 | Selected typed OSC 21 color control and observation | Deferred |
+| 6 | OSC 1337 ReportCellSize as another geometry-query backend | Deferred |
+| 7 | Demonstrated input and lifecycle gaps/hardening | Independent future scope; selected-feature hardening is included in 1.27 |
+| 8 | Further profile, planner and capability expansion | Deferred until a concrete consumer gap justifies it |
+| 9 | Transport/intermediary compatibility and controlled forwarding | Deferred; exact transport identities remain part of acceptance |
+| 10 | Operational and shell-integration expansion | Deferred; existing protocols remain regression coverage |
+| 11 | Privacy-safe diagnostics and performance qualification | Independent future scope; boundedness tests are included in 1.27 |
+| 12 | Controlled public protocol extensibility | Deferred pending separate architecture and security review |
+
+The governing rule is:
+
+> Terminal owns bounded appearance/resize observation, negotiated reporting, input/query ownership, serialized mode changes, and cleanup. Applications own themes, layout, and repaint policy. Native observations and terminal-reported facts retain their distinct provenance.
+
+The release supplies an explicit appearance query plus independently opt-in appearance and in-band resize reporting lifetimes. It preserves native resize behavior, existing synchronous dimensions APIs, the stable 1.x API floor, and the single authoritative input reader. It does not infer support from branding, silence, or a successful write.
+
+No TermInfo change is planned: retain `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`. A concrete capability-data defect, if found, needs its own reviewed scope.
+
+The tranche sequence is:
+
+```text
+T2700  published baseline, detailed design, and API-regret gate
+T2701  bounded protocol parsing and routing fixtures
+T2702  one-shot appearance observation
+T2703  appearance reporting ownership
+T2704  in-band resize observations
+T2705  negotiated resize reporting ownership
+T2706  cross-feature lifecycle and concurrency hardening
+T2707  public-only sample and compatibility scenarios
+T2708  package, API, documentation, and regression qualification
+T2709  focused live-terminal acceptance
+T2710  stable release closure and exact evidence
+```
+
+The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) records completed scope, exact source/artifact/workflow identities, live versions, known limits, and review decisions. The approved [T2700 detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) governs the additive public signatures and runtime semantics. Implementation remained inline without subagents; final review is an author self-review.
+
+Stable acceptance now includes positive Kitty 0.49.2 evidence for both selected features and same-environment Windows Terminal/WSL evidence that unavailable reporting preserves native input and lifecycle. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links passed together before separate maintainer promotion.
 
 ## Later development candidates
 
@@ -500,6 +566,6 @@ The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibilit
 
 The deferred bounded frame-edit execution candidate may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when a real DCurses workload demonstrates a material benefit. It must not claim remote atomicity or rollback.
 
-Other independent candidates still include 1.26 menu options 2–6, gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, image-file decoding/transcoding, and PTY/ConPTY process hosting. Further profile expansion beyond the reviewed 1.20 surface, new query families or broader query architecture, operational-protocol expansion, endpoint/transport expansion, and public extensibility remain separate release decisions. Existing support in those areas remains part of regression qualification.
+Options 2 and 3 are now selected for 1.27 rather than deferred. Options 4–12 remain separate decisions except for narrowly scoped regression/acceptance work needed by the selected features. Graphics candidates still include gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, and image-file decoding/transcoding. PTY/ConPTY process hosting belongs in the adjacent Icod.Pty project, not a second Terminal runtime implementation. Existing support remains part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

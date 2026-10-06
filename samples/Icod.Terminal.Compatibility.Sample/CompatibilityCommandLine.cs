@@ -29,7 +29,7 @@ internal static class CompatibilityCommandLine {
 		+ "  Icod.Terminal.Compatibility.Sample --help\n"
 		+ "  Icod.Terminal.Compatibility.Sample --list-scenarios\n"
 		+ "  Icod.Terminal.Compatibility.Sample --describe <scenario>\n"
-		+ "  Icod.Terminal.Compatibility.Sample --render-matrix <evidence-directory> <output-file>\n"
+		+ "  Icod.Terminal.Compatibility.Sample --render-matrix <evidence-directory> <output-file> [--release-version <version>]\n"
 		+ "  Icod.Terminal.Compatibility.Sample --run <scenario> <identity-options> [--output <file>] [--overwrite]\n"
 		+ "  Icod.Terminal.Compatibility.Sample --run-all <identity-options> [--output <file>] [--overwrite]\n"
 		+ "Identity options: --terminal <id> --terminal-version <version> --os <name> --os-version <version> --source-commit <40-hex-sha>\n"
@@ -68,8 +68,8 @@ internal static class CompatibilityCommandLine {
 				await output.WriteLineAsync( $"External side effects: {scenario.HasExternalSideEffects}" );
 				return 0;
 			}
-			if ( 3 == args.Length && "--render-matrix" == args[ 0 ] ) {
-				return await RenderMatrixAsync( args[ 1 ], args[ 2 ], error, cancellationToken );
+			if ( ( 3 == args.Length || ( 5 == args.Length && "--release-version" == args[ 3 ] ) ) && "--render-matrix" == args[ 0 ] ) {
+				return await RenderMatrixAsync( args[ 1 ], args[ 2 ], error, cancellationToken, 5 == args.Length ? args[ 4 ] : "1.26.0" );
 			}
 			if ( 3 <= args.Length && args[ 0 ] is "--run" or "--run-all" ) {
 				if ( !TryParseLive( args, out ParsedLiveCommand? command, out string? parseError ) ) {
@@ -110,7 +110,8 @@ internal static class CompatibilityCommandLine {
 		string evidenceDirectory,
 		string outputPath,
 		TextWriter error,
-		CancellationToken cancellationToken
+		CancellationToken cancellationToken,
+		string releaseVersion
 	) {
 		if ( !Directory.Exists( evidenceDirectory ) ) {
 			return await UsageErrorAsync( error, "The evidence directory does not exist." );
@@ -151,7 +152,7 @@ internal static class CompatibilityCommandLine {
 					throw new FormatException( $"Evidence file '{path}' must contain an evidence object or report array." );
 			}
 		}
-		string matrix = CompatibilityMatrixRenderer.Render( evidence, "1.26.0" );
+		string matrix = CompatibilityMatrixRenderer.Render( evidence, releaseVersion );
 		await File.WriteAllTextAsync( outputPath, matrix, cancellationToken ).ConfigureAwait( false );
 		return 0;
 	}

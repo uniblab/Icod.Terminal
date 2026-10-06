@@ -36,9 +36,11 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		"\u001b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\u001b\\\u001b[c";
 
 	[Theory]
-	[InlineData( true )]
-	[InlineData( false )]
-	public async Task PublicRasterVerificationAcceptsKittyEmptyDaAttributesWithoutInventingSupport( bool graphicsReply ) {
+	[InlineData( true, "\u001b[?62;c" )]
+	[InlineData( false, "\u001b[?62;c" )]
+	[InlineData( true, "\u001b[?62;52;c" )]
+	[InlineData( false, "\u001b[?62;52;c" )]
+	public async Task PublicRasterVerificationAcceptsKittyTrailingDaSeparatorWithoutInventingSupport( bool graphicsReply, string primaryDa ) {
 		ProbeTransport transport = new();
 		ManualMonotonicClock clock = new();
 		await using TerminalSession session = await OpenSessionAsync( transport, clock );
@@ -48,7 +50,7 @@ public sealed class TerminalKittyGraphicsCapabilityEvidenceTests {
 		System.Text.RegularExpressions.Match id = System.Text.RegularExpressions.Regex.Match( request, "i=([0-9]+)," );
 		Assert.True( id.Success );
 		string response = graphicsReply ? "\u001b_Gi=" + id.Groups[ 1 ].Value + ";OK\u001b\\" : string.Empty;
-		transport.Publish( Encoding.ASCII.GetBytes( response + "\u001b[?62;c" ) );
+		transport.Publish( Encoding.ASCII.GetBytes( response + primaryDa ) );
 		TerminalCapabilityStatus result = await verification.WaitAsync( TimeSpan.FromSeconds( 5 ) );
 		Assert.Equal( graphicsReply, result.IsUsable );
 		Assert.Equal( graphicsReply ? TerminalCapabilitySupport.Verified : TerminalCapabilitySupport.Unknown, result.Support );

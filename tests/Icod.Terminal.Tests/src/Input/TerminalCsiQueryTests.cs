@@ -51,12 +51,52 @@ public sealed class TerminalCsiQueryTests {
 	}
 
 	[Theory]
+	[InlineData( "\u001b[?62;52;c", new int[] { 52 } )]
+	[InlineData( "\u009b?62;52;c", new int[] { 52 } )]
+	[InlineData( "\u001b[?62;52;4;c", new int[] { 52, 4 } )]
+	[InlineData( "\u001b[?62;0;c", new int[] { 0 } )]
+	[InlineData( "\u001b[?62;4;c", new int[] { 4 } )]
+	public async Task PrimaryDaPreservesAttributesBeforeOneTrailingSeparator( string response, int[] attributes ) {
+		CsiTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		Task<TerminalPrimaryDeviceAttributes> query = session.QueryPrimaryDeviceAttributesAsync(
+			TimeSpan.FromSeconds( 5 )
+		).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.Latin1.GetBytes( response ) );
+		TerminalPrimaryDeviceAttributes result = await query.WaitAsync( TimeSpan.FromSeconds( 5 ) );
+		Assert.Equal( 62, result.DeviceCode );
+		Assert.Equal( attributes, result.Attributes );
+	}
+
+	[Theory]
+	[InlineData( 32, true )]
+	[InlineData( 33, false )]
+	public void PrimaryDaTrailingSeparatorPreservesNumericParameterLimit( int numericCount, bool accepted ) {
+		string attributes = string.Join( ';', Enumerable.Repeat( "1", numericCount - 1 ) );
+		TerminalResponseFrame frame = new(
+			TerminalResponseFrameKind.Csi,
+			Encoding.ASCII.GetBytes( "\u001b[?62;" + attributes + ";c" )
+		);
+		if ( accepted ) {
+			TerminalPrimaryDeviceAttributes result = TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( frame );
+			Assert.Equal( 62, result.DeviceCode );
+			Assert.Equal( Enumerable.Repeat( 1, 31 ), result.Attributes );
+		} else {
+			Assert.Throws<FormatException>( () => TerminalCsiQueryProtocol.ParsePrimaryDeviceAttributes( frame ) );
+		}
+	}
+
+	[Theory]
 	[InlineData( "\u001b[?c" )]
 	[InlineData( "\u001b[?;c" )]
 	[InlineData( "\u001b[?;4c" )]
 	[InlineData( "\u001b[?62;;c" )]
 	[InlineData( "\u001b[?62;;4c" )]
-	[InlineData( "\u001b[?62;4;c" )]
+	[InlineData( "\u001b[?62;4;;c" )]
+	[InlineData( "\u001b[?62;;52;c" )]
+	[InlineData( "\u001b[?62;52:1;c" )]
+	[InlineData( "\u001b[?62;1000001;c" )]
 	[InlineData( "\u001b[?62:1;c" )]
 	[InlineData( "\u001b[?1000001;c" )]
 	[InlineData( "\u001b[>62;c" )]
