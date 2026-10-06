@@ -82,6 +82,20 @@ and does not alter other CSI grammars, graphics wire encoding, ACK assumptions,
 fallback selection or public signatures. This approval is limited to that parser
 correction; persistent ATLAS and animation-control live acceptance remain deferred.
 
+### Post-correction persistent-resource result — 2026-10-06
+
+After updating to the corrected 1.27 PR source, the maintainer reran
+`Icod.Terminal.PersistentRaster.Sample` under Kitty 0.49.2 / WSL with `Release`
+and `net10.0`. The sample briefly displayed its generated colors, completed every
+resource/placement update and ownership message, and returned normally to the shell.
+The brief display is expected because the sample has no interactive pause and
+deterministically removes its remaining placements and resources on exit.
+
+This result qualifies the exercised persistent resource, physical/relative placement,
+update, ownership-observation and cleanup path after the DA1 correction. The sample
+does not append, compose, edit or select animation frames, so this observation does
+not qualify persistent ATLAS or alter the missing-ACK evidence above.
+
 Reopening requires a new maintainer scope decision and an environment where
 Kitty graphics behavior can be properly reproduced and tested. Establish
 clean-config/current-version observations and actual upload/control/rendering

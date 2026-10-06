@@ -5,11 +5,16 @@ This sample demonstrates the backend-neutral persistent-raster animation model i
 ## Current live-test limitation
 
 Graphics development and further Kitty qualification are on hold (2026-10-04).
-The downstream Kitty 0.32.2 test confirms that a documented chunked animation-frame
-upload can create the frame without returning its ACK. Published Terminal alpha.5
-bounds transfer waits but cannot make that missing response arrive. A graphics
-resource probe or scripted-terminal test does not establish successful live
-animation, composition, selection or playback in this environment.
+Kitty 0.49.2 on WSL2 reproduces the missing acknowledgement for the documented
+chunked animation-frame continuation first observed on 0.32.2: the silent upload
+creates a frame, but its final continuation does not return the required ACK.
+Bounded transfer waits cannot make that response arrive.
+
+After the 1.27 DA1 correction, the separate persistent-raster ownership sample
+completed on Kitty 0.49.2 and briefly displayed its generated colors before cleanup.
+That result establishes basic resource and placement operations only. A resource
+probe, placement success or scripted-terminal test does not establish successful
+live animation upload, composition, selection or playback in this environment.
 
 This sample remains available with its existing behavior and cleanup contract.
 Do not treat a timeout as proof that no pixels changed, or infer persistent support

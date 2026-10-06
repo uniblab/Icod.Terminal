@@ -140,6 +140,13 @@ Demonstrates the persistent-raster ownership model using semantic APIs only: 1.1
 dotnet run --project samples/Icod.Terminal.PersistentRaster.Sample/Icod.Terminal.PersistentRaster.Sample.csproj -f net10.0
 ```
 
+A successful interactive run can show the generated gradient only briefly. The sample
+does not pause before its deterministic cleanup, so every remaining placement and
+resource is removed before the process returns to the shell. The accompanying success
+messages qualify the resource/placement ownership path exercised here; they do not
+qualify animation-frame controls or persistent ATLAS. See the sample's
+[expected live result](Icod.Terminal.PersistentRaster.Sample/README.md#expected-live-result).
+
 The sample:
 
 1. explicitly verifies `TerminalCapability.PersistentRasterGraphics`;
