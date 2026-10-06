@@ -260,6 +260,8 @@ Partial checkpoint (2026-10-06): reviewed the three Windows Terminal `1.24.11911
 
 Further partial checkpoint (2026-10-06): reviewed the three Kitty 0.32.2 / Ubuntu 24.04 / WSL 2.6.1.0 reports at clean source `6c3bcdb5b209c30129bb23ec924f7ab031cd8542`. The recording confirms the detached Linux worktree and completed launcher run. Appearance query is Inconclusive; both reporting modes are Unavailable. Original JSON is retained and the 1.27 matrix includes this mediated lane. Positive feature witnesses and native fallback observations remain missing, so Tasks 9–10 remain incomplete. The corresponding qualified CI artifact identity and Kitty's later protocol introduction versions are recorded in the evidence README; no untested version is promoted to live support.
 
+Kitty 0.49.2 partial checkpoint (2026-10-06): the subsequent clean run at the same `6c3bcdb` source passed bounded appearance query and operator-confirmed initial/changed in-band resize. Appearance reporting reached the prompt but timed out without an operator palette change; retained as Inconclusive. The original reports remain unchanged and both Kitty versions appear separately in the matrix. Positive appearance reporting and native fallback checks remain outstanding; Tasks 9–10 are not complete. Added temporary Kitty color-change shortcut instructions so the operator can act during the bounded wait.
+
 ### Task 10: Close the stable 1.27.0 candidate
 
 **Files:**

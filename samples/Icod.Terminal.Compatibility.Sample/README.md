@@ -169,7 +169,7 @@ Render the separate development matrix with:
 dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- --render-matrix docs/compatibility/evidence/1.27.0 /tmp/terminal-1.27-matrix.md --release-version 1.27.0
 ```
 
-Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix records the reviewed Windows Terminal and Kitty/WSL queries as Inconclusive and both reporting modes as Unavailable; other untested lanes remain NotRun.
+Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix preserves Windows Terminal and Kitty 0.32.2 Inconclusive/Unavailable results separately from Kitty 0.49.2: query and in-band resize Pass, appearance reporting Inconclusive. Other untested lanes remain NotRun.
 
 The reviewed Kitty 0.32.2 build predates these protocols: Kitty's [official changelog](https://sw.kovidgoyal.net/kitty/changelog/) adds in-band resize in 0.36.0 and dark/light appearance notifications in 0.38.1. For another live attempt, use a current released Kitty with both additions. The [official binary installer](https://sw.kovidgoyal.net/kitty/binary/) installs separately under `~/.local/kitty.app` on Linux. Put its `bin` directory first on PATH when opening the test terminal and inside that terminal before running the launcher, so `kitty --version` identifies the executable actually under test:
 
@@ -181,3 +181,18 @@ kitty
 ```
 
 Inside the new window, set the same PATH, verify `kitty --version`, and run the environment launcher from the clean Linux worktree. A newer version is a test target, not accepted compatibility evidence; appearance changes may still depend on the WSLg desktop environment. Record native fallback separately using `input.text-key` and `lifecycle.resize-suspend` on the unavailable lane.
+
+### Changing Kitty colors during the appearance wait
+
+Prepare the controls before starting the 45-second appearance wait. From the clean Linux worktree, open a test window with two temporary shortcuts:
+
+```sh
+export PATH="$HOME/.local/kitty.app/bin:$PATH"
+kitty --directory "$PWD" \
+  -o 'map ctrl+shift+f6 remote_control set-colors background=white foreground=black' \
+  -o 'map ctrl+shift+f7 remote_control set-colors background=black foreground=white'
+```
+
+Inside that new window, verify Kitty's version and start the environment launcher from the worktree root. When appearance reporting asks consent, answer Yes. Once the change prompt appears, press Ctrl+Shift+F6 to change to a white background with black text. If the background was already white, press Ctrl+Shift+F7 instead to change to black with white text. Answer Yes to the observation confirmation only if you made and saw the change. These controls invoke Kitty's [color command](https://sw.kovidgoyal.net/kitty/remote-control/#kitten-set-colors) through a [key action](https://sw.kovidgoyal.net/kitty/actions/#remote-control); the shortcut works while the sample owns terminal input. Command-line overrides do not edit your Kitty configuration file, and the key action requires no global remote-control setting. The resulting report remains the evidence; a visible color change alone is not a Pass.
+
+For everyday theme selection, `kitten themes` opens Kitty's [theme picker](https://sw.kovidgoyal.net/kitty/kittens/themes/). The temporary shortcut above avoids searching for a theme during the bounded test.

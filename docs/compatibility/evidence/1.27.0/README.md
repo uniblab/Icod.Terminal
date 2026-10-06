@@ -46,6 +46,20 @@ Kitty's [official changelog](https://sw.kovidgoyal.net/kitty/changelog/) places 
 
 Verification: all three JSON files compare byte-identically with the uploads; a second matrix render compares byte-identically with the checked-in matrix; fresh-package compatibility smoke against the corresponding CI package above passed on net8.0, net9.0, and net10.0. These checks validate evidence/schema and package consumption, not positive live terminal support.
 
+## Reviewed Kitty 0.49.2 / WSL checkpoint — 2026-10-06
+
+The subsequent clean source run uses the same `6c3bcdb5b209c30129bb23ec924f7ab031cd8542` checkout, alpha.1, Ubuntu 24.04, WSL 2.6.1.0, and revision-1 scenarios, with Kitty upgraded to `0.49.2`. The screenshot shows empty Git status in the Linux worktree; the recording shows the completed query, bounded appearance wait, and operator-confirmed resize.
+
+| Report | Outcome | What was observed |
+| --- | --- | --- |
+| [Appearance query](kitty-0.49.2-appearance-query.json) | Pass | A bounded typed appearance observation. |
+| [Appearance reporting](kitty-0.49.2-appearance-reporting.json) | Inconclusive | Acquisition reached the change prompt, but no report arrived within the wait. The operator did not know how to change the palette; this does not establish unsupported reporting. |
+| [In-band resize](kitty-0.49.2-in-band-resize.json) | Pass | Initial and changed typed dimensions, with operator confirmation. Unknown-pixel behavior is not separately described by this report. |
+
+All three JSON files passed identity/content review and are retained unchanged. The older 0.32.2 observations remain a separate exact-version environment. The matching source/CI artifact identity is the same as the previous Kitty checkpoint above. A positive appearance query and positive initial/changed resize witness now exist; an operator-induced appearance reporting witness and native input/resize fallback observations remain pending. The sample walkthrough supplies temporary color-change shortcuts for another appearance attempt.
+
+Verification: original upload bytes and a second matrix render match; fresh-package compatibility smoke against the matching-source CI package passed on net8.0/net9.0/net10.0. The color-change walkthrough was checked against Kitty 0.49.2's `set-colors`, background-change callback, and appearance-reporting source; the next live attempt must still establish the event.
+
 ## Collecting further evidence
 
 Run the environment launchers at the exact candidate commit. Review reports before adding JSON here: require exact package version, source SHA, terminal/OS/transport versions, scenario revision 1, and bounded observations. Do not accept raw replies, escape bytes, keystrokes, environment dumps, or host identity. Record package and symbol SHA-256 hashes beside the reviewed source checkpoint.
