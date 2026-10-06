@@ -4,7 +4,11 @@ param(
 
     [string]$ArtifactDirectory = '',
 
-    [string]$ExpectedVersion = ''
+    [string]$ExpectedVersion = '',
+
+    [string]$EvidenceVersion = '1.26.0',
+
+    [string]$EvidenceRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,6 +30,9 @@ if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) {
     throw 'Unable to determine the expected Icod.Terminal package version.'
 }
 
+if ([string]::IsNullOrWhiteSpace($EvidenceRoot)) {
+    $EvidenceRoot = Join-Path $repositoryRoot "docs/compatibility/evidence/$EvidenceVersion"
+}
 $ownedArtifactDirectory = $false
 if ([string]::IsNullOrWhiteSpace($ArtifactDirectory)) {
     $ArtifactDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("Icod.Terminal-compatibility-package-{0}" -f [Guid]::NewGuid().ToString('N'))
@@ -62,8 +69,8 @@ try {
         Where-Object { $_.Name -ne 'Program.cs' } |
         Copy-Item -Destination $smokeRoot
     Copy-Item -LiteralPath (Join-Path $sampleRoot 'fixtures') -Destination $smokeRoot -Recurse
-    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs/compatibility/evidence/1.26.0') -Destination (Join-Path $smokeRoot 'versioned-evidence') -Recurse
-    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs/compatibility/1.26.0.md') -Destination (Join-Path $smokeRoot 'fixtures/versioned-matrix.md')
+    Copy-Item -LiteralPath $EvidenceRoot -Destination (Join-Path $smokeRoot 'versioned-evidence') -Recurse
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot "docs/compatibility/$EvidenceVersion.md") -Destination (Join-Path $smokeRoot 'fixtures/versioned-matrix.md')
 
     $nugetConfig = Join-Path $smokeRoot 'NuGet.Config'
     $artifactUri = [System.Security.SecurityElement]::Escape($ArtifactDirectory)
@@ -80,6 +87,8 @@ try {
     [System.IO.File]::WriteAllText($nugetConfig, $nugetConfigText, [System.Text.UTF8Encoding]::new($false))
 
     $project = Join-Path $smokeRoot 'Icod.Terminal.PackageCompatibilitySmoke.csproj'
+    $oldMatrixVersion = $env:ICOD_COMPATIBILITY_MATRIX_VERSION
+    $env:ICOD_COMPATIBILITY_MATRIX_VERSION = $EvidenceVersion
     $oldNuGetPackages = $env:NUGET_PACKAGES
     $env:NUGET_PACKAGES = Join-Path $smokeRoot 'packages'
     try {
@@ -103,6 +112,7 @@ try {
         }
     } finally {
         $env:NUGET_PACKAGES = $oldNuGetPackages
+        $env:ICOD_COMPATIBILITY_MATRIX_VERSION = $oldMatrixVersion
     }
 } finally {
     if (Test-Path -LiteralPath $smokeRoot) {

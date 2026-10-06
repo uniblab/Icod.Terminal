@@ -32,6 +32,7 @@ internal interface ICompatibilityQueryClient {
 internal static class QueryCompatibilityScenarios {
 	internal static readonly IReadOnlySet<string> ScenarioIds = new HashSet<string>(
 		new[] {
+			"query.appearance",
 			"query.dimensions",
 			"query.device-attributes",
 			"query.status-cursor",
@@ -112,6 +113,9 @@ internal static class QueryCompatibilityScenarios {
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
 			switch ( scenarioId ) {
+				case "query.appearance":
+					_ = await this.session.QueryAppearanceAsync( QueryTimeout, cancellationToken ).ConfigureAwait( false );
+					return true;
 				case "query.dimensions":
 					_ = await this.session.QueryTerminalPixelDimensionsAsync( QueryTimeout, cancellationToken ).ConfigureAwait( false );
 					_ = await this.session.QueryCellPixelDimensionsAsync( QueryTimeout, cancellationToken ).ConfigureAwait( false );

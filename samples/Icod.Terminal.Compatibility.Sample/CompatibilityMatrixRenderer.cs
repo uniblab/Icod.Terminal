@@ -150,6 +150,9 @@ internal static class CompatibilityMatrixRenderer {
 		output.Append( "- `Inconclusive`: permission, policy, timeout, environment, or ambiguity prevented a conclusion.\n" );
 		output.Append( "- `NotRun`: no accepted live result exists.\n" );
 		output.Append( "- `NotApplicable`: the scenario has no meaningful application to the terminal lane.\n" );
+		if ( releaseVersion.StartsWith( "1.27", StringComparison.Ordinal ) ) {
+			output.Append( "- `Unavailable`: the terminal explicitly reported that the reporting mode cannot be enabled.\n" );
+		}
 		return output.ToString();
 	}
 

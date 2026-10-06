@@ -63,7 +63,10 @@ internal static class CompatibilityEvidenceValidator {
 			[ "input.modern-keyboard" ] = 1,
 			[ "lifecycle.resize-suspend" ] = 1,
 			[ "presentation.cursor-sync" ] = 1,
-			[ "presentation.pointer-colors" ] = 1
+			[ "presentation.pointer-colors" ] = 1,
+			[ "query.appearance" ] = 1,
+			[ "environment.appearance-reporting" ] = 1,
+			[ "environment.in-band-resize" ] = 1
 		}.ToFrozenDictionary( StringComparer.Ordinal );
 
 	internal static IReadOnlyDictionary<string, int> KnownScenarioRevisions =>

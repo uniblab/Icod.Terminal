@@ -121,6 +121,13 @@ jobs:
           ./packaging/VerifyCompatibilitySample.ps1
           -ArtifactDirectory artifacts/candidate/package
           -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify 1.27 environment compatibility fixtures
+        shell: pwsh
+        run: >-
+          ./packaging/VerifyCompatibilitySample.ps1
+          -ArtifactDirectory artifacts/candidate/package
+          -Configuration '${{ env.CONFIGURATION }}'
+          -EvidenceVersion 1.27.0
 
   validated-package:
     needs: [package-contracts, compatibility-sample]

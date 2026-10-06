@@ -113,3 +113,29 @@ cmp docs/compatibility/1.26.0.md /tmp/Icod.Terminal-1.26.0-compatibility.md
 ```
 
 The output path must not already exist. Regeneration validates every evidence file, rejects duplicates, applies stable lane/environment ordering, and never manufactures live results.
+
+## Environment awareness (1.27 development candidate)
+
+The three revision-1 scenarios are `query.appearance`, `environment.appearance-reporting`, and `environment.in-band-resize`. Querying appearance enables no reporting. Both reporting scenarios ask consent before negotiation; only a successful acquisition prompts a theme/palette change or resize. Resize must first receive the required initial report, then observe changed character or pixel dimensions. Repeated appearance values remain valid palette observations. Escape or Q exits an observation; each wait is bounded and reporting leases are disposed before evidence is returned. Caller cancellation uses the same cleanup path.
+
+Explicit private-mode states 0/4 produce `Unavailable`; silence, endpoint loss and incomplete observation produce `Inconclusive`; correlated malformed responses or failed cleanup produce `Fail`. A reporting result does not replace native resize or synchronous geometry. After an unavailable result, use `input.text-key` and `lifecycle.resize-suspend` to record native fallback separately.
+
+From the repository root, inside the indicated terminal:
+
+```cmd
+samples\Icod.Terminal.Compatibility.Sample\Run-Environment-WindowsTerminal.cmd
+```
+
+```sh
+sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
+```
+
+These launchers collect exact version identity and save review-only JSON under a temporary directory. Terminal branding is not support evidence. Publication of the alpha is not required: the source sample uses the candidate project. The fresh-package gate verifies the same scenarios against a newly packed package.
+
+Render the separate development matrix with:
+
+```sh
+dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- --render-matrix docs/compatibility/evidence/1.27.0 /tmp/terminal-1.27-matrix.md --release-version 1.27.0
+```
+
+Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix has no accepted live results yet.

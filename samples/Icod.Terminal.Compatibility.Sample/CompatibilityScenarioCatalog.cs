@@ -54,7 +54,10 @@ internal static class CompatibilityScenarioCatalog {
 			( "input.modern-keyboard", "Modern keyboard phases", "The sample observes negotiated modern-keyboard phase information without inventing releases." ),
 			( "lifecycle.resize-suspend", "Resize and suspend lifecycle", "The sample observes typed resize and suspend/resume lifecycle events." ),
 			( "presentation.cursor-sync", "Cursor style and synchronized output", "The operator observes scoped cursor-style and synchronized-output behavior and cleanup." ),
-			( "presentation.pointer-colors", "Pointer and color presentation", "The operator observes scoped pointer and color behavior and cleanup." )
+			( "presentation.pointer-colors", "Pointer and color presentation", "The operator observes scoped pointer and color behavior and cleanup." ),
+			( "query.appearance", "Terminal appearance", "The bounded appearance query returns a typed dark or light observation." ),
+			( "environment.appearance-reporting", "Appearance change reporting", "A consented operator appearance or palette change produces a typed appearance report." ),
+			( "environment.in-band-resize", "In-band resize reporting", "Consented reporting produces initial and changed typed text-area dimensions." ),
 		};
 
 		var scenarios = new List<CompatibilityScenario>( definitions.Length );
@@ -95,6 +98,9 @@ internal static class CompatibilityScenarioCatalog {
 						)
 					)
 				);
+			} else if ( id.StartsWith( "environment.", StringComparison.Ordinal ) ) {
+				scenarios.Add( new CompatibilityScenario( id, 1, description, success, true,
+					( context, token ) => EnvironmentCompatibilityScenarios.RunAsync( context.Session, context.Live, id, token ) ) );
 			} else {
 				scenarios.Add(
 					new CompatibilityScenario(

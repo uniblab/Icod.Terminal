@@ -333,3 +333,7 @@ Icod.Terminal.CapabilityPlanning.Sample
 ```
 
 Higher-level full-screen applications normally consume these contracts through `Icod.DCurses` rather than reimplementing cells, windows, layout, or refresh policy directly.
+
+### 1.27 environment awareness
+
+The [compatibility sample](Icod.Terminal.Compatibility.Sample/README.md#environment-awareness-127-development-candidate) includes a bounded appearance query and independently consented appearance/resize reporting. Its cmd and sh launchers collect exact environment versions without claiming support from identity. Native resize and synchronous dimensions retain their own provenance. The candidate remains `1.27.0-alpha.1` pending live acceptance.
