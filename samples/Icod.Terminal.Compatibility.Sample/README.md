@@ -134,12 +134,19 @@ Use a clean checkout so the recorded commit identifies the tested source. These 
 
 Git attributes give text files an explicit LF checkout policy across Windows and WSL, including when Windows Git uses `core.autocrlf=true`. EditorConfig uses the same policy. Reviewed JSON reports retain their exact submitted bytes. EditorConfig alone does not control checkout conversion. A shared checkout without these attributes can appear clean to Windows Git but modified to WSL Git across Markdown, C#, project, solution, and other text files. If an older Windows checkout produced `sh\r: No such file or directory`, manually converting the scripts may then trigger the launcher's clean-checkout guard. That guard reports local modifications, not a wrong branch; the changed paths are printed before the launcher stops.
 
-For an existing checkout, run the following from the repository root in WSL. The stash preserves local changes, including untracked files. Do not reapply line-ending-only edits after updating; saved content edits remain in the stash for review. The forced checkout refreshes tracked files under the new attributes.
+For an existing shared checkout, use Windows Git for network operations when the SSH key is available only in Windows. The stash preserves local changes, including untracked files. Do not reapply line-ending-only edits after updating; saved content edits remain in the stash for review.
 
-```sh
+From the repository root in Windows:
+
+```cmd
 git stash push -u -m "Preserve local changes before line-ending fix"
 git pull --ff-only
-git checkout-index --all --force
+```
+
+Then refresh tracked files in WSL. This is entirely local and needs no SSH key. The `:/` pathspec selects the whole repository even when invoked from the sample directory; restoring from HEAD rewrites an older CRLF checkout under the current attributes, including exact historical JSON bytes. Use the repository root for the relative launcher path shown below. `checkout-index --all --force` is insufficient for this existing-checkout recovery.
+
+```sh
+git restore --source=HEAD --worktree -- :/
 git status --short
 sh samples/Icod.Terminal.Compatibility.Sample/run-environment-kitty-wsl.sh
 ```
@@ -150,4 +157,4 @@ Render the separate development matrix with:
 dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- --render-matrix docs/compatibility/evidence/1.27.0 /tmp/terminal-1.27-matrix.md --release-version 1.27.0
 ```
 
-Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix has no accepted live results yet.
+Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix records the reviewed Windows Terminal query as Inconclusive and both reporting modes as Unavailable; other untested lanes remain NotRun.
