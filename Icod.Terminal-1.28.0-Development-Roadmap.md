@@ -16,9 +16,10 @@ Icod.DCurses raster atlas.
 terminal-brand or version-specific wire dialect. Record exact implementation
 observations separately, including confirmed deviations in Kitty 0.49.2.
 
-**Status:** Planning only. The graphics-development hold is reopened for this
-bounded 1.28 scope. No encoder workaround, response-assumption change, public API,
-version change or support claim is introduced by this planning PR.
+**Status:** T2800 design is approved and its implementation plan is ready for
+maintainer review. The graphics-development hold is reopened for this bounded
+1.28 scope. No encoder workaround, response-assumption change, public API, version
+change or support claim is introduced by this planning PR.
 
 **Baseline:** Stable `1.27.0` was merged through
 [PR #83](https://github.com/uniblab/Icod.Terminal/pull/83) at
@@ -48,9 +49,12 @@ terminal-name branch or environment-variable support inference.
 [graphics hold/reopening record](docs/Graphics-Development-Hold.md). T2800 must
 write the detailed design and implementation plan before runtime changes.
 
-**T2800 design candidate:**
+**T2800 approved design:**
 [Published-Spec Kitty Graphics Transactions Design](docs/superpowers/specs/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions-design.md),
-awaiting maintainer review before implementation planning.
+approved by the maintainer on 2026-10-06. The corresponding
+[implementation plan](docs/superpowers/plans/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions.md)
+is the executable RED/GREEN sequence and remains subject to plan review before
+runtime implementation begins.
 
 ## Decision
 
@@ -233,17 +237,17 @@ points below bound the work and discourage unrelated refactoring.
 
 ### T2800 — Specification freeze, deviation ledger and API-regret gate
 
-- [ ] Re-read the pinned published protocol and classify every emitted persistent
+- [x] Re-read the pinned published protocol and classify every emitted persistent
   animation action by required, failure-only, optional or absent response contract.
-- [ ] Preserve source citations and distinguish confirmed 0.49.2 deviations from
+- [x] Preserve source citations and distinguish confirmed 0.49.2 deviations from
   specification ambiguity and implementation extensions.
-- [ ] Write the detailed design under `docs/superpowers/specs/` and freeze the
+- [x] Write the detailed design under `docs/superpowers/specs/` and freeze the
   minimal compatible public confirmation model, exact XML vocabulary and private
   action-policy representation.
-- [ ] Write the task-by-task implementation plan under `docs/superpowers/plans/`,
+- [x] Write the task-by-task implementation plan under `docs/superpowers/plans/`,
   including RED tests, exact files, commands and commit boundaries.
-- [ ] Obtain maintainer approval before changing runtime code or the development
-  version.
+- [ ] Obtain maintainer approval of the implementation plan before changing
+  runtime code or the development version.
 
 **Acceptance:** An implementer can determine what bytes to emit, whether to wait,
 what result to return and what evidence to record for every in-scope action without
