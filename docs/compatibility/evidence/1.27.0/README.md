@@ -46,19 +46,35 @@ Kitty's [official changelog](https://sw.kovidgoyal.net/kitty/changelog/) places 
 
 Verification: all three JSON files compare byte-identically with the uploads; a second matrix render compares byte-identically with the checked-in matrix; fresh-package compatibility smoke against the corresponding CI package above passed on net8.0, net9.0, and net10.0. These checks validate evidence/schema and package consumption, not positive live terminal support.
 
-## Reviewed Kitty 0.49.2 / WSL checkpoint — 2026-10-06
+## Reviewed Kitty 0.49.2 / WSL first run — 2026-10-06
 
 The subsequent clean source run uses the same `6c3bcdb5b209c30129bb23ec924f7ab031cd8542` checkout, alpha.1, Ubuntu 24.04, WSL 2.6.1.0, and revision-1 scenarios, with Kitty upgraded to `0.49.2`. The screenshot shows empty Git status in the Linux worktree; the recording shows the completed query, bounded appearance wait, and operator-confirmed resize.
 
 | Report | Outcome | What was observed |
 | --- | --- | --- |
-| [Appearance query](kitty-0.49.2-appearance-query.json) | Pass | A bounded typed appearance observation. |
-| [Appearance reporting](kitty-0.49.2-appearance-reporting.json) | Inconclusive | Acquisition reached the change prompt, but no report arrived within the wait. The operator did not know how to change the palette; this does not establish unsupported reporting. |
-| [In-band resize](kitty-0.49.2-in-band-resize.json) | Pass | Initial and changed typed dimensions, with operator confirmation. Unknown-pixel behavior is not separately described by this report. |
+| [Appearance query](history/2026-10-06-kitty-0.49.2-first-run/kitty-0.49.2-appearance-query.json) | Pass | A bounded typed appearance observation. |
+| [Appearance reporting](history/2026-10-06-kitty-0.49.2-first-run/kitty-0.49.2-appearance-reporting.json) | Inconclusive | Acquisition reached the change prompt, but no report arrived within the wait. The operator did not know how to change the palette; this does not establish unsupported reporting. |
+| [In-band resize](history/2026-10-06-kitty-0.49.2-first-run/kitty-0.49.2-in-band-resize.json) | Pass | Initial and changed typed dimensions, with operator confirmation. Unknown-pixel behavior is not separately described by this report. |
 
 All three JSON files passed identity/content review and are retained unchanged. The older 0.32.2 observations remain a separate exact-version environment. The matching source/CI artifact identity is the same as the previous Kitty checkpoint above. A positive appearance query and positive initial/changed resize witness now exist; an operator-induced appearance reporting witness and native input/resize fallback observations remain pending. The sample walkthrough supplies temporary color-change shortcuts for another appearance attempt.
 
 Verification: original upload bytes and a second matrix render match; fresh-package compatibility smoke against the matching-source CI package passed on net8.0/net9.0/net10.0. The color-change walkthrough was checked against Kitty 0.49.2's `set-colors`, background-change callback, and appearance-reporting source; the next live attempt must still establish the event.
+
+## Reviewed Kitty 0.49.2 / WSL successful rerun — 2026-10-06
+
+The next clean Linux worktree run again identifies source `6c3bcdb5b209c30129bb23ec924f7ab031cd8542`, alpha.1, Kitty 0.49.2, Ubuntu 24.04, WSL 2.6.1.0, and scenario revision 1. The recording shows clean status, bounded query, appearance observation confirmation, and resize observation confirmation. The reviewed results are:
+
+| Report | Outcome | What was observed |
+| --- | --- | --- |
+| [Appearance query](kitty-0.49.2-appearance-query.json) | Pass | A bounded typed appearance observation. |
+| [Appearance reporting](kitty-0.49.2-appearance-reporting.json) | Pass | A typed Light report after the change prompt, with operator confirmation. This qualifies an operator-induced appearance/palette change; it does not establish automatic Windows-to-WSLg theme propagation. |
+| [In-band resize](kitty-0.49.2-in-band-resize.json) | Pass | Initial and changed typed dimensions, with operator confirmation. |
+
+The successful rerun supplies both selected feature witnesses. Native input/resize on an unavailable lane remains outstanding, so Task 9 is still partial and stable closure has not started. Package/source identity remains the matching-source CI checkpoint above; no local package hash was supplied.
+
+Original JSON bytes are retained unchanged. The first run's Pass/Inconclusive/Pass JSON is retained unchanged in the linked `history/2026-10-06-kitty-0.49.2-first-run` directory. Matrix rendering reads only top-level JSON and rejects duplicate exact environment/scenario records; the successful rerun is the active representative for this exact Kitty version, and the history retains the earlier inconclusive result without rewriting it as success. Kitty 0.32.2 remains a separate active environment.
+
+Verification: all six current/history JSON files compare byte-identically with their corresponding uploads; a repeated matrix render matches; fresh-package compatibility smoke against the matching-source CI package passed on net8.0/net9.0/net10.0. The next fallback commands passed shell syntax checking; their live results remain outstanding.
 
 ## Collecting further evidence
 

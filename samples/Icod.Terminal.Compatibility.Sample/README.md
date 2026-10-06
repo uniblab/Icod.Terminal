@@ -169,7 +169,7 @@ Render the separate development matrix with:
 dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- --render-matrix docs/compatibility/evidence/1.27.0 /tmp/terminal-1.27-matrix.md --release-version 1.27.0
 ```
 
-Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix preserves Windows Terminal and Kitty 0.32.2 Inconclusive/Unavailable results separately from Kitty 0.49.2: query and in-band resize Pass, appearance reporting Inconclusive. Other untested lanes remain NotRun.
+Use an output path that does not already exist. The legacy render command defaults to 1.26.0 so historical fixtures remain byte-identical. The 1.27 matrix preserves Windows Terminal and Kitty 0.32.2 Inconclusive/Unavailable results separately from Kitty 0.49.2's successful query, appearance reporting, and in-band resize rerun. Earlier 0.49.2 reports, including appearance Inconclusive, remain unchanged in the evidence history; only top-level JSON participates in the matrix. Other untested lanes remain NotRun.
 
 The reviewed Kitty 0.32.2 build predates these protocols: Kitty's [official changelog](https://sw.kovidgoyal.net/kitty/changelog/) adds in-band resize in 0.36.0 and dark/light appearance notifications in 0.38.1. For another live attempt, use a current released Kitty with both additions. The [official binary installer](https://sw.kovidgoyal.net/kitty/binary/) installs separately under `~/.local/kitty.app` on Linux. Put its `bin` directory first on PATH when opening the test terminal and inside that terminal before running the launcher, so `kitty --version` identifies the executable actually under test:
 
@@ -196,3 +196,24 @@ kitty --directory "$PWD" \
 Inside that new window, verify Kitty's version and start the environment launcher from the worktree root. When appearance reporting asks consent, answer Yes. Once the change prompt appears, press Ctrl+Shift+F6 to change to a white background with black text. If the background was already white, press Ctrl+Shift+F7 instead to change to black with white text. Answer Yes to the observation confirmation only if you made and saw the change. These controls invoke Kitty's [color command](https://sw.kovidgoyal.net/kitty/remote-control/#kitten-set-colors) through a [key action](https://sw.kovidgoyal.net/kitty/actions/#remote-control); the shortcut works while the sample owns terminal input. Command-line overrides do not edit your Kitty configuration file, and the key action requires no global remote-control setting. The resulting report remains the evidence; a visible color change alone is not a Pass.
 
 For everyday theme selection, `kitten themes` opens Kitty's [theme picker](https://sw.kovidgoyal.net/kitty/kittens/themes/). The temporary shortcut above avoids searching for a theme during the bounded test.
+
+### Native fallback on the older Kitty/WSL lane
+
+The unavailable Kitty 0.32.2 environment still needs ordinary input and native resize observations. From the clean Linux worktree, open the distro-installed Kitty explicitly with `/usr/bin/kitty --directory "$PWD"`. Inside that window, check `/usr/bin/kitty --version` still identifies 0.32.2 and `git status --short` is empty. Run the existing public scenarios with exact identity and fresh temporary output:
+
+```sh
+fallback_version=$(/usr/bin/kitty --version)
+fallback_source=$(git rev-parse HEAD)
+fallback_reports=$(mktemp -d /tmp/Icod.Terminal-Fallback.XXXXXX)
+run_fallback() {
+  dotnet run --project samples/Icod.Terminal.Compatibility.Sample -c Staging -f net10.0 -- \
+    --run "$1" --terminal kitty --terminal-version "$fallback_version" \
+    --os Ubuntu --os-version 24.04 --transport WSL --transport-version 2.6.1.0 \
+    --source-commit "$fallback_source" --output "$fallback_reports/$1.json"
+}
+run_fallback input.text-key
+run_fallback lifecycle.resize-suspend
+printf '%s\n' "$fallback_reports"
+```
+
+Consent to each scenario. For input, type a printable character and press an arrow key. For lifecycle, resize the window, press Ctrl+Z to suspend, then type `fg` at the shell prompt to resume promptly. The default CBreak session preserves POSIX signal keys; this scenario requires native resize, suspending, and resumed events. Confirm observations truthfully and submit both JSON files. These scenarios do not acquire appearance or in-band resize reporting. Run them at the already-qualified clean `6c3bcdb` checkout when completing its recorded unavailable lane. If the distro Kitty version or OS/transport has changed, record the actual identity and requalify reporting availability there rather than attributing it to 0.32.2.

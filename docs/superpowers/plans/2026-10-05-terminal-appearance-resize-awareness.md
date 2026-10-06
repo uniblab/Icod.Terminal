@@ -262,6 +262,8 @@ Further partial checkpoint (2026-10-06): reviewed the three Kitty 0.32.2 / Ubunt
 
 Kitty 0.49.2 partial checkpoint (2026-10-06): the subsequent clean run at the same `6c3bcdb` source passed bounded appearance query and operator-confirmed initial/changed in-band resize. Appearance reporting reached the prompt but timed out without an operator palette change; retained as Inconclusive. The original reports remain unchanged and both Kitty versions appear separately in the matrix. Positive appearance reporting and native fallback checks remain outstanding; Tasks 9–10 are not complete. Added temporary Kitty color-change shortcut instructions so the operator can act during the bounded wait.
 
+Kitty 0.49.2 successful rerun (2026-10-06): the same clean `6c3bcdb` source/environment now passed query, typed Light appearance reporting with operator confirmation, and initial/changed in-band resize with operator confirmation. Both selected feature witnesses are complete. The successful rerun is the active exact-environment matrix record; unchanged first-run JSON, including appearance Inconclusive, remains in evidence history. Native fallback observations are still required. Task 9 remains partial; Task 10 has not started and alpha metadata is unchanged.
+
 ### Task 10: Close the stable 1.27.0 candidate
 
 **Files:**

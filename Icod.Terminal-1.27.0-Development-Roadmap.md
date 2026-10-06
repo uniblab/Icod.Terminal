@@ -197,12 +197,12 @@ Each implementation tranche uses failing regression tests first, a witnessed red
 
 ### T2709 — Focused live-terminal acceptance
 
-- [ ] Record a successful bounded appearance query and an operator-induced appearance reporting change on an exact supporting environment.
+- [x] Record a successful bounded appearance query and an operator-induced appearance reporting change on an exact supporting environment. Kitty 0.49.2 / Ubuntu 24.04 / WSL 2.6.1.0 at `6c3bcdb` passed query and operator-confirmed Light reporting.
 - [x] Record initial and changed in-band resize observations on an exact supporting environment, including unknown-pixel behavior where observable. Kitty 0.49.2 / Ubuntu 24.04 / WSL 2.6.1.0 at `6c3bcdb` passed; the report does not separately expose unknown-pixel behavior.
 - [ ] Exercise a missing/unsupported-reporting lane while preserving native resize and ordinary input behavior.
 - [x] Test one mediated lane if available; report it separately and leave untested lanes NotRun. Kitty 0.32.2 / Ubuntu 24.04 / WSL 2.6.1.0 source reports at `6c3bcdb` are accepted with Inconclusive/Unavailable outcomes.
 - [x] Review reports and regenerate the 1.27 matrix; retain Fail/Inconclusive outcomes rather than converting them to unsupported. Windows Terminal source reports at `a2bd155` and both Kitty 0.32.2/0.49.2 WSL environments at `6c3bcdb` are accepted; see the partial checkpoint below.
-- [ ] If a positive live witness cannot be obtained for either selected feature, present that gap to the maintainer before stable release; do not silently waive acceptance or infer success from CI.
+- [x] If a positive live witness cannot be obtained for either selected feature, present that gap to the maintainer before stable release; do not silently waive acceptance or infer success from CI. Both selected features now have reviewed positive Kitty 0.49.2 witnesses; native fallback acceptance remains pending.
 
 **Acceptance:** Both features have a positive live witness and the fallback path has evidence. This does not require all ten emulators to implement either protocol.
 
@@ -243,7 +243,7 @@ No OSC 5522, OSC 21, OSC 1337 ReportCellSize backend, host-theme adapter, palett
 | Scope selection | Options 2 + 3 approved on 2026-10-05 | Recorded |
 | Task 1 additive event contract | Remote head `fff453ac8b3d12444f263d431d64d0a768b44c09`; workflow `37350334445` | Runtime Linux, Windows, and macOS passed; public-API baseline intentionally deferred to T2708 |
 | Runtime and distribution qualification | Head `0da49e0cb436eb3bc339c93819819b8b0e1bce3b`; [workflow 37453595429](https://github.com/uniblab/Icod.Terminal/actions/runs/37453595429) | All ten jobs passed; T2701–T2708 complete |
-| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | Kitty 0.49.2 query and initial/changed resize passed; appearance reporting and native fallback observations remain pending |
+| Live acceptance and stable closure | T2709–T2710 checklists above; 1.27 matrix | Kitty 0.49.2 query, appearance reporting, and initial/changed resize passed; native fallback observations remain pending |
 
 
 ## Qualified alpha checkpoint — 2026-10-06
@@ -283,3 +283,7 @@ Kitty evidence verification: the original upload bytes and repeated matrix rende
 Kitty 0.49.2 checkpoint: the next clean Linux worktree run at the same `6c3bcdb` source, alpha.1, Ubuntu 24.04, WSL 2.6.1.0, and revision 1 passed appearance query and initial/changed in-band resize with operator confirmation. Appearance reporting reached the change prompt but timed out while the operator sought palette controls, so it remains Inconclusive. All three reports are retained unchanged beside the separate 0.32.2 environment. A positive operator-induced appearance event and native fallback observations are still required; Task 9 remains partial and Task 10 has not started. The walkthrough now documents immediate temporary Kitty color-change keys.
 
 Verification for the 0.49.2 evidence update: original JSON bytes and repeated matrix output match; the matching-source CI package compatibility verifier passed on net8.0/net9.0/net10.0. No runtime code or alpha metadata changed.
+
+Kitty 0.49.2 successful rerun: all three revision-1 reports at the same `6c3bcdb` source/environment now Pass, including typed Light appearance reporting with operator confirmation. Both selected feature witnesses are complete. The successful rerun is active in the matrix; the unchanged earlier 0.49.2 reports, including appearance Inconclusive, are retained in the evidence history. Native input/resize on the unavailable lane remains unobserved; T2709 and T2710 remain incomplete and alpha.1 metadata is retained.
+
+Successful-rerun verification: all current/history upload bytes and repeated matrix output match; fresh-package compatibility verification passed net8.0/net9.0/net10.0 against the matching-source artifact. Added shell-syntax-checked instructions for ordinary input and native resize/suspend/resume in the already-recorded older Kitty lane; no fallback observation is inferred from those instructions.

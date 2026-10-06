@@ -11,10 +11,10 @@
     "transportVersion": "2.6.1.0",
     "scenarioId": "environment.appearance-reporting",
     "scenarioRevision": 1,
-    "observedAtUtc": "2026-10-06T13:20:11.8335185+00:00",
-    "outcome": "Inconclusive",
-    "automatedObservation": false,
-    "operatorObservation": null,
-    "note": "No appearance report was observed after the change prompt."
+    "observedAtUtc": "2026-10-06T13:38:41.4703285+00:00",
+    "outcome": "Pass",
+    "automatedObservation": true,
+    "operatorObservation": true,
+    "note": "Typed appearance observation: Light; repeated values remain palette observations."
   }
 ]
