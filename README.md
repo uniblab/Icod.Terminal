@@ -21,14 +21,17 @@ Version 1.25 adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a compl
 
 Version 1.25 derives persistent upload, animation-append and partial-frame-edit deadlines from their Base64 wire size, adds one second for correlated acknowledgement, and caps the result at one minute. Small control-only transactions remain at one second. See the [alpha.5 release notes](docs/releases/1.25.0-alpha.5.md).
 
-**Graphics development is on hold** at the maintainer's direction. Kitty 0.49.2
-on WSL2 reproduces the missing acknowledgement for a documented chunked animation-
-frame continuation first observed on 0.32.2. Version 1.27's DA1 correction allows
-the basic persistent-resource/placement sample to complete on 0.49.2; its brief
-color display and successful ownership trace qualify that narrower path. They do
-not qualify animation controls or persistent ATLAS. Bounded waits remain in effect,
-and no Kitty workaround or new graphics behavior is included. See the
-[hold record and evidence](docs/Graphics-Development-Hold.md).
+Version 1.28 applies action-specific Kitty Graphics transaction semantics while
+keeping the published wire grammar. `Unspecified` preserves unclassified success,
+`OutputCommitted` records completion through the write-and-flush boundary, and
+`ProtocolAcknowledged` records a correlated successful protocol response. None of
+these values claims visible rendering. Kitty 0.49.2 on WSL2 reproduces the missing
+acknowledgement for a documented chunked animation-frame continuation; the
+post-0.49.2 upstream correction is tracked without a repeated-image-id workaround
+or terminal-version branch. Version 1.27's brief basic-resource color display
+qualifies only that persistent resource/placement scenario, not animation or
+persistent ATLAS. See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
+and [hold record and evidence](docs/Graphics-Development-Hold.md).
 
 Ordinary raster capability selection prefers verified Kitty, then verified Sixel.
 A failed write is not automatically retried through another backend. Applications
@@ -398,6 +401,7 @@ Recommended documentation entry points:
 
 - [`docs/releases/1.27.0.md`](docs/releases/1.27.0.md) — terminal appearance, in-band resize, compatibility, and qualification notes;
 - [`docs/compatibility/1.27.0.md`](docs/compatibility/1.27.0.md) — current versioned terminal compatibility matrix; absent reviewed evidence remains explicitly `NotRun`;
+- [`docs/Kitty-Graphics-Transaction-Compatibility-1.28.md`](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md) — published response policy, exact Kitty 0.49.2 deviation, confirmation meanings, and live-evidence provenance;
 - [`docs/compatibility/1.26.0.md`](docs/compatibility/1.26.0.md) — historical 1.26 terminal compatibility matrix;
 - [`samples/Icod.Terminal.Compatibility.Sample/README.md`](samples/Icod.Terminal.Compatibility.Sample/README.md) — headless commands, live scenarios, side effects, privacy, and evidence contribution workflow;
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — prior input and cursor visibility release notes;

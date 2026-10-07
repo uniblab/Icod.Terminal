@@ -23,6 +23,19 @@ namespace Icod.Terminal.RasterAnimation.Sample;
 using Icod.Terminal;
 
 internal static class RasterAnimationCompositionExample {
+	internal static string GetHeadlessTranscript() {
+		return string.Join(
+			"\n",
+			[
+				"Persistent-raster transaction semantics (headless; no terminal opened)",
+				"Confirmation=Unspecified; Meaning=success strength was not classified; Rendered=NotClaimed",
+				"Confirmation=OutputCommitted; Meaning=bytes were written and flushed; Rendered=NotClaimed",
+				"Confirmation=ProtocolAcknowledged; Meaning=a correlated terminal response accepted the operation; Rendered=NotClaimed",
+				"LiveQualification=NotRun; Reason=headless execution cannot establish rendered output"
+			]
+		) + "\n";
+	}
+
 	internal static string FormatMutationOutcome(
 		string operation,
 		TerminalControlMutationResult result
