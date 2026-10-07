@@ -222,6 +222,49 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
+	public async Task ResourceDisposalWhilePartialUpdateWaitsForOutputGateEmitsNoEdit() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session, transport, imageId: 77u
+		);
+		IDisposable outputLease = await session.AcquireControlOutputAsync(
+			CancellationToken.None
+		);
+
+		Task<TerminalControlMutationResult> update = resource.Animation
+			.UpdateFrameRegionAsync(
+				resource.Animation.RootFrame,
+				TerminalRasterImage.CreateRgb24( 1, 1, [ 1, 2, 3 ] ),
+				0,
+				0
+			).AsTask();
+		await YieldSeveralTimesAsync();
+		Assert.False( update.IsCompleted );
+		Assert.Single( transport.Writes );
+
+		Task disposal = resource.DisposeAsync().AsTask();
+		await YieldSeveralTimesAsync();
+		Assert.False( disposal.IsCompleted );
+		outputLease.Dispose();
+
+		TerminalControlMutationResult result = await update;
+		await disposal;
+		Assert.Equal( TerminalControlStatus.Unavailable, result.Status );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.Unspecified,
+			result.Confirmation
+		);
+		Assert.DoesNotContain(
+			transport.Writes,
+			static value => Encoding.ASCII.GetString( value ).StartsWith(
+				"\u001b_Ga=f,",
+				StringComparison.Ordinal
+			)
+		);
+	}
+
+	[Fact]
 	public async Task RootFrameDurationUsesAcknowledgedAnimationControl() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );

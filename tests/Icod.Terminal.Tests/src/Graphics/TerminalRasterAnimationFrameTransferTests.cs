@@ -403,6 +403,47 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 		await YieldSeveralTimesAsync();
 	}
 
+	[Fact]
+	public async Task ResourceDisposalWhileAppendWaitsForOutputGateEmitsNoFrame() {
+		ManualMonotonicClock clock = new();
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, clock );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport,
+			imageId: 77u
+		);
+		IDisposable outputLease = await session.AcquireControlOutputAsync(
+			CancellationToken.None
+		);
+
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				CreateFrameImage(),
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		await YieldSeveralTimesAsync();
+		Assert.False( append.IsCompleted );
+		Assert.Single( transport.Writes );
+
+		Task disposal = resource.DisposeAsync().AsTask();
+		await YieldSeveralTimesAsync();
+		Assert.False( disposal.IsCompleted );
+		outputLease.Dispose();
+
+		TerminalControlResult<TerminalRasterAnimationFrame> result = await append;
+		await disposal;
+		Assert.Equal( TerminalControlStatus.Unavailable, result.Status );
+		Assert.Null( result.Value );
+		Assert.DoesNotContain(
+			transport.Writes,
+			static value => Encoding.ASCII.GetString( value ).StartsWith(
+				"\u001b_Ga=f,",
+				StringComparison.Ordinal
+			)
+		);
+	}
+
 	private static async Task<Task<TerminalControlResult<TerminalRasterAnimationFrame>>> StartAppendAsync(
 		TerminalRasterResource resource,
 		ScriptedTransport transport,
