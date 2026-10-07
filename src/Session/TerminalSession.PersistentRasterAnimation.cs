@@ -21,7 +21,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Owns acknowledged persistent-raster animation frame transactions.
+/// Owns persistent-raster animation frame transactions and controls.
 /// </summary>
 public sealed partial class TerminalSession {
 	private readonly TerminalPersistentRasterAnimationRegistry persistentRasterAnimationRegistry = new();
@@ -352,39 +352,46 @@ public sealed partial class TerminalSession {
 				gapMilliseconds!.Value
 			)
 		;
-		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
-		TerminalQueryResponseResult queryResult = await this.GetQueryTransactionManager().ExecuteAsync(
-			_ => this.WritePersistentRasterAnimationControlPayloadCoreAsync( payload ),
-			TerminalQueryResponsePlan.ForCompletion( matcher ),
-			PersistentRasterCreationTimeout,
-			TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+		return await this.WritePersistentRasterAnimationOutputOnlyControlAsync(
+			payload,
+			() => this.persistentRasterRegistry.IsResourceCurrent( resourceState )
+				&& this.persistentRasterAnimationRegistry.OwnsFrame(
+					animationState,
+					frameState
+				),
+			"Animation ownership changed before frame-control output.",
 			cancellationToken
 		).ConfigureAwait( false );
+	}
 
-		KittyGraphicsPersistentAnimationResponse response =
-			KittyGraphicsPersistentAnimationResponse.Parse(
-				queryResult.Frame,
-				imageId
+	private async ValueTask<TerminalControlMutationResult> WritePersistentRasterAnimationOutputOnlyControlAsync(
+		ReadOnlyMemory<byte> payload,
+		Func<bool> ownershipIsCurrent,
+		string unavailableMessage,
+		CancellationToken cancellationToken
+	) {
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent raster animation control payload cannot be empty.",
+				nameof( payload )
 			);
-		if ( !response.IsSuccess ) {
-			if ( response.IsMissingResource ) {
-				_ = this.persistentRasterAnimationRegistry.InvalidateResource( resourceState );
-				_ = this.InvalidatePersistentRasterResourceWithVirtualDescendants(
-					resourceState
-				);
-				return TerminalControlMutationResult.Unavailable(
-					response.Message
-				);
-			}
-			return TerminalControlMutationResult.Failed( response.Message );
+		}
+		ArgumentNullException.ThrowIfNull( ownershipIsCurrent );
+		ArgumentException.ThrowIfNullOrWhiteSpace( unavailableMessage );
+
+		using IDisposable outputLease = await this.AcquireControlOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		if ( !ownershipIsCurrent() ) {
+			return TerminalControlMutationResult.Unavailable( unavailableMessage );
 		}
 
-		this.RecordSemanticBackendEvidence(
-			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
-			TerminalCapabilitySupportState.Verified,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
+		await this.WritePersistentRasterAnimationControlPayloadCoreAsync(
+			payload
+		).ConfigureAwait( false );
+		return TerminalControlMutationResult.Success(
+			TerminalControlMutationConfirmation.OutputCommitted
 		);
-		return TerminalControlMutationResult.Success();
 	}
 
 	private async ValueTask WritePersistentRasterAnimationControlPayloadCoreAsync(
