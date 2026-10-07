@@ -279,16 +279,18 @@ static async ValueTask<bool> RequireSuccessAsync(
 ) {
 	ArgumentNullException.ThrowIfNull( session );
 	ArgumentException.ThrowIfNullOrWhiteSpace( operation );
+	await session.WriteTextAsync(
+		string.Concat(
+			RasterAnimationCompositionExample.FormatMutationOutcome(
+				operation,
+				result
+			),
+			".\r\n"
+		)
+	);
 	if ( result.Succeeded ) {
 		return true;
 	}
-
-	await ReportFailureAsync(
-		session,
-		operation,
-		result.Status,
-		result.Message
-	);
 	return false;
 }
 
