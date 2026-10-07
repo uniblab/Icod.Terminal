@@ -20,7 +20,7 @@
 */
 namespace Icod.Terminal;
 
-/// <summary>Identifies one focused acknowledged persistent-raster frame operation.</summary>
+/// <summary>Identifies one focused persistent-raster frame operation.</summary>
 public enum TerminalRasterOperation {
 	/// <summary>Composition between two known frames.</summary>
 	FrameComposition = 0,

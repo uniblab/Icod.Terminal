@@ -53,6 +53,24 @@ internal sealed class KittyGraphicsPersistentAnimationEmissionState {
 }
 
 internal static class KittyGraphicsPersistentAnimationTransaction {
+	internal static ValueTask WriteControlAsync(
+		TerminalSession session,
+		ReadOnlyMemory<byte> payload,
+		KittyGraphicsPersistentAnimationEmissionState emissionState
+	) {
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent Kitty Graphics animation control payload cannot be empty.",
+				nameof( payload )
+			);
+		}
+		return WritePayloadsAsync(
+			session,
+			[ payload ],
+			emissionState
+		);
+	}
+
 	internal static ValueTask WriteFrameEditAsync(
 		TerminalSession session,
 		KittyRasterData raster,

@@ -21,7 +21,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Owns acknowledged composition of already known frames in one persistent raster resource.
+/// Owns optional-response composition of already known frames in one persistent raster resource.
 /// </summary>
 public sealed partial class TerminalSession {
 	internal async ValueTask<TerminalControlMutationResult> ComposePersistentRasterAnimationFrameAsync(
@@ -112,6 +112,7 @@ public sealed partial class TerminalSession {
 				mode
 			);
 		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
+		KittyGraphicsPersistentAnimationEmissionState emissionState = new();
 		bool staleBeforeWrite = false;
 		TerminalQueryResponseResult queryResult;
 		try {
@@ -130,7 +131,11 @@ public sealed partial class TerminalSession {
 							"Animation ownership changed before composition output."
 						);
 					}
-					return this.WritePersistentRasterAnimationControlPayloadCoreAsync( payload );
+					return KittyGraphicsPersistentAnimationTransaction.WriteControlAsync(
+						this,
+						payload,
+						emissionState
+					);
 				},
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
 				PersistentRasterCreationTimeout,
@@ -140,6 +145,24 @@ public sealed partial class TerminalSession {
 		} catch ( InvalidOperationException ) when ( staleBeforeWrite ) {
 			return TerminalControlMutationResult.Unavailable(
 				"Animation ownership changed before composition output."
+			);
+		} catch ( TimeoutException ) when ( emissionState.OutputCommitted ) {
+			if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState )
+				|| TerminalRasterAnimationStatus.Current
+					!= animationState.ObserveState().Status
+				|| !this.persistentRasterAnimationRegistry.OwnsFrame(
+					animationState,
+					sourceState
+				) || !this.persistentRasterAnimationRegistry.OwnsFrame(
+					animationState,
+					destinationState
+				) ) {
+				return TerminalControlMutationResult.Unavailable(
+					"Animation ownership changed after composition output was committed."
+				);
+			}
+			return TerminalControlMutationResult.Success(
+				TerminalControlMutationConfirmation.OutputCommitted
 			);
 		}
 
@@ -177,6 +200,8 @@ public sealed partial class TerminalSession {
 			TerminalCapabilityEvidenceSource.ProtocolResponse,
 			evidenceGeneration
 		);
-		return TerminalControlMutationResult.Success();
+		return TerminalControlMutationResult.Success(
+			TerminalControlMutationConfirmation.ProtocolAcknowledged
+		);
 	}
 }
