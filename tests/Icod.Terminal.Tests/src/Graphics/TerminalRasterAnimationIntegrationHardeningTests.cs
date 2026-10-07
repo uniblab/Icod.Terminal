@@ -48,9 +48,9 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		Task<TerminalControlMutationResult> stop = resource.Animation
 			.StopAsync()
 			.AsTask();
-		await YieldSeveralTimesAsync();
+		await transport.WaitForWriteCountAsync( 3 );
 
-		Assert.Equal( 2, transport.Writes.Count );
+		Assert.Equal( 3, transport.Writes.Count );
 		Assert.Equal(
 			"\u001b_Ga=a,i=77,s=2,q=2\u001b\\",
 			Encoding.ASCII.GetString( transport.Writes[ 1 ] )
@@ -60,7 +60,6 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		TerminalControlMutationResult[] results = await AwaitWithoutResponseAsync(
 			controls
 		);
-		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
 			"\u001b_Ga=a,i=77,s=1,q=2\u001b\\",
 			Encoding.ASCII.GetString( transport.Writes[ 2 ] )

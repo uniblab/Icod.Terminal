@@ -509,11 +509,16 @@ public sealed class TerminalRasterAnimationControlTests {
 			.SetFrameDurationAsync(
 				resource.Animation.RootFrame,
 				TimeSpan.FromMilliseconds( 180 )
-			).AsTask();
+				).AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
-		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
-		Assert.True( ( await firstControl ).Succeeded );
-		Assert.True( session.InspectCapability(
+		TerminalControlMutationResult firstResult = await AwaitWithoutResponseAsync(
+			firstControl
+		);
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			firstResult.Confirmation
+		);
+		Assert.False( session.InspectCapability(
 			TerminalCapability.PersistentRasterAnimation
 		).IsUsable );
 	}
@@ -775,21 +780,24 @@ public sealed class TerminalRasterAnimationControlTests {
 			).AsTask();
 		Task<TerminalControlMutationResult> playback = resource.Animation.RunAsync()
 			.AsTask();
-		await YieldSeveralTimesAsync();
-		Assert.Equal( 3, transport.Writes.Count );
+		TerminalControlMutationResult playbackResult = await AwaitWithoutResponseAsync(
+			playback
+		);
+		await transport.WaitForWriteCountAsync( 4 );
+		Assert.StartsWith( "\u001b_Ga=a,", Encoding.ASCII.GetString( transport.Writes[ 3 ] ) );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			playbackResult.Confirmation
+		);
 
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.True( ( await composition ).Succeeded );
-		await transport.WaitForWriteCountAsync( 4 );
-		Assert.StartsWith( "\u001b_Ga=f,", Encoding.ASCII.GetString( transport.Writes[ 3 ] ) );
+		await transport.WaitForWriteCountAsync( 5 );
+		Assert.StartsWith( "\u001b_Ga=f,", Encoding.ASCII.GetString( transport.Writes[ 4 ] ) );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
 		Assert.Equal( 3, Assert.IsType<TerminalRasterAnimationFrame>(
 			( await append ).Value
 		).SequenceNumber );
-		await transport.WaitForWriteCountAsync( 5 );
-		Assert.StartsWith( "\u001b_Ga=a,", Encoding.ASCII.GetString( transport.Writes[ 4 ] ) );
-		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
-		Assert.True( ( await playback ).Succeeded );
 	}
 
 	[Fact]
@@ -894,7 +902,7 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
-	public async Task ControlledFrameFailureDoesNotPoisonKnownFrameSequence() {
+	public async Task UnexpectedFrameControlReplyDoesNotPoisonKnownFrameSequence() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -908,15 +916,21 @@ public sealed class TerminalRasterAnimationControlTests {
 			expectedWriteCount: 2
 		);
 
-		Task<TerminalControlMutationResult> failed = resource.Animation
+		Task<TerminalControlMutationResult> selection = resource.Animation
 			.SelectFrameAsync( frame )
 			.AsTask();
 		await transport.WaitForWriteCountAsync( 3 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:invalid frame\u001b\\" )
+		TerminalControlMutationResult selectionResult = await AwaitWithoutResponseAsync(
+			selection
 		);
-		TerminalControlMutationResult failure = await failed;
-		Assert.Equal( TerminalControlStatus.Failed, failure.Status );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			selectionResult.Confirmation
+		);
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:unexpected reply\u001b\\" )
+		);
+		await YieldSeveralTimesAsync();
 		Assert.Equal(
 			new TerminalRasterAnimationState(
 				TerminalRasterAnimationStatus.Current,
@@ -932,10 +946,10 @@ public sealed class TerminalRasterAnimationControlTests {
 			)
 			.AsTask();
 		await transport.WaitForWriteCountAsync( 4 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await AwaitWithoutResponseAsync( retry ) ).Confirmation
 		);
-		Assert.True( ( await retry ).Succeeded );
 	}
 
 	private static async Task<TerminalRasterAnimationFrame> AppendFrameAsync(
