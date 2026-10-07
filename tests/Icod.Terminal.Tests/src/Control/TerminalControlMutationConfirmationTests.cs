@@ -95,6 +95,17 @@ public sealed class TerminalControlMutationConfirmationTests {
 		Assert.Equal( confirmation, result.Confirmation );
 	}
 
+	[Theory]
+	[InlineData( TerminalControlMutationConfirmation.Unspecified )]
+	[InlineData( (TerminalControlMutationConfirmation)int.MaxValue )]
+	public void ExplicitSuccessFactoryRejectsNonExplicitConfirmation(
+		TerminalControlMutationConfirmation confirmation
+	) {
+		Assert.Throws<ArgumentOutOfRangeException>(
+			() => TerminalControlMutationResult.Success( confirmation )
+		);
+	}
+
 	[Fact]
 	public void ControlledNonSuccessResultsRemainUnspecified() {
 		TerminalControlMutationResult[] results = [

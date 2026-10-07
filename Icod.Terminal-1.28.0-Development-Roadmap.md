@@ -246,7 +246,7 @@ points below bound the work and discourage unrelated refactoring.
   action-policy representation.
 - [x] Write the task-by-task implementation plan under `docs/superpowers/plans/`,
   including RED tests, exact files, commands and commit boundaries.
-- [ ] Obtain maintainer approval of the implementation plan before changing
+- [x] Obtain maintainer approval of the implementation plan before changing
   runtime code or the development version.
 
 **Acceptance:** An implementer can determine what bytes to emit, whether to wait,
