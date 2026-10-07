@@ -169,6 +169,8 @@ public sealed partial class TerminalSession {
 			TerminalCapabilityEvidenceSource.ProtocolResponse,
 			evidenceGeneration
 		);
-		return TerminalControlMutationResult.Success();
+		return TerminalControlMutationResult.Success(
+			TerminalControlMutationConfirmation.ProtocolAcknowledged
+		);
 	}
 }
