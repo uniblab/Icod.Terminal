@@ -191,19 +191,19 @@ public sealed class TerminalRasterAnimationHardeningTests {
 				TimeSpan.FromMilliseconds( 75 )
 			).AsTask();
 		await transport.WaitForWriteCountAsync( writesBeforeRejectedAppend + 1 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await duration ).Confirmation
 		);
-		Assert.True( ( await duration ).Succeeded );
 
 		Task<TerminalControlMutationResult> selection = resource.Animation
 			.SelectFrameAsync( frame )
 			.AsTask();
 		await transport.WaitForWriteCountAsync( writesBeforeRejectedAppend + 2 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await selection ).Confirmation
 		);
-		Assert.True( ( await selection ).Succeeded );
 		Assert.Equal(
 			new TerminalRasterAnimationState(
 				TerminalRasterAnimationStatus.SequenceUncertain,

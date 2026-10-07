@@ -33,7 +33,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 	private const int LoadingAppendCount = 8;
 
 	[Fact]
-	public async Task ConcurrentPlaybackControlsAreSerializedThroughOneAcknowledgementDomain() {
+	public async Task ConcurrentPlaybackControlsAreSerializedWithoutResponseWaiters() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -56,15 +56,19 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			Encoding.ASCII.GetString( transport.Writes[ 1 ] )
 		);
 
-		transport.Publish( OkResponse() );
-		Assert.True( ( await loading ).Succeeded );
 		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
 			"\u001b_Ga=a,i=77,s=1,q=2\u001b\\",
 			Encoding.ASCII.GetString( transport.Writes[ 2 ] )
 		);
-		transport.Publish( OkResponse() );
-		Assert.True( ( await stop ).Succeeded );
+		TerminalControlMutationResult[] results = await Task.WhenAll( loading, stop );
+		Assert.All(
+			results,
+			static result => Assert.Equal(
+				TerminalControlMutationConfirmation.OutputCommitted,
+				result.Confirmation
+			)
+		);
 	}
 
 	[Fact]
@@ -80,8 +84,10 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			.RunLoadingAsync()
 			.AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
-		transport.Publish( OkResponse() );
-		Assert.True( ( await loading ).Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await loading ).Confirmation
+		);
 
 		for ( int index = 0; index < LoadingAppendCount; ++index ) {
 			Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
@@ -101,8 +107,10 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 
 		Task<TerminalControlMutationResult> stop = resource.Animation.StopAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 3 + LoadingAppendCount );
-		transport.Publish( OkResponse() );
-		Assert.True( ( await stop ).Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await stop ).Confirmation
+		);
 		Assert.Equal(
 			new TerminalRasterAnimationState(
 				TerminalRasterAnimationStatus.Current,
@@ -113,20 +121,43 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 	}
 
 	[Fact]
-	public async Task ResourceDisposalDuringPendingPlaybackCannotResurrectAnimationState() {
+	public async Task ResourceDisposalWhilePlaybackWaitsForOutputGateEmitsNoControl() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		TerminalRasterResource resource = await CreateResourceAsync(
 			session,
 			transport
 		);
+		IDisposable outputLease = await session.AcquireControlOutputAsync(
+			CancellationToken.None
+		);
 
 		Task<TerminalControlMutationResult> run = resource.Animation.RunAsync().AsTask();
-		await transport.WaitForWriteCountAsync( 2 );
+		await YieldSeveralTimesAsync();
+		Assert.False( run.IsCompleted );
+		Assert.Single( transport.Writes );
 		Task disposal = resource.DisposeAsync().AsTask();
-		await transport.WaitForWriteCountAsync( 3 );
+		await YieldSeveralTimesAsync();
+		Assert.False( disposal.IsCompleted );
+		outputLease.Dispose();
+		await transport.WaitForWriteCountAsync( 2 );
+		if ( transport.Writes.Any(
+			static value => Encoding.ASCII.GetString( value ).Contains(
+				"Ga=a,",
+				StringComparison.Ordinal
+			)
+		) ) {
+			transport.Publish( OkResponse() );
+		}
+
+		TerminalControlMutationResult result = await run;
 		await disposal;
 
+		Assert.Equal( TerminalControlStatus.Unavailable, result.Status );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.Unspecified,
+			result.Confirmation
+		);
 		Assert.Equal(
 			new TerminalRasterAnimationState(
 				TerminalRasterAnimationStatus.OwnerDisposed,
@@ -134,13 +165,13 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			),
 			resource.Animation.State
 		);
-		Assert.Equal(
-			"\u001b_Ga=d,d=I,i=77,q=2\u001b\\",
-			Encoding.ASCII.GetString( transport.Writes[ 2 ] )
+		Assert.DoesNotContain(
+			transport.Writes,
+			static value => Encoding.ASCII.GetString( value ).Contains(
+				"Ga=a,",
+				StringComparison.Ordinal
+			)
 		);
-
-		transport.Publish( OkResponse() );
-		Assert.True( ( await run ).Succeeded );
 		Assert.Equal(
 			TerminalRasterAnimationStatus.OwnerDisposed,
 			resource.Animation.State.Status

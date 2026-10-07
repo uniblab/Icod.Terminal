@@ -265,7 +265,7 @@ public sealed class TerminalRasterAnimationControlTests {
 	}
 
 	[Fact]
-	public async Task RootFrameDurationUsesAcknowledgedAnimationControl() {
+	public async Task RootFrameDurationCompletesAfterOutputWithoutTerminalResponse() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -280,19 +280,18 @@ public sealed class TerminalRasterAnimationControlTests {
 				TimeSpan.FromMilliseconds( 55 )
 			)
 			.AsTask();
-		await YieldSeveralTimesAsync();
-		Assert.False( control.IsCompleted );
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
 			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=1,z=55,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
 
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
-		);
 		TerminalControlMutationResult result = await control;
 		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			result.Confirmation
+		);
 	}
 
 	[Fact]
@@ -321,10 +320,12 @@ public sealed class TerminalRasterAnimationControlTests {
 			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=2,z=75,q=2\u001b\\" ),
 			transport.Writes[ 2 ]
 		);
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult durationResult = await duration;
+		Assert.True( durationResult.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			durationResult.Confirmation
 		);
-		Assert.True( ( await duration ).Succeeded );
 
 		Task<TerminalControlMutationResult> selection = resource.Animation
 			.SelectFrameAsync( frame )
@@ -334,10 +335,12 @@ public sealed class TerminalRasterAnimationControlTests {
 			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,c=2,q=2\u001b\\" ),
 			transport.Writes[ 3 ]
 		);
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult selectionResult = await selection;
+		Assert.True( selectionResult.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			selectionResult.Confirmation
 		);
-		Assert.True( ( await selection ).Succeeded );
 	}
 
 	[Fact]
