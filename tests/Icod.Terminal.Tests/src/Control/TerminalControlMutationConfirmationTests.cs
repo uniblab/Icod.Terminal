@@ -64,9 +64,8 @@ public sealed class TerminalControlMutationConfirmationTests {
 		Assert.Single(
 			typeof( TerminalControlMutationResult ).GetMethods(
 				BindingFlags.Static | BindingFlags.Public
-			).Where(
-				method => method.Name == nameof( TerminalControlMutationResult.Success )
-			)
+			),
+			method => method.Name == nameof( TerminalControlMutationResult.Success )
 		);
 	}
 
