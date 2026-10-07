@@ -233,6 +233,37 @@ public sealed class TerminalRasterAnimationConcurrencyTests {
 	}
 
 	[Fact]
+	public void PendingAppendPublicationCannotResurrectReleasedAnimation() {
+		TerminalPersistentRasterAnimationRegistry registry = new();
+		TerminalPersistentRasterResourceState resource = CreateResource();
+		TerminalPersistentRasterAnimationState animation = CreateAnimation(
+			registry,
+			resource
+		);
+		Assert.True(
+			registry.TryReserveAppend(
+				animation,
+				out TerminalPersistentRasterAnimationRegistry.AppendReservation? reservation
+			)
+		);
+		Assert.NotNull( reservation );
+
+		Assert.True( registry.ReleaseResource( resource ) );
+		Assert.False( registry.TryPublishAppend( reservation, out _ ) );
+
+		Assert.Equal(
+			new TerminalRasterAnimationState(
+				TerminalRasterAnimationStatus.Released,
+				TerminalRasterAnimationLossReason.ResourceReleased
+			),
+			animation.ObserveState()
+		);
+		Assert.Equal( 0, registry.KnownFrameCount );
+		Assert.False( registry.OwnsFrame( animation, animation.RootFrame ) );
+		Assert.False( registry.TryReserveAppend( animation, out _ ) );
+	}
+
+	[Fact]
 	public async Task SequenceUncertainRetainsKnownTokensUnderConcurrentObservation() {
 		TerminalPersistentRasterAnimationRegistry registry = new();
 		TerminalPersistentRasterAnimationState animation = CreateAnimation(

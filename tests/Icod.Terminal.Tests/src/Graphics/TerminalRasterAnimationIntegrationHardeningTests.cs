@@ -123,6 +123,73 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 	}
 
 	[Fact]
+	public async Task MixedPoliciesPreserveResponseOwnershipAndOrdinaryInput() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport
+		);
+		TerminalRasterAnimationFrame destination = await AppendFrameAsync(
+			resource,
+			transport,
+			expectedWriteCount: 2
+		);
+		Task<TerminalControlMutationResult> composition = resource.Animation
+			.ComposeFrameAsync(
+				resource.Animation.RootFrame,
+				destination,
+				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+				0,
+				0
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				CreateFrameImage( 1 ),
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		Task<TerminalControlMutationResult> playback = resource.Animation
+			.RunAsync()
+			.AsTask();
+
+		await transport.WaitForWriteCountAsync( 4 );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await AwaitWithoutResponseAsync( playback ) ).Confirmation
+		);
+		Assert.False( append.IsCompleted );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=88;OK\u001b\\" ) );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77,p=1;OK\u001b\\" ) );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_GI=77;OK\u001b\\" ) );
+		transport.Publish( Encoding.UTF8.GetBytes( "x" ) );
+		await YieldSeveralTimesAsync();
+		Assert.False( composition.IsCompleted );
+		Assert.False( append.IsCompleted );
+
+		TerminalEvent terminalEvent = await session.ReadEventAsync();
+		TerminalInputEvent input = Assert.IsType<TerminalInputEvent>( terminalEvent.Input );
+		Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
+		Assert.Equal( new Rune( 'x' ), input.Character );
+
+		transport.Publish( OkResponse() );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.ProtocolAcknowledged,
+			( await composition ).Confirmation
+		);
+		await transport.WaitForWriteCountAsync( 5 );
+		Assert.False( append.IsCompleted );
+		transport.Publish( OkResponse() );
+		Assert.Equal(
+			3,
+			Assert.IsType<TerminalRasterAnimationFrame>(
+				( await append ).Value
+			).SequenceNumber
+		);
+		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
+	}
+
+	[Fact]
 	public async Task ResourceDisposalWhilePlaybackWaitsForOutputGateEmitsNoControl() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );

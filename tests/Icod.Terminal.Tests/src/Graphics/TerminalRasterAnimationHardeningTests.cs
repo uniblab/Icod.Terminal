@@ -213,6 +213,70 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		);
 	}
 
+	[Fact]
+	public async Task AmbiguousPixelMutationsPreserveFrameSequenceCertainty() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport,
+			imageId: 77u
+		);
+		TerminalRasterAnimationFrame frame = await AppendFrameAsync(
+			resource,
+			transport,
+			expectedWriteCount: 2
+		);
+		TerminalRasterImage pixel = TerminalRasterImage.CreateRgb24(
+			1,
+			1,
+			[ 7, 8, 9 ]
+		);
+
+		transport.FailNextFlush = true;
+		await Assert.ThrowsAsync<IOException>(
+			() => resource.Animation.UpdateFrameRegionAsync(
+				frame,
+				pixel,
+				0,
+				0
+			).AsTask()
+		);
+		transport.FailNextFlush = true;
+		await Assert.ThrowsAsync<IOException>(
+			() => resource.Animation.ComposeFrameAsync(
+				resource.Animation.RootFrame,
+				frame,
+				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+				0,
+				0
+			).AsTask()
+		);
+
+		Assert.Equal(
+			new TerminalRasterAnimationState(
+				TerminalRasterAnimationStatus.Current,
+				TerminalRasterAnimationLossReason.None
+			),
+			resource.Animation.State
+		);
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				pixel,
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 5 );
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		);
+		Assert.Equal(
+			3,
+			Assert.IsType<TerminalRasterAnimationFrame>(
+				( await append ).Value
+			).SequenceNumber
+		);
+	}
+
 	private static TerminalPersistentRasterResourceState ReserveResource(
 		TerminalPersistentRasterRegistry registry
 	) {
@@ -362,6 +426,11 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		private readonly SemaphoreSlim writeSignal = new( 0 );
 		private readonly List<byte[]> writes = [];
 
+		internal bool FailNextFlush {
+			get;
+			set;
+		}
+
 		internal IReadOnlyList<byte[]> Writes {
 			get {
 				lock ( this.synchronization ) {
@@ -404,6 +473,10 @@ public sealed class TerminalRasterAnimationHardeningTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( this.FailNextFlush ) {
+				this.FailNextFlush = false;
+				throw new IOException( "Synthetic committed flush failure." );
+			}
 			return ValueTask.CompletedTask;
 		}
 
