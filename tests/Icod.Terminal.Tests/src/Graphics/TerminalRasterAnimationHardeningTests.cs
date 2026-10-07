@@ -260,15 +260,13 @@ public sealed class TerminalRasterAnimationHardeningTests {
 			),
 			resource.Animation.State
 		);
+		transport.ReplyToNextFlush = true;
 		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
 			resource.Animation.AddFrameAsync(
 				pixel,
 				TimeSpan.FromMilliseconds( 40 )
 			).AsTask();
 		await transport.WaitForWriteCountAsync( 5 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
-		);
 		Assert.Equal(
 			3,
 			Assert.IsType<TerminalRasterAnimationFrame>(
@@ -431,6 +429,11 @@ public sealed class TerminalRasterAnimationHardeningTests {
 			set;
 		}
 
+		internal bool ReplyToNextFlush {
+			get;
+			set;
+		}
+
 		internal IReadOnlyList<byte[]> Writes {
 			get {
 				lock ( this.synchronization ) {
@@ -476,6 +479,12 @@ public sealed class TerminalRasterAnimationHardeningTests {
 			if ( this.FailNextFlush ) {
 				this.FailNextFlush = false;
 				throw new IOException( "Synthetic committed flush failure." );
+			}
+			if ( this.ReplyToNextFlush ) {
+				this.ReplyToNextFlush = false;
+				this.Publish(
+					Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+				);
 			}
 			return ValueTask.CompletedTask;
 		}

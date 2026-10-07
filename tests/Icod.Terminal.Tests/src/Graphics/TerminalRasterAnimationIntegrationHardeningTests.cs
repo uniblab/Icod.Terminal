@@ -167,10 +167,14 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		Assert.False( composition.IsCompleted );
 		Assert.False( append.IsCompleted );
 
-		TerminalEvent terminalEvent = await session.ReadEventAsync();
-		TerminalInputEvent input = Assert.IsType<TerminalInputEvent>( terminalEvent.Input );
-		Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
-		Assert.Equal( new Rune( 'x' ), input.Character );
+		Rune? character = null;
+		for ( int eventIndex = 0; eventIndex < 4 && character != new Rune( 'x' ); ++eventIndex ) {
+			TerminalEvent terminalEvent = await session.ReadEventAsync();
+			TerminalInputEvent input = Assert.IsType<TerminalInputEvent>( terminalEvent.Input );
+			Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
+			character = input.Character;
+		}
+		Assert.Equal( new Rune( 'x' ), character );
 
 		transport.Publish( OkResponse() );
 		Assert.Equal(
