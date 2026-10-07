@@ -34,7 +34,7 @@ public sealed class KittyGraphicsPersistentAnimationPlaybackEncoderTests {
 			KittyGraphicsPersistentAnimationEncoder.EncodeStopPayload( imageId: 99 );
 
 		Assert.Equal(
-			"Ga=a,i=99,s=1",
+			"Ga=a,i=99,s=1,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
@@ -45,7 +45,7 @@ public sealed class KittyGraphicsPersistentAnimationPlaybackEncoderTests {
 			KittyGraphicsPersistentAnimationEncoder.EncodeRunLoadingPayload( imageId: 99 );
 
 		Assert.Equal(
-			"Ga=a,i=99,s=2",
+			"Ga=a,i=99,s=2,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
@@ -59,7 +59,7 @@ public sealed class KittyGraphicsPersistentAnimationPlaybackEncoderTests {
 			);
 
 		Assert.Equal(
-			"Ga=a,i=99,s=3,v=1",
+			"Ga=a,i=99,s=3,v=1,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
@@ -80,7 +80,7 @@ public sealed class KittyGraphicsPersistentAnimationPlaybackEncoderTests {
 			);
 
 		Assert.Equal(
-			$"Ga=a,i=99,s=3,v={expectedProtocolValue}",
+			$"Ga=a,i=99,s=3,v={expectedProtocolValue},q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
