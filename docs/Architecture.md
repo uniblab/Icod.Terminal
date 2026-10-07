@@ -441,3 +441,11 @@ The evidence ledger accepts the originating generation with the existing keyboar
 ## Environment reporting authority (1.27)
 
 A session-owned TerminalEnvironmentReportingManager tracks independent appearance and in-band resize owner sets, observed private-mode baselines, and invalidation epochs. It registers once as a core observed lifecycle participant. The bounded protocol layer feeds existing query routing first, semantic events second, and ordinary input afterward. There is no second reader, report queue, geometry cache, or TermInfo protocol change. Acquisition follows state-composition, manager, query-ambiguity, then emission-only output gate ordering; lifecycle observation releases state/manager gates before awaiting replies.
+
+## Kitty Graphics transaction confirmation (1.28)
+
+Persistent animation actions use one private response-policy table: `a=f` transfer/edit requires a correlated result, `a=a` control expects no response, and `a=c` composition accepts an optional success response while retaining defined failure ownership. The encoder follows the published Kitty Graphics grammar independent of terminal brand/version. In particular, continuation chunks do not repeat private image identity to accommodate Kitty 0.49.2.
+
+The public result separates `Unspecified`, `OutputCommitted`, and `ProtocolAcknowledged`. No-response controls finish under the existing serialized output gate after the complete command is written and flushed. Required and optional response paths register ownership before commitment, route APC traffic through the authoritative input/query conversation, retain bounded deadlines and late-response quarantine, and revalidate resource/frame generation while queued.
+
+Output commitment is not protocol acknowledgement, capability proof, visible rendering, or remote atomicity. Current-generation live operation evidence is published only from a correlated success. Ambiguous committed frame transfer/edit/composition preserves the existing conservative sequence/pixel certainty rules and never triggers blind replay or backend switching. Higher layers continue to own atlas, cells, damage, composition policy, fallback, and operator-visible qualification.

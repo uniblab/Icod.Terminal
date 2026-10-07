@@ -2,7 +2,7 @@
 
 This document is the permanent 1.x authority for `Icod.Terminal` persistent terminal-resident raster resources, placements, placeholders, and animations.
 
-Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Versions 1.12 through 1.16 added crop/depth/observation/placeholders and resource-owned animation. Version 1.22 added bounded frame composition. Version 1.23 added bounded caller-supplied replacement of existing frame pixels. Version 1.24 adds pixel/resource geometry, advisory local planning, and focused operation evidence.
+Version 1.11 established opaque resource/placement ownership, acknowledged transactions, bounded registries, generation-scoped certainty, and deterministic cleanup. Versions 1.12 through 1.16 added crop/depth/observation/placeholders and resource-owned animation. Version 1.22 added bounded frame composition. Version 1.23 added bounded caller-supplied replacement of existing frame pixels. Version 1.24 added pixel/resource geometry, advisory local planning, and focused operation evidence. Version 1.28 distinguishes committed output from correlated protocol acknowledgement for animation mutations.
 
 Historical tranche and versioned-roadmap documents explain how the design was developed and qualified. This document defines the supported semantic contract consumers should rely on.
 
@@ -783,3 +783,11 @@ The raster-animation sample's `--tile-atlas` path demonstrates a Terminal-only w
 This ordering is not remote atomicity, rollback, a gapless-frame guarantee, or a batching API. Failure before selection leaves the prior selected frame; committed failure can leave back-frame pixels uncertain, so the caller rebuilds from its own art rather than replaying blindly. Missing or inconsistent geometry, impossible planning, unavailable placeholders, failed mutations, or failed selection selects an explicit text fallback.
 
 The application or `Icod.DCurses` owns tile identities, source assets, cell retention, viewport coordinates, clipping, damage, overlay order, refresh policy, and front/back selection policy. The game owns maps, actors, collision, visibility, time, persistence, and rules. Terminal owns live queries, bounded local admission, opaque resource/placement/frame identities, acknowledged execution, lifecycle certainty, and cleanup. Version 1.24 adds no tile map, scene graph, image decoder, damage tracker, batch edit, Indexed8 regional update, or game loop.
+
+## 42. Animation mutation confirmation — 1.28
+
+`TerminalControlMutationResult.Confirmation` reports evidence available when a successful mutation returns. `Unspecified` preserves existing local/native success behavior. `OutputCommitted` means the complete command crossed Terminal's serialized write-and-flush boundary without a promised or observed success reply. `ProtocolAcknowledged` means the owning transaction parsed a correlated successful protocol response; it implies output commitment but not visible rendering.
+
+Frame append and regional `a=f` edits retain required correlated acknowledgement. Silence after commitment is ambiguous; an ambiguous append loses sequence certainty and publishes no frame token, while an ambiguous edit preserves known frame identity but not exact pixel certainty. Kitty 0.49.2's missing response for a documented final multi-chunk continuation is recorded as an implementation deviation, not repaired by repeating a private image id.
+
+Timing, selection, stop, loading, and run controls use the published no-response path and return `OutputCommitted` after flush. Composition retains a bounded optional-response window: correlated `OK` yields `ProtocolAcknowledged`, correlated documented failure is definitive, and committed silence yields `OutputCommitted`. Only a protocol acknowledgement can publish focused live operation evidence. No completion value claims physical rendering, remote atomicity, or future persistence.

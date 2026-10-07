@@ -484,6 +484,33 @@ Require(
 	"TerminalRasterPlaceholder must be asynchronously disposable."
 );
 
+string[] expectedMutationConfirmations = [
+	nameof( TerminalControlMutationConfirmation.Unspecified ),
+	nameof( TerminalControlMutationConfirmation.OutputCommitted ),
+	nameof( TerminalControlMutationConfirmation.ProtocolAcknowledged )
+];
+Require(
+	expectedMutationConfirmations.SequenceEqual(
+		Enum.GetNames<TerminalControlMutationConfirmation>()
+	)
+		&& 0 == (int)TerminalControlMutationConfirmation.Unspecified
+		&& 1 == (int)TerminalControlMutationConfirmation.OutputCommitted
+		&& 2 == (int)TerminalControlMutationConfirmation.ProtocolAcknowledged,
+	"TerminalControlMutationConfirmation does not match the frozen additive contract."
+);
+PropertyInfo? confirmationProperty = typeof( TerminalControlMutationResult ).GetProperty(
+	nameof( TerminalControlMutationResult.Confirmation ),
+	BindingFlags.Instance | BindingFlags.Public
+);
+Require(
+	confirmationProperty?.PropertyType == typeof( TerminalControlMutationConfirmation )
+		&& confirmationProperty.CanRead
+		&& !confirmationProperty.CanWrite
+		&& TerminalControlMutationConfirmation.Unspecified
+			== TerminalControlMutationResult.Success().Confirmation,
+	"TerminalControlMutationResult.Confirmation must remain read-only with compatible default success."
+);
+
 string[] expectedAnimationStatuses = [
 	nameof( TerminalRasterAnimationStatus.Current ),
 	nameof( TerminalRasterAnimationStatus.SequenceUncertain ),

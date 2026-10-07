@@ -307,3 +307,11 @@ Replies to included support queries carry the generation in which observation be
 Reporting is explicitly opt-in and independently owned. Appearance is a terminal report, not host-theme inference, and resize is text-area geometry, not window or host identity. The protocol parser accepts bounded decimal fields and rejects overflow and malformed structure. Requests use the existing single input/query authority and serialized output. No arbitrary reply bytes or raw-mode API is exposed.
 
 Compatibility reporting scenarios require consent before acquisition and before operator-visible confirmation. Evidence contains exact manually supplied terminal/OS/transport versions, scenario revision, bounded typed outcomes and notes. It omits raw replies, raw keys, environment dumps and host identity. Review JSON before accepting it; preserve explicit Unavailable versus missing/deadline Inconclusive outcomes.
+
+## Graphics transaction evidence (1.28)
+
+`OutputCommitted` is a local transport fact: Terminal completed the serialized write and flush. It is not proof that an untrusted terminal parsed, applied, retained, or rendered the command. `ProtocolAcknowledged` adds only a well-formed correlated success owned by the correct bounded transaction. It is not terminal authentication or a rendering guarantee. Existing/unclassified successful mutations remain `Unspecified` rather than being retroactively strengthened.
+
+Required and optional response ownership is installed before output commitment and remains bounded after timeout so a late APC response cannot satisfy a later transaction or escape as ordinary application input. Malformed/wrong-identity responses cannot create confirmation or current-generation capability evidence. A postcommit exception or required-response timeout remains ambiguous and is never automatically retried.
+
+The implementation does not inspect terminal names, process names, `TERM`, version strings, or environment variables to choose graphics wire syntax. It does not expose/repeat private image or frame ids as a compatibility workaround. Live reports keep source/package, terminal, OS, host/transport, configuration, UTC time, transaction confirmation, evidence generation, cleanup, and operator-visible rendering as separate provenance fields; absent reviewed evidence remains `NotRun`.

@@ -232,7 +232,7 @@ Appearance and InBandResize append to Notification in the semantic-event family;
 
 Suspend disables owned reporting before input/presentation and host restoration. Resume reobserves active modes in the internal query window and re-enables reporting before public queries resume. `InvalidateState()` preserves logical owners but invalidates each baseline; final release then performs no speculative toggle until that facility is reobserved. Untagged delayed bytes cannot prove freshness across an epoch change. Session disposal closes queries and lifecycle input, then reporting, input protocols, presentation, and host state. Cleanup errors are aggregated; successful local emission does not prove remote restoration.
 
-The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Graphics development remains on hold.
+The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Graphics work is reopened only for the bounded 1.28 published-spec transaction and downstream ATLAS scope; all other hold boundaries remain in force.
 
 ## Feature Inventory
 
@@ -402,6 +402,7 @@ Recommended documentation entry points:
 - [`docs/releases/1.27.0.md`](docs/releases/1.27.0.md) — terminal appearance, in-band resize, compatibility, and qualification notes;
 - [`docs/compatibility/1.27.0.md`](docs/compatibility/1.27.0.md) — current versioned terminal compatibility matrix; absent reviewed evidence remains explicitly `NotRun`;
 - [`docs/Kitty-Graphics-Transaction-Compatibility-1.28.md`](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md) — published response policy, exact Kitty 0.49.2 deviation, confirmation meanings, and live-evidence provenance;
+- [`docs/Public-API-Baseline-1.28.md`](docs/Public-API-Baseline-1.28.md) — additive confirmation enum/property and the identical .NET 8/9/10 API fingerprint;
 - [`docs/compatibility/1.26.0.md`](docs/compatibility/1.26.0.md) — historical 1.26 terminal compatibility matrix;
 - [`samples/Icod.Terminal.Compatibility.Sample/README.md`](samples/Icod.Terminal.Compatibility.Sample/README.md) — headless commands, live scenarios, side effects, privacy, and evidence contribution workflow;
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — prior input and cursor visibility release notes;

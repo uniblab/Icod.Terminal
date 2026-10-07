@@ -153,3 +153,20 @@ The historical 1.25 release preparation retained the hold limits; see
 1.28 baseline. The bounded reopening does not retroactively qualify any earlier
 persistent path, and Icod.DCurses must consume the accepted 1.28 prerelease or
 exact source before its ATLAS result can qualify the new contract.
+
+### Implemented transaction boundary — 2026-10-07
+
+The selected 1.28 source now implements the approved action-specific policy. It
+keeps documented `a=f` continuation bytes and required acknowledgement, completes
+`a=a` controls after serialized write/flush with `q=2`, and treats successful
+`a=c` acknowledgement as optional while retaining correlated failure handling.
+The public result distinguishes `Unspecified`, `OutputCommitted`, and
+`ProtocolAcknowledged`; none claims rendering.
+
+Deterministic transport, lifecycle, API, package, and sample gates are green on
+Windows, Linux, and macOS. This source evidence does not qualify a live terminal
+or persistent ATLAS. Kitty 0.49.2 remains the documented negative multi-chunk
+frame-acknowledgement lane; a build containing upstream fix `b493a63` and another
+Kitty-protocol implementation remain `NotRun` until separately exercised and
+reviewed. The exact matrix and required provenance are in the
+[1.28 transaction compatibility record](Kitty-Graphics-Transaction-Compatibility-1.28.md).
