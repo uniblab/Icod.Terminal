@@ -28,6 +28,41 @@ using Xunit;
 /// Freezes the public, protocol-neutral raster-animation sample transcript.
 /// </summary>
 public sealed class RasterAnimationSampleTranscriptTests {
+	[Fact]
+	public void HeadlessTranscriptSeparatesConfirmationRenderingAndLiveEvidence() {
+		string transcript = RasterAnimationCompositionExample.GetHeadlessTranscript();
+
+		Assert.Contains(
+			"Confirmation=Unspecified; Meaning=success strength was not classified",
+			transcript,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"Confirmation=OutputCommitted; Meaning=bytes were written and flushed",
+			transcript,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"Confirmation=ProtocolAcknowledged; Meaning=a correlated terminal response accepted the operation",
+			transcript,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"LiveQualification=NotRun; Reason=headless execution cannot establish rendered output",
+			transcript,
+			StringComparison.Ordinal
+		);
+		Assert.Equal(
+			3,
+			transcript.Split(
+				"Rendered=NotClaimed",
+				StringSplitOptions.None
+			).Length - 1
+		);
+		Assert.DoesNotContain( "ImageId", transcript, StringComparison.Ordinal );
+		Assert.DoesNotContain( "FrameNumber", transcript, StringComparison.Ordinal );
+	}
+
 	[Theory]
 	[InlineData( "Frame append", TerminalControlMutationConfirmation.ProtocolAcknowledged )]
 	[InlineData( "Partial frame replacement", TerminalControlMutationConfirmation.ProtocolAcknowledged )]
