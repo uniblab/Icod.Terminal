@@ -11,6 +11,8 @@
 
 Current stable release: `Icod.Terminal 1.27.0`.
 
+Current development prerelease: `Icod.Terminal 1.28.0-alpha.1`. See the [1.28.0-alpha.1 release notes](docs/releases/1.28.0-alpha.1.md) for the approved published-spec Kitty Graphics transaction work and its qualification status.
+
 Version 1.27 adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. It also accepts one trailing separator after populated Primary Device Attributes, preserving Kitty 0.49.2's attributes from `CSI ?62;52;c` while retaining numeric bounds and malformed-field rejection. Reviewed alpha source observations record positive appearance query/reporting and initial/changed resize in Kitty 0.49.2 through WSL, plus unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL. See the [1.27 release notes](docs/releases/1.27.0.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) for exact versions and limits. Reporting is opt-in; applications own theme selection and repaint policy.
 
 Version 1.26 adds no production runtime API. It adds a public-only executable compatibility sample, bounded reviewed JSON evidence, deterministic matrix generation, and fresh-package acceptance across .NET 8, 9, and 10. The initial matrix records exact, scenario-scoped identity and dimension observations for Windows Terminal and Kitty through WSL; every unrecorded scenario remains `NotRun`. See the [1.26 release notes](docs/releases/1.26.0.md), [compatibility matrix](docs/compatibility/1.26.0.md), and [sample walkthrough](samples/Icod.Terminal.Compatibility.Sample/README.md).
