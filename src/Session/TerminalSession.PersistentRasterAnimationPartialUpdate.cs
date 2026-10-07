@@ -94,7 +94,7 @@ public sealed partial class TerminalSession {
 		long evidenceGeneration = this.GetSemanticCapabilityEvidence().LiveGeneration;
 
 		KittyRasterData raster = KittyRasterAdapter.Adapt( region );
-		KittyGraphicsPersistentAnimationAppendCommitment commitment = new();
+		KittyGraphicsPersistentAnimationEmissionState emissionState = new();
 		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
 		bool staleBeforeWrite = false;
 		TerminalQueryResponseResult queryResult;
@@ -114,7 +114,7 @@ public sealed partial class TerminalSession {
 					}
 					return KittyGraphicsPersistentAnimationTransaction.WriteFrameEditAsync(
 						this, raster, imageId, destinationState.FrameNumber,
-						destinationX, destinationY, commitment
+						destinationX, destinationY, emissionState
 					);
 				},
 				TerminalQueryResponsePlan.ForCompletion( matcher ),

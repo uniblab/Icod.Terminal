@@ -52,7 +52,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 
 		Assert.Equal( 2, transport.Writes.Count );
 		Assert.Equal(
-			"\u001b_Ga=a,i=77,s=2\u001b\\",
+			"\u001b_Ga=a,i=77,s=2,q=2\u001b\\",
 			Encoding.ASCII.GetString( transport.Writes[ 1 ] )
 		);
 
@@ -60,7 +60,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		Assert.True( ( await loading ).Succeeded );
 		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
-			"\u001b_Ga=a,i=77,s=1\u001b\\",
+			"\u001b_Ga=a,i=77,s=1,q=2\u001b\\",
 			Encoding.ASCII.GetString( transport.Writes[ 2 ] )
 		);
 		transport.Publish( OkResponse() );

@@ -26,28 +26,30 @@ using Xunit;
 public sealed class KittyGraphicsPersistentAnimationResponsePolicyTests {
 	[Theory]
 	[InlineData(
-		KittyGraphicsPersistentAnimationOperation.FullFrameTransfer,
-		KittyGraphicsPersistentAnimationResponsePolicy.Required
+		(int)KittyGraphicsPersistentAnimationOperation.FullFrameTransfer,
+		(int)KittyGraphicsPersistentAnimationResponsePolicy.Required
 	)]
 	[InlineData(
-		KittyGraphicsPersistentAnimationOperation.RegionalFrameTransfer,
-		KittyGraphicsPersistentAnimationResponsePolicy.Required
+		(int)KittyGraphicsPersistentAnimationOperation.RegionalFrameTransfer,
+		(int)KittyGraphicsPersistentAnimationResponsePolicy.Required
 	)]
 	[InlineData(
-		KittyGraphicsPersistentAnimationOperation.AnimationControl,
-		KittyGraphicsPersistentAnimationResponsePolicy.None
+		(int)KittyGraphicsPersistentAnimationOperation.AnimationControl,
+		(int)KittyGraphicsPersistentAnimationResponsePolicy.None
 	)]
 	[InlineData(
-		KittyGraphicsPersistentAnimationOperation.FrameComposition,
-		KittyGraphicsPersistentAnimationResponsePolicy.Optional
+		(int)KittyGraphicsPersistentAnimationOperation.FrameComposition,
+		(int)KittyGraphicsPersistentAnimationResponsePolicy.Optional
 	)]
-	internal void SemanticOperationMapsToPublishedResponseClass(
-		KittyGraphicsPersistentAnimationOperation operation,
-		KittyGraphicsPersistentAnimationResponsePolicy expected
+	public void SemanticOperationMapsToPublishedResponseClass(
+		int operation,
+		int expected
 	) {
 		Assert.Equal(
-			expected,
-			KittyGraphicsPersistentAnimationResponsePolicies.For( operation )
+			(KittyGraphicsPersistentAnimationResponsePolicy)expected,
+			KittyGraphicsPersistentAnimationResponsePolicies.For(
+				(KittyGraphicsPersistentAnimationOperation)operation
+			)
 		);
 	}
 

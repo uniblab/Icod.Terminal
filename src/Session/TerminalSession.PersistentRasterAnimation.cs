@@ -95,7 +95,7 @@ public sealed partial class TerminalSession {
 		}
 
 		KittyRasterData raster = KittyRasterAdapter.Adapt( image );
-		KittyGraphicsPersistentAnimationAppendCommitment commitment = new();
+		KittyGraphicsPersistentAnimationEmissionState emissionState = new();
 		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
 		ValueTask<TerminalQueryResponseResult> transaction;
 		try {
@@ -105,7 +105,7 @@ public sealed partial class TerminalSession {
 					raster,
 					imageId,
 					gapMilliseconds,
-					commitment
+					emissionState
 				),
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
 				GetPersistentRasterTransferTimeout( raster ),
@@ -114,14 +114,14 @@ public sealed partial class TerminalSession {
 				abandonedCleanup: () => this.CleanupAbandonedAnimationAppend(
 					reservation,
 					animationState,
-					commitment
+					emissionState
 				)
 			);
 		} catch {
 			this.CleanupFailedAnimationAppend(
 				reservation,
 				animationState,
-				commitment
+				emissionState
 			);
 			throw;
 		}
@@ -133,7 +133,7 @@ public sealed partial class TerminalSession {
 			this.CleanupFailedAnimationAppend(
 				reservation,
 				animationState,
-				commitment
+				emissionState
 			);
 			throw;
 		}
@@ -148,7 +148,7 @@ public sealed partial class TerminalSession {
 			this.CleanupFailedAnimationAppend(
 				reservation,
 				animationState,
-				commitment
+				emissionState
 			);
 			throw;
 		}
@@ -379,26 +379,26 @@ public sealed partial class TerminalSession {
 	private void CleanupAbandonedAnimationAppend(
 		TerminalPersistentRasterAnimationRegistry.AppendReservation reservation,
 		TerminalPersistentRasterAnimationState animationState,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		this.CleanupFailedAnimationAppend(
 			reservation,
 			animationState,
-			commitment
+			emissionState
 		);
 	}
 
 	private void CleanupFailedAnimationAppend(
 		TerminalPersistentRasterAnimationRegistry.AppendReservation reservation,
 		TerminalPersistentRasterAnimationState animationState,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		ArgumentNullException.ThrowIfNull( reservation );
 		ArgumentNullException.ThrowIfNull( animationState );
-		ArgumentNullException.ThrowIfNull( commitment );
+		ArgumentNullException.ThrowIfNull( emissionState );
 
 		_ = this.persistentRasterAnimationRegistry.TryRollbackAppend( reservation );
-		if ( commitment.IsCommitted ) {
+		if ( emissionState.HasStarted ) {
 			_ = animationState.TryMarkSequenceUncertain();
 		}
 	}

@@ -45,7 +45,7 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Assert.False( stop.IsCompleted );
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
 
@@ -68,7 +68,7 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Task<TerminalControlMutationResult> run = resource.Animation.RunLoadingAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=2\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=2,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
 		transport.Publish(
@@ -90,7 +90,7 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Task<TerminalControlMutationResult> run = resource.Animation.RunAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=3,v=1\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=3,v=1,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
 		transport.Publish(
@@ -122,7 +122,7 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
 			Encoding.ASCII.GetBytes(
-				$"\u001b_Ga=a,i=77,s=3,v={protocolValue}\u001b\\"
+				$"\u001b_Ga=a,i=77,s=3,v={protocolValue},q=2\u001b\\"
 			),
 			transport.Writes[ 1 ]
 		);
@@ -179,7 +179,7 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Task<TerminalControlMutationResult> stop = resource.Animation.StopAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1,q=2\u001b\\" ),
 			transport.Writes[ 2 ]
 		);
 		transport.Publish(

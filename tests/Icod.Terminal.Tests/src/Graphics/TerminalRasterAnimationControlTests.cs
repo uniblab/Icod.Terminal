@@ -226,7 +226,7 @@ public sealed class TerminalRasterAnimationControlTests {
 		Assert.False( control.IsCompleted );
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=1,z=55\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=1,z=55,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
 
@@ -260,7 +260,7 @@ public sealed class TerminalRasterAnimationControlTests {
 			.AsTask();
 		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=2,z=75\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=2,z=75,q=2\u001b\\" ),
 			transport.Writes[ 2 ]
 		);
 		transport.Publish(
@@ -273,7 +273,7 @@ public sealed class TerminalRasterAnimationControlTests {
 			.AsTask();
 		await transport.WaitForWriteCountAsync( 4 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,c=2\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,c=2,q=2\u001b\\" ),
 			transport.Writes[ 3 ]
 		);
 		transport.Publish(
