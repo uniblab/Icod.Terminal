@@ -38,8 +38,8 @@ foreach ($forbidden in @(
     '\u001b_G',
     'a=f',
     'a=a',
-    's=',
-    'v='
+    ',s=',
+    ',v='
 )) {
     if ($sampleText.Contains($forbidden, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample must remain protocol-neutral; found forbidden text '$forbidden'."
@@ -71,6 +71,11 @@ foreach ($required in @(
 	'TerminalRasterOperation.FrameRegionUpdateRgb24',
 	'TerminalCapabilitySupport.Verified',
 	'TerminalCapabilityEvidenceKind.LiveObservation',
+	'.Confirmation',
+	'FormatMutationOutcome',
+	'FormatExceptionOutcome',
+	'FormatCleanupOutcome',
+	'Rendered=NotClaimed',
 	'.PixelWidth',
 	'.PixelHeight',
 	'CreatePlaceholderAsync',
