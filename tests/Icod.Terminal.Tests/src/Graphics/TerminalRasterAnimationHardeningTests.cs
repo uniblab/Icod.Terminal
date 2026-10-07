@@ -193,7 +193,7 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		await transport.WaitForWriteCountAsync( writesBeforeRejectedAppend + 1 );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
-			( await duration ).Confirmation
+			( await AwaitWithoutResponseAsync( duration ) ).Confirmation
 		);
 
 		Task<TerminalControlMutationResult> selection = resource.Animation
@@ -202,7 +202,7 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		await transport.WaitForWriteCountAsync( writesBeforeRejectedAppend + 2 );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
-			( await selection ).Confirmation
+			( await AwaitWithoutResponseAsync( selection ) ).Confirmation
 		);
 		Assert.Equal(
 			new TerminalRasterAnimationState(
@@ -284,6 +284,17 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		TerminalControlResult<TerminalRasterAnimationFrame> result = await append;
 		Assert.Equal( TerminalControlStatus.Available, result.Status );
 		return Assert.IsType<TerminalRasterAnimationFrame>( result.Value );
+	}
+
+	private static async Task<T> AwaitWithoutResponseAsync<T>(
+		Task<T> task
+	) {
+		Task completed = await Task.WhenAny(
+			task,
+			Task.Delay( TimeSpan.FromMilliseconds( 250 ) )
+		);
+		Assert.Same( task, completed );
+		return await task;
 	}
 
 	private static async Task<TerminalRasterResource> CreateResourceAsync(

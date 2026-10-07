@@ -286,7 +286,7 @@ public sealed class TerminalRasterAnimationControlTests {
 			transport.Writes[ 1 ]
 		);
 
-		TerminalControlMutationResult result = await control;
+		TerminalControlMutationResult result = await AwaitWithoutResponseAsync( control );
 		Assert.True( result.Succeeded );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
@@ -320,7 +320,9 @@ public sealed class TerminalRasterAnimationControlTests {
 			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,r=2,z=75,q=2\u001b\\" ),
 			transport.Writes[ 2 ]
 		);
-		TerminalControlMutationResult durationResult = await duration;
+		TerminalControlMutationResult durationResult = await AwaitWithoutResponseAsync(
+			duration
+		);
 		Assert.True( durationResult.Succeeded );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
@@ -335,7 +337,9 @@ public sealed class TerminalRasterAnimationControlTests {
 			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,c=2,q=2\u001b\\" ),
 			transport.Writes[ 3 ]
 		);
-		TerminalControlMutationResult selectionResult = await selection;
+		TerminalControlMutationResult selectionResult = await AwaitWithoutResponseAsync(
+			selection
+		);
 		Assert.True( selectionResult.Succeeded );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
@@ -1027,6 +1031,17 @@ public sealed class TerminalRasterAnimationControlTests {
 		for ( int iteration = 0; iteration < 8; ++iteration ) {
 			await Task.Yield();
 		}
+	}
+
+	private static async Task<T> AwaitWithoutResponseAsync<T>(
+		Task<T> task
+	) {
+		Task completed = await Task.WhenAny(
+			task,
+			Task.Delay( TimeSpan.FromMilliseconds( 250 ) )
+		);
+		Assert.Same( task, completed );
+		return await task;
 	}
 
 	private sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {

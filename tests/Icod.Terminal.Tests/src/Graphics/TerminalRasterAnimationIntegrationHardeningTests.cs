@@ -56,12 +56,15 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			Encoding.ASCII.GetString( transport.Writes[ 1 ] )
 		);
 
+		Task<TerminalControlMutationResult[]> controls = Task.WhenAll( loading, stop );
+		TerminalControlMutationResult[] results = await AwaitWithoutResponseAsync(
+			controls
+		);
 		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
 			"\u001b_Ga=a,i=77,s=1,q=2\u001b\\",
 			Encoding.ASCII.GetString( transport.Writes[ 2 ] )
 		);
-		TerminalControlMutationResult[] results = await Task.WhenAll( loading, stop );
 		Assert.All(
 			results,
 			static result => Assert.Equal(
@@ -86,7 +89,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
-			( await loading ).Confirmation
+			( await AwaitWithoutResponseAsync( loading ) ).Confirmation
 		);
 
 		for ( int index = 0; index < LoadingAppendCount; ++index ) {
@@ -109,7 +112,7 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		await transport.WaitForWriteCountAsync( 3 + LoadingAppendCount );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
-			( await stop ).Confirmation
+			( await AwaitWithoutResponseAsync( stop ) ).Confirmation
 		);
 		Assert.Equal(
 			new TerminalRasterAnimationState(
@@ -299,6 +302,17 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 		for ( int iteration = 0; iteration < 8; ++iteration ) {
 			await Task.Yield();
 		}
+	}
+
+	private static async Task<T> AwaitWithoutResponseAsync<T>(
+		Task<T> task
+	) {
+		Task completed = await Task.WhenAny(
+			task,
+			Task.Delay( TimeSpan.FromMilliseconds( 250 ) )
+		);
+		Assert.Same( task, completed );
+		return await task;
 	}
 
 	private sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {
