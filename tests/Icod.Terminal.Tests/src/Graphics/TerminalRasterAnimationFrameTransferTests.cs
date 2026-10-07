@@ -430,6 +430,17 @@ public sealed class TerminalRasterAnimationFrameTransferTests {
 		await YieldSeveralTimesAsync();
 		Assert.False( disposal.IsCompleted );
 		outputLease.Dispose();
+		await transport.WaitForWriteCountAsync( 2 );
+		if ( transport.Writes.Any(
+			static value => Encoding.ASCII.GetString( value ).StartsWith(
+				"\u001b_Ga=f,",
+				StringComparison.Ordinal
+			)
+		) ) {
+			transport.Publish(
+				Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+			);
+		}
 
 		TerminalControlResult<TerminalRasterAnimationFrame> result = await append;
 		await disposal;
