@@ -97,16 +97,27 @@ public sealed partial class TerminalSession {
 		KittyRasterData raster = KittyRasterAdapter.Adapt( image );
 		KittyGraphicsPersistentAnimationEmissionState emissionState = new();
 		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
+		bool staleBeforeWrite = false;
 		ValueTask<TerminalQueryResponseResult> transaction;
 		try {
 			transaction = this.GetQueryTransactionManager().ExecuteAsync(
-				_ => KittyGraphicsPersistentAnimationTransaction.WriteAsync(
-					this,
-					raster,
-					imageId,
-					gapMilliseconds,
-					emissionState
-				),
+				_ => {
+					if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState )
+						|| TerminalRasterAnimationStatus.Current
+							!= animationState.ObserveState().Status ) {
+						staleBeforeWrite = true;
+						throw new InvalidOperationException(
+							"Animation ownership changed before frame-append output."
+						);
+					}
+					return KittyGraphicsPersistentAnimationTransaction.WriteAsync(
+						this,
+						raster,
+						imageId,
+						gapMilliseconds,
+						emissionState
+					);
+				},
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
 				GetPersistentRasterTransferTimeout( raster ),
 				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
@@ -116,6 +127,15 @@ public sealed partial class TerminalSession {
 					animationState,
 					emissionState
 				)
+			);
+		} catch ( InvalidOperationException ) when ( staleBeforeWrite ) {
+			this.CleanupFailedAnimationAppend(
+				reservation,
+				animationState,
+				emissionState
+			);
+			return TerminalControlResult<TerminalRasterAnimationFrame>.Unavailable(
+				"Animation ownership changed before frame-append output."
 			);
 		} catch {
 			this.CleanupFailedAnimationAppend(
@@ -129,6 +149,15 @@ public sealed partial class TerminalSession {
 		TerminalQueryResponseResult queryResult;
 		try {
 			queryResult = await transaction.ConfigureAwait( false );
+		} catch ( InvalidOperationException ) when ( staleBeforeWrite ) {
+			this.CleanupFailedAnimationAppend(
+				reservation,
+				animationState,
+				emissionState
+			);
+			return TerminalControlResult<TerminalRasterAnimationFrame>.Unavailable(
+				"Animation ownership changed before frame-append output."
+			);
 		} catch {
 			this.CleanupFailedAnimationAppend(
 				reservation,
