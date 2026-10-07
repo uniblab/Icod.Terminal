@@ -213,8 +213,12 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		);
 	}
 
-	[Fact]
-	public async Task AmbiguousPixelMutationsPreserveFrameSequenceCertainty() {
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public async Task AmbiguousPixelMutationPreservesFrameSequenceCertainty(
+		bool compose
+	) {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -234,24 +238,26 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		);
 
 		transport.FailNextFlush = true;
-		await Assert.ThrowsAsync<IOException>(
-			() => resource.Animation.UpdateFrameRegionAsync(
-				frame,
-				pixel,
-				0,
-				0
-			).AsTask()
-		);
-		transport.FailNextFlush = true;
-		await Assert.ThrowsAsync<IOException>(
-			() => resource.Animation.ComposeFrameAsync(
-				resource.Animation.RootFrame,
-				frame,
-				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
-				0,
-				0
-			).AsTask()
-		);
+		if ( compose ) {
+			await Assert.ThrowsAsync<IOException>(
+				() => resource.Animation.ComposeFrameAsync(
+					resource.Animation.RootFrame,
+					frame,
+					new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+					0,
+					0
+				).AsTask()
+			);
+		} else {
+			await Assert.ThrowsAsync<IOException>(
+				() => resource.Animation.UpdateFrameRegionAsync(
+					frame,
+					pixel,
+					0,
+					0
+				).AsTask()
+			);
+		}
 
 		Assert.Equal(
 			new TerminalRasterAnimationState(
@@ -266,7 +272,7 @@ public sealed class TerminalRasterAnimationHardeningTests {
 				pixel,
 				TimeSpan.FromMilliseconds( 40 )
 			).AsTask();
-		await transport.WaitForWriteCountAsync( 5 );
+		await transport.WaitForWriteCountAsync( 4 );
 		Assert.Equal(
 			3,
 			Assert.IsType<TerminalRasterAnimationFrame>(
