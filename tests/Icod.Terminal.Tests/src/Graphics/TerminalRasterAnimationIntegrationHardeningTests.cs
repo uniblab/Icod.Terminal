@@ -159,22 +159,18 @@ public sealed class TerminalRasterAnimationIntegrationHardeningTests {
 			( await AwaitWithoutResponseAsync( playback ) ).Confirmation
 		);
 		Assert.False( append.IsCompleted );
+		transport.Publish( Encoding.UTF8.GetBytes( "x" ) );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=88;OK\u001b\\" ) );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77,p=1;OK\u001b\\" ) );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_GI=77;OK\u001b\\" ) );
-		transport.Publish( Encoding.UTF8.GetBytes( "x" ) );
 		await YieldSeveralTimesAsync();
 		Assert.False( composition.IsCompleted );
 		Assert.False( append.IsCompleted );
 
-		Rune? character = null;
-		for ( int eventIndex = 0; eventIndex < 4 && character != new Rune( 'x' ); ++eventIndex ) {
-			TerminalEvent terminalEvent = await session.ReadEventAsync();
-			TerminalInputEvent input = Assert.IsType<TerminalInputEvent>( terminalEvent.Input );
-			Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
-			character = input.Character;
-		}
-		Assert.Equal( new Rune( 'x' ), character );
+		TerminalEvent terminalEvent = await session.ReadEventAsync();
+		TerminalInputEvent input = Assert.IsType<TerminalInputEvent>( terminalEvent.Input );
+		Assert.Equal( TerminalEventKind.Input, terminalEvent.Kind );
+		Assert.Equal( new Rune( 'x' ), input.Character );
 
 		transport.Publish( OkResponse() );
 		Assert.Equal(
