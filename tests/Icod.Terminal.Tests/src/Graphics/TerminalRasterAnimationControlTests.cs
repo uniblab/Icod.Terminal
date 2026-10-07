@@ -56,7 +56,12 @@ public sealed class TerminalRasterAnimationControlTests {
 			transport.Writes[ 1 ]
 		);
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" ) );
-		Assert.True( ( await update ).Succeeded );
+		TerminalControlMutationResult result = await update;
+		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.ProtocolAcknowledged,
+			result.Confirmation
+		);
 		Assert.Equal( TerminalRasterAnimationStatus.Current, resource.Animation.State.Status );
 		Assert.Equal(
 			TerminalCapabilitySupport.Verified,
@@ -134,7 +139,12 @@ public sealed class TerminalRasterAnimationControlTests {
 			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:invalid region\u001b\\" ) );
-		Assert.Equal( TerminalControlStatus.Failed, ( await invalid ).Status );
+		TerminalControlMutationResult invalidResult = await invalid;
+		Assert.Equal( TerminalControlStatus.Failed, invalidResult.Status );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.Unspecified,
+			invalidResult.Confirmation
+		);
 		Assert.Equal( TerminalRasterOwnershipStatus.Current, resource.OwnershipState.Status );
 		AssertOperationUnknown(
 			session,
@@ -145,7 +155,12 @@ public sealed class TerminalRasterAnimationControlTests {
 			.UpdateFrameRegionAsync( resource.Animation.RootFrame, pixel, 0, 0 ).AsTask();
 		await transport.WaitForWriteCountAsync( 3 );
 		transport.Publish( Encoding.ASCII.GetBytes( "\u001b_Gi=77;ENOENT:missing frame\u001b\\" ) );
-		Assert.Equal( TerminalControlStatus.Unavailable, ( await missing ).Status );
+		TerminalControlMutationResult missingResult = await missing;
+		Assert.Equal( TerminalControlStatus.Unavailable, missingResult.Status );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.Unspecified,
+			missingResult.Confirmation
+		);
 		Assert.Equal( TerminalRasterOwnershipStatus.Stale, resource.OwnershipState.Status );
 		AssertOperationUnknown(
 			session,
