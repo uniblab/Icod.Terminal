@@ -186,7 +186,7 @@ public sealed class TerminalRasterAnimationOptionalCompositionTests {
 
 		Task<TerminalControlMutationResult> first = StartComposition( resource );
 		await transport.WaitForWriteCountAsync( 2 );
-		clock.Advance( TimeSpan.FromSeconds( 2 ) );
+		clock.Advance( TimeSpan.FromSeconds( 1 ) );
 		Assert.Equal(
 			TerminalControlMutationConfirmation.OutputCommitted,
 			( await first ).Confirmation
