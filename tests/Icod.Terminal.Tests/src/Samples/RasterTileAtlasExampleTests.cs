@@ -25,6 +25,19 @@ using Xunit;
 
 /// <summary>Freezes the tile-atlas sample's conservative geometry fallback boundary.</summary>
 public sealed class RasterTileAtlasExampleTests {
+	[Fact]
+	public void FrameTransferTimeoutPrintsControlledTextFallback() {
+		string transcript = RasterTileAtlasExample.FormatTransactionFallback(
+			new TimeoutException( "synthetic timeout" )
+		);
+
+		Assert.StartsWith( "Tile-atlas text fallback: ", transcript, StringComparison.Ordinal );
+		Assert.Contains( "Status=Ambiguous", transcript, StringComparison.Ordinal );
+		Assert.Contains( "automatic retry is unsafe", transcript, StringComparison.Ordinal );
+		Assert.DoesNotContain( "Confirmation=", transcript, StringComparison.Ordinal );
+		Assert.Contains( "Rendered=NotClaimed", transcript, StringComparison.Ordinal );
+	}
+
 	[Theory]
 	[InlineData( typeof( TimeoutException ), true )]
 	[InlineData( typeof( InvalidOperationException ), true )]
