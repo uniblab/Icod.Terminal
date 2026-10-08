@@ -89,9 +89,17 @@ internal static class PersistentRasterCompositionScenario {
 		TerminalControlMutationResult updated = await RasterAnimationCompositionExample
 			.UpdateRegionAsync( resource.Animation, tile, deadline.Token );
 		Require( updated.Succeeded, "Package-only partial frame replacement failed." );
+		Require(
+			TerminalControlMutationConfirmation.ProtocolAcknowledged == updated.Confirmation,
+			"Package-only partial frame replacement was not protocol acknowledged."
+		);
 		TerminalControlMutationResult composed = await RasterAnimationCompositionExample
 			.ComposeAsync( resource.Animation, tile, deadline.Token );
 		Require( composed.Succeeded, "Package-only frame composition failed." );
+		Require(
+			TerminalControlMutationConfirmation.ProtocolAcknowledged == composed.Confirmation,
+			"Package-only frame composition did not preserve its correlated acknowledgement."
+		);
 		Require(
 			transport.Probes == 1 && transport.PersistentProbes == 1
 				&& transport.Roots == 1

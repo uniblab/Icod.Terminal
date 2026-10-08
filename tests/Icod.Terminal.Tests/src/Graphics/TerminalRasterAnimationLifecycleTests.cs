@@ -60,6 +60,48 @@ public sealed class TerminalRasterAnimationLifecycleTests {
 	}
 
 	[Fact]
+	public async Task LateCompositionReplyAfterInvalidationCannotRestoreStateOrEvidence() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport
+		);
+		TerminalRasterAnimationFrame frame = await AppendFrameAsync(
+			resource,
+			transport
+		);
+		Task<TerminalControlMutationResult> composition = resource.Animation
+			.ComposeFrameAsync(
+				resource.Animation.RootFrame,
+				frame,
+				new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+				0,
+				0
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 3 );
+
+		session.InvalidateState();
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		);
+
+		Assert.Equal( TerminalControlStatus.Unavailable, ( await composition ).Status );
+		Assert.Equal(
+			new TerminalRasterAnimationState(
+				TerminalRasterAnimationStatus.Stale,
+				TerminalRasterAnimationLossReason.SessionStateLost
+			),
+			resource.Animation.State
+		);
+		TerminalRasterOperationStatus status = session.InspectRasterOperation(
+			TerminalRasterOperation.FrameComposition
+		);
+		Assert.Equal( TerminalCapabilitySupport.Unknown, status.Support );
+		Assert.Equal( TerminalCapabilityEvidenceKind.None, status.EvidenceKind );
+	}
+
+	[Fact]
 	public async Task SuspendResumeClearsFocusedRasterOperationEvidenceWithoutReplay() {
 		ScriptedTransport transport = new();
 		TestLifecycleSource lifecycle = new() {

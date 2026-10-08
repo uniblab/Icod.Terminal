@@ -84,6 +84,7 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			+ frameNumber.ToString( CultureInfo.InvariantCulture )
 			+ ",z="
 			+ gapMilliseconds.ToString( CultureInfo.InvariantCulture )
+			+ ",q=2"
 		);
 	}
 
@@ -99,6 +100,7 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			+ imageId.ToString( CultureInfo.InvariantCulture )
 			+ ",c="
 			+ frameNumber.ToString( CultureInfo.InvariantCulture )
+			+ ",q=2"
 		);
 	}
 
@@ -182,6 +184,7 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			+ imageId.ToString( CultureInfo.InvariantCulture )
 			+ ",s=3,v="
 			+ protocolLoopCount.ToString( CultureInfo.InvariantCulture )
+			+ ",q=2"
 		);
 	}
 
@@ -315,6 +318,7 @@ internal static class KittyGraphicsPersistentAnimationEncoder {
 			+ imageId.ToString( CultureInfo.InvariantCulture )
 			+ ",s="
 			+ state.ToString( CultureInfo.InvariantCulture )
+			+ ",q=2"
 		);
 	}
 

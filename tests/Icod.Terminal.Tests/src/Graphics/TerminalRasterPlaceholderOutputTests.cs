@@ -23,6 +23,7 @@ namespace Icod.Terminal.Tests.Graphics;
 using System.Text;
 using System.Threading.Channels;
 using Icod.Terminal;
+using Icod.Terminal.RasterAnimation.Sample;
 using Icod.TermInfo;
 using Xunit;
 
@@ -30,6 +31,41 @@ using Xunit;
 /// Freezes the T154 current-cursor raster-placeholder output contract.
 /// </summary>
 public sealed class TerminalRasterPlaceholderOutputTests {
+	[Fact]
+	public async Task TileAtlasSampleSeparatesEightRowsAndLeavesReportsBelowGrid() {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterPlaceholder placeholder = await CreatePlaceholderAsync(
+			session,
+			transport,
+			imageId: 77u,
+			columns: 8,
+			rows: 8
+		);
+		int baselineWrites = transport.Writes.Count;
+
+		await RasterTileAtlasExample.WritePlaceholderGridAsync( session, placeholder );
+		await session.WriteTextAsync( "report below grid" );
+
+		string transcript = Encoding.UTF8.GetString(
+			transport.Writes.Skip( baselineWrites ).SelectMany( static bytes => bytes ).ToArray()
+		);
+		string[] lines = transcript.Split( "\r\n", StringSplitOptions.None );
+		Assert.Equal( 9, lines.Length );
+		for ( int row = 0; row < 8; ++row ) {
+			Assert.Equal( 8, lines[ row ].EnumerateRunes().Count(
+				static rune => rune.Value == 0x10EEEE
+			) );
+			for ( int column = 0; column < 8; ++column ) {
+				Assert.Equal(
+					KittyGraphicsPlaceholderCellEncoder.Encode( placeholder.State, row, column ).ToArray(),
+					transport.Writes[ baselineWrites + 1 + row * 9 + column ]
+				);
+			}
+		}
+		Assert.Equal( "report below grid", lines[ 8 ] );
+	}
+
 	[Fact]
 	public async Task ScreenTransactionComposesCurrentRasterPlaceholderCell() {
 		ScriptedTransport transport = new();

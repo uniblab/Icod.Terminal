@@ -2,6 +2,15 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.28.0-alpha.1
+
+- Adds `TerminalControlMutationConfirmation` with stable values `Unspecified = 0`, `OutputCommitted = 1`, and `ProtocolAcknowledged = 2`, plus the read-only `TerminalControlMutationResult.Confirmation` property. Existing `Success()` remains source compatible and returns `Unspecified`.
+- Preserves the published Kitty Graphics `a=f` continuation grammar and required correlated acknowledgement. Kitty 0.49.2's silent final multi-chunk continuation remains an exact documented deviation; no repeated-image-id workaround or terminal/version branch is added.
+- Emits animation timing, selection, and playback controls as documented no-response transactions with `q=2`; successful completion after serialized write and flush reports `OutputCommitted` without creating protocol or rendering evidence.
+- Treats composition success responses as optional: correlated `OK` reports `ProtocolAcknowledged`, a correlated error is definitive, and committed silence reports `OutputCommitted`. Required frame append and region-update success reports `ProtocolAcknowledged`.
+- Preserves bounded late-response ownership, lifecycle revalidation, sequence/pixel uncertainty, current-generation evidence, deterministic cleanup, and no automatic replay after committed ambiguity.
+- Extends the public raster-animation sample, package-only smoke consumer, cross-TFM API/XML gates, and versioned compatibility record. Headless output is explicitly not rendering evidence; live terminal and downstream ATLAS qualification remain separate gates.
+
 ## 1.27.0
 
 - Accept one trailing separator in Primary Device Attributes replies with populated attributes, including Kitty 0.49.2's `CSI ?62;52;c`. Preserve every numeric attribute and the existing value/count bounds; reject empty interior fields and keep other CSI query grammars unchanged. This corrects capability-probe parsing, not the unresolved animation-frame acknowledgement defect.

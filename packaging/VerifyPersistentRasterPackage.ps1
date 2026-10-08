@@ -36,6 +36,11 @@ if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
 }
 
 $requiredMembers = @(
+	'T:Icod.Terminal.TerminalControlMutationConfirmation',
+	'F:Icod.Terminal.TerminalControlMutationConfirmation.Unspecified',
+	'F:Icod.Terminal.TerminalControlMutationConfirmation.OutputCommitted',
+	'F:Icod.Terminal.TerminalControlMutationConfirmation.ProtocolAcknowledged',
+	'P:Icod.Terminal.TerminalControlMutationResult.Confirmation',
 	'F:Icod.Terminal.TerminalCapability.PersistentRasterGraphics',
 	'F:Icod.Terminal.TerminalCapability.UnicodeRasterPlaceholders',
 	'F:Icod.Terminal.TerminalCapability.PersistentRasterAnimation',

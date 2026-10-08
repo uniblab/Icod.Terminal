@@ -21,7 +21,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Owns acknowledged persistent-raster animation frame transactions.
+/// Owns persistent-raster animation frame transactions and controls.
 /// </summary>
 public sealed partial class TerminalSession {
 	private readonly TerminalPersistentRasterAnimationRegistry persistentRasterAnimationRegistry = new();
@@ -95,18 +95,29 @@ public sealed partial class TerminalSession {
 		}
 
 		KittyRasterData raster = KittyRasterAdapter.Adapt( image );
-		KittyGraphicsPersistentAnimationAppendCommitment commitment = new();
+		KittyGraphicsPersistentAnimationEmissionState emissionState = new();
 		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
+		bool staleBeforeWrite = false;
 		ValueTask<TerminalQueryResponseResult> transaction;
 		try {
 			transaction = this.GetQueryTransactionManager().ExecuteAsync(
-				_ => KittyGraphicsPersistentAnimationTransaction.WriteAsync(
-					this,
-					raster,
-					imageId,
-					gapMilliseconds,
-					commitment
-				),
+				_ => {
+					if ( !this.persistentRasterRegistry.IsResourceCurrent( resourceState )
+						|| TerminalRasterAnimationStatus.Current
+							!= animationState.ObserveState().Status ) {
+						staleBeforeWrite = true;
+						throw new InvalidOperationException(
+							"Animation ownership changed before frame-append output."
+						);
+					}
+					return KittyGraphicsPersistentAnimationTransaction.WriteAsync(
+						this,
+						raster,
+						imageId,
+						gapMilliseconds,
+						emissionState
+					);
+				},
 				TerminalQueryResponsePlan.ForCompletion( matcher ),
 				GetPersistentRasterTransferTimeout( raster ),
 				TerminalQueryTransactionManager.DefaultLateResponseOwnership,
@@ -114,14 +125,23 @@ public sealed partial class TerminalSession {
 				abandonedCleanup: () => this.CleanupAbandonedAnimationAppend(
 					reservation,
 					animationState,
-					commitment
+					emissionState
 				)
+			);
+		} catch ( InvalidOperationException ) when ( staleBeforeWrite ) {
+			this.CleanupFailedAnimationAppend(
+				reservation,
+				animationState,
+				emissionState
+			);
+			return TerminalControlResult<TerminalRasterAnimationFrame>.Unavailable(
+				"Animation ownership changed before frame-append output."
 			);
 		} catch {
 			this.CleanupFailedAnimationAppend(
 				reservation,
 				animationState,
-				commitment
+				emissionState
 			);
 			throw;
 		}
@@ -129,11 +149,20 @@ public sealed partial class TerminalSession {
 		TerminalQueryResponseResult queryResult;
 		try {
 			queryResult = await transaction.ConfigureAwait( false );
+		} catch ( InvalidOperationException ) when ( staleBeforeWrite ) {
+			this.CleanupFailedAnimationAppend(
+				reservation,
+				animationState,
+				emissionState
+			);
+			return TerminalControlResult<TerminalRasterAnimationFrame>.Unavailable(
+				"Animation ownership changed before frame-append output."
+			);
 		} catch {
 			this.CleanupFailedAnimationAppend(
 				reservation,
 				animationState,
-				commitment
+				emissionState
 			);
 			throw;
 		}
@@ -148,7 +177,7 @@ public sealed partial class TerminalSession {
 			this.CleanupFailedAnimationAppend(
 				reservation,
 				animationState,
-				commitment
+				emissionState
 			);
 			throw;
 		}
@@ -323,39 +352,46 @@ public sealed partial class TerminalSession {
 				gapMilliseconds!.Value
 			)
 		;
-		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
-		TerminalQueryResponseResult queryResult = await this.GetQueryTransactionManager().ExecuteAsync(
-			_ => this.WritePersistentRasterAnimationControlPayloadCoreAsync( payload ),
-			TerminalQueryResponsePlan.ForCompletion( matcher ),
-			PersistentRasterCreationTimeout,
-			TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+		return await this.WritePersistentRasterAnimationOutputOnlyControlAsync(
+			payload,
+			() => this.persistentRasterRegistry.IsResourceCurrent( resourceState )
+				&& this.persistentRasterAnimationRegistry.OwnsFrame(
+					animationState,
+					frameState
+				),
+			"Animation ownership changed before frame-control output.",
 			cancellationToken
 		).ConfigureAwait( false );
+	}
 
-		KittyGraphicsPersistentAnimationResponse response =
-			KittyGraphicsPersistentAnimationResponse.Parse(
-				queryResult.Frame,
-				imageId
+	private async ValueTask<TerminalControlMutationResult> WritePersistentRasterAnimationOutputOnlyControlAsync(
+		ReadOnlyMemory<byte> payload,
+		Func<bool> ownershipIsCurrent,
+		string unavailableMessage,
+		CancellationToken cancellationToken
+	) {
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent raster animation control payload cannot be empty.",
+				nameof( payload )
 			);
-		if ( !response.IsSuccess ) {
-			if ( response.IsMissingResource ) {
-				_ = this.persistentRasterAnimationRegistry.InvalidateResource( resourceState );
-				_ = this.InvalidatePersistentRasterResourceWithVirtualDescendants(
-					resourceState
-				);
-				return TerminalControlMutationResult.Unavailable(
-					response.Message
-				);
-			}
-			return TerminalControlMutationResult.Failed( response.Message );
+		}
+		ArgumentNullException.ThrowIfNull( ownershipIsCurrent );
+		ArgumentException.ThrowIfNullOrWhiteSpace( unavailableMessage );
+
+		using IDisposable outputLease = await this.AcquireControlOutputAsync(
+			cancellationToken
+		).ConfigureAwait( false );
+		if ( !ownershipIsCurrent() ) {
+			return TerminalControlMutationResult.Unavailable( unavailableMessage );
 		}
 
-		this.RecordSemanticBackendEvidence(
-			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
-			TerminalCapabilitySupportState.Verified,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
+		await this.WritePersistentRasterAnimationControlPayloadCoreAsync(
+			payload
+		).ConfigureAwait( false );
+		return TerminalControlMutationResult.Success(
+			TerminalControlMutationConfirmation.OutputCommitted
 		);
-		return TerminalControlMutationResult.Success();
 	}
 
 	private async ValueTask WritePersistentRasterAnimationControlPayloadCoreAsync(
@@ -379,26 +415,26 @@ public sealed partial class TerminalSession {
 	private void CleanupAbandonedAnimationAppend(
 		TerminalPersistentRasterAnimationRegistry.AppendReservation reservation,
 		TerminalPersistentRasterAnimationState animationState,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		this.CleanupFailedAnimationAppend(
 			reservation,
 			animationState,
-			commitment
+			emissionState
 		);
 	}
 
 	private void CleanupFailedAnimationAppend(
 		TerminalPersistentRasterAnimationRegistry.AppendReservation reservation,
 		TerminalPersistentRasterAnimationState animationState,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		ArgumentNullException.ThrowIfNull( reservation );
 		ArgumentNullException.ThrowIfNull( animationState );
-		ArgumentNullException.ThrowIfNull( commitment );
+		ArgumentNullException.ThrowIfNull( emissionState );
 
 		_ = this.persistentRasterAnimationRegistry.TryRollbackAppend( reservation );
-		if ( commitment.IsCommitted ) {
+		if ( emissionState.HasStarted ) {
 			_ = animationState.TryMarkSequenceUncertain();
 		}
 	}

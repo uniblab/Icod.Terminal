@@ -191,25 +191,93 @@ public sealed class TerminalRasterAnimationHardeningTests {
 				TimeSpan.FromMilliseconds( 75 )
 			).AsTask();
 		await transport.WaitForWriteCountAsync( writesBeforeRejectedAppend + 1 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await AwaitWithoutResponseAsync( duration ) ).Confirmation
 		);
-		Assert.True( ( await duration ).Succeeded );
 
 		Task<TerminalControlMutationResult> selection = resource.Animation
 			.SelectFrameAsync( frame )
 			.AsTask();
 		await transport.WaitForWriteCountAsync( writesBeforeRejectedAppend + 2 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			( await AwaitWithoutResponseAsync( selection ) ).Confirmation
 		);
-		Assert.True( ( await selection ).Succeeded );
 		Assert.Equal(
 			new TerminalRasterAnimationState(
 				TerminalRasterAnimationStatus.SequenceUncertain,
 				TerminalRasterAnimationLossReason.FrameSequenceAmbiguous
 			),
 			resource.Animation.State
+		);
+	}
+
+	[Theory]
+	[InlineData( false )]
+	[InlineData( true )]
+	public async Task AmbiguousPixelMutationPreservesFrameSequenceCertainty(
+		bool compose
+	) {
+		ScriptedTransport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport );
+		await using TerminalRasterResource resource = await CreateResourceAsync(
+			session,
+			transport,
+			imageId: 77u
+		);
+		TerminalRasterAnimationFrame frame = await AppendFrameAsync(
+			resource,
+			transport,
+			expectedWriteCount: 2
+		);
+		TerminalRasterImage pixel = TerminalRasterImage.CreateRgb24(
+			1,
+			1,
+			[ 7, 8, 9 ]
+		);
+
+		transport.FailNextFlush = true;
+		if ( compose ) {
+			await Assert.ThrowsAsync<IOException>(
+				() => resource.Animation.ComposeFrameAsync(
+					resource.Animation.RootFrame,
+					frame,
+					new TerminalRasterSourceRectangle( 0, 0, 1, 1 ),
+					0,
+					0
+				).AsTask()
+			);
+		} else {
+			await Assert.ThrowsAsync<IOException>(
+				() => resource.Animation.UpdateFrameRegionAsync(
+					frame,
+					pixel,
+					0,
+					0
+				).AsTask()
+			);
+		}
+
+		Assert.Equal(
+			new TerminalRasterAnimationState(
+				TerminalRasterAnimationStatus.Current,
+				TerminalRasterAnimationLossReason.None
+			),
+			resource.Animation.State
+		);
+		transport.ReplyToNextFlush = true;
+		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
+			resource.Animation.AddFrameAsync(
+				pixel,
+				TimeSpan.FromMilliseconds( 40 )
+			).AsTask();
+		await transport.WaitForWriteCountAsync( 4 );
+		Assert.Equal(
+			3,
+			Assert.IsType<TerminalRasterAnimationFrame>(
+				( await append ).Value
+			).SequenceNumber
 		);
 	}
 
@@ -286,6 +354,17 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		return Assert.IsType<TerminalRasterAnimationFrame>( result.Value );
 	}
 
+	private static async Task<T> AwaitWithoutResponseAsync<T>(
+		Task<T> task
+	) {
+		Task completed = await Task.WhenAny(
+			task,
+			Task.Delay( TimeSpan.FromMilliseconds( 250 ) )
+		);
+		Assert.Same( task, completed );
+		return await task;
+	}
+
 	private static async Task<TerminalRasterResource> CreateResourceAsync(
 		TerminalSession session,
 		ScriptedTransport transport,
@@ -351,6 +430,16 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		private readonly SemaphoreSlim writeSignal = new( 0 );
 		private readonly List<byte[]> writes = [];
 
+		internal bool FailNextFlush {
+			get;
+			set;
+		}
+
+		internal bool ReplyToNextFlush {
+			get;
+			set;
+		}
+
 		internal IReadOnlyList<byte[]> Writes {
 			get {
 				lock ( this.synchronization ) {
@@ -393,6 +482,16 @@ public sealed class TerminalRasterAnimationHardeningTests {
 			CancellationToken cancellationToken = default
 		) {
 			cancellationToken.ThrowIfCancellationRequested();
+			if ( this.FailNextFlush ) {
+				this.FailNextFlush = false;
+				throw new IOException( "Synthetic committed flush failure." );
+			}
+			if ( this.ReplyToNextFlush ) {
+				this.ReplyToNextFlush = false;
+				this.Publish(
+					Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+				);
+			}
 			return ValueTask.CompletedTask;
 		}
 

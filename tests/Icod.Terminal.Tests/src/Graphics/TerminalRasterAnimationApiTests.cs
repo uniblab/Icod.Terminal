@@ -113,6 +113,12 @@ public sealed class TerminalRasterAnimationApiTests {
 	public void AnimationMethodsHaveFrozenShape() {
 		Type animationType = typeof( TerminalRasterAnimation );
 		Type frameType = typeof( TerminalRasterAnimationFrame );
+		Assert.DoesNotContain(
+			animationType.GetMethods( BindingFlags.Instance | BindingFlags.Public )
+				.SelectMany( method => method.GetParameters() ),
+			parameter => parameter.ParameterType
+				== typeof( TerminalControlMutationConfirmation )
+		);
 
 		MethodInfo addFrame = Assert.IsAssignableFrom<MethodInfo>(
 			animationType.GetMethod(
@@ -202,6 +208,7 @@ public sealed class TerminalRasterAnimationApiTests {
 		];
 
 		Type[] publicTypes = [
+			typeof( TerminalControlMutationConfirmation ),
 			typeof( TerminalRasterAnimationState ),
 			typeof( TerminalRasterAnimationPlaybackOptions ),
 			typeof( TerminalRasterAnimation ),

@@ -268,7 +268,7 @@ public sealed class KittyGraphicsPersistentAnimationEncoderTests {
 			);
 
 		Assert.Equal(
-			"Ga=a,i=99,r=1,z=48",
+			"Ga=a,i=99,r=1,z=48,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
@@ -283,7 +283,7 @@ public sealed class KittyGraphicsPersistentAnimationEncoderTests {
 			);
 
 		Assert.Equal(
-			"Ga=a,i=4294967295,r=4294967295,z=2147483647",
+			"Ga=a,i=4294967295,r=4294967295,z=2147483647,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
 	}
@@ -297,9 +297,30 @@ public sealed class KittyGraphicsPersistentAnimationEncoderTests {
 			);
 
 		Assert.Equal(
-			"Ga=a,i=99,c=7",
+			"Ga=a,i=99,c=7,q=2",
 			Encoding.ASCII.GetString( payload.Span )
 		);
+	}
+
+	[Fact]
+	public void CompositionKeepsDefaultResponsePolicy() {
+		ReadOnlyMemory<byte> payload =
+			KittyGraphicsPersistentAnimationEncoder.EncodeCompositionPayload(
+				imageId: 99,
+				sourceFrameNumber: 2,
+				destinationFrameNumber: 3,
+				new TerminalRasterSourceRectangle( 4, 5, 6, 7 ),
+				destinationX: 8,
+				destinationY: 9,
+				TerminalRasterFrameCompositionMode.AlphaBlend
+			);
+
+		string encoded = Encoding.ASCII.GetString( payload.Span );
+		Assert.Equal(
+			"Ga=c,i=99,r=2,c=3,w=6,h=7,X=4,Y=5,x=8,y=9",
+			encoded
+		);
+		Assert.DoesNotContain( "q=", encoded, StringComparison.Ordinal );
 	}
 
 	[Theory]

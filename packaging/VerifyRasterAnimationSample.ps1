@@ -38,8 +38,8 @@ foreach ($forbidden in @(
     '\u001b_G',
     'a=f',
     'a=a',
-    's=',
-    'v='
+    ',s=',
+    ',v='
 )) {
     if ($sampleText.Contains($forbidden, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample must remain protocol-neutral; found forbidden text '$forbidden'."
@@ -71,11 +71,18 @@ foreach ($required in @(
 	'TerminalRasterOperation.FrameRegionUpdateRgb24',
 	'TerminalCapabilitySupport.Verified',
 	'TerminalCapabilityEvidenceKind.LiveObservation',
+	'.Confirmation',
+	'FormatMutationOutcome',
+	'FormatExceptionOutcome',
+	'FormatCleanupOutcome',
+	'Rendered=NotClaimed',
 	'.PixelWidth',
 	'.PixelHeight',
 	'CreatePlaceholderAsync',
 	'GetCell',
-	'WriteRasterPlaceholderCellsAsync'
+	'CreateScreenOutputTransaction',
+	'WriteRasterPlaceholderCells',
+	'CommitAsync'
 )) {
     if (-not $sampleText.Contains($required, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample is missing required semantic API usage '$required'."
@@ -125,6 +132,25 @@ foreach ($framework in @('net8.0', 'net9.0', 'net10.0')) {
         '--no-restore',
         '-p:ContinuousIntegrationBuild=true'
     )
+
+	Write-Host ''
+	Write-Host "=== Raster animation headless transcript: $framework ==="
+	$headlessOutput = @(
+		& dotnet run --project $project -c $Configuration -f $framework --no-build -- --headless-transcript
+	) -join "`n"
+	if (0 -ne $LASTEXITCODE) {
+		throw "Raster animation headless transcript exited with status $LASTEXITCODE for $framework."
+	}
+	foreach ($requiredLine in @(
+		'Confirmation=Unspecified; Meaning=success strength was not classified; Rendered=NotClaimed',
+		'Confirmation=OutputCommitted; Meaning=bytes were written and flushed; Rendered=NotClaimed',
+		'Confirmation=ProtocolAcknowledged; Meaning=a correlated terminal response accepted the operation; Rendered=NotClaimed',
+		'LiveQualification=NotRun; Reason=headless execution cannot establish rendered output'
+	)) {
+		if (-not $headlessOutput.Contains($requiredLine, [System.StringComparison]::Ordinal)) {
+			throw "Raster animation headless transcript is missing '$requiredLine' for $framework."
+		}
+	}
 }
 
 Write-Host ''

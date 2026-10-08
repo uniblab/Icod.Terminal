@@ -1,42 +1,63 @@
 # Graphics development hold
 
-Decision date: 2026-10-04. The maintainer puts Icod.Terminal graphics development
-on hold alongside Icod.DCurses because Kitty development and support cannot
-currently be properly tested and qualified.
+Hold decision date: 2026-10-04.
+
+Bounded reopening date: 2026-10-06. The maintainer reopens graphics development
+only for the Icod.Terminal 1.28 published-spec transaction and downstream ATLAS
+scope recorded below. This file preserves the reasons for the original hold and
+the evidence that changed the decision. Unselected graphics expansion remains
+deferred.
 
 ## Preserved baseline
 
-- Stable Terminal remains `1.24.1`; `1.25.0-alpha.5` is merged and published.
+- Stable `1.27.0` is merged and tagged at
+  `485bedb014ab7b66391661c709833a6a4fa4afcc`; the maintainer reports NuGet upload
+  is in progress. Earlier 1.24.1/1.25 alpha evidence remains historical.
 - Preserve existing APIs, raster capability selection, protocol encoding,
   acknowledgement/cancellation rules, lifecycle certainty, deadlines and cleanup.
 - Retain alpha.5's bounded size-aware persistent transfer deadlines, alpha.4's DA1
   parsing correction, alpha.3's immediate Unix byte input, and the earlier cursor
   and coalesced Sixel corrections.
-- No version bump, runtime change, dependency change, merge or publication is
-  implied by this documentation decision. The subsequent instruction to finish 1.25 authorizes stable release preparation with these limits retained; exact-head qualification and publication remain separate steps.
+- The 1.28 planning decision does not itself change runtime code, public API,
+  dependencies or package version. T2800 requires a reviewed detailed design and
+  implementation plan before runtime work begins.
 
 ## Confirmed evidence and remaining limits
 
-In the maintainer's WSL2 / Ubuntu 24.04 / Kitty 0.32.2 test, the independent
-two-pixel Bash reproducer receives root and single-chunk animation `OK` replies,
-no reply for the documented chunked `a=f,m=0` final continuation, and
-`Gi=1,r=4;OK` when that final continuation repeats the image identifier.
-Frame 4 establishes that the silent upload created frame 3. Source inspection
-agrees with an upstream response-identity defect. This does not establish live
-success on a newer Kitty version or a clean configuration.
+In the maintainer's WSL2 / Ubuntu 24.04 tests, the independent two-pixel Bash
+reproducer on Kitty 0.32.2 and later Kitty 0.49.2 receives root and single-chunk
+animation `OK` replies, no reply for the documented chunked `a=f,m=0` final
+continuation, and `Gi=1,r=4;OK` when that final continuation repeats the image
+identifier. Frame 4 establishes that the silent upload created frame 3. Source
+inspection agrees with a response-identity defect in 0.49.2. These observations
+do not establish live success on a corrected build or clean configuration.
 
 The durable [reproducer](https://github.com/uniblab/Icod.DCurses/blob/a73c290eeb9bdec4dce614f5a15e4d21c1382108/tools/kitty-frame-ack.sh)
-and [bug report](https://github.com/uniblab/Icod.DCurses/blob/a73c290eeb9bdec4dce614f5a15e4d21c1382108/tools/kitty-frame-ack-bug-report.md)
-record captured output and source evidence. Filing with `kovidgoyal/kitty` was
-attempted but returned HTTP 403, `Resource not accessible by integration`.
-**No upstream issue was created.** The defect remains unresolved.
+and [bug-report draft](https://github.com/uniblab/Icod.DCurses/blob/a73c290eeb9bdec4dce614f5a15e4d21c1382108/tools/kitty-frame-ack-bug-report.md)
+record captured output and source evidence. An initial integration filing attempt
+returned HTTP 403. The maintainer subsequently filed
+[kitty issue #10599](https://github.com/kovidgoyal/kitty/issues/10599) directly.
+Upstream closed it on 2026-10-04 after commit
+[`b493a637b0573997f00423e8454f91a966ac96de`](https://github.com/kovidgoyal/kitty/commit/b493a637b0573997f00423e8454f91a966ac96de)
+recovered the starting image identity for explicit `a=f` continuations. That fix
+postdates stable Kitty 0.49.2; live validation on a containing build remains
+required.
 
-Terminal alpha.5 allows more bounded transfer time; it does not resolve the missing
-ACK. The downstream default DCurses sample still abandons atlas setup after its
-deadline and uses ordinary FRAME. Forced TEXT works; ordinary FRAME has correct
-input/display and command-driven flicker. These observations do not qualify
-persistent ATLAS. Animation-control ACK assumptions are a separate unqualified
-concern. Automated protocol fixtures cannot substitute for live rendering evidence.
+Terminal's bounded transfer deadline does not resolve the 0.49.2 defect. The
+downstream default DCurses sample still abandons atlas setup after its deadline
+and uses ordinary FRAME. Forced TEXT works; ordinary FRAME has correct input and
+display with implementation-dependent flicker. These observations do not qualify
+persistent ATLAS.
+
+Animation-control response assumptions remain a separate concern. The published
+protocol documents `a=a` controls but does not unambiguously promise a success
+response for every control. Kitty 0.49.2 and the reviewed current implementation
+execute those controls without a success reply, and upstream tests expect no
+response. This is recorded as implementation behavior in a specification
+ambiguity, not presently asserted as a protocol violation. Kitty also emits `OK`
+for successful `a=c` composition even though the reviewed text is explicit about
+specified failure responses; that stronger behavior must not become a universal
+portable requirement without the 1.28 reference review.
 
 ## Fallback boundary
 
@@ -51,17 +72,43 @@ animation uncertainty still requires caller-owned recovery under existing contra
 
 ## Deferred work
 
-Further graphics expansion, Kitty-specific fixes/workarounds, ACK assumption changes,
-new probe coverage and additional live Kitty acceptance are deferred. The existing
-candidate list stays available for later review: bounded frame-edit batching,
-Indexed8 regional parity, gapless frames, expanded placement and image codecs.
-Do not silently revive these through a release-preparation or documentation task.
+The 1.28 reopening authorizes only published-spec animation transaction semantics,
+truthful confirmation strength, focused probe/sample coverage and downstream ATLAS
+acceptance. It does not authorize a Kitty 0.49.2 repeated-id workaround or a
+terminal-brand/version-specific encoder.
+
+The existing expansion candidates remain deferred: bounded frame-edit batching,
+Indexed8 regional parity, gapless frames, expanded placement, image codecs, hidden
+replay and broader terminal-side reconciliation. Do not silently revive them
+through implementation or release preparation.
 
 Input, lifecycle, screen planning, profile/capability and operational-protocol work
 may be considered independently under a separately selected scope. The graphics
 hold does not remove or disable existing public APIs or regress unrelated behavior.
 
 ## Reopening and release disposition
+
+### Selected specification-first reopening — 2026-10-06
+
+The maintainer approved Icod.Terminal 1.28 as a bounded reopening after the
+upstream issue and correction established that the documented chunk grammar was
+sound and the missing response was an implementation defect. The selected policy
+is:
+
+- emit the published Kitty Graphics Protocol rather than a release-specific
+  dialect;
+- wait only for responses guaranteed by the reviewed published contract;
+- distinguish local output commitment from correlated protocol acknowledgement;
+- record implementation extensions and deviations as exact compatibility evidence;
+- avoid terminal-brand/version heuristics and the repeated-image-id continuation
+  workaround;
+- qualify persistent ATLAS only through the complete downstream live workload;
+- retain controlled FRAME/TEXT fallback for unqualified implementations.
+
+The [1.28 development roadmap](../Icod.Terminal-1.28.0-Development-Roadmap.md)
+defines T2800–T2810. T2800 must pin the action-by-action response matrix, freeze
+any additive public confirmation model and produce a reviewed implementation plan
+before runtime code changes.
 
 ### Approved DA1 parser follow-up — 2026-10-06
 
@@ -96,16 +143,59 @@ update, ownership-observation and cleanup path after the DA1 correction. The sam
 does not append, compose, edit or select animation frames, so this observation does
 not qualify persistent ATLAS or alter the missing-ACK evidence above.
 
-Reopening requires a new maintainer scope decision and an environment where
-Kitty graphics behavior can be properly reproduced and tested. Establish
-clean-config/current-version observations and actual upload/control/rendering
-results before making stronger support claims; retain controlled-failure and
-uncertainty semantics until those results justify a reviewed change.
+The original reopening criterion is now satisfied only for the selected 1.28
+scope. Clean/default-configuration observations and actual upload, control and
+rendering results are still required before making stronger support claims;
+controlled-failure and uncertainty semantics remain in force.
 
-The maintainer subsequently requested completion of stable 1.25.0. Its release
-preparation retains these graphics limits and the alpha.5 runtime implementation;
-see [the closure record](T2508-1.25-Stable-Source-Closure.md). Exact release-head
-qualification, mainline validation and publication remain required. The hold itself neither
-accepts the untested persistent path nor forbids release with explicitly documented
-limits. Icod.DCurses can retain its existing published alpha.5 dependency while
-its own release disposition is reviewed.
+The historical 1.25 release preparation retained the hold limits; see
+[the closure record](T2508-1.25-Stable-Source-Closure.md). Stable 1.27 is now the
+1.28 baseline. The bounded reopening does not retroactively qualify any earlier
+persistent path, and Icod.DCurses must consume the accepted 1.28 prerelease or
+exact source before its ATLAS result can qualify the new contract.
+
+### Implemented transaction boundary — 2026-10-07
+
+The selected 1.28 source now implements the approved action-specific policy. It
+keeps documented `a=f` continuation bytes and required acknowledgement, completes
+`a=a` controls after serialized write/flush with `q=2`, and treats successful
+`a=c` acknowledgement as optional while retaining correlated failure handling.
+The public result distinguishes `Unspecified`, `OutputCommitted`, and
+`ProtocolAcknowledged`; none claims rendering.
+
+Deterministic transport, lifecycle, API, package, and sample gates are green on
+Windows, Linux, and macOS. This source evidence does not qualify a live terminal
+or persistent ATLAS. Kitty 0.49.2 remains the documented negative multi-chunk
+frame-acknowledgement lane. The later corrected-source checkpoint below covers
+the exercised Terminal samples; another Kitty-protocol implementation remains
+`NotRun`. The exact matrix and required provenance are in the
+[1.28 transaction compatibility record](Kitty-Graphics-Transaction-Compatibility-1.28.md).
+
+### Corrected-source live checkpoint — 2026-10-08
+
+The maintainer built and launched Kitty source
+`96693f4c090e9477b51ffa46aed4abdcef52d037`, containing the upstream `b493a63`
+continuation-identity fix, through Ubuntu-24.04 WSL. Its version string still says
+`0.49.2`; the source commit distinguishes it from the unpatched stable release.
+The default Terminal animation sample completed with exit status 0, acknowledged
+regional replacement and composition, output-committed controls, visible changing
+colors and completed cleanup. The tile-atlas witness completed all 1/4/16/64
+acknowledged RGB24 damage workloads and output-committed selections, showing a
+changing horizontal strip before cleanup.
+
+This removes the missing frame-ACK blocker for those exercised source-build
+transactions. It does not invalidate the negative stable-0.49.2 witness, establish
+clean/default configuration, or qualify a physical 8-by-8 grid or DCurses ATLAS.
+The recordings do not include the exact Terminal checkout SHA or all required
+live-provenance fields. The complete downstream gameplay, resize, fallback and
+exit workload remains an acceptance gate. See the compatibility record for the
+capture names, missing fields and precise observation limits.
+
+The later `20261008-1512-07.0969947(1).mp4` retest on exact Terminal source
+`70c6cacd2d26c3f962db513a23035f2570060cea` accepts the corrected eight-by-eight
+sample grid: colors change, reports stay below it, all 1/4/16/64 workloads complete,
+cleanup removes the image and the process exits 0. The capture records SDK
+`10.0.112` and pre-run UTC time `2026-10-08 15:11:42`. All ten jobs in workflow
+`37796031515` passed on the tested source after the same-head Linux retry. This
+supersedes the pending Terminal grid-layout check; exact runtime/configuration
+provenance, other implementations and the full DCurses ATLAS workload remain open.

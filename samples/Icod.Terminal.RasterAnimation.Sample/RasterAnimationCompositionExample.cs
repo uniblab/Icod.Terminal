@@ -23,6 +23,80 @@ namespace Icod.Terminal.RasterAnimation.Sample;
 using Icod.Terminal;
 
 internal static class RasterAnimationCompositionExample {
+	internal static string GetHeadlessTranscript() {
+		return string.Join(
+			"\n",
+			[
+				"Persistent-raster transaction semantics (headless; no terminal opened)",
+				"Confirmation=Unspecified; Meaning=success strength was not classified; Rendered=NotClaimed",
+				"Confirmation=OutputCommitted; Meaning=bytes were written and flushed; Rendered=NotClaimed",
+				"Confirmation=ProtocolAcknowledged; Meaning=a correlated terminal response accepted the operation; Rendered=NotClaimed",
+				"LiveQualification=NotRun; Reason=headless execution cannot establish rendered output"
+			]
+		) + "\n";
+	}
+
+	internal static string FormatMutationOutcome(
+		string operation,
+		TerminalControlMutationResult result
+	) {
+		ArgumentException.ThrowIfNullOrWhiteSpace( operation );
+		if ( result.Succeeded ) {
+			return string.Concat(
+				"Operation=", operation,
+				"; Status=", result.Status.ToString(),
+				"; Confirmation=", result.Confirmation.ToString(),
+				"; Fallback=None; Rendered=NotClaimed"
+			);
+		}
+		return string.Concat(
+			"Operation=", operation,
+			"; Status=", result.Status.ToString(),
+			"; Fallback=",
+			string.IsNullOrWhiteSpace( result.Message )
+				? "Controlled text fallback"
+				: result.Message,
+			"; Rendered=NotClaimed"
+		);
+	}
+
+	internal static string FormatExceptionOutcome(
+		string operation,
+		Exception error
+	) {
+		ArgumentException.ThrowIfNullOrWhiteSpace( operation );
+		ArgumentNullException.ThrowIfNull( error );
+		string reason = error is TimeoutException
+			? "Timeout after output may have committed; automatic retry is unsafe"
+			: string.Concat(
+				error.GetType().Name,
+				" after output may have committed; automatic retry is unsafe"
+			);
+		return string.Concat(
+			"Operation=", operation,
+			"; Status=Ambiguous; Fallback=", reason,
+			"; Rendered=NotClaimed"
+		);
+	}
+
+	internal static string FormatCleanupOutcome(
+		bool succeeded,
+		string? reason = null
+	) {
+		return string.Concat(
+			"Operation=Resource cleanup; Status=",
+			succeeded ? "Available" : "Failed",
+			"; Fallback=",
+			succeeded
+				? "None"
+				: string.IsNullOrWhiteSpace( reason )
+					? "Cleanup did not complete"
+					: reason,
+			"; Cleanup=", succeeded ? "Completed" : "Failed",
+			"; Rendered=NotClaimed"
+		);
+	}
+
 	internal static async ValueTask<bool> VerifyPrerequisiteAsync(
 		TerminalSession session,
 		CancellationToken cancellationToken = default

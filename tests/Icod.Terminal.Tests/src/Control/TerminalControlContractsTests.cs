@@ -174,10 +174,22 @@ public sealed class TerminalControlContractsTests {
 			).Status
 		);
 		Assert.Equal(
+			TerminalControlMutationConfirmation.Unspecified,
+			TerminalControlMutationResult.Unsupported(
+				null
+			).Confirmation
+		);
+		Assert.Equal(
 			TerminalControlStatus.Failed,
 			TerminalControlMutationResult.Failed(
 				"failed"
 			).Status
+		);
+		Assert.Equal(
+			TerminalControlMutationConfirmation.Unspecified,
+			TerminalControlMutationResult.Failed(
+				"failed"
+			).Confirmation
 		);
 	}
 

@@ -123,8 +123,7 @@ internal static class RasterTileAtlasExample {
 			return 0;
 		}
 		await using TerminalRasterPlaceholder placeholder = placeholderResult.Value;
-		TerminalRasterPlaceholderCell[] cells = CreatePlaceholderCells( placeholder );
-		await session.WriteRasterPlaceholderCellsAsync( cells, cancellationToken );
+		await WritePlaceholderGridAsync( session, placeholder, cancellationToken );
 
 		TerminalRasterAnimation animation = resource.Animation;
 		TerminalRasterAnimationFrame front = animation.RootFrame;
@@ -146,13 +145,23 @@ internal static class RasterTileAtlasExample {
 		TerminalRasterAnimationFrame back = backResult.Value;
 
 		foreach ( int regionCount in Workloads ) {
-			if ( !await ApplyDamageAsync(
+			TerminalControlMutationResult damageResult = await ApplyDamageAsync(
 				animation,
 				back,
 				cellDimensions.Value,
 				regionCount,
 				cancellationToken
-			) ) {
+			);
+			await WriteMutationOutcomeAsync(
+				session,
+				string.Create(
+					CultureInfo.InvariantCulture,
+					$"{regionCount}-region damage workload"
+				),
+				damageResult,
+				cancellationToken
+			);
+			if ( !damageResult.Succeeded ) {
 				await WriteFallbackAsync(
 					session,
 					string.Create(
@@ -165,6 +174,15 @@ internal static class RasterTileAtlasExample {
 			}
 			TerminalControlMutationResult selected = await animation.SelectFrameAsync(
 				back,
+				cancellationToken
+			);
+			await WriteMutationOutcomeAsync(
+				session,
+				string.Create(
+					CultureInfo.InvariantCulture,
+					$"{regionCount}-region completed-frame selection"
+				),
+				selected,
 				cancellationToken
 			);
 			if ( !selected.Succeeded ) {
@@ -233,6 +251,18 @@ internal static class RasterTileAtlasExample {
 		return error is TimeoutException or InvalidOperationException or FormatException;
 	}
 
+	internal static string FormatTransactionFallback( Exception error ) {
+		ArgumentNullException.ThrowIfNull( error );
+		return string.Concat(
+			"Tile-atlas text fallback: ",
+			RasterAnimationCompositionExample.FormatExceptionOutcome(
+				"Tile-atlas frame transaction",
+				error
+			),
+			"."
+		);
+	}
+
 	private static bool TryPlanAtlas(
 		TerminalPixelDimensions cell,
 		TerminalRasterPlanningSnapshot planning,
@@ -289,28 +319,34 @@ internal static class RasterTileAtlasExample {
 		return TerminalRasterImage.CreateRgb24( width, height, pixels );
 	}
 
-	private static TerminalRasterPlaceholderCell[] CreatePlaceholderCells(
-		TerminalRasterPlaceholder placeholder
+	internal static ValueTask WritePlaceholderGridAsync(
+		TerminalSession session,
+		TerminalRasterPlaceholder placeholder,
+		CancellationToken cancellationToken = default
 	) {
-		TerminalRasterPlaceholderCell[] cells = new TerminalRasterPlaceholderCell[
-			checked( placeholder.Columns * placeholder.Rows )
-		];
-		int index = 0;
+		ArgumentNullException.ThrowIfNull( session );
+		ArgumentNullException.ThrowIfNull( placeholder );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteText( "\r" );
 		for ( int row = 0; row < placeholder.Rows; ++row ) {
+			TerminalRasterPlaceholderCell[] cells = new TerminalRasterPlaceholderCell[ placeholder.Columns ];
 			for ( int column = 0; column < placeholder.Columns; ++column ) {
-				cells[ index++ ] = placeholder.GetCell( row, column );
+				cells[ column ] = placeholder.GetCell( row, column );
 			}
+			transaction.WriteRasterPlaceholderCells( cells );
+			transaction.WriteText( "\r\n" );
 		}
-		return cells;
+		return transaction.CommitAsync( cancellationToken );
 	}
 
-	private static async ValueTask<bool> ApplyDamageAsync(
+	private static async ValueTask<TerminalControlMutationResult> ApplyDamageAsync(
 		TerminalRasterAnimation animation,
 		TerminalRasterAnimationFrame destination,
 		TerminalPixelDimensions cell,
 		int regionCount,
 		CancellationToken cancellationToken
 	) {
+		TerminalControlMutationResult? lastResult = null;
 		for ( int index = 0; index < regionCount; ++index ) {
 			int column = index % AtlasColumns;
 			int row = index / AtlasColumns;
@@ -326,16 +362,18 @@ internal static class RasterTileAtlasExample {
 				checked( (byte)( 48 + index * 2 ) ),
 				checked( (byte)( 96 + index * 2 ) )
 			);
-			TerminalControlMutationResult result = await animation.UpdateFrameRegionAsync(
+			lastResult = await animation.UpdateFrameRegionAsync(
 				destination,
 				TerminalRasterImage.CreateRgb24( cell.Width, cell.Height, pixels ),
 				column * cell.Width,
 				row * cell.Height,
 				cancellationToken
 			);
-			if ( !result.Succeeded ) return false;
+			if ( !lastResult.Succeeded ) return lastResult;
 		}
-		return true;
+		return lastResult ?? throw new InvalidOperationException(
+			"A damage workload must contain at least one region."
+		);
 	}
 
 	private static void FillRectangle(
@@ -366,6 +404,24 @@ internal static class RasterTileAtlasExample {
 	) {
 		return session.WriteTextAsync(
 			string.Concat( "Tile-atlas text fallback: ", reason, ".\r\n" ),
+			cancellationToken
+		);
+	}
+
+	private static ValueTask WriteMutationOutcomeAsync(
+		TerminalSession session,
+		string operation,
+		TerminalControlMutationResult result,
+		CancellationToken cancellationToken
+	) {
+		return session.WriteTextAsync(
+			string.Concat(
+				RasterAnimationCompositionExample.FormatMutationOutcome(
+					operation,
+					result
+				),
+				".\r\n"
+			),
 			cancellationToken
 		);
 	}

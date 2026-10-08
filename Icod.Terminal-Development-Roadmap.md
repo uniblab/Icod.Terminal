@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current published feature line:** `1.26.0` — Terminal Compatibility Qualification
+- **Current stable feature line:** `1.27.0` — Live Terminal Environment Awareness
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** `1.26.0` is published to NuGet, confirmed by the maintainer on 2026-10-05. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95` (PR #82 merge). The approved `1.27` appearance query, independent appearance/in-band resize leases, lifecycle hardening, and compatibility/package contracts are implemented. All selected live witnesses at alpha source `6c3bcdb` are reviewed: Kitty 0.49.2 positive features and Windows Terminal hosting Bash through WSL with unavailable reporting and native input/resize intact. Stable `1.27.0` release-polish head `791aaf1` passed all ten jobs in workflow `37506963844`; Tasks 1–10 and the final README/sample corrections are complete and prepared for maintainer review before separate promotion. Graphics development remains on hold, and Kitty persistent-ATLAS acceptance is deferred.
-- **Active development target:** `1.27.0` — Live Terminal Environment Awareness.
-- **Selected scope:** **Options 2 + 3: terminal appearance and resize awareness**, with focused compatibility scenarios, public-only samples, and no planned Icod.TermInfo change. See the [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md).
+- **Development status:** `1.27.0` was merged through [PR #83](https://github.com/uniblab/Icod.Terminal/pull/83) at `485bedb014ab7b66391661c709833a6a4fa4afcc` and tagged `v1.27.0` on 2026-10-06; the maintainer reports that NuGet upload is in progress. Final PR head `df6c42189f6b6a2f40771ad2115af41a46dcb4b1` passed all ten jobs in workflow `37536612435`, including 2,821 unit tests and 15 integration tests per framework on Windows, Linux and macOS. The graphics hold is now reopened only for the bounded 1.28 specification-conformance scope below; persistent ATLAS remains unqualified until that scope and downstream acceptance complete.
+- **Active development target:** `1.28.0` — Published-Spec Kitty Graphics Transactions.
+- **Selected scope:** Adhere to the published Kitty Graphics Protocol, distinguish output commitment from protocol acknowledgement, record Kitty 0.49.2 deviations without encoding them as a private dialect, and qualify the downstream raster atlas. See the [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md).
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -19,9 +19,24 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-`Icod.Terminal 1.26.0` is published. Its release comprises the compatibility sample, bounded evidence model, deterministic versioned matrix, and fresh-package acceptance, with no production runtime API additions. [PR #79](https://github.com/uniblab/Icod.Terminal/pull/79) delivered the feature; PRs #80–#82 completed curated notes and stable package metadata. Tag `v1.26.0` resolves to `2c0fafaf7d7a4f6a3cbdad206960f159fb19ef95`. See the [release notes](docs/releases/1.26.0.md) and [reviewed matrix](docs/compatibility/1.26.0.md). Initial live passes cover identity and dimensions on the two recorded environments only; all unrecorded scenarios remain unqualified.
+`Icod.Terminal 1.27.0` is merged and tagged. Its appearance query, independent
+appearance/in-band resize leases, lifecycle hardening, compatibility evidence,
+DA1 trailing-separator correction, package gates and documentation are complete.
+The maintainer reports that NuGet upload is in progress. Tag `v1.27.0` resolves
+to merge commit `485bedb014ab7b66391661c709833a6a4fa4afcc`; final PR head
+`df6c42189f6b6a2f40771ad2115af41a46dcb4b1` passed all ten jobs in
+[workflow 37536612435](https://github.com/uniblab/Icod.Terminal/actions/runs/37536612435).
+The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md),
+[release notes](docs/releases/1.27.0.md) and
+[reviewed matrix](docs/compatibility/1.27.0.md) preserve its exact limits.
 
-The maintainer selected **options 2 + 3** for `1.27.0` on 2026-10-05. The [development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) defines T2700–T2710 and a contract-review gate before implementation.
+On 2026-10-06 the maintainer selected a bounded 1.28 reopening of graphics work:
+follow the published Kitty Graphics Protocol, make transaction confirmation
+truthful, record Kitty 0.49.2 deviations separately, and qualify the downstream
+ATLAS path without terminal-brand heuristics or an undocumented repeated-id
+workaround. The [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md)
+defines T2800–T2810 and requires a detailed contract/API-regret gate before runtime
+implementation.
 
 ### Historical checkpoints
 
@@ -73,7 +88,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency baseline for published 1.26 and planned 1.27 is:
+The production dependency baseline for stable 1.27 and planned 1.28 is:
 
 ```text
 Icod.TermInfo 1.17.0
@@ -111,7 +126,8 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.24.1  persistent Kitty identity verification                PUBLISHED
 1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
 1.26.0  terminal compatibility qualification                  PUBLISHED
-1.27.0  appearance and resize awareness                       STABLE CANDIDATE / OPTIONS 2 + 3
+1.27.0  appearance and resize awareness                       MERGED / TAGGED
+1.28.0  published-spec Kitty graphics transactions            ALPHA / LIVE-DOWNSTREAM GATES OPEN
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -503,17 +519,24 @@ T2610  cross-platform qualification and stable release closure
 
 The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md), [implementation plan](docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md), and [versioned development roadmap](Icod.Terminal-1.26.0-Development-Roadmap.md) define the full evidence model, scenario groups, privacy rules, failure semantics, and release gates. The published 1.26 feature adds no production runtime API and preserves the graphics-development hold. Remaining live-terminal coverage is a continuing qualification backlog, not an unimplemented runtime feature.
 
-## 1.27 prepared line — Live Terminal Environment Awareness
+## 1.27 merged line — Live Terminal Environment Awareness
 
 The maintainer approved a narrow DA1 parser follow-up on 2026-10-06 after Kitty
 0.49.2 returned `CSI ?62;52;c`: accept a single trailing separator after populated
 attributes while retaining all attributes and numeric validation. Regression
-coverage exercises public query and graphics-capability verification. The later
-source requires its own exact-head qualification on PR #83; earlier green heads
-remain historical. The independently reproduced missing chunked animation ACK
-is unresolved, and persistent-ATLAS acceptance remains deferred.
+coverage exercises public query and graphics-capability verification. Final PR
+head `df6c42189f6b6a2f40771ad2115af41a46dcb4b1` passed exact-head
+qualification in workflow `37536612435`; earlier green heads remain historical.
+The independently reproduced missing chunked animation ACK remains a Kitty 0.49.2
+deviation, while upstream fixed it after that release. Persistent-ATLAS acceptance
+remains deferred to the selected 1.28 scope.
 
-The maintainer selected **options 2 + 3: terminal appearance and resize awareness** on 2026-10-05. PR #83 implements the approved additive API, runtime ownership/lifecycle behavior, and compatibility/package contracts, then prepares stable `1.27.0` after the selected live acceptance and exact-head qualification. Production dependencies and the graphics hold remain unchanged.
+The maintainer selected **options 2 + 3: terminal appearance and resize awareness**
+on 2026-10-05. PR #83 delivered the approved additive API, runtime
+ownership/lifecycle behavior, compatibility/package contracts and stable 1.27.0
+metadata; it was merged and tagged on 2026-10-06. Production dependencies remain
+unchanged. The former graphics hold remained in force for 1.27 and is reopened
+only under the separate 1.28 decision below.
 
 The current full nongraphics feature menu preserves the original option numbers:
 
@@ -560,12 +583,79 @@ The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) reco
 
 Stable acceptance now includes positive Kitty 0.49.2 evidence for both selected features and same-environment Windows Terminal/WSL evidence that unavailable reporting preserves native input and lifecycle. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links passed together before separate maintainer promotion.
 
+## 1.28 development line — Published-Spec Kitty Graphics Transactions
+
+The maintainer reopened graphics development on 2026-10-06 for one bounded goal:
+make persistent animation transactions follow the published Kitty Graphics
+Protocol, express the difference between committed output and protocol
+acknowledgement truthfully, and qualify the Icod.DCurses raster atlas. Exact
+implementation observations remain evidence rather than wire-format policy.
+
+The governing rule is:
+
+> Terminal emits the published protocol, waits only for responses the published
+> contract guarantees, records stronger observed responses without universalizing
+> them, and never upgrades output commitment into remote acknowledgement.
+
+Kitty 0.49.2 has one confirmed deviation in the selected area: a documented final
+animation continuation carrying `a=f,m=0` without a repeated image id stores the
+frame but loses the response identity and emits no acknowledgement. Upstream
+[issue #10599](https://github.com/kovidgoyal/kitty/issues/10599) was fixed after
+0.49.2 by
+[commit `b493a63`](https://github.com/kovidgoyal/kitty/commit/b493a637b0573997f00423e8454f91a966ac96de).
+Icod.Terminal will retain the documented continuation grammar instead of repeating
+the image id as a private workaround.
+
+Kitty 0.49.2 also executes `a=a` animation controls without success replies. The
+reviewed published text documents those controls but does not unambiguously promise
+a success acknowledgement for every control. The 1.28 design therefore treats
+this as an implementation observation in a specification ambiguity, not as a
+universal response requirement or an asserted protocol violation. Likewise,
+Kitty's successful `a=c` `OK` response is recorded without assuming every conforming
+implementation must provide more than the specification explicitly guarantees.
+
+The planned tranche sequence is:
+
+```text
+T2800  specification freeze, deviation ledger and API-regret gate
+T2801  action-policy fixtures and response-correlation foundation
+T2802  truthful mutation confirmation contract
+T2803  specification-conformant animation-frame transfer
+T2804  animation-control completion semantics
+T2805  composition, region editing and compose-publish primitive
+T2806  lifecycle, concurrency and adversarial hardening
+T2807  public sample and compatibility evidence
+T2808  Icod.DCurses ATLAS acceptance
+T2809  documentation, package, API and downstream gates
+T2810  live qualification and stable closure
+```
+
+The [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md)
+pins the protocol/source evidence, classifies the Kitty 0.49.2 behaviors, defines
+the required completion states and records the test and release gates. This
+development line implements the approved design as `1.28.0-alpha.1`. Reviewed
+2026-10-08 corrected-source Kitty recordings provide limited positive sample
+evidence including the corrected eight-row visual witness. Full provenance,
+downstream ATLAS acceptance and stable closure remain open under Task 9 of the
+approved plan.
+
 ## Later development candidates
 
-**Graphics hold:** The graphics candidates below are deferred, including frame-edit batching, Indexed8 regional parity, gapless frames, placement expansion and image codecs. No Kitty workaround, new backend replay or additional probe is authorized by this hold. Existing APIs remain available; unrelated input, lifecycle, profile and operational work may be considered under a separate future scope decision. See [the hold and reopening criteria](docs/Graphics-Development-Hold.md).
+**Graphics reopening boundary:** The former blanket hold is lifted only for the
+1.28 transaction-conformance and downstream-ATLAS scope. Frame-edit batching,
+Indexed8 regional parity, gapless frames, placement expansion, image codecs,
+hidden replay and other graphics expansion remain deferred. No Kitty 0.49.2 wire
+workaround is authorized. See the [hold and reopening record](docs/Graphics-Development-Hold.md).
 
 The deferred bounded frame-edit execution candidate may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when a real DCurses workload demonstrates a material benefit. It must not claim remote atomicity or rollback.
 
-Options 2 and 3 are now selected for 1.27 rather than deferred. Options 4–12 remain separate decisions except for narrowly scoped regression/acceptance work needed by the selected features. Graphics candidates still include gapless intermediate frames, absolute screen-coordinate placement, pixel-within-cell positioning, richer terminal-side reconciliation only if a truthful non-destructive primitive exists, and image-file decoding/transcoding. PTY/ConPTY process hosting belongs in the adjacent Icod.Pty project, not a second Terminal runtime implementation. Existing support remains part of regression qualification.
+Options 2 and 3 were delivered in 1.27. Nongraphics options 4–12 remain separate
+decisions except for narrowly scoped regression/acceptance work needed by selected
+features. Graphics candidates still include gapless intermediate frames, absolute
+screen-coordinate placement, pixel-within-cell positioning, richer terminal-side
+reconciliation only if a truthful non-destructive primitive exists, and image-file
+decoding/transcoding. PTY/ConPTY process hosting belongs in the adjacent Icod.Pty
+project, not a second Terminal runtime implementation. Existing support remains
+part of regression qualification.
 
 Scene/window/cell ownership and hidden source-raster replay caches remain intentionally outside the Terminal contract.

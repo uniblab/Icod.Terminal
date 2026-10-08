@@ -11,6 +11,8 @@
 
 Current stable release: `Icod.Terminal 1.27.0`.
 
+Current development prerelease: `Icod.Terminal 1.28.0-alpha.1`. See the [1.28.0-alpha.1 release notes](docs/releases/1.28.0-alpha.1.md) for the approved published-spec Kitty Graphics transaction work and its qualification status.
+
 Version 1.27 adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. It also accepts one trailing separator after populated Primary Device Attributes, preserving Kitty 0.49.2's attributes from `CSI ?62;52;c` while retaining numeric bounds and malformed-field rejection. Reviewed alpha source observations record positive appearance query/reporting and initial/changed resize in Kitty 0.49.2 through WSL, plus unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL. See the [1.27 release notes](docs/releases/1.27.0.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) for exact versions and limits. Reporting is opt-in; applications own theme selection and repaint policy.
 
 Version 1.26 adds no production runtime API. It adds a public-only executable compatibility sample, bounded reviewed JSON evidence, deterministic matrix generation, and fresh-package acceptance across .NET 8, 9, and 10. The initial matrix records exact, scenario-scoped identity and dimension observations for Windows Terminal and Kitty through WSL; every unrecorded scenario remains `NotRun`. See the [1.26 release notes](docs/releases/1.26.0.md), [compatibility matrix](docs/compatibility/1.26.0.md), and [sample walkthrough](samples/Icod.Terminal.Compatibility.Sample/README.md).
@@ -19,14 +21,20 @@ Version 1.25 adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a compl
 
 Version 1.25 derives persistent upload, animation-append and partial-frame-edit deadlines from their Base64 wire size, adds one second for correlated acknowledgement, and caps the result at one minute. Small control-only transactions remain at one second. See the [alpha.5 release notes](docs/releases/1.25.0-alpha.5.md).
 
-**Graphics development is on hold** at the maintainer's direction. Kitty 0.49.2
-on WSL2 reproduces the missing acknowledgement for a documented chunked animation-
-frame continuation first observed on 0.32.2. Version 1.27's DA1 correction allows
-the basic persistent-resource/placement sample to complete on 0.49.2; its brief
-color display and successful ownership trace qualify that narrower path. They do
-not qualify animation controls or persistent ATLAS. Bounded waits remain in effect,
-and no Kitty workaround or new graphics behavior is included. See the
-[hold record and evidence](docs/Graphics-Development-Hold.md).
+Version 1.28 applies action-specific Kitty Graphics transaction semantics while
+keeping the published wire grammar. `Unspecified` preserves unclassified success,
+`OutputCommitted` records completion through the write-and-flush boundary, and
+`ProtocolAcknowledged` records a correlated successful protocol response. None of
+these values claims visible rendering. Kitty 0.49.2 on WSL2 reproduces the missing
+acknowledgement for a documented chunked animation-frame continuation; the
+post-0.49.2 upstream correction is tracked without a repeated-image-id workaround
+or terminal-version branch. Version 1.27's brief basic-resource color display
+qualifies only that persistent resource/placement scenario, not animation or
+persistent ATLAS. Reviewed 2026-10-08 source-built Kitty recordings add limited
+positive animation, tile-update and corrected eight-row layout evidence, including
+cleanup and exit status 0. Downstream ATLAS still requires live qualification.
+See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
+and [hold record and evidence](docs/Graphics-Development-Hold.md).
 
 Ordinary raster capability selection prefers verified Kitty, then verified Sixel.
 A failed write is not automatically retried through another backend. Applications
@@ -227,7 +235,7 @@ Appearance and InBandResize append to Notification in the semantic-event family;
 
 Suspend disables owned reporting before input/presentation and host restoration. Resume reobserves active modes in the internal query window and re-enables reporting before public queries resume. `InvalidateState()` preserves logical owners but invalidates each baseline; final release then performs no speculative toggle until that facility is reobserved. Untagged delayed bytes cannot prove freshness across an epoch change. Session disposal closes queries and lifecycle input, then reporting, input protocols, presentation, and host state. Cleanup errors are aggregated; successful local emission does not prove remote restoration.
 
-The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Graphics development remains on hold.
+The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Graphics work is reopened only for the bounded 1.28 published-spec transaction and downstream ATLAS scope; all other hold boundaries remain in force.
 
 ## Feature Inventory
 
@@ -396,6 +404,8 @@ Recommended documentation entry points:
 
 - [`docs/releases/1.27.0.md`](docs/releases/1.27.0.md) — terminal appearance, in-band resize, compatibility, and qualification notes;
 - [`docs/compatibility/1.27.0.md`](docs/compatibility/1.27.0.md) — current versioned terminal compatibility matrix; absent reviewed evidence remains explicitly `NotRun`;
+- [`docs/Kitty-Graphics-Transaction-Compatibility-1.28.md`](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md) — published response policy, exact Kitty 0.49.2 deviation, confirmation meanings, and live-evidence provenance;
+- [`docs/Public-API-Baseline-1.28.md`](docs/Public-API-Baseline-1.28.md) — additive confirmation enum/property and the identical .NET 8/9/10 API fingerprint;
 - [`docs/compatibility/1.26.0.md`](docs/compatibility/1.26.0.md) — historical 1.26 terminal compatibility matrix;
 - [`samples/Icod.Terminal.Compatibility.Sample/README.md`](samples/Icod.Terminal.Compatibility.Sample/README.md) — headless commands, live scenarios, side effects, privacy, and evidence contribution workflow;
 - [`docs/releases/1.21.0.md`](docs/releases/1.21.0.md) — prior input and cursor visibility release notes;

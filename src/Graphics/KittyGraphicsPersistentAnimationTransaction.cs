@@ -20,24 +20,57 @@
 */
 namespace Icod.Terminal;
 
-internal sealed class KittyGraphicsPersistentAnimationAppendCommitment {
-	private int committed;
+internal sealed class KittyGraphicsPersistentAnimationEmissionState {
+	private int hasStarted;
+	private int outputCommitted;
 
-	internal bool IsCommitted {
+	internal bool HasStarted {
 		get {
-			return 0 != Volatile.Read( ref this.committed );
+			return 0 != Volatile.Read( ref this.hasStarted );
 		}
 	}
 
-	internal void MarkCommitted() {
+	internal bool OutputCommitted {
+		get {
+			return 0 != Volatile.Read( ref this.outputCommitted );
+		}
+	}
+
+	internal void MarkStarted() {
 		Interlocked.Exchange(
-			ref this.committed,
+			ref this.hasStarted,
+			1
+		);
+	}
+
+	internal void MarkOutputCommitted() {
+		this.MarkStarted();
+		Interlocked.Exchange(
+			ref this.outputCommitted,
 			1
 		);
 	}
 }
 
 internal static class KittyGraphicsPersistentAnimationTransaction {
+	internal static ValueTask WriteControlAsync(
+		TerminalSession session,
+		ReadOnlyMemory<byte> payload,
+		KittyGraphicsPersistentAnimationEmissionState emissionState
+	) {
+		if ( payload.IsEmpty ) {
+			throw new ArgumentException(
+				"A persistent Kitty Graphics animation control payload cannot be empty.",
+				nameof( payload )
+			);
+		}
+		return WritePayloadsAsync(
+			session,
+			[ payload ],
+			emissionState
+		);
+	}
+
 	internal static ValueTask WriteFrameEditAsync(
 		TerminalSession session,
 		KittyRasterData raster,
@@ -45,13 +78,13 @@ internal static class KittyGraphicsPersistentAnimationTransaction {
 		uint frameNumber,
 		int destinationX,
 		int destinationY,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		IEnumerable<ReadOnlyMemory<byte>> payloads =
 			KittyGraphicsPersistentAnimationEncoder.EncodeFrameEditPayloads(
 				raster, imageId, frameNumber, destinationX, destinationY
 			);
-		return WritePayloadsAsync( session, payloads, commitment );
+		return WritePayloadsAsync( session, payloads, emissionState );
 	}
 
 	internal static async ValueTask WriteAsync(
@@ -59,11 +92,11 @@ internal static class KittyGraphicsPersistentAnimationTransaction {
 		KittyRasterData raster,
 		uint imageId,
 		int gapMilliseconds,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		ArgumentNullException.ThrowIfNull( session );
 		ArgumentNullException.ThrowIfNull( raster );
-		ArgumentNullException.ThrowIfNull( commitment );
+		ArgumentNullException.ThrowIfNull( emissionState );
 		if ( 0u == imageId ) {
 			throw new ArgumentOutOfRangeException( nameof( imageId ) );
 		}
@@ -77,17 +110,17 @@ internal static class KittyGraphicsPersistentAnimationTransaction {
 				imageId,
 				gapMilliseconds
 			);
-		await WritePayloadsAsync( session, payloads, commitment ).ConfigureAwait( false );
+		await WritePayloadsAsync( session, payloads, emissionState ).ConfigureAwait( false );
 	}
 
 	private static async ValueTask WritePayloadsAsync(
 		TerminalSession session,
 		IEnumerable<ReadOnlyMemory<byte>> payloads,
-		KittyGraphicsPersistentAnimationAppendCommitment commitment
+		KittyGraphicsPersistentAnimationEmissionState emissionState
 	) {
 		ArgumentNullException.ThrowIfNull( session );
 		ArgumentNullException.ThrowIfNull( payloads );
-		ArgumentNullException.ThrowIfNull( commitment );
+		ArgumentNullException.ThrowIfNull( emissionState );
 		using IEnumerator<ReadOnlyMemory<byte>> enumerator = payloads.GetEnumerator();
 		if ( !enumerator.MoveNext() ) {
 			throw new InvalidOperationException(
@@ -110,7 +143,7 @@ internal static class KittyGraphicsPersistentAnimationTransaction {
 				CancellationToken.None
 			).ConfigureAwait( false );
 			if ( first ) {
-				commitment.MarkCommitted();
+				emissionState.MarkStarted();
 				first = false;
 			}
 		} while ( enumerator.MoveNext() );
@@ -118,5 +151,6 @@ internal static class KittyGraphicsPersistentAnimationTransaction {
 		await session.Output.FlushAsync(
 			CancellationToken.None
 		).ConfigureAwait( false );
+		emissionState.MarkOutputCommitted();
 	}
 }

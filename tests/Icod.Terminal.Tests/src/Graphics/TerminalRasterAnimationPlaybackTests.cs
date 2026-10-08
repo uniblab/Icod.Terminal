@@ -31,7 +31,7 @@ using Xunit;
 /// </summary>
 public sealed class TerminalRasterAnimationPlaybackTests {
 	[Fact]
-	public async Task StopUsesAcknowledgedTerminalDrivenStopControl() {
+	public async Task StopCompletesAfterOutputWithoutTerminalResponse() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -41,22 +41,29 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		);
 
 		Task<TerminalControlMutationResult> stop = resource.Animation.StopAsync().AsTask();
-		await YieldSeveralTimesAsync();
-		Assert.False( stop.IsCompleted );
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
 
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult result = await AwaitWithoutResponseAsync( stop );
+		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			result.Confirmation
 		);
-		Assert.True( ( await stop ).Succeeded );
+		TerminalCapabilityResolution evidence = session.GetSemanticCapabilityEvidence().Resolve(
+			TerminalCapabilitySubject.ForProtocolBackend(
+				TerminalProtocolBackend.ApcKittyPersistentRasterAnimation
+			)
+		);
+		Assert.Equal( TerminalCapabilitySupportState.Unknown, evidence.State );
+		Assert.Null( evidence.EvidenceSource );
 	}
 
 	[Fact]
-	public async Task LoadingRunUsesAcknowledgedTerminalDrivenLoadingControl() {
+	public async Task LoadingRunCompletesAfterOutputWithoutTerminalResponse() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -68,13 +75,15 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Task<TerminalControlMutationResult> run = resource.Animation.RunLoadingAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=2\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=2,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult result = await AwaitWithoutResponseAsync( run );
+		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			result.Confirmation
 		);
-		Assert.True( ( await run ).Succeeded );
 	}
 
 	[Fact]
@@ -90,13 +99,15 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Task<TerminalControlMutationResult> run = resource.Animation.RunAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=3,v=1\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=3,v=1,q=2\u001b\\" ),
 			transport.Writes[ 1 ]
 		);
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult result = await AwaitWithoutResponseAsync( run );
+		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			result.Confirmation
 		);
-		Assert.True( ( await run ).Succeeded );
 	}
 
 	[Theory]
@@ -122,14 +133,16 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		await transport.WaitForWriteCountAsync( 2 );
 		Assert.Equal(
 			Encoding.ASCII.GetBytes(
-				$"\u001b_Ga=a,i=77,s=3,v={protocolValue}\u001b\\"
+				$"\u001b_Ga=a,i=77,s=3,v={protocolValue},q=2\u001b\\"
 			),
 			transport.Writes[ 1 ]
 		);
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult result = await AwaitWithoutResponseAsync( run );
+		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			result.Confirmation
 		);
-		Assert.True( ( await run ).Succeeded );
 	}
 
 	[Fact]
@@ -179,13 +192,15 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		Task<TerminalControlMutationResult> stop = resource.Animation.StopAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 3 );
 		Assert.Equal(
-			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1\u001b\\" ),
+			Encoding.ASCII.GetBytes( "\u001b_Ga=a,i=77,s=1,q=2\u001b\\" ),
 			transport.Writes[ 2 ]
 		);
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		TerminalControlMutationResult stopResult = await AwaitWithoutResponseAsync( stop );
+		Assert.True( stopResult.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			stopResult.Confirmation
 		);
-		Assert.True( ( await stop ).Succeeded );
 
 		int writesBeforeRejectedRuns = transport.Writes.Count;
 		TerminalControlMutationResult loading = await resource.Animation.RunLoadingAsync();
@@ -200,7 +215,7 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 	}
 
 	[Fact]
-	public async Task ControlledPlaybackFailureDoesNotPoisonFrameSequence() {
+	public async Task UnexpectedPlaybackReplyDoesNotChangeCommittedResultOrFrameSequence() {
 		ScriptedTransport transport = new();
 		await using TerminalSession session = await OpenSessionAsync( transport );
 		await using TerminalRasterResource resource = await CreateResourceAsync(
@@ -211,11 +226,16 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 
 		Task<TerminalControlMutationResult> run = resource.Animation.RunLoadingAsync().AsTask();
 		await transport.WaitForWriteCountAsync( 2 );
-		transport.Publish(
-			Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:invalid animation state\u001b\\" )
+		TerminalControlMutationResult result = await AwaitWithoutResponseAsync( run );
+		Assert.True( result.Succeeded );
+		Assert.Equal(
+			TerminalControlMutationConfirmation.OutputCommitted,
+			result.Confirmation
 		);
-		TerminalControlMutationResult failure = await run;
-		Assert.Equal( TerminalControlStatus.Failed, failure.Status );
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;EINVAL:unexpected reply\u001b\\" )
+		);
+		await YieldSeveralTimesAsync();
 		Assert.Equal(
 			new TerminalRasterAnimationState(
 				TerminalRasterAnimationStatus.Current,
@@ -305,6 +325,17 @@ public sealed class TerminalRasterAnimationPlaybackTests {
 		for ( int iteration = 0; iteration < 8; ++iteration ) {
 			await Task.Yield();
 		}
+	}
+
+	private static async Task<T> AwaitWithoutResponseAsync<T>(
+		Task<T> task
+	) {
+		Task completed = await Task.WhenAny(
+			task,
+			Task.Delay( TimeSpan.FromMilliseconds( 250 ) )
+		);
+		Assert.Same( task, completed );
+		return await task;
 	}
 
 	private sealed class ScriptedTransport : ITerminalInput, ITerminalOutput {

@@ -192,11 +192,15 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.RasterAnimation.Sample`
 
-Demonstrates full-frame streaming, the 1.22 bounded frame-composition operation, the 1.23 bounded caller-supplied partial frame replacement, and the 1.24 geometry/planning/evidence contracts within a resource-owned animation. Its default path verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+Demonstrates full-frame streaming, the 1.22 bounded frame-composition operation, the 1.23 bounded caller-supplied partial frame replacement, the 1.24 geometry/planning/evidence contracts, and 1.28 transaction confirmation within a resource-owned animation. Its default path verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
 ```
+
+Use `--headless-transcript` for a bounded noninteractive explanation of
+`Unspecified`, `OutputCommitted`, and `ProtocolAcknowledged`. It opens no terminal
+and explicitly leaves visible rendering `NotRun`.
 
 Pass `--tile-atlas` for a generated 8-by-8 atlas, exact cell-geometry fallback, planning checks, placeholder cells, two reusable known frames, and exercised 1/4/16/64-region damage workloads:
 
@@ -204,7 +208,7 @@ Pass `--tile-atlas` for a generated 8-by-8 atlas, exact cell-geometry fallback, 
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
 ```
 
-Run this in an interactive terminal with persistent raster graphics and animation support. The interactive sample does not benchmark the terminal. Controlled metrics come from the package-only scripted harness and are recorded in the [1.24 tile-atlas measurement report](../docs/Raster-Tile-Atlas-Measurement-1.24.md). The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy.
+Run this in an interactive terminal with persistent raster graphics and animation support. The interactive sample does not benchmark the terminal. Controlled metrics come from the package-only scripted harness and are recorded in the [1.24 tile-atlas measurement report](../docs/Raster-Tile-Atlas-Measurement-1.24.md). The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy. The brief color flash previously observed in the basic ownership sample qualifies only that resource/placement scenario; it is not persistent ATLAS or animation qualification. See the [1.28 transaction compatibility record](../docs/Kitty-Graphics-Transaction-Compatibility-1.28.md).
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 

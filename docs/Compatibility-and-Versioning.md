@@ -32,6 +32,8 @@ The 1.25 release adds one member, `TerminalScreenOutputTransaction.WriteRaster(T
 
 Version 1.26 adds no production public member. Its qualification infrastructure must retain the exact 1.25 fingerprint on all three target frameworks. The [versioned terminal matrix](compatibility/1.26.0.md) records existing nongraphics behavior and cannot promote terminal branding, static advertisement, successful output emission, timeout, or missing evidence into a stronger claim.
 
+Version 1.28 adds `TerminalControlMutationConfirmation` and the read-only `TerminalControlMutationResult.Confirmation` property while preserving every existing signature and enum numeric value. The [reviewed 1.28 baseline](Public-API-Baseline-1.28.md) is `0cad933938bf9d52ecd568323f05fdc9079597e6ed3029755a74fffead7c0fcc`, identical across `net8.0`, `net9.0`, and `net10.0`. Existing `TerminalControlMutationResult.Success()` remains source compatible and produces `Unspecified`.
+
 Relevant fingerprints include:
 
 ```text
@@ -260,6 +262,12 @@ Stable 1.x does not promise:
 - PTY/ConPTY process hosting inside this package.
 
 Relative placement, lifecycle observation, virtual placeholders, and resource-owned animation are deliberately bounded additions and must not be interpreted as promises for these excluded features.
+
+## 11.1 1.28 animation transaction compatibility
+
+The published Kitty Graphics Protocol, not terminal branding or a version string, selects wire syntax and response policy. Required `a=f` operations succeed only with a correlated protocol acknowledgement. No-response `a=a` controls add `q=2` and report `OutputCommitted` after the complete serialized write and flush. Optional-response `a=c` composition reports `ProtocolAcknowledged` for correlated `OK`, a definitive failure for correlated error, and `OutputCommitted` for bounded committed silence.
+
+The additive confirmation property does not change `Succeeded`, status values, method signatures, opaque frame identity, or existing callers. Failure results carry `Unspecified`. Neither output commitment nor protocol acknowledgement implies visible rendering. Kitty 0.49.2's missing final multi-chunk frame response is an exact compatibility deviation fixed after that release; stable 1.x does not emit a repeated-image-id dialect or select behavior from terminal/version heuristics. See the [1.28 transaction compatibility record](Kitty-Graphics-Transaction-Compatibility-1.28.md).
 
 ## 12. Release qualification
 

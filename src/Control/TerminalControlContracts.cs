@@ -354,16 +354,25 @@ public sealed class TerminalControlResult<T> {
 public sealed class TerminalControlMutationResult {
 	private TerminalControlMutationResult(
 		TerminalControlStatus status,
+		TerminalControlMutationConfirmation confirmation,
 		string? message,
 		int? nativeErrorCode
 	) {
 		this.Status = status;
+		this.Confirmation = confirmation;
 		this.Message = message;
 		this.NativeErrorCode = nativeErrorCode;
 	}
 
 	/// <summary>Gets the mutation status.</summary>
 	public TerminalControlStatus Status {
+		get;
+	}
+
+	/// <summary>
+	/// Gets the strongest completion evidence observed for a successful mutation.
+	/// </summary>
+	public TerminalControlMutationConfirmation Confirmation {
 		get;
 	}
 
@@ -389,6 +398,22 @@ public sealed class TerminalControlMutationResult {
 	public static TerminalControlMutationResult Success() {
 		return new TerminalControlMutationResult(
 			TerminalControlStatus.Available,
+			TerminalControlMutationConfirmation.Unspecified,
+			null,
+			null
+		);
+	}
+
+	internal static TerminalControlMutationResult Success(
+		TerminalControlMutationConfirmation confirmation
+	) {
+		if ( confirmation is not TerminalControlMutationConfirmation.OutputCommitted
+			and not TerminalControlMutationConfirmation.ProtocolAcknowledged ) {
+			throw new ArgumentOutOfRangeException( nameof( confirmation ) );
+		}
+		return new TerminalControlMutationResult(
+			TerminalControlStatus.Available,
+			confirmation,
 			null,
 			null
 		);
@@ -448,6 +473,7 @@ public sealed class TerminalControlMutationResult {
 	) {
 		return new TerminalControlMutationResult(
 			status,
+			TerminalControlMutationConfirmation.Unspecified,
 			string.IsNullOrWhiteSpace( message ) ? fallback : message.Trim(),
 			nativeErrorCode
 		);

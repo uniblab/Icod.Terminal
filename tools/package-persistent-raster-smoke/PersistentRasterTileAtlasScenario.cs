@@ -128,6 +128,11 @@ internal static class PersistentRasterTileAtlasScenario {
 					cancellationToken
 				);
 				Require( update.Succeeded, "A measured tile-region update failed." );
+				Require(
+					TerminalControlMutationConfirmation.ProtocolAcknowledged
+						== update.Confirmation,
+					"A measured tile-region update was not protocol acknowledged."
+				);
 				if ( 0 == index ) firstAcknowledgement.Stop();
 			}
 			long encodedBytes = transport.EndMeasurementTotal( regionCount );
@@ -136,6 +141,10 @@ internal static class PersistentRasterTileAtlasScenario {
 				cancellationToken
 			);
 			Require( selected.Succeeded, "The measured completed back frame was not selected." );
+			Require(
+				TerminalControlMutationConfirmation.OutputCommitted == selected.Confirmation,
+				"Frame selection must report output commitment without inventing acknowledgement."
+			);
 			total.Stop();
 			TimeSpan cpu = process.TotalProcessorTime - cpuBefore;
 			long allocated = GC.GetTotalAllocatedBytes( precise: true ) - allocatedBefore;

@@ -21,7 +21,7 @@
 namespace Icod.Terminal;
 
 /// <summary>
-/// Owns acknowledged terminal-driven persistent-raster animation playback controls.
+/// Owns output-committed terminal-driven persistent-raster animation playback controls.
 /// </summary>
 public sealed partial class TerminalSession {
 	internal ValueTask<TerminalControlMutationResult> StopPersistentRasterAnimationAsync(
@@ -137,38 +137,20 @@ public sealed partial class TerminalSession {
 		}
 
 		ReadOnlyMemory<byte> payload = encodePayload( imageId );
-		KittyGraphicsPersistentAnimationResponseMatcher matcher = new( imageId );
-		TerminalQueryResponseResult queryResult = await this.GetQueryTransactionManager().ExecuteAsync(
-			_ => this.WritePersistentRasterAnimationControlPayloadCoreAsync( payload ),
-			TerminalQueryResponsePlan.ForCompletion( matcher ),
-			PersistentRasterCreationTimeout,
-			TerminalQueryTransactionManager.DefaultLateResponseOwnership,
+		return await this.WritePersistentRasterAnimationOutputOnlyControlAsync(
+			payload,
+			() => {
+				TerminalRasterAnimationStatus currentStatus = animationState
+					.ObserveState()
+					.Status;
+				return this.persistentRasterRegistry.IsResourceCurrent( resourceState )
+					&& ( TerminalRasterAnimationStatus.Current == currentStatus
+						|| ( allowSequenceUncertain
+							&& TerminalRasterAnimationStatus.SequenceUncertain
+								== currentStatus ) );
+			},
+			"Animation ownership changed before playback-control output.",
 			cancellationToken
 		).ConfigureAwait( false );
-
-		KittyGraphicsPersistentAnimationResponse response =
-			KittyGraphicsPersistentAnimationResponse.Parse(
-				queryResult.Frame,
-				imageId
-			);
-		if ( !response.IsSuccess ) {
-			if ( response.IsMissingResource ) {
-				_ = this.persistentRasterAnimationRegistry.InvalidateResource( resourceState );
-				_ = this.InvalidatePersistentRasterResourceWithVirtualDescendants(
-					resourceState
-				);
-				return TerminalControlMutationResult.Unavailable(
-					response.Message
-				);
-			}
-			return TerminalControlMutationResult.Failed( response.Message );
-		}
-
-		this.RecordSemanticBackendEvidence(
-			TerminalProtocolBackend.ApcKittyPersistentRasterAnimation,
-			TerminalCapabilitySupportState.Verified,
-			TerminalCapabilityEvidenceSource.ProtocolResponse
-		);
-		return TerminalControlMutationResult.Success();
 	}
 }
