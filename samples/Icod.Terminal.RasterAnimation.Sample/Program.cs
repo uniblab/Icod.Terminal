@@ -66,7 +66,19 @@ await session.WriteTextAsync(
 );
 
 if ( args.Contains( "--tile-atlas", StringComparer.Ordinal ) ) {
-	return await RasterTileAtlasExample.RunAsync( session );
+	try {
+		return await RasterTileAtlasExample.RunAsync( session );
+	} catch ( Exception error ) when (
+		error is TimeoutException or IOException or OperationCanceledException
+	) {
+		await session.WriteTextAsync(
+			string.Concat(
+				RasterTileAtlasExample.FormatTransactionFallback( error ),
+				"\r\n"
+			)
+		);
+		return 1;
+	}
 }
 
 if ( !await RasterAnimationCompositionExample.VerifyPrerequisiteAsync( session ) ) {
