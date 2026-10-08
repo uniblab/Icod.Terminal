@@ -31,8 +31,9 @@ post-0.49.2 upstream correction is tracked without a repeated-image-id workaroun
 or terminal-version branch. Version 1.27's brief basic-resource color display
 qualifies only that persistent resource/placement scenario, not animation or
 persistent ATLAS. Reviewed 2026-10-08 source-built Kitty recordings add limited
-positive animation and tile-update evidence; the corrected eight-row layout and
-downstream ATLAS still require live qualification. See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
+positive animation, tile-update and corrected eight-row layout evidence, including
+cleanup and exit status 0. Downstream ATLAS still requires live qualification.
+See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
 and [hold record and evidence](docs/Graphics-Development-Hold.md).
 
 Ordinary raster capability selection prefers verified Kitty, then verified Sixel.

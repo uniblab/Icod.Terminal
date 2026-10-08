@@ -635,8 +635,9 @@ pins the protocol/source evidence, classifies the Kitty 0.49.2 behaviors, define
 the required completion states and records the test and release gates. This
 development line implements the approved design as `1.28.0-alpha.1`. Reviewed
 2026-10-08 corrected-source Kitty recordings provide limited positive sample
-evidence. Full provenance, the corrected eight-row visual witness, downstream
-ATLAS acceptance and stable closure remain open under Task 9 of the approved plan.
+evidence including the corrected eight-row visual witness. Full provenance,
+downstream ATLAS acceptance and stable closure remain open under Task 9 of the
+approved plan.
 
 ## Later development candidates
 

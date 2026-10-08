@@ -18,8 +18,8 @@ observations separately, including confirmed deviations in Kitty 0.49.2.
 
 **Status:** Development prerelease `1.28.0-alpha.1` implements the approved
 transaction contract. Corrected-source Kitty samples have limited positive live
-evidence; complete provenance, the corrected eight-row visual witness, downstream
-ATLAS acceptance and stable closure remain open. The graphics-development hold
+evidence including the corrected eight-row visual witness; complete provenance,
+downstream ATLAS acceptance and stable closure remain open. The graphics-development hold
 is reopened only for this bounded 1.28 scope.
 
 **Baseline:** Stable `1.27.0` was merged through
@@ -69,11 +69,16 @@ transaction workloads (acknowledged edits and output-committed selections). This
 build contains upstream fix `b493a63` despite reporting version `0.49.2`; the
 unpatched stable release remains the negative multi-chunk lane.
 
-The recorded atlas display was a horizontal strip. The sample row-layout
+The first recorded atlas display was a horizontal strip. The sample row-layout
 correction uses the existing public screen transaction to write eight rows and
-leave reports below the grid. Visual acceptance of that correction is pending.
-Exact Terminal checkout and clean/default-configuration provenance were not
-captured in the submitted recordings. T2808 downstream ATLAS, the other
+leave reports below the grid. The follow-up recording on exact Terminal source
+`70c6cacd2d26c3f962db513a23035f2570060cea` accepts that corrected grid, visible
+changes, all 1/4/16/64 workloads, cleanup and exit status 0. It captures SDK
+`10.0.112` and pre-run UTC time `2026-10-08 15:11:42`. All ten jobs in
+[workflow 37796031515](https://github.com/uniblab/Icod.Terminal/actions/runs/37796031515)
+passed on that source, including the same-head Linux retry after a timed
+hardening-test failure. Exact runtime patch and clean/default-configuration
+provenance remain unrecorded. T2808 downstream ATLAS, the other
 implementation lane and complete T2810 closure remain open; stable metadata and
 publication are not authorized by these limited positive results. See the
 [versioned compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md).

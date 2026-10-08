@@ -17,11 +17,13 @@ completed both the default animation sample and all 1/4/16/64 tile-atlas
 transaction workloads. The small sample visibly animated, cleaned up and exited
 0. The atlas recording showed a changing horizontal strip because the tested
 sample emitted all 64 placeholder cells consecutively. The sample now explicitly
-writes eight rows and leaves the reports below the grid; live visual acceptance
-of that corrected layout remains pending. This source build still reports version
-`0.49.2`; identify it by source commit, not by the version string alone. Exact
-Terminal checkout/configuration provenance and the full DCurses ATLAS workload
-remain separate acceptance gates.
+writes eight rows and leaves the reports below the grid. A follow-up recording on
+Terminal commit `70c6cacd2d26c3f962db513a23035f2570060cea` confirms that grid,
+changing colors, completed 1/4/16/64 workloads, cleanup and exit status `0`; it
+captures SDK `10.0.112` and a pre-run UTC timestamp. This source build still reports
+version `0.49.2`; identify it by source commit, not by the version string alone. Exact
+runtime/configuration provenance and the full DCurses ATLAS workload remain
+separate acceptance gates.
 
 After the 1.27 DA1 correction, the separate persistent-raster ownership sample
 completed on Kitty 0.49.2 and briefly displayed its generated colors before cleanup.

@@ -190,3 +190,12 @@ The recordings do not include the exact Terminal checkout SHA or all required
 live-provenance fields. The complete downstream gameplay, resize, fallback and
 exit workload remains an acceptance gate. See the compatibility record for the
 capture names, missing fields and precise observation limits.
+
+The later `20261008-1512-07.0969947(1).mp4` retest on exact Terminal source
+`70c6cacd2d26c3f962db513a23035f2570060cea` accepts the corrected eight-by-eight
+sample grid: colors change, reports stay below it, all 1/4/16/64 workloads complete,
+cleanup removes the image and the process exits 0. The capture records SDK
+`10.0.112` and pre-run UTC time `2026-10-08 15:11:42`. All ten jobs in workflow
+`37796031515` passed on the tested source after the same-head Linux retry. This
+supersedes the pending Terminal grid-layout check; exact runtime/configuration
+provenance, other implementations and the full DCurses ATLAS workload remain open.

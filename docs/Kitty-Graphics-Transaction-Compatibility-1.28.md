@@ -57,9 +57,9 @@ mutation. Resource cleanup remains explicit and deterministic.
 | --- | --- | --- |
 | Headless scripted transport | Covered by deterministic source tests and the sample's `--headless-transcript` mode | Exact bytes, response/no-response policy, correlation, completion strength, ambiguity, ownership, and cleanup. It never establishes rendering. |
 | Kitty 0.49.2 | Reviewed limited live result: small single-chunk frame/control sequence completed; the documented multi-chunk `a=f` append timed out with controlled ambiguity. | The recorded scenarios only: single-chunk transfer/control completion and the exact negative multi-chunk acknowledgement result. It does not establish ATLAS. |
-| Source-built Kitty `96693f4c090e9477b51ffa46aed4abdcef52d037`, containing `b493a63` | Reviewed limited live result: default animation and 1/4/16/64 tile-atlas transaction workloads completed. | Positive evidence for the exercised documented frame transfers, edits, composition and controls. Full downstream ATLAS and compose-publish acceptance remain open. |
+| Source-built Kitty `96693f4c090e9477b51ffa46aed4abdcef52d037`, containing `b493a63` | Reviewed live sample results: default animation and 1/4/16/64 tile-atlas transactions completed; the corrected eight-row witness passed on Terminal source `70c6cac`. | Positive evidence for the exercised documented frame transfers, edits, composition, controls, grid layout and cleanup. Full downstream ATLAS and compose-publish acceptance remain open. |
 | Another Kitty-protocol implementation | `NotRun` | Portability check that behavior does not depend on a Kitty brand/version branch. |
-| Operator-visible rendering | Original 0.49.2 lane: small-sample flash. Corrected source build: changing colors in the small sample and a changing horizontal atlas strip observed in recordings. | The recorded visual observations only. The strip does not qualify an 8-by-8 layout or the DCurses renderer; transaction confirmation still does not claim rendering. |
+| Operator-visible rendering | Original 0.49.2 lane: small-sample flash. Corrected source build: changing colors in the small sample, the earlier atlas strip and the corrected eight-by-eight atlas grid. | The recorded visual observations only. The corrected grid does not qualify the DCurses renderer; transaction confirmation still does not claim rendering. |
 
 `NotRun` is evidence, not a synonym for unsupported or failed. Missing,
 unreviewed, or differently scoped observations remain `NotRun`; source review and
@@ -117,6 +117,47 @@ This is therefore a limited positive live checkpoint, not complete T2810
 provenance or a downstream ATLAS support claim. The unpatched 0.49.2 negative
 witness above remains valid. Other implementations and the complete DCurses
 ATLAS movement/help/resize/exit workload remain `NotRun` under this new contract.
+
+## Reviewed eight-row retest — 2026-10-08
+
+The maintainer supplied the exact Terminal checkout commit
+`70c6cacd2d26c3f962db513a23035f2570060cea` on
+`docs/1.28.0-kitty-graphics-roadmap`. The recording shows the matching repository
+path `/mnt/c/Users/unibl/Development/Icod/Icod.Terminal`, SDK `10.0.112`, and
+pre-run `date -u` output `Thu Oct 8 15:11:42 UTC 2026`. That timestamp precedes
+the build; it is not asserted as the precise sample-process start time. This
+continues the previously reported source-built Kitty / Ubuntu-24.04 WSL lane;
+Kitty source and configuration were not independently recaptured in this clip.
+
+The direct, unredirected command was:
+
+```text
+dotnet run --project ./samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -c Release -f net10.0 -- --tile-atlas
+```
+
+The recording shows an eight-by-eight cell grid with changing colors, with all
+operation reports below it. All 1/4/16/64-region damage workloads returned
+`Available` / `ProtocolAcknowledged`; their completed-frame selections returned
+`Available` / `OutputCommitted`; the final RGB24 operation evidence was
+`Verified / LiveObservation`. The grid disappeared during cleanup, the Bash
+prompt returned, and the immediately following exit-status command printed `0`.
+No fallback or exception appeared. This accepts the corrected sample layout and
+the exercised transaction/rendering/cleanup path, without claiming remote
+atomicity, gapless presentation or complete visual validation of every tile edit.
+
+Reviewed capture: `20261008-1512-07.0969947(1).mp4`, supplied by Timothy J. Bruce,
+SHA-256 `69452c56dec4cd6a44e6f6ac3bb9f3c5cca17fe2a7c18405f5f0e8ee0dcf477a`.
+The exact runtime patch, clean working-tree state, Kitty configuration and
+precise sample-process start remain `NotRecorded`. Other implementations and the
+full DCurses ATLAS workload remain `NotRun` under the new contract.
+
+The tested Terminal source passed all ten jobs in
+[workflow 37796031515](https://github.com/uniblab/Icod.Terminal/actions/runs/37796031515),
+including .NET 8/9/10 runtime checks on Windows, Linux and macOS and every package
+gate. The first Linux attempt hit a deadline in the existing ambiguous-pixel
+hardening test's follow-up append on .NET 8; its .NET 9/10 runs passed. The same-head
+Linux retry passed. The local .NET 8 and 10 suites each passed all 2,868 unit tests;
+the local .NET 10 TermInfo integration suite passed all 15 tests.
 
 ## Required provenance for a live report
 
