@@ -80,7 +80,9 @@ foreach ($required in @(
 	'.PixelHeight',
 	'CreatePlaceholderAsync',
 	'GetCell',
-	'WriteRasterPlaceholderCellsAsync'
+	'CreateScreenOutputTransaction',
+	'WriteRasterPlaceholderCells',
+	'CommitAsync'
 )) {
     if (-not $sampleText.Contains($required, [System.StringComparison]::Ordinal)) {
         throw "Raster animation sample is missing required semantic API usage '$required'."
