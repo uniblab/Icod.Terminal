@@ -252,6 +252,18 @@ internal static class RasterTileAtlasExample {
 		return error is TimeoutException or InvalidOperationException or FormatException;
 	}
 
+	internal static string FormatTransactionFallback( Exception error ) {
+		ArgumentNullException.ThrowIfNull( error );
+		return string.Concat(
+			"Tile-atlas text fallback: ",
+			RasterAnimationCompositionExample.FormatExceptionOutcome(
+				"Tile-atlas frame transaction",
+				error
+			),
+			"."
+		);
+	}
+
 	private static bool TryPlanAtlas(
 		TerminalPixelDimensions cell,
 		TerminalRasterPlanningSnapshot planning,
