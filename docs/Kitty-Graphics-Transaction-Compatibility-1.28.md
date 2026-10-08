@@ -56,14 +56,34 @@ mutation. Resource cleanup remains explicit and deterministic.
 | Lane | Current 1.28 record | What it can establish |
 | --- | --- | --- |
 | Headless scripted transport | Covered by deterministic source tests and the sample's `--headless-transcript` mode | Exact bytes, response/no-response policy, correlation, completion strength, ambiguity, ownership, and cleanup. It never establishes rendering. |
-| Kitty 0.49.2 | Source-reviewed negative multi-chunk `a=f` acknowledgement lane; live 1.28 transaction rerun `NotRun` | The exact documented deviation and, after a reviewed live run, only the scenarios actually exercised. |
+| Kitty 0.49.2 | Reviewed limited live result: small single-chunk frame/control sequence completed; the documented multi-chunk `a=f` append timed out with controlled ambiguity. | The recorded scenarios only: single-chunk transfer/control completion and the exact negative multi-chunk acknowledgement result. It does not establish ATLAS. |
 | Kitty build containing `b493a63` | `NotRun` | Candidate positive lane for documented multi-chunk transfer and compose-publish. |
 | Another Kitty-protocol implementation | `NotRun` | Portability check that behavior does not depend on a Kitty brand/version branch. |
-| Operator-visible rendering | `NotRun` until separately consented, executed, and reviewed | Only the exact visible scenario observed by the operator. It does not strengthen unrun operations. |
+| Operator-visible rendering | Small animation sample: `Observed` as a brief color flash. Tile-atlas: `NotClaimed`. | Only the observed small-sample flash. It does not strengthen the negative atlas transaction or any unrun operation. |
 
 `NotRun` is evidence, not a synonym for unsupported or failed. Missing,
 unreviewed, or differently scoped observations remain `NotRun`; source review and
 headless transport success are never promoted to a rendering result.
+
+## Reviewed Kitty 0.49.2 / WSL live witness — 2026-10-08
+
+This is a limited maintainer-run witness, recorded here rather than promoted to
+a support claim. The reported environment was direct Kitty in WSL2, with
+`TERM=xterm-kitty` and `KITTY_WINDOW_ID=1`; no terminal multiplexer or pipe
+was in the transaction path. The available environment capture records Kitty
+0.49.2, Ubuntu 24.04 on Linux 6.6.87.2-microsoft-standard-WSL2 x86_64, and
+.NET SDK 10.0.112. The precise start time and Kitty configuration-file state
+were not separately recorded and therefore remain `NotRecorded`.
+
+| Scenario | Exact Terminal source | Command / outcome | Visible observation | Scope limit |
+| --- | --- | --- | --- | --- |
+| Small animation control | `187ee56ed617468e43fc1dcab446e7adb202b67b`; Release, `net10.0` | Default raster-animation sample exited 0. Frame replacement and composition were `ProtocolAcknowledged`; timing and all exercised `a=a` controls were `OutputCommitted`; cleanup completed. | Brief color flash observed by the operator. | The frames are single-chunk. This does not qualify multi-chunk append, ATLAS, or an arbitrary renderer. |
+| Multi-chunk atlas negative | `40271730750ae3a8da50cc739f58a341143ae125`; Release, `net10.0` | `--tile-atlas` reached the frame append deadline. It printed `Tile-atlas text fallback`, `Status=Ambiguous`, and exited 1 with no stack trace. | `Rendered=NotClaimed`; no rendering assertion is drawn from the output. | This confirms only the documented 0.49.2 required-ACK failure and controlled fallback. It is not an ATLAS pass. |
+
+The negative lane preserves the published `a=f` continuation grammar and does
+not retry or repeat the image id. The observed timeout means output may have
+committed, but the missing correlated acknowledgement leaves the append
+sequence uncertain and no frame token is published.
 
 ## Required provenance for a live report
 
