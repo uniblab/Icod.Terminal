@@ -127,7 +127,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
 1.26.0  terminal compatibility qualification                  PUBLISHED
 1.27.0  appearance and resize awareness                       MERGED / TAGGED
-1.28.0  published-spec Kitty graphics transactions            PLANNED / T2800-T2810
+1.28.0  published-spec Kitty graphics transactions            ALPHA / LIVE-DOWNSTREAM GATES OPEN
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -583,7 +583,7 @@ The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) reco
 
 Stable acceptance now includes positive Kitty 0.49.2 evidence for both selected features and same-environment Windows Terminal/WSL evidence that unavailable reporting preserves native input and lifecycle. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links passed together before separate maintainer promotion.
 
-## 1.28 planned line — Published-Spec Kitty Graphics Transactions
+## 1.28 development line — Published-Spec Kitty Graphics Transactions
 
 The maintainer reopened graphics development on 2026-10-06 for one bounded goal:
 make persistent animation transactions follow the published Kitty Graphics
@@ -633,9 +633,10 @@ T2810  live qualification and stable closure
 The [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md)
 pins the protocol/source evidence, classifies the Kitty 0.49.2 behaviors, defines
 the required completion states and records the test and release gates. This
-planning selection does not itself change runtime code, public API, dependencies
-or package version. T2800 must produce a reviewed detailed design and implementation
-plan before implementation begins.
+development line implements the approved design as `1.28.0-alpha.1`. Reviewed
+2026-10-08 corrected-source Kitty recordings provide limited positive sample
+evidence. Full provenance, the corrected eight-row visual witness, downstream
+ATLAS acceptance and stable closure remain open under Task 9 of the approved plan.
 
 ## Later development candidates
 

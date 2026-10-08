@@ -56,6 +56,12 @@ public sealed class TerminalRasterPlaceholderOutputTests {
 			Assert.Equal( 8, lines[ row ].EnumerateRunes().Count(
 				static rune => rune.Value == 0x10EEEE
 			) );
+			for ( int column = 0; column < 8; ++column ) {
+				Assert.Equal(
+					KittyGraphicsPlaceholderCellEncoder.Encode( placeholder.State, row, column ).ToArray(),
+					transport.Writes[ baselineWrites + 1 + row * 9 + column ]
+				);
+			}
 		}
 		Assert.Equal( "report below grid", lines[ 8 ] );
 	}

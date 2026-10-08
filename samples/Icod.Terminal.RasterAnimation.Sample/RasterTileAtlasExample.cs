@@ -123,8 +123,7 @@ internal static class RasterTileAtlasExample {
 			return 0;
 		}
 		await using TerminalRasterPlaceholder placeholder = placeholderResult.Value;
-		TerminalRasterPlaceholderCell[] cells = CreatePlaceholderCells( placeholder );
-		await session.WriteRasterPlaceholderCellsAsync( cells, cancellationToken );
+		await WritePlaceholderGridAsync( session, placeholder, cancellationToken );
 
 		TerminalRasterAnimation animation = resource.Animation;
 		TerminalRasterAnimationFrame front = animation.RootFrame;
@@ -320,19 +319,24 @@ internal static class RasterTileAtlasExample {
 		return TerminalRasterImage.CreateRgb24( width, height, pixels );
 	}
 
-	private static TerminalRasterPlaceholderCell[] CreatePlaceholderCells(
-		TerminalRasterPlaceholder placeholder
+	internal static ValueTask WritePlaceholderGridAsync(
+		TerminalSession session,
+		TerminalRasterPlaceholder placeholder,
+		CancellationToken cancellationToken = default
 	) {
-		TerminalRasterPlaceholderCell[] cells = new TerminalRasterPlaceholderCell[
-			checked( placeholder.Columns * placeholder.Rows )
-		];
-		int index = 0;
+		ArgumentNullException.ThrowIfNull( session );
+		ArgumentNullException.ThrowIfNull( placeholder );
+		TerminalScreenOutputTransaction transaction = session.CreateScreenOutputTransaction();
+		transaction.WriteText( "\r" );
 		for ( int row = 0; row < placeholder.Rows; ++row ) {
+			TerminalRasterPlaceholderCell[] cells = new TerminalRasterPlaceholderCell[ placeholder.Columns ];
 			for ( int column = 0; column < placeholder.Columns; ++column ) {
-				cells[ index++ ] = placeholder.GetCell( row, column );
+				cells[ column ] = placeholder.GetCell( row, column );
 			}
+			transaction.WriteRasterPlaceholderCells( cells );
+			transaction.WriteText( "\r\n" );
 		}
-		return cells;
+		return transaction.CommitAsync( cancellationToken );
 	}
 
 	private static async ValueTask<TerminalControlMutationResult> ApplyDamageAsync(

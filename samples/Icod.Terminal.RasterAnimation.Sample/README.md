@@ -2,13 +2,26 @@
 
 This sample demonstrates the backend-neutral persistent-raster animation model introduced in `Icod.Terminal 1.16.0`, bounded composition between known frames added in 1.22.0, caller-supplied partial frame replacement added in 1.23.0, the geometry/planning contracts added in 1.24.0, and the transaction-confirmation contract added in 1.28.0.
 
-## Current live-test limitation
+## Current live-test evidence and limits
 
-Graphics development and further Kitty qualification are on hold (2026-10-04).
-Kitty 0.49.2 on WSL2 reproduces the missing acknowledgement for the documented
+Graphics development reopened on 2026-10-06 for the bounded 1.28 published-spec
+transaction and downstream ATLAS work. Unpatched stable Kitty 0.49.2 on WSL2
+reproduces the missing acknowledgement for the documented
 chunked animation-frame continuation first observed on 0.32.2: the silent upload
 creates a frame, but its final continuation does not return the required ACK.
 Bounded transfer waits cannot make that response arrive.
+
+On 2026-10-08, the maintainer's source-built Kitty at
+`96693f4c090e9477b51ffa46aed4abdcef52d037`, containing upstream fix `b493a63`,
+completed both the default animation sample and all 1/4/16/64 tile-atlas
+transaction workloads. The small sample visibly animated, cleaned up and exited
+0. The atlas recording showed a changing horizontal strip because the tested
+sample emitted all 64 placeholder cells consecutively. The sample now explicitly
+writes eight rows and leaves the reports below the grid; live visual acceptance
+of that corrected layout remains pending. This source build still reports version
+`0.49.2`; identify it by source commit, not by the version string alone. Exact
+Terminal checkout/configuration provenance and the full DCurses ATLAS workload
+remain separate acceptance gates.
 
 After the 1.27 DA1 correction, the separate persistent-raster ownership sample
 completed on Kitty 0.49.2 and briefly displayed its generated colors before cleanup.
@@ -48,7 +61,7 @@ Pass `--tile-atlas` to run the 1.24 tile-presentation witness:
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
 ```
 
-That path prefers a direct cell-pixel query. If it times out, it explicitly attempts exact derivation from a terminal-pixel query and the current character dimensions. It never rounds. It checks the local planning ceilings before allocating a generated 8-by-8 atlas, reads the accepted resource's intrinsic geometry, creates a placeholder grid, and runs 1-, 4-, 16-, and 64-region damage workloads against two reusable caller-managed frames. Every region update is acknowledged before the completed back frame is selected; only then are the front/back references swapped. This remains a caller-owned two-frame witness built from Terminal primitives, not a Terminal-owned atlas API, remote atomicity, or gapless display.
+That path prefers a direct cell-pixel query. If it times out, it explicitly attempts exact derivation from a terminal-pixel query and the current character dimensions. It never rounds. It checks the local planning ceilings before allocating a generated 8-by-8 atlas, reads the accepted resource's intrinsic geometry, creates a placeholder grid, and runs 1-, 4-, 16-, and 64-region damage workloads against two reusable caller-managed frames. The application writes eight placeholder cells per row with an explicit carriage return and line feed, in one screen-output transaction; the final line break keeps operation reports below the grid. Every region update is acknowledged before the completed back frame is selected; only then are the front/back references swapped. This remains a caller-owned two-frame witness built from Terminal primitives, not a Terminal-owned atlas API, remote atomicity, or gapless display.
 
 The planning snapshot is local and advisory: it does not reserve capacity or report terminal memory, and the later create/append result remains authoritative. The preflight accepts focused RGB24 operation evidence that is unknown but presently usable. After the acknowledged regional work, the sample re-inspects that same operation and requires `Verified` support with `LiveObservation` evidence. That generation-scoped result does not prove composition, RGBA32 replacement, physical rendering, or future success.
 
@@ -111,7 +124,7 @@ The catch treats precommit and committed exceptions conservatively. It does not 
 
 `PersistentRasterAnimation` has no reviewed passive support query. The preflight verifies persistent raster graphics, checks for a usable graphics endpoint and no known animation rejection, and then attempts real acknowledged animation operations. An unknown animation status does not falsely stop a fresh session; successful controls establish live animation evidence. The resource creation, frame append, and composition results are checked separately. Verifying persistent raster graphics alone does not prove animation or composition support. See the [capability walkthrough](../Icod.Terminal.CapabilityPlanning.Sample/README.md) for the capabilities with live support paths.
 
-The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame or delta cache, image-file decoder, or screen-layout policy. Returned failures and ambiguous transport exceptions are reported, cleanup is reported separately, and neither path automatically retries composition.
+The program contains no terminal-brand branch, graphics-backend selection, public numeric image/frame identity, raw control dictionary, retained source-frame or delta cache, or image-file decoder. Its small placeholder-grid layout remains application-owned. Returned failures and ambiguous transport exceptions are reported, cleanup is reported separately, and neither path automatically retries composition.
 
 The animation controller is resource-owned and is not independently disposable. Disposing the resource remains final terminal-side cleanup authority for the resource, its frames, and its placements.
 

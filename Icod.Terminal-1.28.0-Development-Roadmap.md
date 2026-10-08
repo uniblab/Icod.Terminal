@@ -1,9 +1,9 @@
 # Icod.Terminal 1.28.0 Development Roadmap
 
 > **Execution:** Use the executing-plans workflow task by task in the main session
-> without subagents. This planning PR records the selected direction; it does not
-> authorize runtime or public-API changes. T2800 must produce the detailed design,
-> API-regret review and implementation plan before implementation begins.
+> without subagents. The approved T2800 design and implementation plan govern
+> runtime and public-API changes. Tasks 1–8 are implemented; Task 9 retains the
+> downstream ATLAS, live-qualification and stable-closure gates.
 
 **Goal:** Make persistent Kitty Graphics animation transactions conform to the
 published protocol, report their actual confirmation strength truthfully, and
@@ -16,10 +16,11 @@ Icod.DCurses raster atlas.
 terminal-brand or version-specific wire dialect. Record exact implementation
 observations separately, including confirmed deviations in Kitty 0.49.2.
 
-**Status:** T2800 design is approved and its implementation plan is ready for
-maintainer review. The graphics-development hold is reopened for this bounded
-1.28 scope. No encoder workaround, response-assumption change, public API, version
-change or support claim is introduced by this planning PR.
+**Status:** Development prerelease `1.28.0-alpha.1` implements the approved
+transaction contract. Corrected-source Kitty samples have limited positive live
+evidence; complete provenance, the corrected eight-row visual witness, downstream
+ATLAS acceptance and stable closure remain open. The graphics-development hold
+is reopened only for this bounded 1.28 scope.
 
 **Baseline:** Stable `1.27.0` was merged through
 [PR #83](https://github.com/uniblab/Icod.Terminal/pull/83) at
@@ -57,6 +58,27 @@ is the executable RED/GREEN sequence and remains subject to plan review before
 runtime implementation begins.
 
 ## Decision
+
+### Execution checkpoint — 2026-10-08
+
+The approved transaction implementation and package/API gates are present on PR
+#84. The maintainer's corrected-source Kitty build at
+`96693f4c090e9477b51ffa46aed4abdcef52d037` completed the default animation sample
+(exit 0, visible changing colors and completed cleanup) and the 1/4/16/64 atlas
+transaction workloads (acknowledged edits and output-committed selections). This
+build contains upstream fix `b493a63` despite reporting version `0.49.2`; the
+unpatched stable release remains the negative multi-chunk lane.
+
+The recorded atlas display was a horizontal strip. The sample row-layout
+correction uses the existing public screen transaction to write eight rows and
+leave reports below the grid. Visual acceptance of that correction is pending.
+Exact Terminal checkout and clean/default-configuration provenance were not
+captured in the submitted recordings. T2808 downstream ATLAS, the other
+implementation lane and complete T2810 closure remain open; stable metadata and
+publication are not authorized by these limited positive results. See the
+[versioned compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md).
+
+### Published-protocol policy
 
 Icod.Terminal will implement the published Kitty Graphics Protocol, not reproduce
 the accidental behavior of one Kitty release. Protocol control-data grammar,

@@ -30,7 +30,9 @@ acknowledgement for a documented chunked animation-frame continuation; the
 post-0.49.2 upstream correction is tracked without a repeated-image-id workaround
 or terminal-version branch. Version 1.27's brief basic-resource color display
 qualifies only that persistent resource/placement scenario, not animation or
-persistent ATLAS. See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
+persistent ATLAS. Reviewed 2026-10-08 source-built Kitty recordings add limited
+positive animation and tile-update evidence; the corrected eight-row layout and
+downstream ATLAS still require live qualification. See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
 and [hold record and evidence](docs/Graphics-Development-Hold.md).
 
 Ordinary raster capability selection prefers verified Kitty, then verified Sixel.

@@ -57,9 +57,9 @@ mutation. Resource cleanup remains explicit and deterministic.
 | --- | --- | --- |
 | Headless scripted transport | Covered by deterministic source tests and the sample's `--headless-transcript` mode | Exact bytes, response/no-response policy, correlation, completion strength, ambiguity, ownership, and cleanup. It never establishes rendering. |
 | Kitty 0.49.2 | Reviewed limited live result: small single-chunk frame/control sequence completed; the documented multi-chunk `a=f` append timed out with controlled ambiguity. | The recorded scenarios only: single-chunk transfer/control completion and the exact negative multi-chunk acknowledgement result. It does not establish ATLAS. |
-| Kitty build containing `b493a63` | `NotRun` | Candidate positive lane for documented multi-chunk transfer and compose-publish. |
+| Source-built Kitty `96693f4c090e9477b51ffa46aed4abdcef52d037`, containing `b493a63` | Reviewed limited live result: default animation and 1/4/16/64 tile-atlas transaction workloads completed. | Positive evidence for the exercised documented frame transfers, edits, composition and controls. Full downstream ATLAS and compose-publish acceptance remain open. |
 | Another Kitty-protocol implementation | `NotRun` | Portability check that behavior does not depend on a Kitty brand/version branch. |
-| Operator-visible rendering | Small animation sample: `Observed` as a brief color flash. Tile-atlas: `NotClaimed`. | Only the observed small-sample flash. It does not strengthen the negative atlas transaction or any unrun operation. |
+| Operator-visible rendering | Original 0.49.2 lane: small-sample flash. Corrected source build: changing colors in the small sample and a changing horizontal atlas strip observed in recordings. | The recorded visual observations only. The strip does not qualify an 8-by-8 layout or the DCurses renderer; transaction confirmation still does not claim rendering. |
 
 `NotRun` is evidence, not a synonym for unsupported or failed. Missing,
 unreviewed, or differently scoped observations remain `NotRun`; source review and
@@ -84,6 +84,39 @@ The negative lane preserves the published `a=f` continuation grammar and does
 not retry or repeat the image id. The observed timeout means output may have
 committed, but the missing correlated acknowledgement leaves the append
 sequence uncertain and no frame token is published.
+
+## Reviewed corrected-source Kitty / WSL witness — 2026-10-08
+
+The maintainer built Kitty from upstream `master` at
+`96693f4c090e9477b51ffa46aed4abdcef52d037` in
+`/mnt/c/Users/unibl/Development/kitty`. The submitted `git log` and
+`kitty/graphics.c` excerpt show the corrected continuation identity recovery from
+the starting command. The launched executable was `./kitty/launcher/kitty`.
+Although its version output is still `0.49.2`, this is a **post-release source
+build containing `b493a63`**, not the unpatched stable 0.49.2 negative lane.
+
+After converting `dev.sh` and `shell-integration/bash/kitty.bash` to LF, the
+maintainer launched that executable through Ubuntu-24.04 WSL from Windows and ran
+both samples directly in the new Kitty window, with no headless option, pipe or
+output redirection. Mesa/EGL and desktop-service warnings remained in the launcher
+shell; the recordings nevertheless show completed graphics transactions and
+visible changing colors. No universal inference about those warnings is made.
+
+| Scenario | Command / transaction result | Separately reviewed visual observation |
+| --- | --- | --- |
+| Tile-atlas transaction witness | `dotnet run --project ./samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -c Release -f net10.0 -- --tile-atlas`; all 1/4/16/64-region workloads returned `Available` / `ProtocolAcknowledged`, and their completed-frame selections returned `Available` / `OutputCommitted`. The final witness reported `Verified / LiveObservation` RGB24 evidence. No fallback or exception appeared. | A colored horizontal strip appeared, changed, and disappeared during cleanup. The tested sample emitted all 64 placeholder cells consecutively; this recording does not establish an 8-by-8 physical grid. |
+| Small animation witness | Same command without `--tile-atlas`; partial replacement and composition returned `ProtocolAcknowledged`; timing, selection, loading, finite/indefinite playback and stops returned `OutputCommitted`; resource cleanup completed; captured exit status was `0`. | A colored image visibly changed during playback and disappeared during cleanup. The recording does not separately prove the visual correctness or precise timing of each individual mutation. |
+
+Reviewed captures: `20261008-1415-07.2253538.mp4` (atlas) and
+`20261008-1430-53.9447193.mp4` (small animation), supplied by Timothy J. Bruce.
+The atlas capture does not show the completed exit-status command. The exact
+Icod.Terminal checkout SHA, runtime/SDK version for these two runs, precise UTC
+start time, and clean/default Kitty configuration state were not independently
+captured and remain `NotRecorded`. Both runs precede the sample row-layout fix.
+This is therefore a limited positive live checkpoint, not complete T2810
+provenance or a downstream ATLAS support claim. The unpatched 0.49.2 negative
+witness above remains valid. Other implementations and the complete DCurses
+ATLAS movement/help/resize/exit workload remain `NotRun` under this new contract.
 
 ## Required provenance for a live report
 

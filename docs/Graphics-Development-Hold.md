@@ -166,7 +166,27 @@ The public result distinguishes `Unspecified`, `OutputCommitted`, and
 Deterministic transport, lifecycle, API, package, and sample gates are green on
 Windows, Linux, and macOS. This source evidence does not qualify a live terminal
 or persistent ATLAS. Kitty 0.49.2 remains the documented negative multi-chunk
-frame-acknowledgement lane; a build containing upstream fix `b493a63` and another
-Kitty-protocol implementation remain `NotRun` until separately exercised and
-reviewed. The exact matrix and required provenance are in the
+frame-acknowledgement lane. The later corrected-source checkpoint below covers
+the exercised Terminal samples; another Kitty-protocol implementation remains
+`NotRun`. The exact matrix and required provenance are in the
 [1.28 transaction compatibility record](Kitty-Graphics-Transaction-Compatibility-1.28.md).
+
+### Corrected-source live checkpoint — 2026-10-08
+
+The maintainer built and launched Kitty source
+`96693f4c090e9477b51ffa46aed4abdcef52d037`, containing the upstream `b493a63`
+continuation-identity fix, through Ubuntu-24.04 WSL. Its version string still says
+`0.49.2`; the source commit distinguishes it from the unpatched stable release.
+The default Terminal animation sample completed with exit status 0, acknowledged
+regional replacement and composition, output-committed controls, visible changing
+colors and completed cleanup. The tile-atlas witness completed all 1/4/16/64
+acknowledged RGB24 damage workloads and output-committed selections, showing a
+changing horizontal strip before cleanup.
+
+This removes the missing frame-ACK blocker for those exercised source-build
+transactions. It does not invalidate the negative stable-0.49.2 witness, establish
+clean/default configuration, or qualify a physical 8-by-8 grid or DCurses ATLAS.
+The recordings do not include the exact Terminal checkout SHA or all required
+live-provenance fields. The complete downstream gameplay, resize, fallback and
+exit workload remains an acceptance gate. See the compatibility record for the
+capture names, missing fields and precise observation limits.
