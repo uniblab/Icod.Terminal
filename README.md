@@ -9,9 +9,7 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.27.0`.
-
-Current development prerelease: `Icod.Terminal 1.28.0-alpha.1`. See the [1.28.0-alpha.1 release notes](docs/releases/1.28.0-alpha.1.md) for the approved published-spec Kitty Graphics transaction work and its qualification status.
+Current stable release: `Icod.Terminal 1.28.0`. See the [1.28.0 release notes](docs/releases/1.28.0.md) for the published-spec Kitty Graphics transaction contract, exact implementation evidence, downstream ATLAS qualification, and retained limits.
 
 Version 1.27 adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. It also accepts one trailing separator after populated Primary Device Attributes, preserving Kitty 0.49.2's attributes from `CSI ?62;52;c` while retaining numeric bounds and malformed-field rejection. Reviewed alpha source observations record positive appearance query/reporting and initial/changed resize in Kitty 0.49.2 through WSL, plus unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL. See the [1.27 release notes](docs/releases/1.27.0.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) for exact versions and limits. Reporting is opt-in; applications own theme selection and repaint policy.
 
@@ -32,8 +30,11 @@ or terminal-version branch. Version 1.27's brief basic-resource color display
 qualifies only that persistent resource/placement scenario, not animation or
 persistent ATLAS. Reviewed 2026-10-08 source-built Kitty recordings add limited
 positive animation, tile-update and corrected eight-row layout evidence, including
-cleanup and exit status 0. Downstream ATLAS still requires live qualification.
-See the [1.28 transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md)
+cleanup and exit status 0. The reviewed 2026-10-09 Icod.DCurses 2.3 sample then
+qualified the exact downstream compose-publish ATLAS workload with responsive
+movement and scrolling in that corrected-source Kitty lane. This remains scoped
+evidence, not an atomic, gapless, or universal rendering claim. See the
+[1.28 release notes](docs/releases/1.28.0.md), [transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md),
 and [hold record and evidence](docs/Graphics-Development-Hold.md).
 
 Ordinary raster capability selection prefers verified Kitty, then verified Sixel.
@@ -56,9 +57,9 @@ Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Te
 
 Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
 
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.27 preserves every 1.26.0 public signature and enum value while adding typed environment observations and independently scoped reporting. Existing screen planning, transactions, rendition, raster, input, lifecycle, and compatibility contracts remain available.
+The stable `1.0.0` compatibility floor remains unchanged. Version 1.28 preserves every existing public signature and enum value while adding the confirmation enum and read-only result property. Existing screen planning, transactions, rendition, raster, input, lifecycle, and compatibility contracts remain available.
 
-See the [1.27 release notes](docs/releases/1.27.0.md), additive [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.28 release notes](docs/releases/1.28.0.md), additive [1.28 API baseline](docs/Public-API-Baseline-1.28.md), and [changelog](CHANGELOG.md) for release-specific details.
 
 ## Support the Project
 
@@ -108,7 +109,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the stable release after publication:
 
 ```text
-dotnet add package Icod.Terminal --version 1.27.0
+dotnet add package Icod.Terminal --version 1.28.0
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
@@ -235,7 +236,7 @@ Appearance and InBandResize append to Notification in the semantic-event family;
 
 Suspend disables owned reporting before input/presentation and host restoration. Resume reobserves active modes in the internal query window and re-enables reporting before public queries resume. `InvalidateState()` preserves logical owners but invalidates each baseline; final release then performs no speculative toggle until that facility is reobserved. Untagged delayed bytes cannot prove freshness across an epoch change. Session disposal closes queries and lifecycle input, then reporting, input protocols, presentation, and host state. Cleanup errors are aggregated; successful local emission does not prove remote restoration.
 
-The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Graphics work is reopened only for the bounded 1.28 published-spec transaction and downstream ATLAS scope; all other hold boundaries remain in force.
+The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md) supplies consented, bounded cmd/sh walkthroughs and review-only JSON evidence without raw input or host identity. No Icod.TermInfo change is needed; dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Version 1.28 closes its bounded published-spec transaction and downstream ATLAS scope; all unrelated graphics-hold boundaries remain in force.
 
 ## Feature Inventory
 
@@ -402,6 +403,7 @@ The [`samples`](samples/README.md) directory contains focused examples for sessi
 
 Recommended documentation entry points:
 
+- [`docs/releases/1.28.0.md`](docs/releases/1.28.0.md) — published-spec Kitty transaction semantics, exact live evidence, downstream ATLAS qualification, and release limits;
 - [`docs/releases/1.27.0.md`](docs/releases/1.27.0.md) — terminal appearance, in-band resize, compatibility, and qualification notes;
 - [`docs/compatibility/1.27.0.md`](docs/compatibility/1.27.0.md) — current versioned terminal compatibility matrix; absent reviewed evidence remains explicitly `NotRun`;
 - [`docs/Kitty-Graphics-Transaction-Compatibility-1.28.md`](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md) — published response policy, exact Kitty 0.49.2 deviation, confirmation meanings, and live-evidence provenance;
