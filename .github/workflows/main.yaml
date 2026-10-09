@@ -15,6 +15,7 @@ permissions:
 env:
   DOTNET_VERSION: 10.0.x
   CONFIGURATION: Release
+  EXPECTED_VERSION: 1.28.0
   PACKAGE_CANDIDATE_ARTIFACT: icod-terminal-main-package-candidate
 
 jobs:
@@ -60,6 +61,7 @@ jobs:
           ./packaging/BuildPackageArtifact.ps1
           -ArtifactDirectory artifacts/package
           -Configuration '${{ env.CONFIGURATION }}'
+          -ExpectedVersion '${{ env.EXPECTED_VERSION }}'
           -ApiOutputDirectory artifacts/public-api
       - uses: actions/upload-artifact@v4
         with:
@@ -103,6 +105,7 @@ jobs:
           -ArtifactDirectory artifacts/candidate/package
           -Shard '${{ matrix.shard }}'
           -Configuration '${{ env.CONFIGURATION }}'
+          -ExpectedVersion '${{ env.EXPECTED_VERSION }}'
 
   compatibility-sample:
     needs: package-prep
