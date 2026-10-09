@@ -21,9 +21,20 @@ writes eight rows and leaves the reports below the grid. A follow-up recording o
 Terminal commit `70c6cacd2d26c3f962db513a23035f2570060cea` confirms that grid,
 changing colors, completed 1/4/16/64 workloads, cleanup and exit status `0`; it
 captures SDK `10.0.112` and a pre-run UTC timestamp. This source build still reports
-version `0.49.2`; identify it by source commit, not by the version string alone. Exact
-runtime/configuration provenance and the full DCurses ATLAS workload remain
-separate acceptance gates.
+version `0.49.2`; identify it by source commit, not by the version string alone.
+
+The later downstream acceptance used Icod.DCurses head
+[`d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d`](https://github.com/uniblab/Icod.DCurses/commit/d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d)
+with Icod.Terminal `1.28.0-alpha.1`. Its
+[seven-job workflow 37940789076](https://github.com/uniblab/Icod.DCurses/actions/runs/37940789076)
+passed, and the maintainer reported all 1,366 local `net10.0` tests passing. In the
+reviewed corrected-source Kitty run, the retained DCurses sample displayed the
+opaque 16-by-16 water, grass, forest, road, and player artwork and remained
+responsive while the player moved and the viewport scrolled. This accepts only
+that exercised compose-publish and interaction subset: help, resize, and independent exit observations remain `NotRun`.
+Other Kitty-protocol implementations also remain `NotRun`. The observation does
+not claim remote atomicity, gapless presentation, or correctness beyond the
+recorded workload.
 
 After the 1.27 DA1 correction, the separate persistent-raster ownership sample
 completed on Kitty 0.49.2 and briefly displayed its generated colors before cleanup.
