@@ -261,6 +261,7 @@ The root README describes the current product by capability rather than by the r
 - **Persistent raster animation** — one resource-owned controller, opaque root/appended frame tokens, exact positive timing, selection, loading-mode streaming, finite/indefinite playback, bounded sequence tracking, and no hidden source-frame replay.
 - **Animation frame composition (1.22)** — acknowledged bounded pixel composition between known frames of one current resource, with alpha blending or replacement; callers retain placement and playback control.
 - **Partial animation frame replacement (1.23)** — acknowledged RGB24/RGBA32 rectangle replacement in one known frame, with no new frame identity or hidden replay cache.
+- **Animation mutation confirmation (1.28)** — `Unspecified` preserves compatible unclassified success, `OutputCommitted` records the serialized write-and-flush boundary, and `ProtocolAcknowledged` records a correlated successful response; confirmation never claims visible rendering, atomicity, or gapless presentation.
 - **Raster geometry and planning (1.24)** — live terminal/cell pixel queries, exact caller-selected derivation, immutable resource dimensions, fixed admission ceilings, advisory local ownership counts, and focused generation-scoped operation evidence.
 - **Tile-atlas witness (1.24)** — protocol-neutral two-frame regional editing and placeholder presentation with exercised 1/4/16/64-region workloads, separate package-only measurements, and explicit text fallback; tile retention, damage, layout, and game state remain above Terminal.
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
@@ -333,6 +334,24 @@ if ( !result.Succeeded ) {
     // Report the definite unavailable, unsupported, or failed result.
 }
 ```
+
+In 1.28, successful mutation results expose the strongest completion evidence Terminal can report for that action:
+
+```csharp
+switch ( result.Confirmation ) {
+    case TerminalControlMutationConfirmation.ProtocolAcknowledged:
+        // A correlated successful protocol response completed the mutation.
+        break;
+    case TerminalControlMutationConfirmation.OutputCommitted:
+        // The complete command crossed the serialized write-and-flush boundary.
+        break;
+    case TerminalControlMutationConfirmation.Unspecified:
+        // Success is preserved, but its completion evidence is not classified.
+        break;
+}
+```
+
+These values classify transaction completion only. None proves visible rendering, remote atomicity, gapless presentation, or a later terminal state. A failed result has no successful confirmation; follow its status and fallback reason instead.
 
 In 1.24, query cell pixels directly when possible. If that bounded query times out, a caller may combine a separately observed terminal-pixel size with `GetDimensions()` only when exact integer derivation succeeds:
 
