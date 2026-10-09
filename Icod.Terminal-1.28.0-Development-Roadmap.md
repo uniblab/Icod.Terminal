@@ -2,8 +2,8 @@
 
 > **Execution:** Use the executing-plans workflow task by task in the main session
 > without subagents. The approved T2800 design and implementation plan govern
-> runtime and public-API changes. Tasks 1–8 are implemented; Task 9 retains the
-> downstream ATLAS, live-qualification and stable-closure gates.
+> runtime and public-API changes. The runtime and public-API work is implemented;
+> the stable promotion record below preserves the remaining evidence limits.
 
 **Goal:** Make persistent Kitty Graphics animation transactions conform to the
 published protocol, report their actual confirmation strength truthfully, and
@@ -16,11 +16,39 @@ Icod.DCurses raster atlas.
 terminal-brand or version-specific wire dialect. Record exact implementation
 observations separately, including confirmed deviations in Kitty 0.49.2.
 
-**Status:** Development prerelease `1.28.0-alpha.1` implements the approved
-transaction contract. Corrected-source Kitty samples have limited positive live
-evidence including the corrected eight-row visual witness; complete provenance,
-downstream ATLAS acceptance and stable closure remain open. The graphics-development hold
-is reopened only for this bounded 1.28 scope.
+**Status:** Stable `1.28.0` promotion is prepared on `release/1.28.0` after
+the maintainer accepted the published-spec transaction behavior and the available
+downstream ATLAS result. Exact implementation observations remain evidence-scoped;
+untested terminals and any unrecorded scenarios remain `NotRun`. Merge, tag,
+GitHub Release creation, and NuGet publication remain separate maintainer actions.
+
+## Stable promotion decision — 2026-10-09
+
+The maintainer approved stable promotion after the following bounded evidence:
+
+- Terminal `main` at `da139821290b617e928513330893e95f4a0c6e0f`
+  contains the reviewed 1.28 transaction implementation from PR #84.
+- Unmodified Kitty 0.49.2 retains the exact negative multi-chunk continuation
+  witness. Source-built Kitty
+  `96693f4c090e9477b51ffa46aed4abdcef52d037`, containing upstream
+  correction `b493a63`, supplies the positive animation, regional-update,
+  corrected eight-row layout, cleanup, and exit witnesses.
+- Icod.DCurses branch `2.3.0-raster-atlas-roadmap` at
+  `d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d` consumes published
+  `Icod.Terminal 1.28.0-alpha.1`, implements the intended compose-publish
+  flow, and passed all seven jobs in
+  [workflow 37940789076](https://github.com/uniblab/Icod.DCurses/actions/runs/37940789076).
+  Its complete local .NET 10 suite passed 1,366 tests.
+- The maintainer-observed corrected-source Kitty run selected `ATLAS`, rendered
+  the supplied opaque 16×16 tile artwork, and completed interactive movement and
+  scrolling responsively after full-coverage damage was coalesced. The maintainer
+  accepted the result. `FRAME` and `TEXT` remain controlled alternatives.
+
+This decision does not claim atomic or gapless remote presentation, does not
+generalize optional Kitty responses into protocol requirements, and does not
+qualify untested terminal implementations. The exact stable release branch and
+resulting `main` commit must still pass their complete workflows before
+`v1.28.0` may be created.
 
 **Baseline:** Stable `1.27.0` was merged through
 [PR #83](https://github.com/uniblab/Icod.Terminal/pull/83) at

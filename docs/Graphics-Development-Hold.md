@@ -43,11 +43,12 @@ recovered the starting image identity for explicit `a=f` continuations. That fix
 postdates stable Kitty 0.49.2; live validation on a containing build remains
 required.
 
-Terminal's bounded transfer deadline does not resolve the 0.49.2 defect. The
-downstream default DCurses sample still abandons atlas setup after its deadline
-and uses ordinary FRAME. Forced TEXT works; ordinary FRAME has correct input and
-display with implementation-dependent flicker. These observations do not qualify
-persistent ATLAS.
+Terminal's bounded transfer deadline does not resolve the 0.49.2 defect. In the
+historical unpatched stable-0.49.2 lane, the downstream default DCurses sample
+abandoned atlas setup after its deadline and used ordinary FRAME. Forced TEXT
+worked; ordinary FRAME had correct input and display with implementation-dependent
+flicker. Those observations do not qualify persistent ATLAS. The later
+corrected-source lane and its scoped downstream acceptance are recorded below.
 
 Animation-control response assumptions remain a separate concern. The published
 protocol documents `a=a` controls but does not unambiguously promise a success
@@ -102,7 +103,7 @@ is:
 - record implementation extensions and deviations as exact compatibility evidence;
 - avoid terminal-brand/version heuristics and the repeated-image-id continuation
   workaround;
-- qualify persistent ATLAS only through the complete downstream live workload;
+- qualify each persistent ATLAS claim only through recorded downstream live evidence at the claimed scope;
 - retain controlled FRAME/TEXT fallback for unqualified implementations.
 
 The [1.28 development roadmap](../Icod.Terminal-1.28.0-Development-Roadmap.md)
@@ -185,11 +186,11 @@ changing horizontal strip before cleanup.
 
 This removes the missing frame-ACK blocker for those exercised source-build
 transactions. It does not invalidate the negative stable-0.49.2 witness, establish
-clean/default configuration, or qualify a physical 8-by-8 grid or DCurses ATLAS.
-The recordings do not include the exact Terminal checkout SHA or all required
-live-provenance fields. The complete downstream gameplay, resize, fallback and
-exit workload remains an acceptance gate. See the compatibility record for the
-capture names, missing fields and precise observation limits.
+clean/default configuration, or by itself qualify a physical 8-by-8 grid or the
+DCurses retained renderer. The recordings do not include the exact Terminal
+checkout SHA or all required live-provenance fields. See the compatibility record
+for the capture names, missing fields and precise observation limits. The later
+2026-10-09 checkpoint below records the separately accepted downstream subset.
 
 The later `20261008-1512-07.0969947(1).mp4` retest on exact Terminal source
 `70c6cacd2d26c3f962db513a23035f2570060cea` accepts the corrected eight-by-eight
@@ -197,5 +198,25 @@ sample grid: colors change, reports stay below it, all 1/4/16/64 workloads compl
 cleanup removes the image and the process exits 0. The capture records SDK
 `10.0.112` and pre-run UTC time `2026-10-08 15:11:42`. All ten jobs in workflow
 `37796031515` passed on the tested source after the same-head Linux retry. This
-supersedes the pending Terminal grid-layout check; exact runtime/configuration
-provenance, other implementations and the full DCurses ATLAS workload remain open.
+supersedes the pending Terminal grid-layout check while retaining the missing
+runtime/configuration provenance and portability limits.
+### Scoped downstream ATLAS closure — 2026-10-09
+
+The downstream acceptance source is Icod.DCurses branch
+`2.3.0-raster-atlas-roadmap` at exact head
+[`d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d`](https://github.com/uniblab/Icod.DCurses/commit/d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d),
+using `Icod.Terminal 1.28.0-alpha.1`. Its
+[seven-job workflow 37940789076](https://github.com/uniblab/Icod.DCurses/actions/runs/37940789076)
+passed, and the maintainer reported all 1,366 local `net10.0` tests passing.
+
+The reviewed corrected-source Kitty run displayed the supplied opaque 16-by-16
+water, grass, forest, road, and player artwork. Movement remained responsive and
+the viewport scrolled at the tested area boundary after the full-coverage update
+coalescing correction. This closes the selected 1.28 downstream gate for that
+exercised compose-publish and interaction subset. It does not claim terminal-side
+atomicity, gapless presentation, or portability to an untested implementation.
+
+The remaining observation boundary is explicit: help, resize, and independent exit observations remain `NotRun`.
+Other Kitty-protocol implementations remain `NotRun`. FRAME and TEXT retain their
+controlled-alternative roles. Unrelated graphics expansion listed above remains
+on hold.

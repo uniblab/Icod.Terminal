@@ -57,9 +57,9 @@ mutation. Resource cleanup remains explicit and deterministic.
 | --- | --- | --- |
 | Headless scripted transport | Covered by deterministic source tests and the sample's `--headless-transcript` mode | Exact bytes, response/no-response policy, correlation, completion strength, ambiguity, ownership, and cleanup. It never establishes rendering. |
 | Kitty 0.49.2 | Reviewed limited live result: small single-chunk frame/control sequence completed; the documented multi-chunk `a=f` append timed out with controlled ambiguity. | The recorded scenarios only: single-chunk transfer/control completion and the exact negative multi-chunk acknowledgement result. It does not establish ATLAS. |
-| Source-built Kitty `96693f4c090e9477b51ffa46aed4abdcef52d037`, containing `b493a63` | Reviewed live sample results: default animation and 1/4/16/64 tile-atlas transactions completed; the corrected eight-row witness passed on Terminal source `70c6cac`. | Positive evidence for the exercised documented frame transfers, edits, composition, controls, grid layout and cleanup. Full downstream ATLAS and compose-publish acceptance remain open. |
+| Source-built Kitty `96693f4c090e9477b51ffa46aed4abdcef52d037`, containing `b493a63` | Reviewed live sample results: default animation and 1/4/16/64 tile-atlas transactions completed; the corrected eight-row witness passed on Terminal source `70c6cac`; the scoped DCurses compose-publish run passed on downstream head `d9ae518`. | Positive evidence for the exercised documented frame transfers, edits, composition, controls, grid layout, cleanup, opaque tile artwork, movement and viewport scrolling. The recorded scope does not include every interactive command. |
 | Another Kitty-protocol implementation | `NotRun` | Portability check that behavior does not depend on a Kitty brand/version branch. |
-| Operator-visible rendering | Original 0.49.2 lane: small-sample flash. Corrected source build: changing colors in the small sample, the earlier atlas strip and the corrected eight-by-eight atlas grid. | The recorded visual observations only. The corrected grid does not qualify the DCurses renderer; transaction confirmation still does not claim rendering. |
+| Operator-visible rendering | Original 0.49.2 lane: small-sample flash. Corrected source build: changing colors in the small sample, the earlier atlas strip, the corrected eight-by-eight Terminal grid, and the downstream DCurses opaque tile artwork with responsive movement and scrolling. | The recorded visual observations only. Transaction confirmation does not claim rendering, atomicity, or gapless presentation; unobserved interactions remain unqualified. |
 
 `NotRun` is evidence, not a synonym for unsupported or failed. Missing,
 unreviewed, or differently scoped observations remain `NotRun`; source review and
@@ -115,8 +115,9 @@ start time, and clean/default Kitty configuration state were not independently
 captured and remain `NotRecorded`. Both runs precede the sample row-layout fix.
 This is therefore a limited positive live checkpoint, not complete T2810
 provenance or a downstream ATLAS support claim. The unpatched 0.49.2 negative
-witness above remains valid. Other implementations and the complete DCurses
-ATLAS movement/help/resize/exit workload remain `NotRun` under this new contract.
+witness above remains valid. Other implementations remain `NotRun` under this checkpoint. The later downstream
+record below accepts artwork, movement, and scrolling only; help, resize, and
+independent exit were not observed in this earlier run.
 
 ## Reviewed eight-row retest — 2026-10-08
 
@@ -148,8 +149,9 @@ atomicity, gapless presentation or complete visual validation of every tile edit
 Reviewed capture: `20261008-1512-07.0969947(1).mp4`, supplied by Timothy J. Bruce,
 SHA-256 `69452c56dec4cd6a44e6f6ac3bb9f3c5cca17fe2a7c18405f5f0e8ee0dcf477a`.
 The exact runtime patch, clean working-tree state, Kitty configuration and
-precise sample-process start remain `NotRecorded`. Other implementations and the
-full DCurses ATLAS workload remain `NotRun` under the new contract.
+precise sample-process start remain `NotRecorded`. Other implementations remain
+`NotRun` under the new contract; the downstream evidence below is limited to its
+recorded compose-publish and interaction subset.
 
 The tested Terminal source passed all ten jobs in
 [workflow 37796031515](https://github.com/uniblab/Icod.Terminal/actions/runs/37796031515),
@@ -158,6 +160,29 @@ gate. The first Linux attempt hit a deadline in the existing ambiguous-pixel
 hardening test's follow-up append on .NET 8; its .NET 9/10 runs passed. The same-head
 Linux retry passed. The local .NET 8 and 10 suites each passed all 2,868 unit tests;
 the local .NET 10 TermInfo integration suite passed all 15 tests.
+
+## Reviewed downstream DCurses ATLAS acceptance — 2026-10-09
+
+The accepted downstream source is Icod.DCurses branch
+`2.3.0-raster-atlas-roadmap` at exact head
+[`d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d`](https://github.com/uniblab/Icod.DCurses/commit/d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d),
+using the published `Icod.Terminal 1.28.0-alpha.1` dependency. Its
+[workflow 37940789076](https://github.com/uniblab/Icod.DCurses/actions/runs/37940789076)
+passed all seven jobs. The maintainer separately reported all 1,366 local
+`net10.0` tests passing.
+
+In the reviewed corrected-source Kitty lane, the DCurses RasterAtlas sample
+showed the supplied opaque 16-by-16 water, grass, forest, road, and player artwork.
+Movement remained responsive, and viewport scrolling completed at the tested
+area boundary after full-coverage updates were coalesced. This accepts the
+exercised retained-renderer compose-publish path and those operator observations.
+It does not turn `OutputCommitted` or `ProtocolAcknowledged` into rendering
+claims, and it does not establish atomic or gapless presentation.
+
+The evidence scope is intentionally narrower than every sample interaction:
+help, resize, and independent exit observations remain `NotRun`. Other
+Kitty-protocol implementations remain `NotRun`. FRAME and TEXT remain controlled
+alternatives rather than evidence for persistent ATLAS.
 
 ## Required provenance for a live report
 

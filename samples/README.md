@@ -192,23 +192,33 @@ See [`Icod.Terminal.RasterPlaceholder.Sample/README.md`](Icod.Terminal.RasterPla
 
 ### `Icod.Terminal.RasterAnimation.Sample`
 
-Demonstrates full-frame streaming, the 1.22 bounded frame-composition operation, the 1.23 bounded caller-supplied partial frame replacement, the 1.24 geometry/planning/evidence contracts, and 1.28 transaction confirmation within a resource-owned animation. Its default path verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+Demonstrates full-frame streaming, the 1.22 bounded frame-composition operation, the 1.23 bounded caller-supplied partial frame replacement, the 1.24 geometry/planning/evidence contracts, and 1.28 transaction confirmation within a resource-owned animation. Choose one of three modes:
+
+- **Default animation witness** — verifies persistent raster graphics, appends known full-size frames, replaces one pixel from caller-owned RGBA32 data, composes another pixel from the root frame, then selects and plays frames. Animation support can be unknown before the first acknowledged control; the sample proceeds when graphics is usable and animation is not known unsupported.
+- **`--tile-atlas`** — runs Terminal's generated 8-by-8 protocol/transaction witness with exact cell-geometry fallback, placeholder cells, two reusable known frames, and 1/4/16/64-region damage workloads. This is not the higher-level retained renderer or viewport workload owned by Icod.DCurses.
+- **`--headless-transcript`** — prints a bounded noninteractive explanation of `Unspecified`, `OutputCommitted`, and `ProtocolAcknowledged`. It opens no terminal and explicitly leaves visible rendering `NotRun`.
+
+Run the Default animation witness:
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0
 ```
 
-Use `--headless-transcript` for a bounded noninteractive explanation of
-`Unspecified`, `OutputCommitted`, and `ProtocolAcknowledged`. It opens no terminal
-and explicitly leaves visible rendering `NotRun`.
-
-Pass `--tile-atlas` for a generated 8-by-8 atlas, exact cell-geometry fallback, planning checks, placeholder cells, two reusable known frames, and exercised 1/4/16/64-region damage workloads:
+Run the `--tile-atlas` transaction witness:
 
 ```text
 dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --tile-atlas
 ```
 
-Run this in an interactive terminal with persistent raster graphics and animation support. The interactive sample does not benchmark the terminal. Controlled metrics come from the package-only scripted harness and are recorded in the [1.24 tile-atlas measurement report](../docs/Raster-Tile-Atlas-Measurement-1.24.md). The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains acknowledgement, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy. The brief color flash previously observed in the basic ownership sample qualifies only that resource/placement scenario; it is not persistent ATLAS or animation qualification. See the [1.28 transaction compatibility record](../docs/Kitty-Graphics-Transaction-Compatibility-1.28.md).
+Run the `--headless-transcript` explanation:
+
+```text
+dotnet run --project samples/Icod.Terminal.RasterAnimation.Sample/Icod.Terminal.RasterAnimation.Sample.csproj -f net10.0 -- --headless-transcript
+```
+
+Run either interactive mode in a terminal with persistent raster graphics and animation support. The sample does not benchmark the terminal. Controlled metrics come from the package-only scripted harness and are recorded in the [1.24 tile-atlas measurement report](../docs/Raster-Tile-Atlas-Measurement-1.24.md). The [animation walkthrough](Icod.Terminal.RasterAnimation.Sample/README.md) explains confirmation strength, definite failure versus an uncertain committed attempt, two-frame ordering without an atomicity claim, explicit text fallback, and caller-owned placement/damage/playback policy.
+
+The accepted higher-level evidence is separately scoped to Icod.DCurses head [`d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d`](https://github.com/uniblab/Icod.DCurses/commit/d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d). Its [seven-job workflow 37940789076](https://github.com/uniblab/Icod.DCurses/actions/runs/37940789076) passed, the maintainer reported all 1,366 local `net10.0` tests passing, and the reviewed corrected-source Kitty run showed the opaque 16-by-16 artwork plus responsive movement and scrolling. That accepts the exercised DCurses compose-publish path only: help, resize, and independent exit observations remain `NotRun`, as do other terminal implementations. Neither Terminal's witness nor the downstream observation claims atomic or gapless presentation.
 
 ### `Icod.Terminal.TermInfoPersistentRaster.Sample`
 
