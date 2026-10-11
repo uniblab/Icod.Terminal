@@ -9,8 +9,8 @@
 
 ## Status
 
-Stable release: **1.28.0**. Development candidate: **1.29.0-alpha.1**, adding bounded
-clipboard transfers. The stable **1.0.0 compatibility floor** remains unchanged.
+Stable release: **1.29.0**. It adds bounded, opt-in OSC 52 clipboard transfers;
+the stable **1.0.0 compatibility floor** remains unchanged.
 
 See the [changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md)
 for release history, the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
@@ -62,10 +62,10 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install the stable release after publication:
+Install the stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.28.0
+dotnet add package Icod.Terminal --version 1.29.0
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
@@ -133,7 +133,7 @@ This capability check is a conservative fallback, not a guarantee: the effective
 
 ### Clipboard transfers
 
-Configurable clipboard budgets are available in `1.29.0-alpha.1` and later.
+Configurable clipboard budgets are available in `1.29.0` and later.
 Read and write limits independently default to 64 KiB and allow explicit opt-in
 through 16 MiB. These authorize local resources; they do not negotiate terminal
 capacity.
