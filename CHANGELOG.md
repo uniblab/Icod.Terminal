@@ -2,7 +2,7 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
-## 1.29.0-alpha.1
+## 1.29.0
 
 - Add independent immutable session clipboard read/write budgets, preserving the
   65,536-byte defaults and allowing explicit limits up to 16,777,216 decoded bytes.
@@ -14,7 +14,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Add explicit generated-payload samples, a consented larger round-trip scenario,
   privacy-safe diagnostics, allocation regression tests and fresh-package coverage.
 - Preserve public method signatures, enum values, .NET 8/9/10 and existing dependencies.
-  See [alpha notes](docs/releases/1.29.0-alpha.1.md) and
+  See [1.29.0 release notes](docs/releases/1.29.0.md) and
   [qualification](docs/Clipboard-Transfer-Qualification-1.29.md) for measured limits.
 
 ## 1.28.0
