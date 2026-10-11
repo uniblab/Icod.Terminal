@@ -14,9 +14,10 @@ preserving the 64 KiB default and bounded single-session input/output ownership.
 the next Terminal milestone before DCurses/Widgets editor work, and explicitly
 confirmed that 64 KiB is the correct default with larger buffers opt-in.
 
-**Status:** Approved and implemented as the `1.29.0-alpha.1` candidate in PR #87.
+**Status:** Implemented and qualified for stable `1.29.0` in PR #87.
 See [qualification](docs/Clipboard-Transfer-Qualification-1.29.md) for automated
-results, measured allocation and outstanding live/release gates. Nothing has been published.
+results, measured allocation and outstanding live/release gates. Merge, tagging and
+publication remain maintainer actions.
 
 **Architecture:** Add immutable session clipboard read/write budgets and propagate
 them through private encoding and correlated response accumulation. Keep ordinary
