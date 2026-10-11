@@ -117,6 +117,12 @@ internal sealed class TerminalResponseFrame {
 	internal TerminalResponseFrame(
 		TerminalResponseFrameKind kind,
 		byte[] bytes
+	) : this( kind, ( bytes ?? throw new ArgumentNullException( nameof( bytes ) ) ).AsSpan() ) {
+	}
+
+	internal TerminalResponseFrame(
+		TerminalResponseFrameKind kind,
+		ReadOnlySpan<byte> bytes
 	) {
 		if ( !Enum.IsDefined( kind ) ) {
 			throw new ArgumentOutOfRangeException(
@@ -125,7 +131,6 @@ internal sealed class TerminalResponseFrame {
 				"The terminal response frame kind is not recognized."
 			);
 		}
-		ArgumentNullException.ThrowIfNull( bytes );
 		if ( 0 == bytes.Length ) {
 			throw new ArgumentException(
 				"A terminal response frame cannot be empty.",
@@ -168,6 +173,11 @@ internal sealed class TerminalResponseFrame {
 /// Owns one internal response expectation without exposing routing state publicly.
 /// </summary>
 internal sealed class TerminalResponseExpectation {
+	private readonly TaskCompletionSource ownershipEnded = new(
+		TaskCreationOptions.RunContinuationsAsynchronously );
+	internal Task OwnershipEnded => this.ownershipEnded.Task;
+	internal void EndOwnership() => this.ownershipEnded.TrySetResult();
+
 	private readonly TaskCompletionSource<TerminalResponseFrame> completion = new(
 		TaskCreationOptions.RunContinuationsAsynchronously
 	);

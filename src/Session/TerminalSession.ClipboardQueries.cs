@@ -47,10 +47,17 @@ public sealed partial class TerminalSession {
 	/// <para>
 	/// After an emitted request times out or the caller cancels, the transaction retains
 	/// bounded late-response ownership so a delayed reply cannot satisfy a later query or
-	/// leak into ordinary input. A structurally correlated OSC 52 response which reaches
-	/// the complete-frame ceiling without terminating fails deterministically with
-	/// <see cref="FormatException"/> and is drained through its OSC terminator before
-	/// ordinary input decoding resumes.
+	/// leak into ordinary input. Larger correlated replies use a separate bounded
+	/// accumulator. Malformed or oversized replies are drained through their terminator
+	/// before reporting <see cref="FormatException"/>. If bounded recovery or late
+	/// ownership expires before termination, the input coordinator fails closed.
+	/// A caller deadline may expire first. No partial payload is returned.
+	/// </para>
+	/// <para>
+	/// The decoded-byte limit is <see cref="TerminalClipboardOptions.MaximumReadBytes"/>.
+	/// Ordinary decoder settings still govern prefix recognition; a seven-byte buffer
+	/// accommodates both supported OSC 52 introducers. Budgets at or below 64 KiB retain
+	/// the existing ordinary-buffer framing behavior.
 	/// </para>
 	/// <para>
 	/// A successful result means a syntactically correlated OSC 52 response was
@@ -73,16 +80,19 @@ public sealed partial class TerminalSession {
 		cancellationToken.ThrowIfCancellationRequested();
 
 		byte[] request = OscWriter.EncodeOsc52QueryFrame( protocolSelection );
-		TerminalResponseFrame frame = await this.ExecuteQueryAsync(
+		int maximumBytes = this.Options.ClipboardOptions.MaximumReadBytes;
+		TerminalQueryResponseResult result = await this.ExecuteQueryTransactionAsync(
 			request,
-			TerminalOsc52Protocol.CreateResponseMatcher( protocolSelection ),
+			TerminalQueryResponsePlan.ForClipboard(
+				TerminalOsc52Protocol.CreateResponseMatcher( protocolSelection ), maximumBytes ),
 			timeout,
 			cancellationToken
 		).ConfigureAwait( false );
 
 		return TerminalOsc52Protocol.ParsePayload(
-			frame,
-			protocolSelection
+			result.Frame,
+			protocolSelection,
+			maximumBytes
 		);
 	}
 

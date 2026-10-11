@@ -263,6 +263,24 @@ Stable 1.x does not promise:
 
 Relative placement, lifecycle observation, virtual placeholders, and resource-owned animation are deliberately bounded additions and must not be interpreted as promises for these excluded features.
 
+## 1.29 clipboard transfer compatibility
+
+The additive `TerminalClipboardOptions` contract preserves existing clipboard
+overloads, selection values, strict UTF-8 behavior and default decoded-byte limits.
+Independent init-only read/write budgets accept 1..16 MiB; no production dependency
+changes. See [the API baseline](Public-API-Baseline-1.29.md).
+
+Budgets above 64 KiB opt into a separate correlated accumulator; budgets at or
+below it retain ordinary-buffer framing. Ordinary input, paste and unrelated
+query ceilings are unchanged. Customized ordinary buffers must still accommodate
+the selection prefix (seven bytes covers both supported introducers).
+Wrong-selection/unsolicited handling remains unchanged. Bounded recovery can
+fail input closed if the peer never terminates a correlated reply.
+
+This contract authorizes local resources, with no remote negotiation or acceptance
+inference. Headless package evidence and live emulator observations remain separate;
+consult [the qualification record](Clipboard-Transfer-Qualification-1.29.md).
+
 ## 11.1 1.28 animation transaction compatibility
 
 The published Kitty Graphics Protocol, not terminal branding or a version string, selects wire syntax and response policy. Required `a=f` operations succeed only with a correlated protocol acknowledgement. No-response `a=a` controls add `q=2` and report `OutputCommitted` after the complete serialized write and flush. Optional-response `a=c` composition reports `ProtocolAcknowledged` for correlated `OK`, a definitive failure for correlated error, and `OutputCommitted` for bounded committed silence.

@@ -1,6 +1,6 @@
 # Bounded Clipboard Transfers — 1.29 Design
 
-**Status:** Proposed for maintainer review; selected scope, not implemented API.
+**Status:** Approved by the maintainer; implemented in the 1.29.0-alpha.1 candidate.
 **Decision date:** 2026-10-10 (America/New_York).
 **Baseline:** Icod.Terminal main `2c410cd80663fef30912079e2c0de7a550852b97`,
 stable [v1.28.0](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.28.0).
@@ -50,7 +50,7 @@ chunked input facility; its total size is not the OSC 52 limit.
 3. Public streaming clipboard API or another protocol: larger contract and
    lifecycle scope than the editor currently needs. Deferred.
 
-## Proposed public contract
+## Approved public contract
 
 Names and values below are the concrete review proposal. Freeze them at T2900;
 they are not shipped API until implemented and qualified.
@@ -73,9 +73,9 @@ its existing explicit-clear meaning. Null options are rejected during session
 validation; invalid budgets fail before acquiring modes or emitting output.
 The session retains immutable effective values for its lifetime.
 
-The 16 MiB hard ceiling is a proposed library resource policy, not a terminal
+The 16 MiB hard ceiling is an approved library resource policy, not a terminal
 capability claim or an advertised guarantee that any terminal accepts that size.
-Maintainer review may choose a lower ceiling before the API freeze.
+Applications may choose any lower positive budget independently for reads and writes.
 
 Existing methods and return types remain unchanged:
 
@@ -209,6 +209,20 @@ query or overwrite the user's clipboard during sample startup or session open.
   1.29.0-alpha.1; stable 1.29.0 promotion is a later reviewed step.
 - Live results identify terminal/version, OS, transport, runtime, commit and
   payload sizes. Unavailable environments remain NotRun; do not invent coverage.
+
+## Implementation rulings
+
+- Reuse the existing control-sequence scanner incrementally; no second reader or
+  duplicate control grammar. Keep the generic scanner ceiling unchanged.
+- An invalid/oversized correlated frame reports FormatException after bounded
+  terminator drain. If no terminator arrives, the caller deadline may expire first;
+  exhausted recovery or late ownership fails the input coordinator closed.
+- Preserve existing wrong-selection/unsolicited decoding and tiny ordinary-buffer
+  behavior. Seven ordinary bytes accommodate selection-prefix recognition; once
+  correlated, larger reads do not depend on the ordinary buffer's payload capacity.
+- Verify linear work with one scanner Feed call per input byte and deterministic
+  allocation bounds rather than production-only instrumentation counters. Record
+  measurements and outstanding live gates in the qualification document.
 
 ## Authorities
 

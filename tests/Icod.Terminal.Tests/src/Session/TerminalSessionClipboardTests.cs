@@ -30,6 +30,46 @@ using Xunit;
 /// </summary>
 public sealed class TerminalSessionClipboardTests {
 	[Theory]
+	[InlineData( 65_537 )]
+	[InlineData( 1_048_576 )]
+	[InlineData( 16_777_216 )]
+	public async Task OptInWriteBudgetEmitsExactLargerPayload( int size ) {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			new RecordingTerminalControlProvider(), output,
+			new TerminalSessionOptions {
+				TerminalOverride = TerminalProfiles.Dumb,
+				ClipboardOptions = new() { MaximumWriteBytes = size }
+			} );
+		byte[] payload = new byte[ size ];
+		for ( int i = 0; i < payload.Length; i++ ) payload[ i ] = (byte)i;
+		await session.WriteClipboardAsync( TerminalClipboardSelection.Clipboard, payload );
+		Assert.Equal( 1, output.WriteCount );
+		byte[] frame = output.Bytes.ToArray();
+		Assert.Equal( payload, Convert.FromBase64String(
+			Encoding.ASCII.GetString( frame, 7, frame.Length - 9 ) ) );
+		Assert.Equal( 65_536, session.Options.ClipboardOptions.MaximumReadBytes );
+	}
+
+	[Fact]
+	public async Task CustomWriteBudgetRejectsUtf8BytesBeforeOutput() {
+		RecordingTerminalOutput output = new();
+		await using TerminalSession session = await OpenSessionAsync(
+			new RecordingTerminalControlProvider(), output,
+			new TerminalSessionOptions {
+				TerminalOverride = TerminalProfiles.Dumb,
+				ClipboardOptions = new() { MaximumWriteBytes = 3 }
+			} );
+		await Assert.ThrowsAsync<ArgumentException>( () => session.WriteClipboardAsync(
+			TerminalClipboardSelection.Clipboard, "éé" ).AsTask() );
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>( () => session.WriteClipboardAsync(
+			TerminalClipboardSelection.Clipboard, new byte[ 4 ] ).AsTask() );
+		Assert.Equal( 0, output.WriteCount );
+		await session.WriteClipboardAsync( TerminalClipboardSelection.Clipboard, "é" );
+		Assert.Equal( 1, output.WriteCount );
+	}
+
+	[Theory]
 	[InlineData( 0, "hello", "1B5D35323B633B614756736247383D1B5C" )]
 	[InlineData( 1, "hello", "1B5D35323B703B614756736247383D1B5C" )]
 	[InlineData( 2, "hello", "1B5D35323B713B614756736247383D1B5C" )]

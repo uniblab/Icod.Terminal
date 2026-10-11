@@ -31,7 +31,13 @@ return await CompatibilityCommandLine.RunAsync(
 	args,
 	Console.Out,
 	Console.Error,
-	static cancellationToken => TerminalSession.OpenAsync(
+	cancellationToken => TerminalSession.OpenAsync(
+		new TerminalSessionOptions {
+			ClipboardOptions = args.Contains( "clipboard.osc52.large", StringComparer.Ordinal )
+				|| args.Contains( "--run-all", StringComparer.Ordinal )
+				? new() { MaximumReadBytes = 131_072, MaximumWriteBytes = 131_072 }
+				: new()
+		},
 		cancellationToken: cancellationToken
 	),
 	cancellation.Token

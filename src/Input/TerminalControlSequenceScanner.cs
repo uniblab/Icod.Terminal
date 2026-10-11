@@ -63,10 +63,14 @@ internal sealed class TerminalControlSequenceScanner {
 	private int length;
 
 	internal TerminalControlSequenceScanner(
-		int maximumFrameBytes
+		int maximumFrameBytes,
+		bool clipboardCapacity = false
 	) {
+		int hardMaximum = clipboardCapacity
+			? TerminalClipboardLimits.GetResponseFrameLimit( TerminalClipboardOptions.SupportedMaximumBytes )
+			: TerminalResponseFramer.HardMaximumFrameBytes;
 		if ( 4 > maximumFrameBytes
-			|| TerminalResponseFramer.HardMaximumFrameBytes < maximumFrameBytes ) {
+			|| hardMaximum < maximumFrameBytes ) {
 			throw new ArgumentOutOfRangeException( nameof( maximumFrameBytes ) );
 		}
 

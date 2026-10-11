@@ -43,11 +43,11 @@ public sealed partial class TerminalSession {
 	}
 
 	/// <summary>
-	/// Gets the maximum number of undecoded bytes retained by the input decoder.
+	/// Gets the maximum number of ordinary undecoded bytes retained by the input decoder.
 	/// </summary>
 	/// <remarks>
-	/// The ceiling is 87,400 bytes, matching the independently enforced maximum
-	/// complete OSC 52 frame size.
+	/// The ceiling remains 87,400 bytes. An explicitly larger clipboard read budget
+	/// uses separate bounded storage only after a correlated OSC 52 prefix is recognized.
 	/// </remarks>
 	public static int MaximumBufferedInputBytes {
 		get {

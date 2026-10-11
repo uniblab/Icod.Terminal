@@ -114,9 +114,11 @@ internal static class TerminalOsc52PayloadCodec {
 	}
 
 	internal static int GetDecodedLength(
-		ReadOnlySpan<byte> encodedPayload
+		ReadOnlySpan<byte> encodedPayload,
+		int maximumBytes = MaximumDecodedPayloadBytes
 	) {
-		ValidateEncodedPayloadLength( encodedPayload.Length );
+		TerminalClipboardOptions.ValidateLimit( maximumBytes, nameof( maximumBytes ) );
+		ValidateEncodedPayloadLength( encodedPayload.Length, maximumBytes );
 		if ( encodedPayload.IsEmpty ) {
 			return 0;
 		}
@@ -131,11 +133,11 @@ internal static class TerminalOsc52PayloadCodec {
 		int decodedLength = checked(
 			( encodedPayload.Length / 4 ) * 3 - padding
 		);
-		if ( MaximumDecodedPayloadBytes < decodedLength ) {
+		if ( maximumBytes < decodedLength ) {
 			throw new ArgumentOutOfRangeException(
 				nameof( encodedPayload ),
 				encodedPayload.Length,
-				$"An OSC 52 decoded payload cannot exceed {MaximumDecodedPayloadBytes} bytes."
+				$"An OSC 52 decoded payload cannot exceed {maximumBytes} bytes."
 			);
 		}
 
@@ -143,9 +145,10 @@ internal static class TerminalOsc52PayloadCodec {
 	}
 
 	internal static byte[] Decode(
-		ReadOnlySpan<byte> encodedPayload
+		ReadOnlySpan<byte> encodedPayload,
+		int maximumBytes = MaximumDecodedPayloadBytes
 	) {
-		int decodedLength = GetDecodedLength( encodedPayload );
+		int decodedLength = GetDecodedLength( encodedPayload, maximumBytes );
 		if ( 0 == decodedLength ) {
 			return [];
 		}
@@ -190,10 +193,11 @@ internal static class TerminalOsc52PayloadCodec {
 	}
 
 	private static void ValidateEncodedPayloadLength(
-		int encodedByteCount
+		int encodedByteCount,
+		int maximumBytes
 	) {
 		if ( 0 > encodedByteCount
-			|| MaximumEncodedPayloadBytes < encodedByteCount ) {
+			|| TerminalClipboardLimits.GetEncodedLength( maximumBytes ) < encodedByteCount ) {
 			throw new ArgumentOutOfRangeException( nameof( encodedByteCount ) );
 		}
 		if ( 0 != encodedByteCount % 4 ) {
@@ -254,7 +258,7 @@ internal static class TerminalOsc52PayloadCodec {
 		int decoded = DecodeSextet( value );
 		if ( 0 > decoded ) {
 			throw new FormatException(
-				$"OSC 52 payload contains invalid base64 byte 0x{value:X2}."
+				"OSC 52 payload contains an invalid base64 byte."
 			);
 		}
 

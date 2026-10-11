@@ -252,6 +252,9 @@ internal sealed class TerminalSessionCompatibilityLiveClient : ICompatibilityLiv
 		"clipboard.osc52" => ClipboardCompatibilityScenarios.ExecuteAsync(
 			this.session, cancellationToken
 		),
+		"clipboard.osc52.large" => ClipboardCompatibilityScenarios.ExecuteLargeAsync(
+			this.session, cancellationToken
+		),
 		"input.text-key" or
 		"input.paste-focus-mouse" or
 		"input.modern-keyboard" or

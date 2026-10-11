@@ -20,7 +20,8 @@
 */
 namespace Icod.Terminal;
 
-using System.Text;
+using System.Buffers;
+using System.Buffers.Text;
 
 internal static partial class OscWriter {
 	private static readonly byte[] Osc52Prefix = [
@@ -36,21 +37,23 @@ internal static partial class OscWriter {
 	/// </summary>
 	internal static byte[] EncodeOsc52WriteFrame(
 		TerminalOsc52Selection selection,
-		ReadOnlySpan<byte> payload
+		ReadOnlySpan<byte> payload,
+		int maximumBytes = TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes
 	) {
 		byte selectionByte = TerminalOsc52SelectionEncoder.Encode( selection );
-		int frameLength = TerminalOsc52PayloadCodec.GetWriteFrameLength( payload.Length );
-		string encodedPayload = TerminalOsc52PayloadCodec.Encode( payload );
+		TerminalClipboardOptions.ValidateLimit( maximumBytes, nameof( maximumBytes ) );
+		if ( payload.Length > maximumBytes ) throw new ArgumentOutOfRangeException( nameof( payload ) );
+		int encodedLength = TerminalClipboardLimits.GetEncodedLength( payload.Length );
+		int frameLength = checked( encodedLength + 9 );
 		byte[] frame = new byte[ frameLength ];
 
 		Osc52Prefix.CopyTo( frame, 0 );
 		frame[ 5 ] = selectionByte;
 		frame[ 6 ] = (byte)';';
-		if ( 0 < encodedPayload.Length ) {
-			Encoding.ASCII.GetBytes(
-				encodedPayload.AsSpan(),
-				frame.AsSpan( 7, encodedPayload.Length )
-			);
+		if ( Base64.EncodeToUtf8( payload, frame.AsSpan( 7, encodedLength ),
+			out int consumed, out int written ) != OperationStatus.Done
+			|| consumed != payload.Length || written != encodedLength ) {
+			throw new InvalidOperationException( "Clipboard encoding produced an invalid length." );
 		}
 		frame[ ^2 ] = 0x1b;
 		frame[ ^1 ] = (byte)'\\';
@@ -91,7 +94,8 @@ internal static partial class OscWriter {
 		ITerminalOutput output,
 		TerminalOsc52Selection selection,
 		ReadOnlyMemory<byte> payload,
-		CancellationToken cancellationToken = default
+		CancellationToken cancellationToken = default,
+		int maximumBytes = TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes
 	) {
 		ArgumentNullException.ThrowIfNull( output );
 		_ = TerminalOsc52SelectionEncoder.Encode( selection );
@@ -99,7 +103,8 @@ internal static partial class OscWriter {
 
 		byte[] frame = EncodeOsc52WriteFrame(
 			selection,
-			payload.Span
+			payload.Span,
+			maximumBytes
 		);
 		cancellationToken.ThrowIfCancellationRequested();
 

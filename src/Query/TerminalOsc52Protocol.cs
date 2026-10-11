@@ -32,7 +32,8 @@ internal static class TerminalOsc52Protocol {
 
 	internal static byte[] ParsePayload(
 		TerminalResponseFrame frame,
-		TerminalOsc52Selection selection
+		TerminalOsc52Selection selection,
+		int maximumBytes = TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes
 	) {
 		ArgumentNullException.ThrowIfNull( frame );
 		if ( TerminalResponseFrameKind.Osc != frame.Kind ) {
@@ -51,7 +52,7 @@ internal static class TerminalOsc52Protocol {
 		}
 
 		try {
-			return TerminalOsc52PayloadCodec.Decode( payload );
+			return TerminalOsc52PayloadCodec.Decode( payload, maximumBytes );
 		} catch ( ArgumentOutOfRangeException exception ) {
 			throw new FormatException(
 				"The correlated OSC 52 response payload exceeds the supported bound.",

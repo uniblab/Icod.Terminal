@@ -82,6 +82,21 @@ internal sealed class TerminalQueryResponseRule {
 /// Defines the bounded set of response families which may complete one logical terminal query.
 /// </summary>
 internal sealed class TerminalQueryResponsePlan {
+	// A separate accumulator is enabled only by explicit larger clipboard reads.
+	internal int MaximumClipboardBytes { get; private init; }
+
+	internal static TerminalQueryResponsePlan ForClipboard(
+		ITerminalResponseMatcher matcher, int maximumBytes
+	) {
+		TerminalClipboardOptions.ValidateLimit( maximumBytes, nameof( maximumBytes ) );
+		return new TerminalQueryResponsePlan( new TerminalQueryResponseRule(
+			matcher, TerminalQueryResponseDisposition.Completion,
+			Math.Min( TerminalClipboardLimits.GetResponseFrameLimit( maximumBytes ),
+				TerminalOsc52PayloadCodec.MaximumFrameBytes ) ) ) {
+			MaximumClipboardBytes = maximumBytes
+		};
+	}
+
 	internal const int MaximumRules = 6;
 
 	private readonly TerminalQueryResponseRule[] rules;

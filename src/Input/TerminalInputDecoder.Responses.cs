@@ -101,6 +101,7 @@ internal sealed partial class TerminalInputDecoder {
 		}
 
 		expectation.TrySetCanceled();
+		expectation.EndOwnership();
 		return true;
 	}
 
@@ -133,6 +134,11 @@ internal sealed partial class TerminalInputDecoder {
 				cancellationToken
 			).ConfigureAwait( false ) ) {
 				continue;
+			}
+
+			if ( expectation.ResponsePlan.MaximumClipboardBytes > TerminalClipboardOptions.DefaultMaximumBytes
+				&& expectation.ResponsePlan.IsCorrelatedPrefix( TerminalControlFamily.Osc, this.bufferedBytes ) ) {
+				return await this.ReadLargeClipboardResponseAsync( expectation, cancellationToken ).ConfigureAwait( false );
 			}
 
 			TerminalResponseFrameParseResult parseResult = this.ParseExpectedResponse(

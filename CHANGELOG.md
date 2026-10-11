@@ -2,6 +2,21 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.29.0-alpha.1
+
+- Add independent immutable session clipboard read/write budgets, preserving the
+  65,536-byte defaults and allowing explicit limits up to 16,777,216 decoded bytes.
+- Encode larger writes directly into one bounded OSC 52 frame; retain strict
+  UTF-8 validation, ordering, no truncation and existing cancellation boundaries.
+- Incrementally accumulate explicitly larger correlated replies without expanding
+  ordinary input or unrelated query limits. Bound malformed/overflow recovery,
+  preserve late-query ownership and fail unresolved input closed.
+- Add explicit generated-payload samples, a consented larger round-trip scenario,
+  privacy-safe diagnostics, allocation regression tests and fresh-package coverage.
+- Preserve public method signatures, enum values, .NET 8/9/10 and existing dependencies.
+  See [alpha notes](docs/releases/1.29.0-alpha.1.md) and
+  [qualification](docs/Clipboard-Transfer-Qualification-1.29.md) for measured limits.
+
 ## 1.28.0
 
 - Adds truthful mutation confirmation through `TerminalControlMutationConfirmation` and `TerminalControlMutationResult.Confirmation`, distinguishing local `OutputCommitted` completion from correlated `ProtocolAcknowledged` success without changing existing signatures or enum values.

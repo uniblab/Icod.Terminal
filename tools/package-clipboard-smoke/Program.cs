@@ -88,7 +88,35 @@ Require(
 	"The package-only OSC 52 query returned unexpected decoded bytes."
 );
 
-Console.WriteLine( "Icod.Terminal package clipboard smoke test passed." );
+Require( session.Options.ClipboardOptions.MaximumReadBytes == 65_536
+	&& session.Options.ClipboardOptions.MaximumWriteBytes == 65_536,
+	"Default package clipboard budgets changed." );
+
+ClipboardTransport largeTransport = new();
+await using TerminalSession largeSession = await TerminalSession.OpenAsync(
+	new PackageTerminalControlProvider(), TerminalEndpoint.StandardInput, TerminalEndpoint.StandardOutput,
+	largeTransport, largeTransport, new TerminalSessionOptions {
+		ConfigureOutput = false, ObserveLifecycleEvents = false, TerminalOverride = TerminalProfiles.Dumb,
+		InputDecoderOptions = new() { MaximumBufferedBytes = 32 },
+		ClipboardOptions = new() { MaximumReadBytes = 1_048_576, MaximumWriteBytes = 1_048_576 }
+	} );
+byte[] largePayload = new byte[ 1_048_576 ];
+for ( int i = 0; i < largePayload.Length; ++i ) largePayload[ i ] = (byte)i;
+byte[] largeFrame = Encoding.ASCII.GetBytes( "\u001b]52;c;" + Convert.ToBase64String( largePayload ) + "\u001b\\" );
+await largeSession.WriteClipboardAsync( TerminalClipboardSelection.Clipboard, largePayload );
+Require( largeFrame.SequenceEqual( largeTransport.GetWrite( 0 ) ), "Custom-budget package write differed." );
+Task<byte[]> largeQuery = largeSession.ReadClipboardAsync( TerminalClipboardSelection.Clipboard,
+	TimeSpan.FromSeconds( 30 ) ).AsTask();
+using CancellationTokenSource largeTimeout = new( TimeSpan.FromSeconds( 30 ) );
+await largeTransport.WaitForWriteCountAsync( 2, largeTimeout.Token );
+largeTransport.Publish( largeFrame );
+Require( largePayload.SequenceEqual( await largeQuery ), "Custom-budget package read differed." );
+bool rejected = false;
+try {
+	await session.WriteClipboardAsync( TerminalClipboardSelection.Clipboard, largePayload );
+} catch ( ArgumentOutOfRangeException ) { rejected = true; }
+Require( rejected, "Another session inherited an opt-in budget." );
+Console.WriteLine( "Icod.Terminal package clipboard smoke passed: default and independent 1 MiB budgets." );
 
 internal sealed class ClipboardTransport : ITerminalInput, ITerminalOutput {
 	private readonly Channel<byte[]> input = Channel.CreateUnbounded<byte[]>();

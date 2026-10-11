@@ -45,7 +45,7 @@ public sealed partial class TerminalSession {
 	/// accepted, retained, or exposed the selection content.
 	/// </para>
 	/// <para>
-	/// The payload is limited to 65,536 decoded bytes. An empty payload explicitly
+	/// The payload uses the session write budget (65,536 bytes by default). An empty payload explicitly
 	/// replaces the selected terminal selection with empty content.
 	/// </para>
 	/// <para>
@@ -60,11 +60,12 @@ public sealed partial class TerminalSession {
 		CancellationToken cancellationToken = default
 	) {
 		TerminalOsc52Selection protocolSelection = ToOsc52Selection( selection );
-		if ( TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes < payload.Length ) {
+		int maximumBytes = this.Options.ClipboardOptions.MaximumWriteBytes;
+		if ( maximumBytes < payload.Length ) {
 			throw new ArgumentOutOfRangeException(
 				nameof( payload ),
 				payload.Length,
-				$"A terminal clipboard payload cannot exceed {TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes} bytes."
+				$"A terminal clipboard payload cannot exceed {maximumBytes} bytes."
 			);
 		}
 		cancellationToken.ThrowIfCancellationRequested();
@@ -82,7 +83,8 @@ public sealed partial class TerminalSession {
 			this.Output,
 			protocolSelection,
 			payload,
-			cancellationToken
+			cancellationToken,
+			maximumBytes
 		).ConfigureAwait( false );
 	}
 
@@ -117,9 +119,10 @@ public sealed partial class TerminalSession {
 				exception
 			);
 		}
-		if ( TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes < payloadLength ) {
+		int maximumBytes = this.Options.ClipboardOptions.MaximumWriteBytes;
+		if ( maximumBytes < payloadLength ) {
 			throw new ArgumentException(
-				$"Terminal clipboard text may not exceed {TerminalOsc52PayloadCodec.MaximumDecodedPayloadBytes} encoded UTF-8 bytes.",
+				$"Terminal clipboard text may not exceed {maximumBytes} encoded UTF-8 bytes.",
 				nameof( value )
 			);
 		}

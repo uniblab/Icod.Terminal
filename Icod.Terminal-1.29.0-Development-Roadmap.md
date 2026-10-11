@@ -2,7 +2,8 @@
 
 > **Execution:** Use `superpowers:executing-plans` task by task in the main
 > session, without subagents, after maintainer review of this plan and its design.
-> Checkboxes represent future work. This planning PR changes documentation only.
+> Checked items have implementation or regression evidence. Live qualification and
+> stable promotion remain separate release gates.
 
 **Goal:** Enhance OSC 52 clipboard transfers for editor-sized selections while
 preserving the 64 KiB default and bounded single-session input/output ownership.
@@ -13,8 +14,9 @@ preserving the 64 KiB default and bounded single-session input/output ownership.
 the next Terminal milestone before DCurses/Widgets editor work, and explicitly
 confirmed that 64 KiB is the correct default with larger buffers opt-in.
 
-**Status:** Planning; not implemented. Proposed next feature line: 1.29.0.
-No alpha or stable publication is implied.
+**Status:** Approved and implemented as the `1.29.0-alpha.1` candidate in PR #87.
+See [qualification](docs/Clipboard-Transfer-Qualification-1.29.md) for automated
+results, measured allocation and outstanding live/release gates. Nothing has been published.
 
 **Architecture:** Add immutable session clipboard read/write budgets and propagate
 them through private encoding and correlated response accumulation. Keep ordinary
@@ -29,7 +31,7 @@ Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0 dependencies; cmd/sh/PowerShell 5.1.
 ## Global constraints
 
 - Default decoded read/write capacity: 65,536 bytes (64 KiB), unchanged.
-- Proposed explicit opt-in ceiling: 16,777,216 bytes (16 MiB), subject to T2900 review.
+- Approved explicit opt-in ceiling: 16,777,216 bytes (16 MiB).
 - Budgets count bytes; text uses strict UTF-8 without BOM.
 - Existing clipboard methods and return types remain source/binary compatible.
 - Empty write still explicitly clears the selection; never silently truncate.
@@ -45,8 +47,9 @@ Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0 dependencies; cmd/sh/PowerShell 5.1.
 
 1. Multibyte text near a byte limit and equal-length base64 blocks must enforce
    decoded-byte capacity exactly (T2901/T2902).
-2. Wrong-selection, malformed and over-budget replies must not grow unrelated
-   buffers or become keyboard input (T2903/T2904).
+2. Correlated malformed and over-budget replies must not grow unrelated buffers
+   or become keyboard input. Wrong-selection frames retain legacy ordinary handling
+   and receive no larger allowance (T2903/T2904; implementation ruling).
 3. Cancellation/late replies/disposal must preserve correlation and release storage
    without hanging the caller (T2904).
 4. Large single-byte-fragmented responses must avoid quadratic scanning and
@@ -99,16 +102,16 @@ replacing their historical regression coverage.
 **Consumes:** the design and current public/session/query contracts.
 **Produces:** reviewed API, bounds and recovery contracts; 1.29.0-alpha.1 identity.
 
-- [ ] Review the proposed `TerminalClipboardOptions` names, independent read/write
+- [x] Review the proposed `TerminalClipboardOptions` names, independent read/write
   budgets, inclusive 1..16 MiB range and default compatibility with the maintainer.
-- [ ] Trace codec, query rule, ordinary input and discard limits from the baseline.
+- [x] Trace codec, query rule, ordinary input and discard limits from the baseline.
   Record every coupling that must change; identify existing small-buffer fixtures.
-- [ ] Prove with a minimal internal test fixture that a correlated response can
+- [x] Prove with a minimal internal test fixture that a correlated response can
   accumulate past the ordinary-input ceiling without increasing unrelated limits.
   Resolve ownership/recovery design before building the public feature.
-- [ ] Freeze accumulator overflow/EOF/late-response transitions and allocation
+- [x] Freeze accumulator overflow/EOF/late-response transitions and allocation
   accounting. If the prototype contradicts the design, amend the design for review.
-- [ ] Establish 1.29.0-alpha.1 in `Directory.Build.props` and development identity
+- [x] Establish 1.29.0-alpha.1 in `Directory.Build.props` and development identity
   tests when implementation begins. Preserve 1.28 historical API/evidence files.
 
 **Gate:** no runtime work beyond the approved internal proof until the public and
@@ -121,14 +124,14 @@ reader-ownership contracts have been reviewed. No protocol capacity handshake is
 `GetEncodedLength(int decodedBytes)` / `GetResponseFrameLimit(int maximumDecodedBytes)`
 helpers in `TerminalClipboardLimits`.
 
-- [ ] Add failing options tests: defaults equal 65,536; independent 1 MiB read and
+- [x] Add failing options tests: defaults equal 65,536; independent 1 MiB read and
   write settings; 0, -1 and 16,777,217 rejected; null options rejected; no output or
   terminal mode mutation on invalid session settings.
-- [ ] Add geometry tests for 0, 1, 2, 3, 65,535, 65,536, 65,537, 1 MiB and 16 MiB,
+- [x] Add geometry tests for 0, 1, 2, 3, 65,535, 65,536, 65,537, 1 MiB and 16 MiB,
   including expected E/F values in the design and integer-overflow rejection.
-- [ ] Verify the new tests fail, then implement validation/immutable effective
+- [x] Verify the new tests fail, then implement validation/immutable effective
   budgets and checked arithmetic without altering old default constants.
-- [ ] Run options/codec tests on all targets; review default-session behavior; commit.
+- [x] Run options/codec tests on all targets; review default-session behavior; commit.
 
 **Gate:** defaults and hard ceilings are explicit and no large eager allocation occurs.
 
@@ -141,17 +144,17 @@ helpers in `TerminalClipboardLimits`.
 **Consumes:** validated write budget and T2901 geometry.
 **Produces:** existing write methods honoring session capacity with unchanged completion semantics.
 
-- [ ] Add failing cases: default accepts 65,536/rejects 65,537; explicit 1 MiB and
+- [x] Add failing cases: default accepts 65,536/rejects 65,537; explicit 1 MiB and
   hard-ceiling writes; one byte over each budget; empty clear; invalid selection;
   malformed surrogate text; UTF-8 multi-byte boundaries.
-- [ ] Assert oversize/invalid inputs emit nothing and do not allocate an output frame.
+- [x] Assert oversize/invalid inputs emit nothing and do not allocate an output frame.
   Assert binary/text exception categories remain those documented in the design.
-- [ ] Encode directly into bounded frame storage; preserve one serialized logical
+- [x] Encode directly into bounded frame storage; preserve one serialized logical
   OSC operation and existing public signatures. Never split content into multiple
   replacement writes as an attempted append mechanism.
-- [ ] Test cancellation before output gate acquisition and before commitment, then
+- [x] Test cancellation before output gate acquisition and before commitment, then
   cancellation after commitment, competing screen output and transport failure.
-- [ ] Run targeted write/order tests on all targets and commit.
+- [x] Run targeted write/order tests on all targets and commit.
 
 **Gate:** output remains complete and ordered; success reports emission only.
 
@@ -164,22 +167,22 @@ new accumulator; `TerminalClipboardCapacityTests.cs`,
 **Consumes:** validated read budget, existing query ownership and T2901 geometry.
 **Produces:** unchanged `ReadClipboardAsync` result contract with clipboard-specific capacity.
 
-- [ ] Add failing default-limit and explicit larger-limit read tests through the
+- [x] Add failing default-limit and explicit larger-limit read tests through the
   session API, including empty/binary data and exact returned-byte equality.
-- [ ] Test 1-byte fragmentation, split introducer/selection/base64 padding/terminator,
-  and both existing supported OSC termination forms. Record parser work counters.
-- [ ] Introduce the internal incremental accumulator behind complete correlated
+- [x] Test 1-byte fragmentation, split introducer/selection/base64 padding/terminator,
+  and both existing supported OSC termination forms. Verify one incremental scanner feed per input byte (see implementation ruling).
+- [x] Introduce the internal incremental accumulator behind complete correlated
   OSC 52 selection-prefix recognition. Feed it from the existing reader and
   attach it to the active/late query identity.
-- [ ] Build the clipboard-specific response plan explicitly through the existing
+- [x] Build the clipboard-specific response plan explicitly through the existing
   transaction entry point. Keep generic `ForCompletion` and unrelated protocol
   budgets at their pre-feature effective values.
-- [ ] Validate actual decoded bytes as well as encoded/frame length; reject
+- [x] Validate actual decoded bytes as well as encoded/frame length; reject
   over-budget payloads that share a base64 block length with an allowed payload.
-- [ ] Test wrong selection, unsolicited OSC, concurrent sessions with different
+- [x] Test wrong selection, unsolicited OSC, concurrent sessions with different
   budgets, ordinary text/keys/focus/paste before and after replies.
   Preserve ordinary-input options and existing small-buffer behavior.
-- [ ] Run read/routing/input regression tests on all targets and commit.
+- [x] Run read/routing/input regression tests on all targets and commit.
 
 **Gate:** larger replies neither require a larger ordinary-input buffer nor permit
 unrelated protocol frames to consume the clipboard allowance.
@@ -192,19 +195,19 @@ unrelated protocol frames to consume the clipboard allowance.
 **Consumes:** T2903 query-bound accumulator.
 **Produces:** tested completion, overflow, abandoned-query and disposal cleanup.
 
-- [ ] Add failing tests for invalid base64, illegal padding, decoded/frame overflow,
+- [x] Add failing tests for invalid base64, illegal padding, decoded/frame overflow,
   missing terminator, EOF mid-response and transport disconnect.
-- [ ] Test queue-inclusive timeout before emission: no request bytes. Test timeout
+- [x] Test queue-inclusive timeout before emission: no request bytes. Test timeout
   after emission and late reply followed by a second same-selection query.
   The late reply must never satisfy the second query.
-- [ ] Enforce bounded scratch-space discard and the reviewed per-query recovery
+- [x] Enforce bounded scratch-space discard and the reviewed per-query recovery
   allowance. Test input resumption after a valid terminator and failure closed
   after recovery exhaustion; never return payload fragments as keystrokes.
-- [ ] Test caller cancellation during fragmented input, lifecycle suspension,
+- [x] Test caller cancellation during fragmented input, lifecycle suspension,
   session disposal and concurrent clipboard/screen operations.
-- [ ] Verify no clipboard payload appears in exceptions or diagnostics; assert
+- [x] Verify no clipboard payload appears in exceptions or diagnostics; assert
   accumulator buffers and query ownership are released at terminal outcomes.
-- [ ] Run targeted failures plus existing multi-family transaction tests and commit.
+- [x] Run targeted failures plus existing multi-family transaction tests and commit.
 
 **Gate:** no partial success, stale-result substitution, second input reader or
 unbounded recovery storage; existing timing guarantees remain intact.
@@ -216,15 +219,15 @@ unbounded recovery storage; existing timing guarantees remain intact.
 
 - [ ] Measure 64 KiB, 1 MiB and 16 MiB reads/writes, plus long fragmented responses;
   include default idle sessions and invalid over-budget calls.
-- [ ] Assert zero payload-sized allocation at session open, no retained response
-  accumulator after completion/disposal, and no intermediate base64 string on writes.
-- [ ] Instrument scanned/copied bytes and buffer-growth counts; establish linear
-  work as payload size grows and prevent whole-prefix rescanning per fragment.
+- [x] Verify lazy options/accumulator allocation and rejected-write allocation;
+  review accumulator disposal/clearing and no intermediate base64 string on writes.
+- [x] Establish linear scanner work and geometric allocation bounds through
+  component measurements, source review and one-byte-fragmented session tests.
   Pin deterministic budgets to the measured implementation; do not use fragile
   wall-clock thresholds as unit-test pass criteria.
 - [ ] Record allocation totals, peak working storage, runtime/OS/architecture and
   elapsed time. Compare default-path results with baseline 1.28.
-- [ ] Resolve regressions and document the cost of a complete output frame, including
+- [x] Resolve regressions and document the cost of a complete output frame, including
   the non-cancellable post-commit write interval; commit evidence and tests.
 
 **Gate:** opt-in capacity has demonstrated bounded cost; defaults do not inherit
@@ -234,19 +237,19 @@ the high-capacity allocation footprint.
 
 **Files:** clipboard/compatibility samples, their tests, qualification document.
 
-- [ ] Add sample options `--maximum-read-bytes` and `--maximum-write-bytes`
+- [x] Add sample options `--maximum-read-bytes` and `--maximum-write-bytes`
   with validated decimal byte counts and documented defaults. Keep existing modes.
-- [ ] Offer generated payload fixtures above 64 KiB; require explicit action before
+- [x] Offer generated payload fixtures above 64 KiB; require explicit action before
   writing or reading the clipboard. Do not automatically inspect/restore prior
   contents, print payloads, or embed them in reports.
-- [ ] Add sample tests showing headless/help paths do not access the clipboard,
+- [x] Add sample tests showing headless/help paths do not access the clipboard,
   limits are applied independently, and over-budget input explains local failure.
-- [ ] Report emitted bytes separately from decoded read results and operator
+- [x] Report emitted bytes separately from decoded read results and operator
   observations. Timeout/unavailable policy is not a positive/negative support proof.
 - [ ] Run public-only sample checks and consented live scenarios in available
   terminals. Record exact terminal/version/transport/commit and tested sizes,
   including default transfer, larger transfer and graceful refusal/timeout.
-- [ ] Mark missing environments NotRun; retain honest limits and commit evidence.
+- [x] Mark missing environments NotRun; retain honest limits and commit evidence.
 
 **Gate:** consumers have runnable examples and precise operational expectations.
 
@@ -255,18 +258,18 @@ the high-capacity allocation footprint.
 **Files:** public API snapshot/hash, package clipboard smoke tool, existing
 package verifier/shards, README, CHANGELOG, security/compatibility docs.
 
-- [ ] Update fresh-package smoke coverage for default and custom budgets through
+- [x] Update fresh-package smoke coverage for default and custom budgets through
   public APIs only. Verify dependency graph, XML docs and license/header gates.
-- [ ] Generate identical public API snapshots for net8.0/net9.0/net10.0 and review
+- [x] Generate identical public API snapshots for net8.0/net9.0/net10.0 and review
   the diff against 1.28 for accidental removals/signature/enum changes.
-- [ ] Update README with durable examples, UTF-8 byte accounting, local-versus-remote
+- [x] Update README with durable examples, UTF-8 byte accounting, local-versus-remote
   limits and fallback guidance. Keep measured qualification in its dedicated doc.
-- [ ] Record implemented changes in CHANGELOG only once delivered. Add curated
+- [x] Record implemented changes in CHANGELOG only once delivered. Add curated
   alpha/stable release notes at the appropriate promotion step.
 - [ ] Run full solution, integration, package and existing downstream DCurses gates.
   Confirm ordinary input, graphics, semantic events and clipboard ordering regressions
   remain covered without changing downstream repositories.
-- [ ] Commit docs/package evidence and report remaining caveats.
+- [x] Commit docs/package evidence and report remaining caveats.
 
 **Gate:** the package delivers the same reviewed contract as source, with existing
 dependencies and a clear contract for the later DCurses facade.
@@ -278,7 +281,7 @@ dependencies and a clear contract for the later DCurses facade.
 - [ ] Promote version metadata from alpha to stable 1.29.0 only when authorized.
 - [ ] Run complete CI/package verification on the final candidate commit and
   record workflow IDs, API fingerprints and artifact identities.
-- [ ] Update this roadmap and the main roadmap with actual completion/evidence.
+- [x] Update this roadmap and the main roadmap with actual completion/evidence.
 - [ ] Present the reviewed branch to the maintainer for merge/tag/publication.
   Do not perform those actions automatically.
 
@@ -302,8 +305,22 @@ contracts after inspecting their current parameters; do not invent a parallel
 release workflow. Cross-platform automated results and live-terminal observations
 are recorded separately.
 
-## Immediate handoff
+## Implementation checkpoint
 
-Review the [design](docs/Clipboard-Transfer-Design-1.29.md) and this development
-roadmap. Approval starts T2900 and inline implementation; it does not authorize
-merge or publication. DCurses/Widgets plans follow the accepted Terminal contract.
+The maintainer approved the design and implementation. T2900–T2904 are delivered;
+regressions include default/custom byte limits, 16 MiB transfers, fragmentation,
+small ordinary buffers, malformed/oversized replies, recovery exhaustion,
+timeout, cancellation, EOF, disposal and independent sessions.
+
+T2905 component allocation/scanner qualification is complete. Whole-session
+peak-memory profiling across operating systems remains a release follow-up;
+the recorded peak is an analytical live-storage bound, not measured process RSS.
+T2906 samples and consented scenario are delivered; all live environments remain
+NotRun. T2907 local solution, integration, fresh-package and downstream acceptance
+are recorded in the qualification document; final GitHub matrix status belongs
+to PR #87. Unchecked measurement/live/CI items are explicit release follow-ups,
+not claims of completed qualification.
+
+The remaining release decision is maintainer review, any accepted qualification
+exceptions, stable promotion, merge and publication. DCurses/Widgets implementation
+follows the accepted Terminal contract.

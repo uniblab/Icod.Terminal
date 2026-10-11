@@ -24,11 +24,11 @@ using System.Xml.Linq;
 using Xunit;
 
 /// <summary>
-/// Prevents the stable distribution workflow from accepting a prerelease identity.
+/// Keeps the distribution workflow aligned with the reviewed development identity.
 /// </summary>
 public sealed class StableReleaseIdentityTests {
 	[Fact]
-	public void MainDistributionPinsStableOneTwentyEightIdentity() {
+	public void MainDistributionPinsOneTwentyNineAlphaIdentity() {
 		string root = FindRepositoryRoot();
 		XDocument properties = XDocument.Load(
 			Path.Combine( root, "Directory.Build.props" )
@@ -47,10 +47,10 @@ public sealed class StableReleaseIdentityTests {
 			Path.Combine( root, ".github", "workflows", "main.yaml" )
 		);
 
-		Assert.Equal( "1.28.0", versionPrefix );
-		Assert.Equal( string.Empty, versionSuffix );
+		Assert.Equal( "1.29.0", versionPrefix );
+		Assert.Equal( "alpha.1", versionSuffix );
 		Assert.Contains(
-			"EXPECTED_VERSION: 1.28.0",
+			"EXPECTED_VERSION: 1.29.0-alpha.1",
 			workflow,
 			StringComparison.Ordinal
 		);
