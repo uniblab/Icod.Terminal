@@ -28,7 +28,7 @@ using Xunit;
 /// </summary>
 public sealed class StableReleaseIdentityTests {
 	[Fact]
-	public void MainDistributionPinsOneTwentyNineAlphaIdentity() {
+	public void MainDistributionPinsOneTwentyNineStableIdentity() {
 		string root = FindRepositoryRoot();
 		XDocument properties = XDocument.Load(
 			Path.Combine( root, "Directory.Build.props" )
@@ -38,21 +38,48 @@ public sealed class StableReleaseIdentityTests {
 			.Single( element => "VersionPrefix" == element.Name.LocalName )
 			.Value
 			.Trim();
-		string versionSuffix = properties
+		XElement? versionSuffix = properties
 			.Descendants()
-			.Single( element => "VersionSuffix" == element.Name.LocalName )
-			.Value
-			.Trim();
+			.SingleOrDefault( element => "VersionSuffix" == element.Name.LocalName );
 		string workflow = File.ReadAllText(
 			Path.Combine( root, ".github", "workflows", "main.yaml" )
 		);
+		string readme = File.ReadAllText(
+			Path.Combine( root, "README.md" )
+		);
+		string changelog = File.ReadAllText(
+			Path.Combine( root, "CHANGELOG.md" )
+		);
 
 		Assert.Equal( "1.29.0", versionPrefix );
-		Assert.Equal( "alpha.1", versionSuffix );
+		Assert.True(
+			null == versionSuffix
+			|| String.IsNullOrWhiteSpace( versionSuffix.Value )
+		);
 		Assert.Contains(
-			"EXPECTED_VERSION: 1.29.0-alpha.1",
+			"EXPECTED_VERSION: 1.29.0",
 			workflow,
 			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"Stable release: **1.29.0**.",
+			readme,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"dotnet add package Icod.Terminal --version 1.29.0",
+			readme,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"## 1.29.0",
+			changelog,
+			StringComparison.Ordinal
+		);
+		Assert.True(
+			File.Exists(
+				Path.Combine( root, "docs", "releases", "1.29.0.md" )
+			)
 		);
 		Assert.Equal(
 			2,
