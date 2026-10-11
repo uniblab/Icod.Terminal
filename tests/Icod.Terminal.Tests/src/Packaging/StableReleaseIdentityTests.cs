@@ -75,6 +75,11 @@ public sealed class StableReleaseIdentityTests {
 			StringComparison.Ordinal
 		);
 		Assert.Contains(
+			"https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md",
+			readme,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
 			"## 1.29.0",
 			changelog,
 			StringComparison.Ordinal
