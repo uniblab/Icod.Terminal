@@ -12,8 +12,9 @@
 Stable release: **1.29.0**. It adds bounded, opt-in OSC 52 clipboard transfers;
 the stable **1.0.0 compatibility floor** remains unchanged.
 
-See the [changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md)
-for release history, the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
+See the [1.29.0 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md),
+[changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md) for release history,
+the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
 for current work, and the [compatibility policy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
 for support guarantees.
 
