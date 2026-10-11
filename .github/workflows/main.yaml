@@ -15,7 +15,7 @@ permissions:
 env:
   DOTNET_VERSION: 10.0.x
   CONFIGURATION: Release
-  EXPECTED_VERSION: 1.29.0-alpha.1
+  EXPECTED_VERSION: 1.29.0
   PACKAGE_CANDIDATE_ARTIFACT: icod-terminal-main-package-candidate
 
 jobs:
