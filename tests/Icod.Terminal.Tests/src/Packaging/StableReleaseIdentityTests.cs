@@ -50,6 +50,9 @@ public sealed class StableReleaseIdentityTests {
 		string changelog = File.ReadAllText(
 			Path.Combine( root, "CHANGELOG.md" )
 		);
+		string releaseNotes = File.ReadAllText(
+			Path.Combine( root, "docs", "releases", "1.29.0.md" )
+		);
 
 		Assert.Equal( "1.29.0", versionPrefix );
 		Assert.True(
@@ -81,6 +84,13 @@ public sealed class StableReleaseIdentityTests {
 				Path.Combine( root, "docs", "releases", "1.29.0.md" )
 			)
 		);
+		foreach ( string targetFramework in new[] { "net8.0", "net9.0", "net10.0" } ) {
+			Assert.Contains(
+				targetFramework,
+				releaseNotes,
+				StringComparison.Ordinal
+			);
+		}
 		Assert.Equal(
 			2,
 			CountOccurrences(
