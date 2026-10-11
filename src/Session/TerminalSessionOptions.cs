@@ -29,6 +29,10 @@ using Icod.Timing;
 /// and application text policy applied when opening a <see cref="TerminalSession"/>.
 /// </summary>
 public sealed class TerminalSessionOptions {
+	/// <summary>Gets or initializes immutable local clipboard read/write budgets.</summary>
+	/// <remarks>Defaults remain 64 KiB. Larger budgets do not establish remote support.</remarks>
+	public TerminalClipboardOptions ClipboardOptions { get; init; } = new();
+
 	/// <summary>
 	/// Gets or initializes the semantic input discipline entered by the session.
 	/// </summary>
@@ -184,6 +188,8 @@ public sealed class TerminalSessionOptions {
 	}
 
 	internal void Validate() {
+		ArgumentNullException.ThrowIfNull( this.ClipboardOptions );
+		this.ClipboardOptions.Validate();
 		if ( !Enum.IsDefined( this.InputMode ) ) {
 			throw new ArgumentOutOfRangeException(
 				nameof( this.InputMode ),

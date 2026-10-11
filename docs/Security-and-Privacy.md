@@ -308,6 +308,26 @@ Reporting is explicitly opt-in and independently owned. Appearance is a terminal
 
 Compatibility reporting scenarios require consent before acquisition and before operator-visible confirmation. Evidence contains exact manually supplied terminal/OS/transport versions, scenario revision, bounded typed outcomes and notes. It omits raw replies, raw keys, environment dumps and host identity. Review JSON before accepting it; preserve explicit Unavailable versus missing/deadline Inconclusive outcomes.
 
+## Bounded clipboard resources (1.29)
+
+Clipboard reads and writes remain explicit application actions. Immutable session
+budgets independently authorize 1..16 MiB decoded bytes; defaults remain 64 KiB.
+They establish no remote capacity, read permission or write acknowledgement.
+Default sessions reserve no maximum-sized clipboard storage. Larger responses
+acquire dedicated storage only after exact selection-prefix correlation.
+
+Malformed/overflowed correlated responses use bounded terminator draining; when
+recovery or late ownership expires unresolved, input fails closed. Applications
+must dispose/reopen before resuming input after such a failure. Never display
+partial content as a successful paste. Wrong-selection frames keep their existing
+ordinary handling and receive no larger resource allowance.
+
+Library clipboard errors and samples omit payload contents. Generated fixtures
+are used in tests and compatibility reports. Accumulator buffers are cleared when
+replaced/disposed; this is not a secure-erasure guarantee for caller buffers,
+returned arrays, transport copies or the managed heap. Applications own those
+lifetimes and any internal clipboard fallback. See [the guide](Clipboard-Transfers.md).
+
 ## Graphics transaction evidence (1.28)
 
 `OutputCommitted` is a local transport fact: Terminal completed the serialized write and flush. It is not proof that an untrusted terminal parsed, applied, retained, or rendered the command. `ProtocolAcknowledged` adds only a well-formed correlated success owned by the correct bounded transaction. It is not terminal authentication or a rendering guarantee. Existing/unclassified successful mutations remain `Unspecified` rather than being retroactively strengthened.

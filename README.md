@@ -9,59 +9,14 @@
 
 ## Status
 
-Current stable release: `Icod.Terminal 1.28.0`.
+Stable release: **1.29.0**. It adds bounded, opt-in OSC 52 clipboard transfers;
+the stable **1.0.0 compatibility floor** remains unchanged.
 
-See the [1.28.0 release notes](docs/releases/1.28.0.md) for the published-spec Kitty Graphics transaction contract, exact implementation evidence, downstream ATLAS qualification, and retained limits.
-
-Version 1.27 adds terminal appearance and in-band resize awareness through bounded queries and independently owned reporting leases. It also accepts one trailing separator after populated Primary Device Attributes, preserving Kitty 0.49.2's attributes from `CSI ?62;52;c` while retaining numeric bounds and malformed-field rejection. Reviewed alpha source observations record positive appearance query/reporting and initial/changed resize in Kitty 0.49.2 through WSL, plus unavailable reporting with working native input and resize in Windows Terminal hosting Bash through WSL. See the [1.27 release notes](docs/releases/1.27.0.md), [1.27 API baseline](docs/Public-API-Baseline-1.27.md), and [1.27 matrix](docs/compatibility/1.27.0.md) for exact versions and limits. Reporting is opt-in; applications own theme selection and repaint policy.
-
-Version 1.26 adds no production runtime API. It adds a public-only executable compatibility sample, bounded reviewed JSON evidence, deterministic matrix generation, and fresh-package acceptance across .NET 8, 9, and 10. The initial matrix records exact, scenario-scoped identity and dimension observations for Windows Terminal and Kitty through WSL; every unrecorded scenario remains `NotRun`. See the [1.26 release notes](docs/releases/1.26.0.md), [compatibility matrix](docs/compatibility/1.26.0.md), and [sample walkthrough](samples/Icod.Terminal.Compatibility.Sample/README.md).
-
-Version 1.25 adds `TerminalScreenOutputTransaction.WriteRaster(...)` for a complete, caller-owned image in the same ordered commit as cursor plans and text. Call `VerifyCapabilityAsync(TerminalCapability.RasterGraphics)` before building the transaction. The commit uses already verified Kitty Graphics or Sixel evidence, encodes all frames within the aggregate 64 MiB bound before output, and does not infer placement or cursor position after the raster. It includes the alpha.1–alpha.5 corrections: newline-safe cursor planning, coalesced Sixel writes, immediate Unix byte input, Kitty DA1 compatibility and bounded persistent-transfer deadlines. See the [1.25 release notes](docs/releases/1.25.0.md).
-
-Version 1.25 derives persistent upload, animation-append and partial-frame-edit deadlines from their Base64 wire size, adds one second for correlated acknowledgement, and caps the result at one minute. Small control-only transactions remain at one second. See the [alpha.5 release notes](docs/releases/1.25.0-alpha.5.md).
-
-Version 1.28 applies action-specific Kitty Graphics transaction semantics while
-keeping the published wire grammar. `Unspecified` preserves unclassified success,
-`OutputCommitted` records completion through the write-and-flush boundary, and
-`ProtocolAcknowledged` records a correlated successful protocol response. None of
-these values claims visible rendering. Kitty 0.49.2 on WSL2 reproduces the missing
-acknowledgement for a documented chunked animation-frame continuation; the
-post-0.49.2 upstream correction is tracked without a repeated-image-id workaround
-or terminal-version branch. Version 1.27's brief basic-resource color display
-qualifies only that persistent resource/placement scenario, not animation or
-persistent ATLAS. Reviewed 2026-10-08 source-built Kitty recordings add limited
-positive animation, tile-update and corrected eight-row layout evidence, including
-cleanup and exit status 0. The reviewed 2026-10-09 Icod.DCurses 2.3 sample then
-qualified the exact downstream compose-publish ATLAS workload with responsive
-movement and scrolling in that corrected-source Kitty lane. This remains scoped
-evidence, not an atomic, gapless, or universal rendering claim. See the
-[1.28 release notes](docs/releases/1.28.0.md), [transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md),
-and [hold record and evidence](docs/Graphics-Development-Hold.md).
-
-Ordinary raster capability selection prefers verified Kitty, then verified Sixel.
-A failed write is not automatically retried through another backend. Applications
-own text fallback; Sixel does not emulate persistent Kitty identities or animation.
-
-Version 1.24.1 verifies the persistent Kitty resource-identity path independently from generic Kitty graphics support. A terminal must accept a bounded 1x1 persistent upload and return a nonzero terminal-assigned image id before `PersistentRasterGraphics` becomes usable; the probe resource is then deleted. Zero ids and other malformed acknowledgements no longer escape from capability verification as raw format failures. See the [1.24.1 release notes](docs/releases/1.24.1.md).
-
-Version 1.24 adds direct and exactly derived terminal-pixel geometry, intrinsic persistent-resource geometry, advisory local raster-planning snapshots, and focused generation-scoped evidence for acknowledged composition and RGB24/RGBA32 frame-region updates. The [1.24 roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md), [release notes](docs/releases/1.24.0.md), [ownership guide](docs/Persistent-Raster-Ownership.md), and [tile-atlas witness](samples/Icod.Terminal.RasterAnimation.Sample/README.md) define the contract and its Terminal/DCurses/game boundary.
-
-Version 1.23 adds bounded caller-supplied partial frame replacement, completes current legacy Menu phase decoding, and fixes malformed modern-keyboard end-of-input recovery. See the [1.23 roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md), [release notes](docs/releases/1.23.0.md), and [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md).
-
-Version 1.22 adds acknowledged bounded pixel composition between known animation frames of one persistent raster resource. See the [development roadmap](Icod.Terminal-1.22.0-Development-Roadmap.md) and [animation sample](samples/Icod.Terminal.RasterAnimation.Sample/README.md) for the implementation and a runnable example.
-
-Version 1.21 adds Kitty functional-key phase reporting and temporary cursor visibility for one screen transaction, restoring the presentation lease owner or ordinary cursor afterward. See the [development roadmap](Icod.Terminal-1.21.0-Development-Roadmap.md) and [screen-output sample](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the implementation and an input-driven refresh.
-
-Version 1.20 adds immutable screen-advertisement facts, fixes generation and late-response ownership in existing support verification, and expands the [capability guide](docs/Capability-Inspection-and-Planning.md) and [runnable sample](samples/Icod.Terminal.CapabilityPlanning.Sample/README.md). Static advertisement, concrete plans, live support evidence, and endpoint availability remain separate decisions.
-
-Version 1.18 adds `TerminalScreenPlanner.PlanRenditionBaseline()`, allowing a Terminal-only renderer to establish the normalized default rendition safely when the physical starting state is unknown. The operation returns no plan when any profile-exposed rendition axis cannot be restored unconditionally.
-
-Version 1.17 adds Terminal-owned dimensions, an immutable semantic terminal profile, side-effect-free screen-operation planning, and bounded session-bound output transactions. These contracts provide the Terminal-side boundary used by the decoupled `Icod.DCurses 2.x` renderer.
-
-The stable `1.0.0` compatibility floor remains unchanged. Version 1.28 preserves every existing public signature and enum value while adding the confirmation enum and read-only result property. Existing screen planning, transactions, rendition, raster, input, lifecycle, and compatibility contracts remain available.
-
-See the [1.28 release notes](docs/releases/1.28.0.md), additive [1.28 API baseline](docs/Public-API-Baseline-1.28.md), and [changelog](CHANGELOG.md) for release-specific details.
+See the [1.29.0 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md),
+[changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md) for release history,
+the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
+for current work, and the [compatibility policy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
+for support guarantees.
 
 ## Support the Project
 
@@ -108,10 +63,10 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 
 ## Quick Start
 
-Install the stable release after publication:
+Install the stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.28.0
+dotnet add package Icod.Terminal --version 1.29.0
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
@@ -176,6 +131,41 @@ if ( session.Profile.Screen.SupportsCursorHidden
 This capability check is a conservative fallback, not a guarantee: the effective lease owner or a concurrent state change can still prevent commitment. Handle commit failures without replaying an emitted prefix. Use a presentation lease when the cursor preference should last beyond one frame; see the [sample's input-driven refresh](samples/Icod.Terminal.ScreenOutput.Sample/README.md) for the complete flow.
 
 `Profile` contains immutable selected-profile facts, while `GetDimensions()` reports the current Terminal-owned size result. A plan is opaque and session-bound; creating it emits nothing, and the transaction preserves ordering under one output gate and flush boundary. Retained cells, layout, Unicode width, clipping, damage, and repaint policy remain caller-owned.
+
+### Clipboard transfers
+
+Configurable clipboard budgets are available in `1.29.0` and later.
+Read and write limits independently default to 64 KiB and allow explicit opt-in
+through 16 MiB. These authorize local resources; they do not negotiate terminal
+capacity.
+
+Run the clipboard sample's headless help from a checkout:
+
+```text
+dotnet run --project samples/Icod.Terminal.Clipboard.Sample -c Release -f net10.0 -- --help
+```
+
+To authorize larger transfers when opening an application session:
+
+```csharp
+using Icod.Terminal;
+
+await using TerminalSession session = await TerminalSession.OpenAsync(new TerminalSessionOptions {
+    ClipboardOptions = new TerminalClipboardOptions {
+        MaximumReadBytes = 1_048_576,
+        MaximumWriteBytes = 1_048_576
+    }
+});
+```
+
+Clipboard operations remain explicit. Text limits count strict UTF-8 bytes,
+and write completion reports emission rather than remote acceptance. Applications
+own internal clipboard fallback; a read timeout alone establishes no support status.
+
+See the [clipboard guide](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Clipboard-Transfers.md)
+for byte accounting and recovery, and the
+[qualification record](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Clipboard-Transfer-Qualification-1.29.md)
+for measured costs and live-test status.
 
 ### Choosing a capability API
 
@@ -267,6 +257,10 @@ The root README describes the current product by capability rather than by the r
 - **Optional TermInfo planning integration** — consumer-owned lifecycle, placement, runtime-evidence, and raster-backend planning through `Icod.TermInfo.Inspection` without widening the production dependency graph or transferring live routing authority away from Terminal.
 
 ## Raster Ownership at a Glance
+
+Ordinary raster capability selection prefers verified Kitty, then verified Sixel.
+A failed write is not automatically retried through another backend. Applications
+own text fallback; Sixel does not emulate persistent Kitty identities or animation.
 
 The current persistent-raster ownership model is:
 

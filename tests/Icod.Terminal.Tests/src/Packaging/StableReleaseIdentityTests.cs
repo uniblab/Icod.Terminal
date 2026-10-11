@@ -24,11 +24,11 @@ using System.Xml.Linq;
 using Xunit;
 
 /// <summary>
-/// Prevents the stable distribution workflow from accepting a prerelease identity.
+/// Keeps the distribution workflow aligned with the reviewed development identity.
 /// </summary>
 public sealed class StableReleaseIdentityTests {
 	[Fact]
-	public void MainDistributionPinsStableOneTwentyEightIdentity() {
+	public void MainDistributionPinsOneTwentyNineStableIdentity() {
 		string root = FindRepositoryRoot();
 		XDocument properties = XDocument.Load(
 			Path.Combine( root, "Directory.Build.props" )
@@ -38,22 +38,69 @@ public sealed class StableReleaseIdentityTests {
 			.Single( element => "VersionPrefix" == element.Name.LocalName )
 			.Value
 			.Trim();
-		string versionSuffix = properties
+		XElement? versionSuffix = properties
 			.Descendants()
-			.Single( element => "VersionSuffix" == element.Name.LocalName )
-			.Value
-			.Trim();
+			.SingleOrDefault( element => "VersionSuffix" == element.Name.LocalName );
 		string workflow = File.ReadAllText(
 			Path.Combine( root, ".github", "workflows", "main.yaml" )
 		);
+		string readme = File.ReadAllText(
+			Path.Combine( root, "README.md" )
+		);
+		string changelog = File.ReadAllText(
+			Path.Combine( root, "CHANGELOG.md" )
+		);
+		string releaseNotes = File.ReadAllText(
+			Path.Combine( root, "docs", "releases", "1.29.0.md" )
+		);
 
-		Assert.Equal( "1.28.0", versionPrefix );
-		Assert.Equal( string.Empty, versionSuffix );
+		Assert.Equal( "1.29.0", versionPrefix );
+		Assert.True(
+			null == versionSuffix
+			|| String.IsNullOrWhiteSpace( versionSuffix.Value )
+		);
 		Assert.Contains(
-			"EXPECTED_VERSION: 1.28.0",
+			"EXPECTED_VERSION: 1.29.0",
 			workflow,
 			StringComparison.Ordinal
 		);
+		Assert.Contains(
+			"Stable release: **1.29.0**.",
+			readme,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"dotnet add package Icod.Terminal --version 1.29.0",
+			readme,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md",
+			readme,
+			StringComparison.Ordinal
+		);
+		Assert.Contains(
+			"## 1.29.0",
+			changelog,
+			StringComparison.Ordinal
+		);
+		Assert.True(
+			File.Exists(
+				Path.Combine( root, "docs", "releases", "1.29.0.md" )
+			)
+		);
+		foreach ( string requiredReleaseNoteText in new[] {
+			"net8.0",
+			"net9.0",
+			"net10.0",
+			"Compatibility-and-Versioning.md"
+		} ) {
+			Assert.Contains(
+				requiredReleaseNoteText,
+				releaseNotes,
+				StringComparison.Ordinal
+			);
+		}
 		Assert.Equal(
 			2,
 			CountOccurrences(

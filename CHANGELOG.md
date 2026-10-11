@@ -2,11 +2,27 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.29.0
+
+- Add independent immutable session clipboard read/write budgets, preserving the
+  65,536-byte defaults and allowing explicit limits up to 16,777,216 decoded bytes.
+- Encode larger writes directly into one bounded OSC 52 frame; retain strict
+  UTF-8 validation, ordering, no truncation and existing cancellation boundaries.
+- Incrementally accumulate explicitly larger correlated replies without expanding
+  ordinary input or unrelated query limits. Bound malformed/overflow recovery,
+  preserve late-query ownership and fail unresolved input closed.
+- Add explicit generated-payload samples, a consented larger round-trip scenario,
+  privacy-safe diagnostics, allocation regression tests and fresh-package coverage.
+- Preserve public method signatures, enum values, .NET 8/9/10 and existing dependencies.
+  See [1.29.0 release notes](docs/releases/1.29.0.md) and
+  [qualification](docs/Clipboard-Transfer-Qualification-1.29.md) for measured limits.
+
 ## 1.28.0
 
 - Adds truthful mutation confirmation through `TerminalControlMutationConfirmation` and `TerminalControlMutationResult.Confirmation`, distinguishing local `OutputCommitted` completion from correlated `ProtocolAcknowledged` success without changing existing signatures or enum values.
 - Applies published action-specific response policy to persistent Kitty animation transfers, controls, composition, and regional edits. The published multi-chunk grammar, bounded ownership, ambiguity rules, and cleanup remain unchanged; no terminal/version branch or repeated-image-id workaround is added.
 - Records the exact Kitty 0.49.2 missing-acknowledgement deviation and limited positive corrected-source Kitty evidence without converting implementation behavior into protocol requirements or rendering claims.
+- Preserves the scope of the graphics observations: 1.27's basic-resource color display qualified that resource/placement scenario only. Reviewed 2026-10-08 source-built Kitty recordings added animation, tile-update and corrected eight-row layout evidence with cleanup and successful exit. See the [transaction compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md) for exact provenance and limitations.
 - Qualifies the downstream Icod.DCurses compose-publish ATLAS workload at exact source `d9ae518f0ba075f5e264acaeb14de2c9e8bc2c3d`, including full-coverage coalescing and maintainer-observed interactive artwork, movement, and scrolling. FRAME and TEXT remain controlled alternatives.
 - Preserves the .NET 8/9/10 target matrix, existing 1.x compatibility floor, and production dependencies `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`. See [1.28.0 release notes](docs/releases/1.28.0.md).
 

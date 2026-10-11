@@ -24,9 +24,11 @@ using Icod.Terminal.Compatibility.Sample;
 await VerifyAsync( [ "--help" ], output =>
 	output == CompatibilityCommandLine.HelpText + Environment.NewLine );
 await VerifyAsync( [ "--list-scenarios" ], output =>
-	24 == output.Split( Environment.NewLine, StringSplitOptions.RemoveEmptyEntries ).Length );
+	25 == output.Split( Environment.NewLine, StringSplitOptions.RemoveEmptyEntries ).Length );
 await VerifyAsync( [ "--describe", "clipboard.osc52" ], output =>
 	output.Contains( "clipboard.osc52/v1", StringComparison.Ordinal ) );
+await VerifyAsync( [ "--describe", "clipboard.osc52.large" ], output =>
+	output.Contains( "131072", StringComparison.Ordinal ) );
 
 string fixtureDirectory = Path.Combine( AppContext.BaseDirectory, "fixtures" );
 string matrixPath = Path.Combine( Path.GetTempPath(), $"icod-compatibility-{Guid.NewGuid():N}.md" );

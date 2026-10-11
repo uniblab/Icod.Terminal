@@ -1,5 +1,15 @@
 # Icod.Terminal Compatibility Sample
 
+The `clipboard.osc52.large` scenario requests consent before overwriting the
+clipboard with 131,072 generated ASCII bytes and reading them back. Its standalone
+`--run` invocation opens a session with matching read/write budgets; `--run-all`
+also authorizes those budgets, while each scenario retains its own consent gate.
+The existing `clipboard.osc52` scenario remains a small fixed-value round trip.
+Use the same identity/output options described below and record the exact source
+commit, terminal version and transport. Reports contain counts and match outcomes,
+never clipboard contents. A timeout proves no support status. To try other sizes
+and independent limits, use the [clipboard sample](../Icod.Terminal.Clipboard.Sample/README.md).
+
 This executable qualifies existing nongraphics `Icod.Terminal` behavior without inferring support from terminal branding. It can list and describe scenarios without opening a terminal, run one or all scenarios in an interactive terminal, write bounded JSON evidence, and regenerate a deterministic Markdown matrix.
 
 The sample uses only public `Icod.Terminal` APIs. Graphics and raster protocols are deliberately outside the 1.26 matrix.

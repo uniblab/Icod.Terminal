@@ -30,6 +30,215 @@ using Xunit;
 /// Verifies the T57 explicit OSC 52 clipboard-read API on the shared query substrate.
 /// </summary>
 public sealed class TerminalOsc52QueryTests {
+	[Fact]
+	public async Task ConcurrentSessionsKeepReadBudgetsIndependent() {
+		Osc52Transport smallTransport = new();
+		Osc52Transport largeTransport = new();
+		await using TerminalSession small = await OpenSessionAsync( smallTransport );
+		await using TerminalSession large = await OpenSessionAsync( largeTransport, options: LargeReadOptions() );
+		Task<byte[]> smallRead = small.ReadClipboardAsync( TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 30 ) ).AsTask();
+		Task<byte[]> largeRead = large.ReadClipboardAsync( TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 30 ) ).AsTask();
+		await Task.WhenAll( WaitForWriteCountAsync( smallTransport, 1 ), WaitForWriteCountAsync( largeTransport, 1 ) );
+		byte[] payload = new byte[ 100_000 ];
+		byte[] frame = Encoding.ASCII.GetBytes( "\u001b]52;c;" + Convert.ToBase64String( payload ) + "\u001b\\" );
+		smallTransport.Publish( frame );
+		await Assert.ThrowsAsync<FormatException>( () => smallRead );
+		largeTransport.Publish( frame );
+		Assert.Equal( payload, await largeRead );
+	}
+
+	[Theory]
+	[InlineData( "\u001b]52;c;", "\u0007" )]
+	[InlineData( "\u001b]52;c;", "\u001b\\" )]
+	[InlineData( "\u009d52;c;", "\u009c" )]
+	public async Task OptInOverflowOnTerminatorPreservesNextKey( string prefix, string terminator ) {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 2 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		int limit = TerminalClipboardLimits.GetResponseFrameLimit( 131_072 );
+		transport.Publish( Encoding.Latin1.GetBytes( prefix
+			+ new string( 'A', limit + 1 - prefix.Length - terminator.Length ) + terminator + "z" ) );
+		await Assert.ThrowsAsync<FormatException>( () => query );
+		Assert.Equal( new Rune( 'z' ), ( await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) ) ).Input?.Character );
+	}
+
+	[Fact]
+	public async Task OptInRecoveryExhaustionFailsClosed() {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;" + new string( 'A', 360_000 ) ) );
+		await Assert.ThrowsAsync<InvalidOperationException>( () => query );
+		await Assert.ThrowsAnyAsync<Exception>( async () => await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) ) );
+	}
+
+	[Fact]
+	public async Task OptInReadWithSmallOrdinaryBufferIgnoresWrongSelection() {
+		Osc52Transport transport = new() { MaximumReadChunk = 1 };
+		await using TerminalSession session = await OpenSessionAsync( transport, options: new() {
+			TerminalOverride = TerminalProfiles.Dumb,
+			InputDecoderOptions = new() { MaximumBufferedBytes = 32 },
+			ClipboardOptions = new() { MaximumReadBytes = 131_072 }
+		} );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		byte[] payload = new byte[ 100_000 ];
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;p;eA==\u001b\\"
+			+ "\u001b]52;c;" + Convert.ToBase64String( payload ) + "\u001b\\z" ) );
+		Assert.Equal( payload, await query );
+		// Wrong-selection frames retain ordinary decoding; they gain no clipboard allowance.
+		TerminalEvent trailing;
+		int events = 0;
+		do {
+			trailing = await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) );
+			Assert.Equal( TerminalEventKind.Input, trailing.Kind );
+			Assert.True( ++events <= 17 );
+		} while ( trailing.Input?.Character != new Rune( 'z' ) );
+		Assert.Equal( 32, session.Options.InputDecoderOptions.MaximumBufferedBytes );
+	}
+
+	private static TerminalSessionOptions LargeReadOptions() => new() {
+		TerminalOverride = TerminalProfiles.Dumb,
+		ClipboardOptions = new() { MaximumReadBytes = 131_072 }
+	};
+
+	[Theory]
+	[InlineData( "\u001b]52;c;Zh==\u001b\\" )]
+	[InlineData( "\u001b]52;c;SGVsbG8_\u0007" )]
+	[InlineData( "\u001b]52;c;\u001b\u0007" )]
+	[InlineData( "\u001b]52;c;\u001bXAAAA\u0007" )]
+	public async Task OptInMalformedReadIsRejectedWithoutPayloadLeak( string response ) {
+		Osc52Transport transport = new() { MaximumReadChunk = 1 };
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( response + "z" ) );
+		FormatException failure = await Assert.ThrowsAsync<FormatException>( () => query );
+		Assert.DoesNotContain( response, failure.Message );
+		Assert.Equal( new Rune( 'z' ), ( await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) ) ).Input?.Character );
+	}
+
+	[Theory]
+	[InlineData( "\u001b]52;c;", "\u001b\\" )]
+	[InlineData( "\u001b]52;c;", "\u0007" )]
+	[InlineData( "\u009d52;c;", "\u009c" )]
+	public async Task OptInFrameOverflowDrainsOnlyThroughTerminator( string prefix, string terminator ) {
+		Osc52Transport transport = new() { MaximumReadChunk = 127 };
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.Latin1.GetBytes(
+			prefix + new string( 'A', 180_000 ) + terminator + "z" ) );
+		await Assert.ThrowsAsync<FormatException>( () => query );
+		Assert.Equal( new Rune( 'z' ), ( await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) ) ).Input?.Character );
+	}
+
+	[Fact]
+	public async Task OptInReadCancellationRetainsLateResponseOwnership() {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		using CancellationTokenSource stop = new();
+		Task<byte[]> first = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ), stop.Token ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;b2xk" ) );
+		stop.Cancel();
+		await Assert.ThrowsAnyAsync<OperationCanceledException>( () => first );
+		Task<byte[]> second = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b\\" ) );
+		await WaitForWriteCountAsync( transport, 2 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;bmV3\u001b\\" ) );
+		Assert.Equal( Encoding.ASCII.GetBytes( "new" ), await second );
+	}
+
+	[Fact]
+	public async Task OptInReadEofFailsRatherThanReturningPartialData() {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;YWJj" ) );
+		transport.Publish( [] );
+		await Assert.ThrowsAsync<FormatException>( () => query );
+		Assert.Equal( TerminalInputEventKind.EndOfInput,
+			( await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) ) ).Input?.Kind );
+	}
+
+	[Fact]
+	public async Task OptInReadDisposalInterruptsUnterminatedResponse() {
+		Osc52Transport transport = new();
+		TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 30 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;" + new string( 'A', 90_000 ) ) );
+		await session.DisposeAsync().AsTask().WaitAsync( TimeSpan.FromSeconds( 3 ) );
+		await Assert.ThrowsAsync<ObjectDisposedException>( () => query );
+	}
+
+	[Fact]
+	public async Task OptInReadTimeoutDoesNotReturnAnUnterminatedFrameAsKeys() {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport, options: LargeReadOptions() );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromMilliseconds( 200 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;YWJj" ) );
+		await Assert.ThrowsAsync<TimeoutException>( () => query );
+		await Assert.ThrowsAnyAsync<Exception>( async () =>
+			await session.ReadEventAsync( TimeSpan.FromSeconds( 3 ) ) );
+	}
+
+	[Theory]
+	[InlineData( 65_537, 256 )]
+	[InlineData( 1_048_576, 256 )]
+	[InlineData( 16_777_216, 256 )]
+	[InlineData( 65_537, 1 )]
+	public async Task OptInReadBudgetReturnsLargerPayloadAndPreservesTrailingInput( int size, int chunk ) {
+		Osc52Transport transport = new() { MaximumReadChunk = chunk };
+		await using TerminalSession session = await OpenSessionAsync( transport,
+			options: new TerminalSessionOptions {
+				TerminalOverride = TerminalProfiles.Dumb,
+				ClipboardOptions = new() { MaximumReadBytes = size }
+			} );
+		byte[] payload = new byte[ size ];
+		for ( int i = 0; i < payload.Length; i++ ) payload[ i ] = (byte)i;
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 30 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes(
+			"\u001b]52;c;" + Convert.ToBase64String( payload ) + "\u001b\\z" ) );
+		Assert.Equal( payload, await query.WaitAsync( TimeSpan.FromSeconds( 35 ) ) );
+		TerminalEvent trailing = await session.ReadEventAsync( TimeSpan.FromSeconds( 1 ) );
+		Assert.Equal( new Rune( 'z' ), trailing.Input?.Character );
+		Assert.Equal( 87_400, session.Options.InputDecoderOptions.MaximumBufferedBytes );
+		Assert.Equal( 65_536, session.Options.ClipboardOptions.MaximumWriteBytes );
+	}
+
+	[Fact]
+	public async Task SmallReadBudgetRejectsDecodedOverflowInSameBase64Block() {
+		Osc52Transport transport = new();
+		await using TerminalSession session = await OpenSessionAsync( transport,
+			options: new TerminalSessionOptions {
+				TerminalOverride = TerminalProfiles.Dumb,
+				ClipboardOptions = new() { MaximumReadBytes = 1 }
+			} );
+		Task<byte[]> query = session.ReadClipboardAsync(
+			TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		await WaitForWriteCountAsync( transport, 1 );
+		transport.Publish( Encoding.ASCII.GetBytes( "\u001b]52;c;YWI=\u001b\\" ) );
+		await Assert.ThrowsAsync<FormatException>( () => query );
+	}
+
 	[Theory]
 	[InlineData( TerminalClipboardSelection.Clipboard, 'c' )]
 	[InlineData( TerminalClipboardSelection.Primary, 'p' )]
@@ -282,6 +491,7 @@ public sealed class TerminalOsc52QueryTests {
 	}
 
 	private sealed class Osc52Transport : ITerminalInput, ITerminalOutput {
+		internal int MaximumReadChunk { get; init; } = int.MaxValue;
 		private readonly Channel<byte[]> input = Channel.CreateUnbounded<byte[]>();
 		private readonly List<byte[]> writes = [];
 		private byte[]? pending;
@@ -333,7 +543,7 @@ public sealed class TerminalOsc52QueryTests {
 			}
 
 			int count = Math.Min(
-				buffer.Length,
+				Math.Min( buffer.Length, this.MaximumReadChunk ),
 				this.pending.Length - this.pendingOffset
 			);
 			this.pending.AsSpan( this.pendingOffset, count ).CopyTo( buffer.Span );

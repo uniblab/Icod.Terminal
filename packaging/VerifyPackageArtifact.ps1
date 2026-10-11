@@ -71,6 +71,12 @@ function Assert-ClipboardApiDocumentation {
 
     $requiredMembers = @(
         'T:Icod.Terminal.TerminalClipboardSelection',
+        'T:Icod.Terminal.TerminalClipboardOptions',
+        'P:Icod.Terminal.TerminalClipboardOptions.DefaultMaximumBytes',
+        'P:Icod.Terminal.TerminalClipboardOptions.SupportedMaximumBytes',
+        'P:Icod.Terminal.TerminalClipboardOptions.MaximumReadBytes',
+        'P:Icod.Terminal.TerminalClipboardOptions.MaximumWriteBytes',
+        'P:Icod.Terminal.TerminalSessionOptions.ClipboardOptions',
         'M:Icod.Terminal.TerminalSession.WriteClipboardAsync(Icod.Terminal.TerminalClipboardSelection,System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)',
         'M:Icod.Terminal.TerminalSession.WriteClipboardAsync(Icod.Terminal.TerminalClipboardSelection,System.String,System.Threading.CancellationToken)',
         'M:Icod.Terminal.TerminalSession.ReadClipboardAsync(Icod.Terminal.TerminalClipboardSelection,System.TimeSpan,System.Threading.CancellationToken)'

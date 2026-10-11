@@ -1,8 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<!-- Repository-wide release version authority. -->
-		<VersionPrefix>1.28.0</VersionPrefix>
-		<VersionSuffix />
+		<VersionPrefix>1.29.0</VersionPrefix>
 		<Version Condition="'$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
 		<Version Condition="'$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
 		<PackageVersion>$(Version)</PackageVersion>
