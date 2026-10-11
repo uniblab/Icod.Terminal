@@ -1,9 +1,9 @@
 # Clipboard transfer qualification — 1.29
 
-Candidate: **1.29.0-alpha.1**, implementation in
+Release preparation: **1.29.0**, implementation in
 [PR #87](https://github.com/uniblab/Icod.Terminal/pull/87).
 Recorded 2026-10-11 UTC. This is automated/component evidence, not live clipboard
-acceptance. Stable promotion and publication remain separate maintainer actions.
+acceptance. Merge, tagging and publication remain separate maintainer actions.
 
 ## Environment and reproducibility
 
