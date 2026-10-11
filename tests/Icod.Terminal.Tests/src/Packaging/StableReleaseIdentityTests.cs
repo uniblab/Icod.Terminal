@@ -84,9 +84,14 @@ public sealed class StableReleaseIdentityTests {
 				Path.Combine( root, "docs", "releases", "1.29.0.md" )
 			)
 		);
-		foreach ( string targetFramework in new[] { "net8.0", "net9.0", "net10.0" } ) {
+		foreach ( string requiredReleaseNoteText in new[] {
+			"net8.0",
+			"net9.0",
+			"net10.0",
+			"Compatibility-and-Versioning.md"
+		} ) {
 			Assert.Contains(
-				targetFramework,
+				requiredReleaseNoteText,
 				releaseNotes,
 				StringComparison.Ordinal
 			);
