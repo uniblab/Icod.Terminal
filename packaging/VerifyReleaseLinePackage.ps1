@@ -164,7 +164,7 @@ try {
 
 		$statusMatches = [regex]::Matches(
 			$readme,
-			'(?m)^Current stable release: `Icod\.Terminal (?<version>[^`\r\n]+)`\.\r?$'
+			'(?m)^Stable release: \*\*(?<version>[^*\r\n]+)\*\*\.'
 		)
 		if ( 1 -ne $statusMatches.Count ) {
 			throw "The packed README must contain exactly one current-stable-release line; found $($statusMatches.Count)."
