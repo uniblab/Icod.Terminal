@@ -74,8 +74,14 @@ try {
     $reader = [System.IO.StreamReader]::new($archive.GetEntry('README.md').Open())
     try { $readme = $reader.ReadToEnd() } finally { $reader.Dispose() }
     $notes = $nuspec.SelectSingleNode("//*[local-name()='metadata']/*[local-name()='releaseNotes']").InnerText
-    foreach ($token in @($ExpectedVersion, "docs/releases/$ExpectedVersion.md", 'Compatibility-and-Versioning.md')) {
-        if (-not $readme.Contains($token) -or -not $notes.Contains($token)) { throw "Packed release documentation is missing '$token'." }
+    $documentationRoot = 'https://github.com/uniblab/Icod.Terminal/blob/main/docs'
+    $releaseNotesUrl = "$documentationRoot/releases/$ExpectedVersion.md"
+    $compatibilityPolicyUrl = "$documentationRoot/Compatibility-and-Versioning.md"
+    foreach ($token in @($ExpectedVersion, $compatibilityPolicyUrl)) {
+        if (-not $readme.Contains($token)) { throw "Packed README is missing '$token'." }
+    }
+    foreach ($token in @($ExpectedVersion, $releaseNotesUrl, $compatibilityPolicyUrl)) {
+        if (-not $notes.Contains($token)) { throw "Packed package release notes are missing '$token'." }
     }
     foreach ($token in @('terminal appearance', 'in-band resize', 'native', 'QueryAppearanceAsync', 'AcquireAppearanceReportingAsync', 'AcquireInBandResizeReportingAsync')) {
         if (-not $readme.Contains($token)) { throw "Packed README is missing environment contract '$token'." }
