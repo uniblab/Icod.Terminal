@@ -4,11 +4,11 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable feature line:** `1.27.0` — Live Terminal Environment Awareness
-- **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification
-- **Development status:** `1.27.0` was merged through [PR #83](https://github.com/uniblab/Icod.Terminal/pull/83) at `485bedb014ab7b66391661c709833a6a4fa4afcc` and tagged `v1.27.0` on 2026-10-06; the maintainer reports that NuGet upload is in progress. Final PR head `df6c42189f6b6a2f40771ad2115af41a46dcb4b1` passed all ten jobs in workflow `37536612435`, including 2,821 unit tests and 15 integration tests per framework on Windows, Linux and macOS. The graphics hold is now reopened only for the bounded 1.28 specification-conformance scope below; persistent ATLAS remains unqualified until that scope and downstream acceptance complete.
-- **Active development target:** `1.28.0` — Published-Spec Kitty Graphics Transactions.
-- **Selected scope:** Adhere to the published Kitty Graphics Protocol, distinguish output commitment from protocol acknowledgement, record Kitty 0.49.2 deviations without encoding them as a private dialect, and qualify the downstream raster atlas. See the [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md).
+- **Current stable feature line:** `1.28.0` — Published-Spec Kitty Graphics Transactions; [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.28.0) published 2026-10-09.
+- **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification.
+- **Development status:** Clipboard enhancement scope selected on 2026-10-10; documentation/design only, runtime work pending review.
+- **Active development target:** `1.29.0` — Bounded Clipboard Transfers.
+- **Selected scope:** Preserve the 65,536-byte default while allowing explicit larger read/write budgets, with coordinated codec/framing limits, bounded correlated response accumulation and truthful outcomes. See the [1.29 development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md) and [design](docs/Clipboard-Transfer-Design-1.29.md).
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
@@ -19,24 +19,21 @@ The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initia
 
 ## Latest accepted checkpoint
 
-`Icod.Terminal 1.27.0` is merged and tagged. Its appearance query, independent
-appearance/in-band resize leases, lifecycle hardening, compatibility evidence,
-DA1 trailing-separator correction, package gates and documentation are complete.
-The maintainer reports that NuGet upload is in progress. Tag `v1.27.0` resolves
-to merge commit `485bedb014ab7b66391661c709833a6a4fa4afcc`; final PR head
-`df6c42189f6b6a2f40771ad2115af41a46dcb4b1` passed all ten jobs in
-[workflow 37536612435](https://github.com/uniblab/Icod.Terminal/actions/runs/37536612435).
-The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md),
-[release notes](docs/releases/1.27.0.md) and
-[reviewed matrix](docs/compatibility/1.27.0.md) preserve its exact limits.
+Stable `1.28.0` is present on main at
+`2c410cd80663fef30912079e2c0de7a550852b97`; its
+[GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.28.0)
+was published 2026-10-09. The
+[1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md) and
+[release notes](docs/releases/1.28.0.md) preserve the exact graphics and downstream
+qualification limits. This status does not expand their terminal coverage.
 
-On 2026-10-06 the maintainer selected a bounded 1.28 reopening of graphics work:
-follow the published Kitty Graphics Protocol, make transaction confirmation
-truthful, record Kitty 0.49.2 deviations separately, and qualify the downstream
-ATLAS path without terminal-brand heuristics or an undocumented repeated-id
-workaround. The [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md)
-defines T2800–T2810 and requires a detailed contract/API-regret gate before runtime
-implementation.
+On 2026-10-10 the maintainer selected clipboard enhancement before the next
+DCurses/Widgets editor milestones for Icod.Dedit, and explicitly retained
+**64 KiB as the default**. Applications may opt into larger library budgets;
+that local policy is not remote OSC 52 capacity negotiation. The
+[1.29 roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md) defines T2900–T2908.
+The proposed 16 MiB hard ceiling remains subject to design review. No runtime,
+package version, dependency or publication change is made by this planning PR.
 
 ### Historical checkpoints
 
@@ -88,7 +85,7 @@ terminal applications
 - `Icod.DCurses` owns cells, windows, virtual-screen state, screen coordinates, clipping, scrolling, layout, refresh/diff policy, damage, and higher-level presentation policy.
 - PTY/process hosting remains orthogonal to the `Icod.Terminal` runtime contract.
 
-The production dependency baseline for stable 1.27 and planned 1.28 is:
+The production dependency baseline for stable 1.28 and planned 1.29 is:
 
 ```text
 Icod.TermInfo 1.17.0
@@ -127,7 +124,8 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.25.0  ordered screen raster transactions                    STABLE SOURCE / GRAPHICS HOLD
 1.26.0  terminal compatibility qualification                  PUBLISHED
 1.27.0  appearance and resize awareness                       MERGED / TAGGED
-1.28.0  published-spec Kitty graphics transactions            ALPHA / LIVE-DOWNSTREAM GATES OPEN
+1.28.0  published-spec Kitty graphics transactions            RELEASED
+1.29.0  bounded opt-in clipboard transfers                        SELECTED / PLANNING
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
@@ -633,11 +631,43 @@ T2810  live qualification and stable closure
 The [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md)
 pins the protocol/source evidence, classifies the Kitty 0.49.2 behaviors, defines
 the required completion states and records the test and release gates. This
-development line implements the approved design as `1.28.0-alpha.1`. Reviewed
-2026-10-08 corrected-source Kitty recordings provide limited positive sample
-evidence including the corrected eight-row visual witness. Full provenance,
-downstream ATLAS acceptance and stable closure remain open under Task 9 of the
-approved plan.
+development line progressed through `1.28.0-alpha.1` to the released stable
+`1.28.0` line. Reviewed corrected-source Kitty recordings and the maintainer's
+downstream ATLAS acceptance are preserved in the 1.28 promotion record and release
+notes; their precise provenance and limitations remain authoritative.
+
+## 1.29 selected line — Bounded Clipboard Transfers
+
+The next release extends existing OSC 52 clipboard functionality for applications
+such as Icod.Dedit. Keep 65,536 decoded bytes as the default for both reads and
+writes; offer independent, explicit larger budgets with a reviewed hard ceiling.
+Terminal owns transport bounds and protocol truth; applications own internal
+clipboard fallback, selected text and user messaging.
+
+The selected work coordinates codec, frame, query and decoder limits; preserves
+ordinary input and bracketed-paste policy; handles malformed/oversized/late replies;
+and includes public samples, allocation measurement, package and compatibility gates.
+Successful output is not remote acceptance, and a query timeout is not proof of
+unsupported functionality. No OSC 52 capacity negotiation is invented.
+
+| Tranche | Deliverable |
+| --- | --- |
+| T2900 | Contract freeze, reader-ownership proof and development identity |
+| T2901 | Immutable clipboard budgets and checked byte geometry |
+| T2902 | Larger bounded writes and output-ordering preservation |
+| T2903 | Correlated larger reads without broader ordinary-input limits |
+| T2904 | Failure, cancellation, late response and lifecycle hardening |
+| T2905 | Allocation and performance qualification |
+| T2906 | Public sample and exact-environment compatibility evidence |
+| T2907 | API, package, documentation and downstream gates |
+| T2908 | Maintainer-reviewed release closure |
+
+See the [development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md)
+and [design](docs/Clipboard-Transfer-Design-1.29.md).
+MIME-aware OSC 5522 (earlier option 4) remains deferred; this decision enhances
+the existing OSC 52 path. No TermInfo or production dependency change is planned.
+No changes to DCurses/Widgets or the shared workflow-template repository are part
+of this milestone. Execution remains inline, without subagents.
 
 ## Later development candidates
 
