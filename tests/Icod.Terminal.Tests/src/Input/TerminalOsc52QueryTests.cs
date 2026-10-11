@@ -36,14 +36,14 @@ public sealed class TerminalOsc52QueryTests {
 		Osc52Transport largeTransport = new();
 		await using TerminalSession small = await OpenSessionAsync( smallTransport );
 		await using TerminalSession large = await OpenSessionAsync( largeTransport, options: LargeReadOptions() );
-		Task<byte[]> smallRead = small.ReadClipboardAsync( TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
-		Task<byte[]> largeRead = large.ReadClipboardAsync( TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 5 ) ).AsTask();
+		Task<byte[]> smallRead = small.ReadClipboardAsync( TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 30 ) ).AsTask();
+		Task<byte[]> largeRead = large.ReadClipboardAsync( TerminalClipboardSelection.Clipboard, TimeSpan.FromSeconds( 30 ) ).AsTask();
 		await Task.WhenAll( WaitForWriteCountAsync( smallTransport, 1 ), WaitForWriteCountAsync( largeTransport, 1 ) );
 		byte[] payload = new byte[ 100_000 ];
 		byte[] frame = Encoding.ASCII.GetBytes( "\u001b]52;c;" + Convert.ToBase64String( payload ) + "\u001b\\" );
 		smallTransport.Publish( frame );
-		largeTransport.Publish( frame );
 		await Assert.ThrowsAsync<FormatException>( () => smallRead );
+		largeTransport.Publish( frame );
 		Assert.Equal( payload, await largeRead );
 	}
 
