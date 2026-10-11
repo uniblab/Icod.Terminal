@@ -4,9 +4,9 @@
 - **Package:** `Icod.Terminal`
 - **Language:** C# 13
 - **Target frameworks:** `net8.0`; `net9.0`; `net10.0`
-- **Current stable feature line:** `1.28.0` — Published-Spec Kitty Graphics Transactions; [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.28.0) published 2026-10-09.
+- **Current stable feature line:** `1.29.0` — Bounded Clipboard Transfers; merge, tag, and publication remain maintainer actions.
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification.
-- **Development status:** Approved clipboard enhancements implemented as `1.29.0-alpha.1`; qualification and maintainer release review tracked in the versioned roadmap.
+- **Development status:** Stable `1.29.0` release preparation; reviewed qualification is tracked in the versioned roadmap.
 - **Active development target:** `1.29.0` — Bounded Clipboard Transfers.
 - **Selected scope:** Preserve the 65,536-byte default while allowing explicit larger read/write budgets, with coordinated codec/framing limits, bounded correlated response accumulation and truthful outcomes. See the [1.29 development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md) and [design](docs/Clipboard-Transfer-Design-1.29.md).
 - **Stable compatibility floor:** `1.0.0`
@@ -33,8 +33,9 @@ DCurses/Widgets editor milestones for Icod.Dedit, and explicitly retained
 that local policy is not remote OSC 52 capacity negotiation. The
 [1.29 roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md) defines T2900–T2908.
 The maintainer approved the 16 MiB hard ceiling and implementation. Independent
-budgets, bounded transfers and explicit samples are implemented in the alpha line.
-Dependencies remain unchanged; publication is a separate maintainer action.
+budgets, bounded transfers and explicit samples are qualified for the 1.29.0
+stable release. Dependencies remain unchanged; publication is a separate
+maintainer action.
 
 ### Historical checkpoints
 
@@ -126,7 +127,7 @@ Optional integration tests/samples use `Icod.TermInfo.Inspection 1.17.0`; Inspec
 1.26.0  terminal compatibility qualification                  PUBLISHED
 1.27.0  appearance and resize awareness                       MERGED / TAGGED
 1.28.0  published-spec Kitty graphics transactions            RELEASED
-1.29.0  bounded opt-in clipboard transfers                    ALPHA IMPLEMENTATION
+1.29.0  bounded opt-in clipboard transfers                    STABLE PREPARATION
 ```
 
 The unchanged 1.18–1.19 public API fingerprint is:
