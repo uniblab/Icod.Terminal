@@ -318,6 +318,8 @@ internal sealed partial class TerminalInputDecoder {
 
 		switch ( first ) {
 			case EscapeByte:
+				TerminalInputEvent? alt = await this.TryReadLegacyAltAsync( cancellationToken ).ConfigureAwait( false );
+				if ( alt is not null ) return alt;
 				this.Consume( 1 );
 				return TerminalInputEvent.FromKey( TerminalKey.Escape );
 
@@ -366,6 +368,23 @@ internal sealed partial class TerminalInputDecoder {
 
 			this.Consume( 1 );
 			return TerminalInputEvent.FromText( new Rune( '\uFFFD' ) );
+		}
+	}
+
+	private async ValueTask<TerminalInputEvent?> TryReadLegacyAltAsync( CancellationToken cancellationToken ) {
+		while ( this.bufferedBytes.Count < 2 ) {
+			if ( !await this.ReadMoreWithinEscapeWindowAsync( cancellationToken ).ConfigureAwait( false ) ) return null;
+		}
+		// Keep control-family and SS3 introducers on the existing sequence/recovery path.
+		byte next = this.bufferedBytes[ 1 ];
+		if ( next < 0x20 || next is 0x7f or (byte)'[' or (byte)']' or (byte)'P' or (byte)'_' or (byte)'^' or (byte)'X' or (byte)'O' or (byte)'\\' ) return null;
+		while ( true ) {
+			OperationStatus status = Rune.DecodeFromUtf8( this.bufferedBytes.Skip( 1 ).ToArray(), out Rune rune, out int consumed );
+			if ( status == OperationStatus.Done ) {
+				this.Consume( consumed + 1 );
+				return TerminalInputEvent.FromKey( TerminalKey.Character, TerminalKeyModifiers.Alt, rune );
+			}
+			if ( status != OperationStatus.NeedMoreData || !await this.ReadMoreWithinEscapeWindowAsync( cancellationToken ).ConfigureAwait( false ) ) return null;
 		}
 	}
 

@@ -9,10 +9,9 @@
 
 ## Status
 
-Stable release: **1.29.0**. It adds bounded, opt-in OSC 52 clipboard transfers;
-the stable **1.0.0 compatibility floor** remains unchanged.
+Stable release: **1.29.1**. The stable **1.0.0 compatibility floor** remains unchanged.
 
-See the [1.29.0 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md),
+See the [1.29.1 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md),
 [changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md) for release history,
 the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
 for current work, and the [compatibility policy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
@@ -66,7 +65,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.29.0
+dotnet add package Icod.Terminal --version 1.29.1
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
@@ -235,7 +234,7 @@ The [compatibility sample](samples/Icod.Terminal.Compatibility.Sample/README.md)
 The root README describes the current product by capability rather than by the release in which each feature first appeared.
 
 - **Live terminal session and lifecycle** — terminal endpoint observation; native terminal-mode capture/mutation; deterministic session disposal; lifecycle invalidation; scoped/reversible state where exact restoration is supportable.
-- **Unified input and events** — one authoritative reader for text, keys, bracketed paste, focus, mouse, lifecycle observations, active query responses, and unsolicited protocol-neutral semantic events.
+- **Unified input and events** — one authoritative reader for text, keys, bracketed paste, focus, mouse, lifecycle observations, active query responses, and unsolicited protocol-neutral semantic events, including legacy Escape-prefixed Alt characters and direct Windows console control/Unicode input.
 - **Typed terminal queries** — bounded cursor, status, style, color, clipboard, notification, pointer, appearance, and related observations integrated with the same input/query authority.
 - **Terminal environment awareness** — opt-in appearance and in-band resize reporting with independent scoped ownership, typed semantic observations, and separate native-geometry provenance.
 - **Static screen advertisement** — immutable `Profile.Screen.Advertises...` facts, separate from parameter-specific planning and live evidence; the [capability sample](samples/Icod.Terminal.CapabilityPlanning.Sample/README.md) demonstrates all three.
@@ -393,6 +392,19 @@ net10.0
 The repository uses C# 13. Release qualification covers Windows, Linux, and macOS.
 
 `TerminalSession.OpenAsync(options)` reads interactive Unix input through a session-owned byte transport on Linux and macOS. It bypasses .NET console line editing so keys and terminal replies reach the decoder without waiting for Enter or acquiring managed echo. The existing input-mode and echo options still control native terminal behavior. Dispose the session to restore modes and release its input descriptor. The overload accepting explicit byte services continues to borrow them; callers retain their lifetime responsibility.
+
+On Windows, the same overload owns a separate `CONIN$` handle and reads it with
+`ReadConsoleW`. This keeps Ctrl+Z in the input stream instead of allowing a
+standard byte-stream read to interpret it as end-of-input, and converts console
+Unicode to UTF-8 for the common decoder. Cancellation finishes the outstanding
+native read before its owned handle is closed. Sessions opened with explicit
+byte services retain their existing borrowed-transport behavior.
+
+Applications that bind Ctrl+C or Ctrl+Z as commands should request
+`TerminalInputMode.Raw`. Raw mode disables POSIX signal handling and Windows
+processed input so both arrive through `ReadEventAsync()` as Character keys with
+the Control modifier. `CBreak` deliberately retains host signal/processed-input
+handling for applications that want conventional interrupt and suspend behavior.
 
 `Icod.Terminal` is a managed library but intentionally uses native platform facilities where terminal modes or console behavior require them. Protocol and feature availability still depends on the terminal endpoint attached to the process; operating-system identity or terminal brand is not treated as sufficient support proof.
 

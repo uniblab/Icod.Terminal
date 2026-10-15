@@ -266,6 +266,12 @@ public sealed class TerminalRasterAnimationHardeningTests {
 			),
 			resource.Animation.State
 		);
+		// A committed flush failure retains bounded ownership of its possible
+		// late response. Resolve that ownership before starting the short-timeout
+		// append used to prove that frame-sequence certainty was preserved.
+		transport.Publish(
+			Encoding.ASCII.GetBytes( "\u001b_Gi=77;OK\u001b\\" )
+		);
 		transport.ReplyToNextFlush = true;
 		Task<TerminalControlResult<TerminalRasterAnimationFrame>> append =
 			resource.Animation.AddFrameAsync(

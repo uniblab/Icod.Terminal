@@ -203,11 +203,13 @@ public sealed partial class TerminalSession : IAsyncDisposable {
 	) {
 		cancellationToken.ThrowIfCancellationRequested();
 
-		PosixTerminalInput? ownedInput = null;
+		IDisposable? ownedInput = null;
 		try {
 			ITerminalInput input = OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()
-				? ownedInput = PosixTerminalInput.OpenStandardInput()
-				: new StreamTerminalInput( Console.OpenStandardInput() );
+				? (ITerminalInput)( ownedInput = PosixTerminalInput.OpenStandardInput() )
+				: OperatingSystem.IsWindows()
+					? (ITerminalInput)( ownedInput = WindowsTerminalInput.OpenStandardInput() )
+					: new StreamTerminalInput( Console.OpenStandardInput() );
 			TerminalSession session = await OpenAsync(
 				SystemTerminalControlProvider.Instance,
 				TerminalEndpoint.StandardInput,

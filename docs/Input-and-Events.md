@@ -18,6 +18,14 @@ Typed query methods share the same underlying input stream and response router.
 
 `ITerminalInput` remains public so custom transports can be supplied when opening a session. A live session does not expose that borrowed input transport as a public property. Callers must not create a competing reader over the same transport while the session owns it.
 
+The default Windows session owns a separate `CONIN$` handle and reads Unicode
+characters through `ReadConsoleW`, then incrementally encodes them as UTF-8 for
+the common decoder. This preserves control characters such as Ctrl+Z instead of
+giving byte-stream EOF semantics to the Windows console host, and preserves
+surrogate pairs across native read boundaries. Cancellation completes the
+outstanding native read before closing the owned handle. An explicit
+`ITerminalInput` remains borrowed and does not use this Windows-console path.
+
 This rule is normative. It prevents an external read from stealing bytes belonging to fragmented UTF-8, terminal keys, mouse/focus/paste frames, modern keyboard frames, active query responses, or unsolicited semantic reports.
 
 ## 2. Unified event model
@@ -145,6 +153,15 @@ The decoder recognizes terminfo key capabilities for navigation, editing, functi
 
 Traditional keyboard input remains available regardless of whether a modern keyboard protocol is negotiated.
 
+Applications that need Ctrl+C, Ctrl+Z, or another host control character as an
+application command must request `TerminalInputMode.Raw`. In raw mode, decoded
+Ctrl+C and Ctrl+Z are `TerminalKey.Character` events with the Control modifier
+and `Character` equal to `C` or `Z`. `TerminalInputMode.CBreak` intentionally
+retains POSIX signal handling and Windows processed-input handling; it is not an
+interception mode for those shortcuts. The application chooses the input mode
+when opening the session and handles the resulting event through
+`ReadEventAsync(...)`; no separate signal-interception API is required.
+
 ### Escape ambiguity
 
 An isolated Escape key is ambiguous with the prefix of many terminal sequences. The decoder therefore uses a bounded ambiguity interval.
@@ -158,6 +175,14 @@ TerminalSession.DefaultEscapeSequenceTimeout
 and may be configured per session through `TerminalInputDecoderOptions.EscapeSequenceTimeout`.
 
 The timeout distinguishes an isolated Escape from an incomplete escape-prefixed sequence; it is not an application-wide input polling interval.
+
+After reserving known terminfo matches and control-family introducers for their
+existing sequence and recovery paths, Escape followed within that interval by
+one valid non-control UTF-8 scalar becomes a `TerminalKey.Character` key with
+the Alt modifier. The scalar may arrive across multiple native reads. CSI, OSC,
+DCS, APC, PM, SOS, SS3, and string-terminator introducers do not become Alt
+characters. If no qualifying scalar arrives within the interval, the decoder
+returns the isolated Escape key and retains later input for normal decoding.
 
 ## 7. Rich input events
 
