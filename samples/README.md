@@ -78,7 +78,7 @@ Normal execution needs interactive input/output and alternate-screen/cursor/rend
 
 Interactive inspector for text, keys, bracketed paste, focus, mouse, lifecycle, unsolicited semantic events, and negotiated modern keyboard reporting.
 
-On terminals that send Kitty phase-bearing functional CSI frames, navigation, editing, and Menu keys retain repeat/release phases in the existing event model. The example tracks a held Left key and Control+Insert repeats only while a modern keyboard-reporting lease is active. Traditional key decoding remains the fallback; an ordinary traditional press does not imply that a matching release will arrive. The [sample walkthrough](Icod.Terminal.RichInput.Sample/README.md) explains reporting, output, privacy, and fresh-package verification.
+On terminals that send Kitty phase-bearing functional CSI frames, navigation, editing, and Menu keys retain repeat/release phases in the existing event model. The example tracks a held Left key and Control+Insert repeats only while a modern keyboard-reporting lease is active. Traditional key decoding remains the fallback; an ordinary traditional press does not imply that a matching release will arrive. In fallback mode, Alt+F demonstrates one Alt-modified character event. On Windows, Ctrl+Z demonstrates one Control-modified character event without ending subsequent input. The [sample walkthrough](Icod.Terminal.RichInput.Sample/README.md) explains reporting, the 1.29.1 checks, output, privacy, and fresh-package verification.
 
 ```text
 dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichInput.Sample.csproj -f net10.0

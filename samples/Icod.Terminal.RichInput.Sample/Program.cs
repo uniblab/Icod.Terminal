@@ -85,6 +85,16 @@ try {
 	);
 	await WriteLineAsync(
 		session,
+		"With traditional input, Alt+F should report one Alt-modified Character key."
+	);
+	if ( OperatingSystem.IsWindows() ) {
+		await WriteLineAsync(
+			session,
+			"On Windows, Ctrl+Z should report one Control-modified Character key and input should continue."
+		);
+	}
+	await WriteLineAsync(
+		session,
 		"Mouse coordinates below are zero-based terminal-cell coordinates."
 	);
 	await WriteLineAsync(

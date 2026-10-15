@@ -12,6 +12,24 @@ dotnet run --project samples/Icod.Terminal.RichInput.Sample/Icod.Terminal.RichIn
 
 The sample also targets `net8.0` and `net9.0` when the matching runtime is installed. Type text, use navigation/editing keys, paste, click, or change focus. Press **q**, **Q**, or **Escape** to exit; end of input also ends the loop. Terminal support determines which reports actually arrive, so a physical terminal need not emit every event shown in the scripted package witness.
 
+## 1.29.1 input checks
+
+When modern keyboard reporting is unavailable and the terminal uses traditional
+Escape-prefixed input, press Alt+F. It should produce one event resembling:
+
+```text
+Key key=Character ... character="f" ... modifiers=Alt
+```
+
+The exact phase and alternate-character fields depend on the terminal. The
+important observations are one Character key, `f`, and the Alt modifier rather
+than a standalone Escape followed by text.
+
+On Windows, press Ctrl+Z and then a printable key. Ctrl+Z should produce one
+Control-modified Character key for `Z`; the following key must still arrive.
+This check is Windows-specific: POSIX terminal modes may assign Ctrl+Z to job
+control. Neither check requires the sample to acquire modern keyboard reporting.
+
 ## Reporting and fallback
 
 The sample first requests an input-protocol lease for Kitty `AllKeys` reporting, bracketed paste, focus, and button mouse tracking. If that combined request is unavailable, it tries paste/focus/mouse without modern keyboard reporting. If that is also unavailable, the basic event loop still runs. The lease is disposed on exit; the session remains the sole reader throughout.
