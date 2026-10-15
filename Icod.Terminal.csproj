@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>1.29.1 fixes legacy Alt-letter decoding and preserves Ctrl+Z and Unicode on Windows using direct ReadConsoleW input. Adds cancellation-safe owned console reads and a native Windows console regression smoke. No public API or dependency changes. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>1.29.1 fixes legacy Alt-letter decoding and preserves Ctrl+Z and Unicode on Windows using direct ReadConsoleW input. Adds cancellation-safe owned console reads and a native Windows console regression smoke. No public API or dependency changes. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>
