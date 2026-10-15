@@ -1,6 +1,6 @@
 /*
-	Icod.Terminal.Tests
-	Automated test suite for the Icod.Terminal library.
+	Icod.Terminal.WindowsInput.Smoke
+	Validation utility for Icod.Terminal release and integration contracts.
 	Copyright (C) 2026  Timothy J. Bruce <uniblab@hotmail.com>
 */
 
