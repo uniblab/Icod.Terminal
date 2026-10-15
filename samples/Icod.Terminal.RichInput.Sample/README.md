@@ -25,10 +25,14 @@ The exact phase and alternate-character fields depend on the terminal. The
 important observations are one Character key, `f`, and the Alt modifier rather
 than a standalone Escape followed by text.
 
-On Windows, press Ctrl+Z and then a printable key. Ctrl+Z should produce one
-Control-modified Character key for `Z`; the following key must still arrive.
-This check is Windows-specific: POSIX terminal modes may assign Ctrl+Z to job
-control. Neither check requires the sample to acquire modern keyboard reporting.
+The sample deliberately requests `TerminalInputMode.Raw`. Press Ctrl+C, type a
+printable key, then press Ctrl+Z and type another printable key. Each control
+shortcut should produce one `TerminalKey.Character` event with the Control
+modifier (`C` or `Z`), and both following keys must still arrive. Raw mode is
+essential here: `CBreak` retains host signal/processed-input handling, where
+POSIX normally maps Ctrl+C to `SIGINT` and Ctrl+Z to `SIGTSTP`, and Windows
+retains processed console handling. Neither check requires modern keyboard
+reporting.
 
 ## Reporting and fallback
 

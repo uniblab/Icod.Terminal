@@ -400,6 +400,12 @@ Unicode to UTF-8 for the common decoder. Cancellation finishes the outstanding
 native read before its owned handle is closed. Sessions opened with explicit
 byte services retain their existing borrowed-transport behavior.
 
+Applications that bind Ctrl+C or Ctrl+Z as commands should request
+`TerminalInputMode.Raw`. Raw mode disables POSIX signal handling and Windows
+processed input so both arrive through `ReadEventAsync()` as Character keys with
+the Control modifier. `CBreak` deliberately retains host signal/processed-input
+handling for applications that want conventional interrupt and suspend behavior.
+
 `Icod.Terminal` is a managed library but intentionally uses native platform facilities where terminal modes or console behavior require them. Protocol and feature availability still depends on the terminal endpoint attached to the process; operating-system identity or terminal brand is not treated as sufficient support proof.
 
 ## Design Boundaries and Guarantees

@@ -25,7 +25,8 @@ using Icod.Terminal.RichInput.Sample;
 
 await using TerminalSession session = await TerminalSession.OpenAsync(
 	new TerminalSessionOptions {
-		InputMode = TerminalInputMode.CBreak,
+		// Raw lets applications bind control characters such as Ctrl+C and Ctrl+Z.
+		InputMode = TerminalInputMode.Raw,
 		EchoInput = false
 	}
 );
@@ -87,12 +88,10 @@ try {
 		session,
 		"With traditional input, Alt+F should report one Alt-modified Character key."
 	);
-	if ( OperatingSystem.IsWindows() ) {
-		await WriteLineAsync(
-			session,
-			"On Windows, Ctrl+Z should report one Control-modified Character key and input should continue."
-		);
-	}
+	await WriteLineAsync(
+		session,
+		"Raw mode lets Ctrl+C and Ctrl+Z report as Control-modified Character keys; input should continue."
+	);
 	await WriteLineAsync(
 		session,
 		"Mouse coordinates below are zero-based terminal-cell coordinates."

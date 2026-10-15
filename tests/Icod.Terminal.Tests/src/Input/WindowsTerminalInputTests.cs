@@ -24,12 +24,12 @@ using Xunit;
 
 public sealed class WindowsTerminalInputTests {
 	[Fact]
-	public async Task PreservesControlZAndSplitSurrogatesAcrossSmallReads() {
-		Queue<string> chunks = new( [ "\u001a", "\ud83d", "\ude42界", "" ] );
+	public async Task PreservesControlCControlZAndSplitSurrogatesAcrossSmallReads() {
+		Queue<string> chunks = new( [ "\u0003\u001a", "\ud83d", "\ude42界", "" ] );
 		using WindowsTerminalInput input = new( buffer => { string next = chunks.Dequeue(); next.CopyTo( 0, buffer, 0, next.Length ); return next.Length; }, () => { } );
 		List<byte> received = []; byte[] one = new byte[ 1 ]; int count;
 		while ( ( count = await input.ReadAsync( one ) ) > 0 ) received.AddRange( one.Take( count ) );
-		Assert.Equal( "\u001a🙂界", Encoding.UTF8.GetString( received.ToArray() ) );
+		Assert.Equal( "\u0003\u001a🙂界", Encoding.UTF8.GetString( received.ToArray() ) );
 	}
 
 	[Fact]

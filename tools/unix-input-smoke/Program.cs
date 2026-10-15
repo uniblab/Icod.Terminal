@@ -39,7 +39,7 @@ if ( args.Length > 0 && args[0] == "--child" ) {
 foreach ( TerminalInputMode mode in new[] { TerminalInputMode.CBreak, TerminalInputMode.Raw } ) {
 	await RunParentAsync( mode );
 }
-Console.WriteLine( "Unix standard-input regression passed: immediate keys, UTF-8, query routing, no echo, cancellation, restoration and reopen." );
+Console.WriteLine( "Unix standard-input regression passed: immediate keys, raw Ctrl+C/Ctrl+Z, UTF-8, query routing, no echo, cancellation, restoration and reopen." );
 return 0;
 
 static async Task RunChildAsync( TerminalInputMode mode ) {
@@ -49,6 +49,11 @@ static async Task RunChildAsync( TerminalInputMode mode ) {
 	await session.WriteTextAsync( "READY|" );
 	await ExpectCharacterAsync( session, 'd' );
 	await session.WriteTextAsync( "KEY|" );
+	if ( TerminalInputMode.Raw == mode ) {
+		await ExpectControlCharacterAsync( session, 'C' );
+		await ExpectControlCharacterAsync( session, 'Z' );
+		await session.WriteTextAsync( "CONTROL|" );
+	}
 	await ExpectCharacterAsync( session, 'é' );
 	await session.WriteTextAsync( "UTF8|" );
 	_ = await session.QueryPrimaryDeviceAttributesAsync( TimeSpan.FromSeconds( 3 ) );
@@ -79,6 +84,15 @@ static async Task ExpectCharacterAsync( TerminalSession session, char expected )
 	TerminalEvent result = await session.ReadEventAsync( TimeSpan.FromSeconds( 3 ) );
 	Require( result.Input?.Character?.Value == expected,
 		$"Expected immediate '{expected}' without Enter; received {result.Kind}." );
+}
+
+static async Task ExpectControlCharacterAsync( TerminalSession session, char expected ) {
+	TerminalEvent result = await session.ReadEventAsync( TimeSpan.FromSeconds( 3 ) );
+	Require( result.Input?.Kind == TerminalInputEventKind.Key
+		&& result.Input.Key == TerminalKey.Character
+		&& result.Input.Character?.Value == expected
+		&& result.Input.Modifiers == TerminalKeyModifiers.Control,
+		$"Expected Ctrl+{expected} as an application key; received {result.Kind}." );
 }
 
 static async Task RunParentAsync( TerminalInputMode mode ) {
@@ -119,6 +133,11 @@ static async Task RunParentAsync( TerminalInputMode mode ) {
 		}
 		await SendAsync( "d" );
 		await ExpectAsync( "KEY|" );
+		if ( TerminalInputMode.Raw == mode ) {
+			await process.StandardInput.BaseStream.WriteAsync( new byte[] { 0x03, 0x1a }, deadline.Token );
+			await process.StandardInput.BaseStream.FlushAsync( deadline.Token );
+			await ExpectAsync( "CONTROL|" );
+		}
 		// Split a UTF-8 scalar across writes to exercise the byte decoder.
 		await process.StandardInput.BaseStream.WriteAsync( new byte[] { 0xc3 }, deadline.Token );
 		await process.StandardInput.BaseStream.FlushAsync( deadline.Token );

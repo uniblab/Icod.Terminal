@@ -47,10 +47,12 @@ public sealed class TerminalInputDecoderTests {
 	}
 
 	[Fact]
-	public async Task ControlZByteIsAKeyAndDoesNotEndTheDecoder() {
-		TerminalInputDecoder decoder = CreateDecoder( new ScriptedTerminalInput( [ new byte[] { 0x1a, (byte)'x' } ] ) );
-		TerminalInputEvent key = await decoder.ReadAsync();
-		Assert.Equal( TerminalKeyModifiers.Control, key.Modifiers ); Assert.Equal( new Rune( 'Z' ), key.Character );
+	public async Task ControlCAndControlZBytesAreKeysAndDoNotEndTheDecoder() {
+		TerminalInputDecoder decoder = CreateDecoder( new ScriptedTerminalInput( [ new byte[] { 0x03, 0x1a, (byte)'x' } ] ) );
+		TerminalInputEvent copy = await decoder.ReadAsync();
+		Assert.Equal( TerminalKeyModifiers.Control, copy.Modifiers ); Assert.Equal( new Rune( 'C' ), copy.Character );
+		TerminalInputEvent undo = await decoder.ReadAsync();
+		Assert.Equal( TerminalKeyModifiers.Control, undo.Modifiers ); Assert.Equal( new Rune( 'Z' ), undo.Character );
 		Assert.Equal( new Rune( 'x' ), ( await decoder.ReadAsync() ).Character );
 	}
 

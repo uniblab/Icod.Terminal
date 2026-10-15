@@ -9,6 +9,8 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Read Windows console input through `ReadConsoleW`, preserving Ctrl+Z instead
   of treating it as EOF on affected console hosts. Encode Unicode as UTF-8
   without depending on the console code page, including split surrogate pairs.
+- Verify that raw sessions deliver Ctrl+C and Ctrl+Z as Control-modified
+  Character keys on Unix PTYs and through the native Windows console reader.
 - Cancel and finish outstanding owned console reads before closing their handle.
 - Add a Windows CI smoke using an isolated native console for Ctrl+Z, following
   input, Alt+F, Unicode, and shutdown with an outstanding read.

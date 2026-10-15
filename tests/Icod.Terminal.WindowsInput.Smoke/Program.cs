@@ -37,7 +37,9 @@ await using ( TerminalSession session = await TerminalSession.OpenAsync( new Ter
 	InputMode = TerminalInputMode.Raw, EchoInput = false, RequireInteractiveOutput = false,
 	ConfigureOutput = false, ObserveLifecycleEvents = false, TerminalOverride = TerminalProfiles.Xterm
 }, deadline.Token ) ) {
-	Send( '\u001a', 0x5a, 8 ); Send( 'x', 0x58 ); Send( '\u001b', 0x1b ); Send( 'f', 0x46 ); Send( '界', 0 );
+	Send( '\u0003', 0x43, 8 ); Send( '\u001a', 0x5a, 8 ); Send( 'x', 0x58 ); Send( '\u001b', 0x1b ); Send( 'f', 0x46 ); Send( '界', 0 );
+	TerminalInputEvent copy = await Read( session, deadline.Token );
+	if ( copy.Kind != TerminalInputEventKind.Key || copy.Character != new Rune( 'C' ) || copy.Modifiers != TerminalKeyModifiers.Control ) throw new InvalidOperationException( "Ctrl+C was not a control key." );
 	TerminalInputEvent undo = await Read( session, deadline.Token );
 	if ( undo.Kind != TerminalInputEventKind.Key || undo.Character != new Rune( 'Z' ) || undo.Modifiers != TerminalKeyModifiers.Control ) throw new InvalidOperationException( "Ctrl+Z was not a control key." );
 	if ( ( await Read( session, deadline.Token ) ).Character != new Rune( 'x' ) ) throw new InvalidOperationException( "Input ended after Ctrl+Z." );

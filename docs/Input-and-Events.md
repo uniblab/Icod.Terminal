@@ -153,6 +153,15 @@ The decoder recognizes terminfo key capabilities for navigation, editing, functi
 
 Traditional keyboard input remains available regardless of whether a modern keyboard protocol is negotiated.
 
+Applications that need Ctrl+C, Ctrl+Z, or another host control character as an
+application command must request `TerminalInputMode.Raw`. In raw mode, decoded
+Ctrl+C and Ctrl+Z are `TerminalKey.Character` events with the Control modifier
+and `Character` equal to `C` or `Z`. `TerminalInputMode.CBreak` intentionally
+retains POSIX signal handling and Windows processed-input handling; it is not an
+interception mode for those shortcuts. The application chooses the input mode
+when opening the session and handles the resulting event through
+`ReadEventAsync(...)`; no separate signal-interception API is required.
+
 ### Escape ambiguity
 
 An isolated Escape key is ambiguous with the prefix of many terminal sequences. The decoder therefore uses a bounded ambiguity interval.
