@@ -509,8 +509,10 @@ public sealed class TerminalRasterAnimationHardeningTests {
 		internal async Task WaitForWriteCountAsync(
 			int expected
 		) {
+			// Windows CI runs the target frameworks serially but still schedules
+			// test classes in parallel; allow the output pump a bounded load margin.
 			using CancellationTokenSource timeout = new(
-				TimeSpan.FromSeconds( 5 )
+				TimeSpan.FromSeconds( 15 )
 			);
 			while ( this.Writes.Count < expected ) {
 				await this.writeSignal.WaitAsync(
