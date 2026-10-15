@@ -9,10 +9,9 @@
 
 ## Status
 
-Stable release: **1.29.0**. It adds bounded, opt-in OSC 52 clipboard transfers;
-the stable **1.0.0 compatibility floor** remains unchanged.
+Stable release: **1.29.1**. The stable **1.0.0 compatibility floor** remains unchanged.
 
-See the [1.29.0 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md),
+See the [1.29.1 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md),
 [changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md) for release history,
 the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
 for current work, and the [compatibility policy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
@@ -66,7 +65,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.29.0
+dotnet add package Icod.Terminal --version 1.29.1
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.

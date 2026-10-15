@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>Icod.Terminal 1.29.0 adds independent bounded clipboard read/write budgets: 64 KiB defaults with explicit opt-in through 16 MiB. Larger correlated reads use incremental bounded storage; writes encode directly into a complete ordered frame. Includes explicit public samples and package validation while preserving .NET 8/9/10, existing APIs and production dependencies. Local capacity does not negotiate remote acceptance. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.0.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md. Usage: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Clipboard-Transfers.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>1.29.1 fixes legacy Alt-letter decoding and preserves Ctrl+Z and Unicode on Windows using direct ReadConsoleW input. Adds cancellation-safe owned console reads and a native Windows console regression smoke. No public API or dependency changes. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

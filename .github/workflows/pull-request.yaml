@@ -42,6 +42,11 @@ jobs:
       - name: Verify runtime and source integration
         shell: pwsh
         run: ./packaging/VerifyRuntime.ps1 -Configuration '${{ env.CONFIGURATION }}'
+      - name: Verify native Windows console input and cancellation
+        if: runner.os == 'Windows'
+        timeout-minutes: 3
+        shell: pwsh
+        run: dotnet run --project tests/Icod.Terminal.WindowsInput.Smoke -c '${{ env.CONFIGURATION }}'
 
   package-prep:
     name: Package candidate

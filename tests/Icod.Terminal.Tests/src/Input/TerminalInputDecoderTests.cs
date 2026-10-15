@@ -30,6 +30,30 @@ using Xunit;
 /// Verifies incremental T08 byte decoding without touching the process terminal.
 /// </summary>
 public sealed class TerminalInputDecoderTests {
+	[Theory]
+	[InlineData( "f" )]
+	[InlineData( "F" )]
+	[InlineData( "界" )]
+	[InlineData( "🙂" )]
+	public async Task LegacyAltCharacterIsOneModifiedKeyEvenWhenFragmented( string text ) {
+		byte[] bytes = Encoding.UTF8.GetBytes( "\u001b" + text );
+		TerminalInputDecoder decoder = CreateDecoder( new ScriptedTerminalInput( bytes.Select( value => new byte[] { value } ) ) );
+		TerminalInputEvent key = await decoder.ReadAsync();
+		Assert.Equal( TerminalInputEventKind.Key, key.Kind );
+		Assert.Equal( TerminalKey.Character, key.Key );
+		Assert.Equal( TerminalKeyModifiers.Alt, key.Modifiers );
+		Assert.Equal( Rune.GetRuneAt( text, 0 ), key.Character );
+		Assert.Equal( TerminalInputEventKind.EndOfInput, ( await decoder.ReadAsync() ).Kind );
+	}
+
+	[Fact]
+	public async Task ControlZByteIsAKeyAndDoesNotEndTheDecoder() {
+		TerminalInputDecoder decoder = CreateDecoder( new ScriptedTerminalInput( [ new byte[] { 0x1a, (byte)'x' } ] ) );
+		TerminalInputEvent key = await decoder.ReadAsync();
+		Assert.Equal( TerminalKeyModifiers.Control, key.Modifiers ); Assert.Equal( new Rune( 'Z' ), key.Character );
+		Assert.Equal( new Rune( 'x' ), ( await decoder.ReadAsync() ).Character );
+	}
+
 	[Fact]
 	public async Task FragmentedTerminfoSequenceDecodesAsOneKey() {
 		TerminalDescription terminal = new TerminalDescriptionBuilder( "fragmented" )
