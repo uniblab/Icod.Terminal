@@ -182,8 +182,8 @@ public sealed class TerminalInputModePolicyTests {
 	/// </summary>
 	[Theory]
 	[InlineData( TerminalInputMode.Canonical, 0x0003U, 0x0200U )]
-	[InlineData( TerminalInputMode.CBreak, 0x0201U, 0x0002U )]
-	[InlineData( TerminalInputMode.Raw, 0x0200U, 0x0003U )]
+	[InlineData( TerminalInputMode.CBreak, 0x0291U, 0x0042U )]
+	[InlineData( TerminalInputMode.Raw, 0x0290U, 0x0043U )]
 	public void ConfiguresWindowsInputModes(
 		TerminalInputMode inputMode,
 		uint requiredBits,
@@ -192,7 +192,7 @@ public sealed class TerminalInputModePolicyTests {
 		const uint unrelated = 0x80000000U;
 		TerminalModeSnapshot baseline = TerminalModeSnapshot.CreateWindowsConsole(
 			TerminalConsoleDirection.Input,
-			unrelated | 0x0007U
+			unrelated | 0x0047U
 		);
 
 		TerminalModeSnapshot configured = TerminalInputModePolicy.Configure(
