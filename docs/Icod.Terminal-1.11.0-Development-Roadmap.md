@@ -17,11 +17,11 @@ The release deliberately does **not** turn `Icod.Terminal` into a virtual-screen
 
 The approved architectural specification is:
 
-[`docs/superpowers/specs/2026-09-11-1.11.0-persistent-raster-design.md`](docs/superpowers/specs/2026-09-11-1.11.0-persistent-raster-design.md)
+[`docs/superpowers/specs/2026-09-11-1.11.0-persistent-raster-design.md`](superpowers/specs/2026-09-11-1.11.0-persistent-raster-design.md)
 
 The implementation plan is:
 
-[`docs/superpowers/plans/2026-09-11-1.11.0-persistent-raster.md`](docs/superpowers/plans/2026-09-11-1.11.0-persistent-raster.md)
+[`docs/superpowers/plans/2026-09-11-1.11.0-persistent-raster.md`](superpowers/plans/2026-09-11-1.11.0-persistent-raster.md)
 
 ## Architectural objectives
 
@@ -92,7 +92,7 @@ C111–C117 implemented the frozen persistent-raster protocol, capability, owner
 
 The C118 acceptance record is:
 
-[`docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`](docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md)
+[`docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`](C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md)
 
 Validated feature head:
 
@@ -114,7 +114,7 @@ That unchanged feature head passed Windows, Linux, macOS, package/API candidate,
 
 The record is:
 
-[`docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md`](docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md)
+[`docs/C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md`](C110-Persistent-Raster-Architecture-and-API-Regret-Gate.md)
 
 ## C111 — persistent Kitty protocol foundation
 
@@ -171,7 +171,7 @@ The release-facing state includes:
 - 1.11 Architecture/Security/Compatibility authority updates;
 - final sample catalog and backend-neutral sample verification;
 - long-range roadmap handoff to conditional 1.12 advanced placement/lifecycle work;
-- release-closure record at [`docs/C119-1.11.0-Release-Closure.md`](docs/C119-1.11.0-Release-Closure.md).
+- release-closure record at [`docs/C119-1.11.0-Release-Closure.md`](C119-1.11.0-Release-Closure.md).
 
 C119 code/release acceptance is frozen on exact head:
 

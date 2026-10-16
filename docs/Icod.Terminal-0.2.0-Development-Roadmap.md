@@ -12,7 +12,7 @@
 **Stable contract target:** `1.0.0`
 **Final release version:** `0.2.0`
 **Status:** Released publicly as `v0.2.0`; T13-T20 complete
-**Successor roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
+**Successor roadmap:** [`docs/Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---
 
@@ -265,7 +265,7 @@ Required work:
 `0.2.0-alpha.1`, with no runtime behavior change and no remaining
 `0.1.0`-specific release assumptions in the validation tooling.
 
-**T13 implementation record:** [`docs/T13-0.2-Foundation-and-Contract-Reset.md`](docs/T13-0.2-Foundation-and-Contract-Reset.md).
+**T13 implementation record:** [`docs/T13-0.2-Foundation-and-Contract-Reset.md`](T13-0.2-Foundation-and-Contract-Reset.md).
 
 ---
 
@@ -308,7 +308,7 @@ configuration.
 does not require any protocol-specific reader outside the existing session
 input path.
 
-**T14 completion record:** [`docs/T14-Rich-Input-Event-Model-and-Decoder-Policy.md`](docs/T14-Rich-Input-Event-Model-and-Decoder-Policy.md).
+**T14 completion record:** [`docs/T14-Rich-Input-Event-Model-and-Decoder-Policy.md`](T14-Rich-Input-Event-Model-and-Decoder-Policy.md).
 
 ---
 
@@ -353,7 +353,7 @@ than emitted for every terminal.
 partial-failure rollback, suspend/resume re-entry, and final restoration for
 all rich input protocols.
 
-**T15 implementation record:** [`docs/T15-Reversible-Input-Protocol-Leases.md`](docs/T15-Reversible-Input-Protocol-Leases.md).
+**T15 implementation record:** [`docs/T15-Reversible-Input-Protocol-Leases.md`](T15-Reversible-Input-Protocol-Leases.md).
 
 ---
 
@@ -396,7 +396,7 @@ keystrokes. Paste is semantically distinct input.
 sequences, multi-chunk payloads, Unicode boundaries, cancellation, timeout,
 end-of-input, and bounded-memory behavior.
 
-**T16 implementation record:** [`docs/T16-Focus-and-Bracketed-Paste.md`](docs/T16-Focus-and-Bracketed-Paste.md).
+**T16 implementation record:** [`docs/T16-Focus-and-Bracketed-Paste.md`](T16-Focus-and-Bracketed-Paste.md).
 
 ---
 
@@ -453,7 +453,7 @@ Tests SHALL cover:
 paste, and lifecycle events in deterministic order without private consumer
 parsers.
 
-**T17 implementation record:** [`docs/T17-Mouse-Input.md`](docs/T17-Mouse-Input.md).
+**T17 implementation record:** [`docs/T17-Mouse-Input.md`](T17-Mouse-Input.md).
 
 ---
 
@@ -483,7 +483,7 @@ keyboard event. Unknown protocol data must remain bounded and deterministic.
 **Gate T18:** modified traditional keys decode consistently across fragmented
 input and profile fixtures without regressing the 0.1 key contract.
 
-**T18 implementation record:** [`docs/T18-Traditional-Keyboard-Completeness.md`](docs/T18-Traditional-Keyboard-Completeness.md).
+**T18 implementation record:** [`docs/T18-Traditional-Keyboard-Completeness.md`](T18-Traditional-Keyboard-Completeness.md).
 
 ---
 
@@ -518,7 +518,7 @@ consumer for each new event family.
 `Icod.Terminal`, and disabling/removing Terminal support would leave no hidden
 parallel terminal protocol implementation in DCurses.
 
-**T19 acceptance record:** [`docs/T19-DCurses-Rich-Input-Acceptance.md`](docs/T19-DCurses-Rich-Input-Acceptance.md).
+**T19 acceptance record:** [`docs/T19-DCurses-Rich-Input-Acceptance.md`](T19-DCurses-Rich-Input-Acceptance.md).
 
 ---
 
@@ -530,7 +530,7 @@ T20 closes the release in the same disciplined manner as 0.1.
 0.2 API baseline, complete rich-input README documentation, and extend the
 three-framework package-only consumer through focus, paste, mouse, traditional
 modified keys, and reversible input-protocol leases. The checkpoint is recorded
-in [`docs/T20A-0.2-Release-Candidate-Gate.md`](docs/T20A-0.2-Release-Candidate-Gate.md).
+in [`docs/T20A-0.2-Release-Candidate-Gate.md`](T20A-0.2-Release-Candidate-Gate.md).
 
 Alpha-8 passed the complete Windows/Ubuntu/macOS PR package gate in GitHub
 Actions run `33132667483`.
@@ -538,7 +538,7 @@ Actions run `33132667483`.
 **T20B — complete.** The accepted release candidate was promoted to stable
 `0.2.0`, merged to `main`, validated again, and published by the matching
 `v0.2.0` tag-controlled release workflow. The closure record is
-[`docs/T20B-0.2.0-Release-Closure.md`](docs/T20B-0.2.0-Release-Closure.md).
+[`docs/T20B-0.2.0-Release-Closure.md`](T20B-0.2.0-Release-Closure.md).
 
 Required work:
 

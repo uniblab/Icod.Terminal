@@ -204,4 +204,4 @@ The runnable public-only walkthrough is
 [`../samples/Icod.Terminal.RasterAnimation.Sample/README.md`](../samples/Icod.Terminal.RasterAnimation.Sample/README.md).
 The approved contract and its evidence boundaries are in the
 [`1.28 design`](superpowers/specs/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions-design.md)
-and the [`1.28 roadmap`](../Icod.Terminal-1.28.0-Development-Roadmap.md).
+and the [`1.28 roadmap`](Icod.Terminal-1.28.0-Development-Roadmap.md).

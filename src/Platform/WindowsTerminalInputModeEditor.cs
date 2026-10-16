@@ -27,6 +27,9 @@ internal static class WindowsTerminalInputModeEditor {
 	private const uint EnableProcessedInput = 0x0001U;
 	private const uint EnableLineInput = 0x0002U;
 	private const uint EnableEchoInput = 0x0004U;
+	private const uint EnableMouseInput = 0x0010U;
+	private const uint EnableQuickEditMode = 0x0040U;
+	private const uint EnableExtendedFlags = 0x0080U;
 	private const uint EnableVirtualTerminalInput = 0x0200U;
 
 	/// <summary>
@@ -70,13 +73,22 @@ internal static class WindowsTerminalInputModeEditor {
 				break;
 
 			case TerminalInputMode.CBreak:
-				mode |= EnableProcessedInput | EnableVirtualTerminalInput;
-				mode &= ~EnableLineInput;
+				mode |= EnableProcessedInput
+					| EnableMouseInput
+					| EnableExtendedFlags
+					| EnableVirtualTerminalInput;
+				mode &= ~( EnableLineInput | EnableQuickEditMode );
 				break;
 
 			case TerminalInputMode.Raw:
-				mode |= EnableVirtualTerminalInput;
-				mode &= ~( EnableProcessedInput | EnableLineInput );
+				mode |= EnableMouseInput
+					| EnableExtendedFlags
+					| EnableVirtualTerminalInput;
+				mode &= ~(
+					EnableProcessedInput
+					| EnableLineInput
+					| EnableQuickEditMode
+				);
 				break;
 
 			default:

@@ -16,19 +16,19 @@ The release is about ownership and lifecycle, not a scene graph. It does not mov
 
 Design authority:
 
-[`docs/superpowers/specs/2026-09-12-1.13.0-relative-persistent-raster-placement-design.md`](docs/superpowers/specs/2026-09-12-1.13.0-relative-persistent-raster-placement-design.md)
+[`docs/superpowers/specs/2026-09-12-1.13.0-relative-persistent-raster-placement-design.md`](superpowers/specs/2026-09-12-1.13.0-relative-persistent-raster-placement-design.md)
 
 Implementation plan:
 
-[`docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md`](docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md)
+[`docs/superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md`](superpowers/plans/2026-09-12-1.13.0-relative-persistent-raster-placement.md)
 
 Permanent ownership authority:
 
-[`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+[`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
 
 Release notes:
 
-[`docs/releases/1.13.0.md`](docs/releases/1.13.0.md)
+[`docs/releases/1.13.0.md`](releases/1.13.0.md)
 
 ## Frozen architecture decisions
 
@@ -131,7 +131,7 @@ Final public API fingerprint:
 c9dc8b86dc1e8beed7161f1f5a122dce67a9187d3f4ee0b85ad5b49f09bd0da9
 ```
 
-See [`docs/Public-API-Baseline-1.13.md`](docs/Public-API-Baseline-1.13.md).
+See [`docs/Public-API-Baseline-1.13.md`](Public-API-Baseline-1.13.md).
 
 ## Tranche record
 

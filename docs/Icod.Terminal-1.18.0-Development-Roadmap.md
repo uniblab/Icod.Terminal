@@ -25,8 +25,8 @@ Icod.DCurses -> Icod.Terminal -> Icod.TermInfo
 
 ## Design and implementation authorities
 
-- [`docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md`](docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
-- [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
+- [`docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md`](superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
+- [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
 - [`Icod.DCurses 2.0 PR #32`](https://github.com/uniblab/Icod.DCurses/pull/32)
 
 ## Accepted implementation record

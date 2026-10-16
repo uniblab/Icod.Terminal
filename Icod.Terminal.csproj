@@ -39,7 +39,7 @@
 		<Title>Icod.Terminal</Title>
 		<Authors>Timothy J. Bruce</Authors>
 		<Description>Managed, cross-platform live-terminal session, endpoint, mode, input, lifecycle, and terminal-control foundation for .NET.</Description>
-		<PackageReleaseNotes>1.29.1 decodes legacy Escape-prefixed Alt characters, including fragmented Unicode, and preserves Ctrl+Z and Unicode on Windows using direct ReadConsoleW input. Raw sessions expose Ctrl+C and Ctrl+Z as application keys; CBreak retains host control handling. Adds cancellation-safe owned console reads, Rich Input sample checks, Unix PTY coverage, and a native Windows console regression smoke. No public API or dependency changes. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
+		<PackageReleaseNotes>1.29.2 makes system-backed Windows sessions reversibly enable UTF-8 console output so byte-oriented Unicode, including box drawing, retains one-cell geometry. Raw and CBreak modes explicitly own mouse input and suppress Quick Edit while active, restoring the exact prior console mode afterward. Adds native Windows console I/O and restoration coverage. No public API or dependency changes. Release notes: https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.2.md. Compatibility policy: https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md.</PackageReleaseNotes>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/uniblab/Icod.Terminal</PackageProjectUrl>

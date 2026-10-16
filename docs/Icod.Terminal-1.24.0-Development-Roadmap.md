@@ -6,9 +6,9 @@
 
 **Release theme:** Raster Geometry and Planning Contracts.
 
-**Design authority:** [`docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md`](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md)
+**Design authority:** [`docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md`](superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md)
 
-**Implementation authority:** [`docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md`](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md)
+**Implementation authority:** [`docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md`](superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md)
 
 **Compatibility:** Preserve the stable 1.0.0 floor, existing public signatures and enum values, one authoritative input/query path, opaque raster identities, no hidden replay, and the .NET 8/9/10 target matrix. Production dependencies remain `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`; optional integration remains outside the production graph.
 

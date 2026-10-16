@@ -241,7 +241,7 @@
 **Files:**
 - Add after review: `docs/compatibility/evidence/1.27.0/*.json`
 - Regenerate: `docs/compatibility/1.27.0.md`
-- Modify: `Icod.Terminal-1.27.0-Development-Roadmap.md`
+- Modify: `docs/Icod.Terminal-1.27.0-Development-Roadmap.md`
 
 **Interfaces:**
 - Consumes: Task 7 launchers and accepted evidence schema.
@@ -275,8 +275,8 @@ Task 9 complete (2026-10-06): subsequent consented appearance and resize reporti
 - Modify: `Icod.Terminal.csproj`
 - Modify: `README.md`
 - Modify: `CHANGELOG.md`
-- Modify: `Icod.Terminal-Development-Roadmap.md`
-- Modify: `Icod.Terminal-1.27.0-Development-Roadmap.md`
+- Modify: `docs/Icod.Terminal-Development-Roadmap.md`
+- Modify: `docs/Icod.Terminal-1.27.0-Development-Roadmap.md`
 - Create: `docs/releases/1.27.0.md`
 - Modify: release/package workflow assertions only where the current release line is pinned
 

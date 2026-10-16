@@ -2,6 +2,22 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.29.2
+
+- Configure system-backed Windows console output for UTF-8 while a session owns
+  it, preventing UTF-8 box-drawing bytes from being decoded as multiple OEM
+  characters and breaking terminal-cell geometry.
+- Restore the exact prior Windows console output code page during disposal,
+  failed setup, lifecycle release and lifecycle re-entry.
+- Make Windows Raw and CBreak modes enable virtual-terminal and mouse input,
+  enable extended mode flags, and suppress Quick Edit while active.
+- Preserve canonical-mode policy, unrelated console-mode flags, raw Ctrl+C and
+  Ctrl+Z handling, and exact captured-mode restoration.
+- Add cross-target unit coverage and an isolated native Windows console smoke
+  for UTF-8 box drawing, mouse-mode ownership, control keys and restoration.
+- Preserve the public API, .NET 8/9/10 targets and production dependencies.
+  See [1.29.2 release notes](docs/releases/1.29.2.md).
+
 ## 1.29.1
 
 - Decode legacy Escape-prefixed Alt letters as a single modified key, including
@@ -150,7 +166,7 @@ Notable changes to `Icod.Terminal` are recorded here for consumers who need a co
 - Retains production dependencies `Icod.TermInfo 1.15.0` and `Icod.Timing 1.0.0`.
 - Qualifies fresh package consumers, published `Icod.DCurses 1.6.0` compatibility, and a separate TermInfo-free future-renderer package consumer on all target frameworks.
 
-See `docs/releases/1.18.0.md`, `docs/Public-API-Baseline-1.18.md`, and `Icod.Terminal-1.18.0-Development-Roadmap.md` for the complete contract.
+See `docs/releases/1.18.0.md`, `docs/Public-API-Baseline-1.18.md`, and `docs/Icod.Terminal-1.18.0-Development-Roadmap.md` for the complete contract.
 
 ## 1.17.1
 
@@ -182,7 +198,7 @@ See `docs/releases/1.17.1.md` for the complete patch-release notes.
 - Advances the production dependency to `Icod.TermInfo 1.15.0` while retaining `Icod.Timing 1.0.0`; the new screen contracts expose no TermInfo types.
 - Aligns optional integration tests and samples with `Icod.TermInfo.Inspection 1.15.0` without adding Inspection or Source to the production graph.
 
-See `docs/releases/1.17.0.md`, `docs/Public-API-Baseline-1.17.md`, and `Icod.Terminal-1.17.0-Development-Roadmap.md` for the complete 1.17 contract.
+See `docs/releases/1.17.0.md`, `docs/Public-API-Baseline-1.17.md`, and `docs/Icod.Terminal-1.17.0-Development-Roadmap.md` for the complete 1.17 contract.
 
 ## 1.16.0
 
@@ -208,7 +224,7 @@ See `docs/releases/1.17.0.md`, `docs/Public-API-Baseline-1.17.md`, and `Icod.Ter
 - Finalizes the 1.16 public API fingerprint as `d2acfa85aad87c739b3f682096d4d7139627f12bc9d8981b65529eeb79a2da8d` while retaining all historical baselines unchanged.
 - Continues to exclude frame composition/delta editing, partial-frame updates, gapless composition frames, absolute or pixel-within-cell placement, automatic image decoding, Terminal-owned scene/window/cell/damage/layout/timeline policy, public protocol identities, hidden replay caches, and PTY/ConPTY hosting.
 
-See `docs/releases/1.16.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.16.md`, and `Icod.Terminal-1.16.0-Development-Roadmap.md` for the complete 1.16 contract.
+See `docs/releases/1.16.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.16.md`, and `docs/Icod.Terminal-1.16.0-Development-Roadmap.md` for the complete 1.16 contract.
 
 ## 1.15.0
 
@@ -237,7 +253,7 @@ See `docs/releases/1.16.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Finalizes the 1.15 public API fingerprint as `eb361cef615fda97ac2c0ef9da8ea3d63fdc1f537ec438164bcb93694eecd13d` while retaining all historical baselines unchanged.
 - Continues to exclude animation/frame ownership, absolute screen-coordinate layout, pixel-within-cell positioning, Terminal-owned scene/window/cell/damage policy, public protocol identities, generic raw Kitty dispatch, hidden replay caches, image decoding/transcoding, and PTY/ConPTY hosting.
 
-See `docs/releases/1.15.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.15.md`, and `Icod.Terminal-1.15.0-Development-Roadmap.md` for the complete 1.15 contract.
+See `docs/releases/1.15.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.15.md`, and `docs/Icod.Terminal-1.15.0-Development-Roadmap.md` for the complete 1.15 contract.
 
 ## 1.14.0
 
@@ -265,7 +281,7 @@ See `docs/releases/1.15.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Uses production dependencies `Icod.TermInfo 1.13.0` and `Icod.Timing 1.0.0`.
 - Continues to exclude passive terminal-side existence probes, public protocol/generation identities, reparenting, Unicode placeholder placement, animation/frame lifecycle, absolute or pixel-within-cell placement, scene ownership, automatic replay, image decoding/transcoding, and PTY/ConPTY hosting.
 
-See `docs/releases/1.14.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.14.md`, and `Icod.Terminal-1.14.0-Development-Roadmap.md` for the complete 1.14 contract.
+See `docs/releases/1.14.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.14.md`, and `docs/Icod.Terminal-1.14.0-Development-Roadmap.md` for the complete 1.14 contract.
 
 ## 1.13.0
 
@@ -290,7 +306,7 @@ See `docs/releases/1.14.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Updates the production dependency to `Icod.TermInfo 1.12.0` while retaining `Icod.Timing 1.0.0`.
 - Continues to exclude reparenting, public protocol/parent identities, Unicode placeholder placement, animation/frame lifecycle, absolute screen-coordinate layout, pixel-within-cell positioning, scene ownership, automatic replay, image decoding/transcoding, and PTY/ConPTY hosting.
 
-See `docs/releases/1.13.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.13.md`, and `Icod.Terminal-1.13.0-Development-Roadmap.md` for the complete 1.13 contract.
+See `docs/releases/1.13.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.13.md`, and `docs/Icod.Terminal-1.13.0-Development-Roadmap.md` for the complete 1.13 contract.
 
 ## 1.12.0
 
@@ -315,7 +331,7 @@ See `docs/releases/1.13.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Preserves production dependencies at `Icod.TermInfo 1.11.0` and `Icod.Timing 1.0.0`.
 - Continues to exclude automatic replay, Sixel persistent-resource emulation, public protocol ids, relative placement graphs, absolute screen-coordinate layout, Unicode placeholders, animation/frame lifecycle, image decoding/transcoding, and PTY/ConPTY hosting.
 
-See `docs/releases/1.12.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.12.md`, and `Icod.Terminal-1.12.0-Development-Roadmap.md` for the complete 1.12 contract.
+See `docs/releases/1.12.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.12.md`, and `docs/Icod.Terminal-1.12.0-Development-Roadmap.md` for the complete 1.12 contract.
 
 ## 1.11.1
 
@@ -337,7 +353,7 @@ See `docs/releases/1.12.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - T1111-A through T1111-D completed full pull-request qualification on exact head `651af888875a0d2acababe46a4e1313532ec7ba6` in workflow `#1628 / 34704455179`.
 - Deliberately defers a table-driven `TerminalTermInfoSemanticEvidence` cleanup, static lifecycle-evidence ingestion, and any adapter package to later independent design work.
 
-See `docs/releases/1.11.1.md` and `Icod.Terminal-1.11.1-Development-Roadmap.md` for the complete patch-release integration contract.
+See `docs/releases/1.11.1.md` and `docs/Icod.Terminal-1.11.1-Development-Roadmap.md` for the complete patch-release integration contract.
 
 ## 1.11.0
 
@@ -368,7 +384,7 @@ See `docs/releases/1.11.1.md` and `Icod.Terminal-1.11.1-Development-Roadmap.md` 
 - Finalizes the 1.11 public API fingerprint as `9336a1f6def1c4b02e86db813bae27f45b95af33f47a2cf10dccd4d1d44324f2` while retaining all historical baselines unchanged.
 - Deliberately excludes automatic replay, Sixel persistence emulation, public protocol ids, source rectangles, z-order, Unicode placeholders, relative/pixel placement, animation, scene-graph ownership, image decoding/transcoding, and PTY/ConPTY hosting.
 
-See `docs/releases/1.11.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.11.md`, `docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`, `docs/C119-1.11.0-Release-Closure.md`, and `Icod.Terminal-1.11.0-Development-Roadmap.md` for the complete 1.11 contract.
+See `docs/releases/1.11.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Public-API-Baseline-1.11.md`, `docs/C118-1.11.0-Persistent-Raster-Adversarial-Downstream-and-Package-Qualification.md`, `docs/C119-1.11.0-Release-Closure.md`, and `docs/Icod.Terminal-1.11.0-Development-Roadmap.md` for the complete 1.11 contract.
 
 ## 1.10.0
 
@@ -397,7 +413,7 @@ See `docs/releases/1.11.0.md`, `docs/Persistent-Raster-Ownership.md`, `docs/Publ
 - Retains `net8.0`, `net9.0`, and `net10.0`, Windows/Linux/macOS runtime validation, existing `Icod.DCurses` acceptance/soak witnesses, and the stable `1.0.0` compatibility floor.
 - Adds no public protocol-backend selector, raw evidence ledger, arbitrary terminfo-capability-name API, terminal-brand heuristic, or requirement that every semantic capability have a live probe.
 
-See `docs/releases/1.10.0.md`, `docs/Capability-Inspection-and-Planning.md`, `docs/Public-API-Baseline-1.10.md`, `docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`, `docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md`, and `Icod.Terminal-1.10.0-Development-Roadmap.md` for the complete 1.10 contract.
+See `docs/releases/1.10.0.md`, `docs/Capability-Inspection-and-Planning.md`, `docs/Public-API-Baseline-1.10.md`, `docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`, `docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md`, and `docs/Icod.Terminal-1.10.0-Development-Roadmap.md` for the complete 1.10 contract.
 
 ## 1.9.0
 
@@ -428,7 +444,7 @@ See `docs/releases/1.10.0.md`, `docs/Capability-Inspection-and-Planning.md`, `do
 - Intentionally advances the final public API fingerprint to `e652e6fd65cd43422ca84b7c4c2a1815ee7ead9b2a64285e0e17cf39614b0315` while retaining every historical baseline unchanged.
 - Retains the stable `1.0.0` compatibility floor, Windows/Linux/macOS runtime validation, current `Icod.DCurses` acceptance/soak witnesses, and the `Icod.TermInfo 1.10.0` / `Icod.Timing 1.0.0` dependency floor.
 
-See `docs/releases/1.9.0.md`, `docs/Public-API-Baseline-1.9.md`, `docs/E190-Unsolicited-Semantic-Event-Contract-and-Reference-Freeze.md` through `docs/E199-1.9.0-Public-API-Documentation-Compatibility-and-Release-Closure.md`, and `Icod.Terminal-1.9.0-Development-Roadmap.md` for the complete 1.9 contract.
+See `docs/releases/1.9.0.md`, `docs/Public-API-Baseline-1.9.md`, `docs/E190-Unsolicited-Semantic-Event-Contract-and-Reference-Freeze.md` through `docs/E199-1.9.0-Public-API-Documentation-Compatibility-and-Release-Closure.md`, and `docs/Icod.Terminal-1.9.0-Development-Roadmap.md` for the complete 1.9 contract.
 
 ## 1.8.1
 
@@ -480,7 +496,7 @@ See `docs/releases/1.8.1.md` for the curated maintenance release notes.
 - Extends the fresh NuGet-only raster package smoke so both DCS/Sixel-specific and APC/Kitty-specific public escape-hatch method names remain excluded from the shipped API while the same public raster contract compiles/runs on all three TFMs.
 - A180–A189 completed exact-head Staging qualification before PR #46 was merged; `v1.8.0` was subsequently tagged and published as the stable multi-backend raster release.
 
-See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md` through `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`, and `Icod.Terminal-1.8.0-Development-Roadmap.md` for the complete 1.8 contract.
+See `docs/releases/1.8.0.md`, `docs/A180-APC-Construction-Contract-and-Reference-Freeze.md` through `docs/A189-1.8.0-Package-Documentation-Compatibility-and-Release-Closure.md`, and `docs/Icod.Terminal-1.8.0-Development-Roadmap.md` for the complete 1.8 contract.
 
 ### Prior release history
 

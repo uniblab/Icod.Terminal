@@ -257,8 +257,8 @@ E190 rejects the following from the 1.9 scope:
 
 E199 must reconcile at least:
 
-- `Icod.Terminal-Development-Roadmap.md`;
-- `Icod.Terminal-1.9.0-Development-Roadmap.md`;
+- `docs/Icod.Terminal-Development-Roadmap.md`;
+- `docs/Icod.Terminal-1.9.0-Development-Roadmap.md`;
 - `docs/Architecture.md`;
 - `docs/Input-and-Events.md`;
 - `docs/Queries-and-Responses.md`;

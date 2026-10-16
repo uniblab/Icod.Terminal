@@ -12,7 +12,7 @@
 **Immediate acceptance consumers:** `Icod.DCurses`, `watch`, `slabtop`, `top`
 **Status:** T27/T28A accepted; T28B stable `0.3.0` release commit prepared
 **Current tranche:** T28B — stable `0.3.0` release closure
-**Current milestone roadmap:** [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md)
+**Current milestone roadmap:** [`docs/Icod.Terminal-0.3.0-Development-Roadmap.md`](../Icod.Terminal-0.3.0-Development-Roadmap.md)
 
 ---
 
@@ -426,7 +426,7 @@ The tranche SHALL also define the namespace/type renaming strategy so the new li
 
 **Gate T02:** a written extraction matrix exists and the dependency graph can be made acyclic with `Icod.Terminal -> Icod.TermInfo` and no runtime dependency from `Icod.Terminal` back to `Icod.CommandFramework` or `Icod.DCurses`.
 
-**T02 completion record:** [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](docs/T02-Extraction-Inventory-and-Contract-Classification.md).
+**T02 completion record:** [`docs/T02-Extraction-Inventory-and-Contract-Classification.md`](../T02-Extraction-Inventory-and-Contract-Classification.md).
 
 ---
 
@@ -512,7 +512,7 @@ A failed session open SHALL leave the host terminal as close as possible to its 
 
 **Gate T05:** fault-injection tests prove restoration after success, exceptions, cancellation, failed initialization steps, and repeated disposal.
 
-**T05 completion record:** [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](docs/T05-TerminalSession-Lifecycle-and-Ownership.md).
+**T05 completion record:** [`docs/T05-TerminalSession-Lifecycle-and-Ownership.md`](../T05-TerminalSession-Lifecycle-and-Ownership.md).
 
 ---
 
@@ -536,7 +536,7 @@ The library SHALL also establish an explicit application-text encoding policy. C
 
 **Gate T06:** a standard live session can resolve a terminal description and emit capability-driven output without `Icod.DCurses` performing platform-specific terminal detection or Windows VT setup.
 
-**T06 completion record:** [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md).
+**T06 completion record:** [`docs/T06-Terminal-Identity-TermInfo-and-Output-Setup.md`](../T06-Terminal-Identity-TermInfo-and-Output-Setup.md).
 
 ---
 
@@ -562,7 +562,7 @@ Callbacks which execute in restricted host/runtime contexts SHALL do minimal wor
 
 **Gate T07:** resize wakes a waiting interactive loop, and suspend/resume or equivalent lifecycle disruption can restore/re-enter session state without leaving the terminal corrupted.
 
-**T07 completion record:** [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](docs/T07-Live-Dimensions-and-Lifecycle-Events.md).
+**T07 completion record:** [`docs/T07-Live-Dimensions-and-Lifecycle-Events.md`](../T07-Live-Dimensions-and-Lifecycle-Events.md).
 
 ---
 
@@ -608,7 +608,7 @@ Mouse, focus, bracketed paste, and modern keyboard protocols are not required fo
 
 **Gate T08:** scripted tests cover byte-by-byte fragmentation, combined reads, UTF-8, overlapping prefixes, isolated Escape, escape-prefixed keys, timeout behavior, cancellation, and resize wake-up.
 
-**T08 completion record:** [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
+**T08 completion record:** [`docs/T08-Input-Byte-Stream-and-Key-Event-Decoder.md`](../T08-Input-Byte-Stream-and-Key-Event-Decoder.md).
 
 ---
 
@@ -632,7 +632,7 @@ Where a terminal lacks a capability, the result SHALL be controlled rather than 
 
 **Gate T09:** a test backend can verify exact enter/leave ordering, nested/repeated behavior, rollback after partial acquisition, and capability-driven output.
 
-**T09 completion record:** [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](docs/T09-Reversible-Terminal-Presentation-Leases.md).
+**T09 completion record:** [`docs/T09-Reversible-Terminal-Presentation-Leases.md`](../T09-Reversible-Terminal-Presentation-Leases.md).
 
 ---
 
@@ -656,7 +656,7 @@ Required coordinated work SHALL include:
 
 **Gate T10:** `Icod.DCurses` builds/tests without a runtime dependency on `Icod.CommandFramework.Terminal`, and its platform-specific terminal-mode implementation has been eliminated or reduced only to curses-specific policy.
 
-**T10 integration record:** [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](docs/T10-DCurses-Lifecycle-Participant-Integration.md).
+**T10 integration record:** [`docs/T10-DCurses-Lifecycle-Participant-Integration.md`](../T10-DCurses-Lifecycle-Participant-Integration.md).
 
 ---
 
@@ -700,7 +700,7 @@ The acceptance work SHALL identify missing reusable mechanisms rather than solvi
 
 **Gate T11:** all three applications can run on the supported Windows, Linux, and macOS environments using the shared stack, with platform-specific limitations documented rather than hidden.
 
-**T11 completion record:** [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md).
+**T11 completion record:** [`docs/T11-ProcPs-Acceptance.md`](../T11-ProcPs-Acceptance.md).
 
 ---
 
@@ -715,21 +715,21 @@ T12 is the release-closure tranche for `0.1.0` and is executed in four subtranch
 
 **Gate T12A:** repository status documentation identifies T01-T11 as complete, makes T12 the active release tranche, and records the three ProcPs acceptance consumers.
 
-**T12A completion record:** [`docs/T11-ProcPs-Acceptance.md`](docs/T11-ProcPs-Acceptance.md).
+**T12A completion record:** [`docs/T11-ProcPs-Acceptance.md`](../T11-ProcPs-Acceptance.md).
 
 **Gate T12B:** the public 0.1 surface has an intentional review baseline, independent-consumer behavior is documented, and no unresolved API regret requiring a breaking pre-0.1 change remains.
 
-**T12B completion records:** [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md) and [`docs/Public-API-Baseline-0.1.md`](docs/Public-API-Baseline-0.1.md).
+**T12B completion records:** [`docs/T12B-Public-API-and-Consumer-Contract.md`](../T12B-Public-API-and-Consumer-Contract.md) and [`docs/Public-API-Baseline-0.1.md`](../Public-API-Baseline-0.1.md).
 
 **Gate T12C:** the packed `.nupkg` and `.snupkg` pass structural, dependency-closure, symbol/Source Link, and fresh package-reference-only consumer validation for both supported target frameworks on Windows, Linux, and macOS.
 
-**T12C completion record:** [`docs/T12C-Package-and-Fresh-Consumer-Validation.md`](docs/T12C-Package-and-Fresh-Consumer-Validation.md).
+**T12C completion record:** [`docs/T12C-Package-and-Fresh-Consumer-Validation.md`](../T12C-Package-and-Fresh-Consumer-Validation.md).
 
 **Gate T12D:** the release commit declares `<Version>` and `<PackageVersion>` as exactly `0.1.0`, passes the normal three-host `main` Release validation, and is then tagged `v0.1.0`. The tag-controlled release workflow must verify that the tagged commit belongs to `main`, rerun the complete Release gate, publish the package to NuGet.org and GitHub Packages, and create the GitHub Release with package artifacts and SHA-256 checksums.
 
 Ordinary pushes to `main` SHALL validate but SHALL NOT publish packages. Publishing `0.1.0` is an explicit tag-controlled action.
 
-**T12D release record:** [`docs/T12D-0.1.0-Release-Closure.md`](docs/T12D-0.1.0-Release-Closure.md).
+**T12D release record:** [`docs/T12D-0.1.0-Release-Closure.md`](../T12D-0.1.0-Release-Closure.md).
 
 Before publishing `0.1.0`:
 
@@ -752,7 +752,7 @@ Before publishing `0.1.0`:
 
 **Release gate `0.1.0`: complete.** The package is buildable and consumable independently, DCurses is integrated on top of it, and `watch`, `slabtop`, and `top` no longer require suite-private terminal-control implementations. The matching `v0.1.0` tag completed the three-host release workflow and published the non-prerelease package.
 
-Completed `0.2.0` work is tracked in [`Icod.Terminal-0.2.0-Development-Roadmap.md`](Icod.Terminal-0.2.0-Development-Roadmap.md). Current `0.3.0` work is tracked in [`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
+Completed `0.2.0` work is tracked in [`docs/Icod.Terminal-0.2.0-Development-Roadmap.md`](../Icod.Terminal-0.2.0-Development-Roadmap.md). Current `0.3.0` work is tracked in [`docs/Icod.Terminal-0.3.0-Development-Roadmap.md`](../Icod.Terminal-0.3.0-Development-Roadmap.md).
 
 ---
 
@@ -803,7 +803,7 @@ A change which makes the isolated Terminal tests pass but forces DCurses or Proc
 
 ## 9. Public API Direction
 
-The public `0.1.x` surface completed intentional review in T12B. The exact reviewed inventory is recorded in [`docs/Public-API-Baseline-0.1.md`](docs/Public-API-Baseline-0.1.md), and its behavioral/ownership contract is recorded in [`docs/T12B-Public-API-and-Consumer-Contract.md`](docs/T12B-Public-API-and-Consumer-Contract.md).
+The public `0.1.x` surface completed intentional review in T12B. The exact reviewed inventory is recorded in [`docs/Public-API-Baseline-0.1.md`](../Public-API-Baseline-0.1.md), and its behavioral/ownership contract is recorded in [`docs/T12B-Public-API-and-Consumer-Contract.md`](../T12B-Public-API-and-Consumer-Contract.md).
 
 The baseline centers on `TerminalSession` / `TerminalSessionOptions`, endpoint and control contracts, semantic input modes, decoded input/lifecycle events, reversible presentation leases, and the intentionally public low-level snapshot/serialization/injection seams required by advanced consumers. OS-specific interop providers, decoder internals, lifecycle signal plumbing, and presentation composition remain internal.
 
@@ -842,7 +842,7 @@ This tranche SHALL build on the 0.1 incremental decoder rather than introducing 
 ### 10.2 Version 0.3 — Query/response routing
 
 The detailed milestone plan is maintained in
-[`Icod.Terminal-0.3.0-Development-Roadmap.md`](Icod.Terminal-0.3.0-Development-Roadmap.md).
+[`docs/Icod.Terminal-0.3.0-Development-Roadmap.md`](../Icod.Terminal-0.3.0-Development-Roadmap.md).
 
 Version 0.3 adds a common request/response mechanism for active terminal
 conversations, including device attributes, device status reports,

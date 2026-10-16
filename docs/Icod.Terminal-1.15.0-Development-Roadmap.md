@@ -18,19 +18,19 @@ The governing rule is:
 
 Design authority:
 
-[`docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md`](docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md)
+[`docs/superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md`](superpowers/specs/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement-design.md)
 
 Implementation plan:
 
-[`docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md`](docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md)
+[`docs/superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md`](superpowers/plans/2026-09-14-1.15.0-unicode-placeholder-virtual-raster-placement.md)
 
 Permanent ownership authority:
 
-[`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+[`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
 
 Curated release notes:
 
-[`docs/releases/1.15.0.md`](docs/releases/1.15.0.md)
+[`docs/releases/1.15.0.md`](releases/1.15.0.md)
 
 ## Persistent-raster progression
 

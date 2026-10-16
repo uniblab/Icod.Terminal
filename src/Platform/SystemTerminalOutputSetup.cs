@@ -61,8 +61,8 @@ internal static class SystemTerminalOutputSetup {
 			)
 		};
 
-		IDisposable? lease = WindowsVirtualTerminal.TryEnableOutput( stream );
-		if ( lease is null ) {
+		IDisposable? virtualTerminalLease = WindowsVirtualTerminal.TryEnableOutput( stream );
+		if ( virtualTerminalLease is null ) {
 			throw new InvalidOperationException(
 				string.Concat(
 					"Windows virtual-terminal output processing could not be enabled for ",
@@ -72,6 +72,45 @@ internal static class SystemTerminalOutputSetup {
 			);
 		}
 
-		return lease;
+		try {
+			IDisposable? codePageLease = WindowsConsoleOutputCodePage.TryEnableUtf8();
+			if ( codePageLease is null ) {
+				throw new InvalidOperationException(
+					string.Concat(
+						"UTF-8 Windows console output could not be enabled for ",
+						endpoint.DisplayName,
+						"."
+					)
+				);
+			}
+			return new OutputLease( virtualTerminalLease, codePageLease );
+		} catch {
+			virtualTerminalLease.Dispose();
+			throw;
+		}
+	}
+
+	private sealed class OutputLease(
+		IDisposable virtualTerminalLease,
+		IDisposable codePageLease
+	) : IDisposable {
+		private IDisposable? virtualTerminalLease = virtualTerminalLease;
+		private IDisposable? codePageLease = codePageLease;
+
+		public void Dispose() {
+			IDisposable? codePage = Interlocked.Exchange(
+				ref this.codePageLease,
+				null
+			);
+			IDisposable? virtualTerminal = Interlocked.Exchange(
+				ref this.virtualTerminalLease,
+				null
+			);
+			try {
+				codePage?.Dispose();
+			} finally {
+				virtualTerminal?.Dispose();
+			}
+		}
 	}
 }

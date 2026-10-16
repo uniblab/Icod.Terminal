@@ -71,17 +71,17 @@ output. Higher layers continue to own cells, damage, atlas policy and fallback.
 5.1-compatible packaging scripts and cmd/sh launchers. No Python, native helper,
 terminal-name branch or environment-variable support inference.
 
-**Design authorities:** [Architecture](docs/Architecture.md),
-[compatibility and versioning](docs/Compatibility-and-Versioning.md),
-[security and privacy](docs/Security-and-Privacy.md),
-[persistent raster ownership](docs/Persistent-Raster-Ownership.md), and the
-[graphics hold/reopening record](docs/Graphics-Development-Hold.md). T2800 must
+**Design authorities:** [Architecture](Architecture.md),
+[compatibility and versioning](Compatibility-and-Versioning.md),
+[security and privacy](Security-and-Privacy.md),
+[persistent raster ownership](Persistent-Raster-Ownership.md), and the
+[graphics hold/reopening record](Graphics-Development-Hold.md). T2800 must
 write the detailed design and implementation plan before runtime changes.
 
 **T2800 approved design:**
-[Published-Spec Kitty Graphics Transactions Design](docs/superpowers/specs/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions-design.md),
+[Published-Spec Kitty Graphics Transactions Design](superpowers/specs/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions-design.md),
 approved by the maintainer on 2026-10-06. The corresponding
-[implementation plan](docs/superpowers/plans/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions.md)
+[implementation plan](superpowers/plans/2026-10-06-1.28.0-published-spec-kitty-graphics-transactions.md)
 is the executable RED/GREEN sequence and remains subject to plan review before
 runtime implementation begins.
 
@@ -109,7 +109,7 @@ hardening-test failure. Exact runtime patch and clean/default-configuration
 provenance remain unrecorded. T2808 downstream ATLAS, the other
 implementation lane and complete T2810 closure remain open; stable metadata and
 publication are not authorized by these limited positive results. See the
-[versioned compatibility record](docs/Kitty-Graphics-Transaction-Compatibility-1.28.md).
+[versioned compatibility record](Kitty-Graphics-Transaction-Compatibility-1.28.md).
 
 ### Published-protocol policy
 

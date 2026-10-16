@@ -25,8 +25,8 @@ TermInfo remains the immutable capability-data, expansion, and padding authority
 
 ## Design authority
 
-- [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
-- [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
+- [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
+- [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
 
 ## Scope
 
@@ -131,7 +131,7 @@ The package release shard runs these as two independent consumers across every s
 
 ## T179 — Stable closure
 
-Public API/XML snapshots are frozen across all target frameworks, permanent architecture/compatibility/security authorities and stable release metadata are synchronized, and exact candidate head `d02fc710d2fa8d492153c03dc644f21f194eb1dd` is qualified across Windows, Linux, and macOS. The evidence-only bookkeeping commit defined by [`docs/superpowers/plans/2026-09-18-1.17.0-stable-closure.md`](docs/superpowers/plans/2026-09-18-1.17.0-stable-closure.md) remains to be requalified.
+Public API/XML snapshots are frozen across all target frameworks, permanent architecture/compatibility/security authorities and stable release metadata are synchronized, and exact candidate head `d02fc710d2fa8d492153c03dc644f21f194eb1dd` is qualified across Windows, Linux, and macOS. The evidence-only bookkeeping commit defined by [`docs/superpowers/plans/2026-09-18-1.17.0-stable-closure.md`](superpowers/plans/2026-09-18-1.17.0-stable-closure.md) remains to be requalified.
 
 Publication remains an explicit maintainer action after the stable candidate is accepted.
 

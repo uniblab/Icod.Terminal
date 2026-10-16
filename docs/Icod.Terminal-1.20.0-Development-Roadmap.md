@@ -8,7 +8,7 @@
 
 **Tech stack:** C# 13; .NET 8/9/10; PowerShell 5.1-compatible packaging scripts; cmd/sh. No Python or new tooling dependencies.
 
-**Spec:** [1.20 profile/capability design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md).
+**Spec:** [1.20 profile/capability design](superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md).
 
 **Selected scope:** **3 + focused 6 + 10**.
 
@@ -42,7 +42,7 @@
 
 - Released baseline: tag `v1.19.0`, merge commit `b3f7adf929d36ea654f2116ad6132781edc3fb3b`, [PR #64](https://github.com/uniblab/Icod.Terminal/pull/64), [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.19.0).
 - The final pre-merge dependency-refresh head `5849ec717ba59a37ec7395d11f5c892ef3f380b2` passed all nine jobs in [workflow 36296373936](https://github.com/uniblab/Icod.Terminal/actions/runs/36296373936). Its runtime matrix passed 2,402 unit tests and 15 integration tests per framework on Windows, Linux, and macOS. These are baseline results, not 1.20 qualification.
-- Baseline API fingerprint on every framework: `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`. Preserve [1.19 evidence](docs/Public-API-Baseline-1.19.md); generate a separate 1.20 baseline after additive API review.
+- Baseline API fingerprint on every framework: `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`. Preserve [1.19 evidence](Public-API-Baseline-1.19.md); generate a separate 1.20 baseline after additive API review.
 - `TerminalProfile.Create` currently projects color, attributes, absolute addressing, ACS, and visibility facts. Existing planner methods additionally cover alternative cursor routes, erase, character/line shifts, and scroll regions.
 - `TerminalSession.CapabilityInspection.cs` has twelve capability mappings and three active verification cases. The guide/sample's older nine/two inventory needs reconciliation.
 - Existing inspection/lifecycle/verification tests and package/sample scripts are reusable. Start with a coverage inventory; do not recreate already-proven tests.

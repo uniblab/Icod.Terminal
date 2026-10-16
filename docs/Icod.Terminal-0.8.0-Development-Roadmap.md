@@ -46,7 +46,7 @@ Bar styles are retained as xterm-compatible extensions without fabricating proof
 
 ## 3. Stable public API
 
-The reviewed 0.8 public delta is frozen in [`docs/Public-API-Baseline-0.8.md`](docs/Public-API-Baseline-0.8.md):
+The reviewed 0.8 public delta is frozen in [`docs/Public-API-Baseline-0.8.md`](Public-API-Baseline-0.8.md):
 
 ```text
 TerminalCursorStyle
@@ -69,13 +69,13 @@ The 0.8 release uses tranche numbers `T80` through `T87`, aligned with the relea
 
 Frozen numeric mapping, DEC/xterm boundary, query semantics, parameter-zero policy, restoration truthfulness, and cursor-style/visibility independence.
 
-Record: [`docs/T80-Cursor-Style-Contract-and-Reference-Freeze.md`](docs/T80-Cursor-Style-Contract-and-Reference-Freeze.md)
+Record: [`docs/T80-Cursor-Style-Contract-and-Reference-Freeze.md`](T80-Cursor-Style-Contract-and-Reference-Freeze.md)
 
 ### T81 — reusable CSI intermediate-byte output primitive — complete
 
 Implemented structural CSI parameter/intermediate/final-byte output, canonical seven-bit framing, and byte-exact DECSCUSR emission for parameters `1`–`6` without a public raw CSI escape hatch.
 
-Record: [`docs/T81-CSI-Intermediate-Byte-Output-Primitive.md`](docs/T81-CSI-Intermediate-Byte-Output-Primitive.md)
+Record: [`docs/T81-CSI-Intermediate-Byte-Output-Primitive.md`](T81-CSI-Intermediate-Byte-Output-Primitive.md)
 
 Validation: workflow #246 green.
 
@@ -83,7 +83,7 @@ Validation: workflow #246 green.
 
 Implemented the six-value `TerminalCursorStyle` model, deterministic outbound mapping, strict inbound status parsing, omitted/`0`/`1` normalization, and rejection of malformed/unknown positive state.
 
-Record: [`docs/T82-Typed-Cursor-Style-Codec-and-DECRQSS-Interpretation.md`](docs/T82-Typed-Cursor-Style-Codec-and-DECRQSS-Interpretation.md)
+Record: [`docs/T82-Typed-Cursor-Style-Codec-and-DECRQSS-Interpretation.md`](T82-Typed-Cursor-Style-Codec-and-DECRQSS-Interpretation.md)
 
 Validation: workflow #250 green.
 
@@ -91,7 +91,7 @@ Validation: workflow #250 green.
 
 Implemented public `SetCursorStyleAsync(...)` with semantic validation, redirected-output rejection, shared output serialization, cancellation-before-commit, non-truncating committed frames, and no implicit flush.
 
-Record: [`docs/T83-Semantic-Cursor-Style-Set-API.md`](docs/T83-Semantic-Cursor-Style-Set-API.md)
+Record: [`docs/T83-Semantic-Cursor-Style-Set-API.md`](T83-Semantic-Cursor-Style-Set-API.md)
 
 Validation: workflow #260 green with T84.
 
@@ -99,7 +99,7 @@ Validation: workflow #260 green with T84.
 
 Implemented `TerminalCursorStyleObservation` and `QueryCursorStyleAsync(...)` on the existing DECRQSS `SP q` transaction path. Unsupported, timeout, cancellation, and malformed positive state remain distinct outcomes.
 
-Record: [`docs/T84-Typed-Cursor-Style-Query-and-Observation.md`](docs/T84-Typed-Cursor-Style-Query-and-Observation.md)
+Record: [`docs/T84-Typed-Cursor-Style-Query-and-Observation.md`](T84-Typed-Cursor-Style-Query-and-Observation.md)
 
 Validation: workflow #260 green with T83.
 
@@ -107,7 +107,7 @@ Validation: workflow #260 green with T83.
 
 Accepted `TerminalCursorStyleLease` and `AcquireCursorStyleAsync(...)` because the outermost acquisition first observes an authoritative semantic baseline. Nested leases are strict LIFO. Suspend restores the observed baseline; resume reapplies the active innermost logical style; disposal performs final best-effort restoration. No guessed reset participates.
 
-Record: [`docs/T85-Cursor-Style-Restoration-and-Scoped-State.md`](docs/T85-Cursor-Style-Restoration-and-Scoped-State.md)
+Record: [`docs/T85-Cursor-Style-Restoration-and-Scoped-State.md`](T85-Cursor-Style-Restoration-and-Scoped-State.md)
 
 Validation: workflow #270 green.
 
@@ -115,7 +115,7 @@ Validation: workflow #270 green.
 
 Added acceptance coverage for cursor-style/visibility independence, deterministic ordering with text and OSC 0/1/2/7/8/52, lifecycle baseline restoration/re-entry, and release-while-suspended behavior. Existing T82/T84 query tests remain authoritative for malformed responses, cancellation, timeout, late-response ownership, and single-reader behavior.
 
-Record: [`docs/T86-Cursor-Style-Integration-Compatibility-and-Regression-Acceptance.md`](docs/T86-Cursor-Style-Integration-Compatibility-and-Regression-Acceptance.md)
+Record: [`docs/T86-Cursor-Style-Integration-Compatibility-and-Regression-Acceptance.md`](T86-Cursor-Style-Integration-Compatibility-and-Regression-Acceptance.md)
 
 Validation: workflow #275 green.
 
@@ -134,7 +134,7 @@ Implemented:
 - PR, `main` distribution, and tagged-release integration of the 0.8 package gate;
 - stable closure record and release-order gate.
 
-Record: [`docs/T87-0.8.0-Public-API-Package-and-Stable-Closure.md`](docs/T87-0.8.0-Public-API-Package-and-Stable-Closure.md)
+Record: [`docs/T87-0.8.0-Public-API-Package-and-Stable-Closure.md`](T87-0.8.0-Public-API-Package-and-Stable-Closure.md)
 
 **T87 gate:** exact stable PR head must be green before merge. After merge, `main` Release distribution validation must be green before tag `v0.8.0` is created.
 

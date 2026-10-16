@@ -9,11 +9,11 @@
 
 ## Status
 
-Stable release: **1.29.1**. The stable **1.0.0 compatibility floor** remains unchanged.
+Stable release: **1.29.2**. The stable **1.0.0 compatibility floor** remains unchanged.
 
-See the [1.29.1 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md),
+See the [1.29.2 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.2.md),
 [changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md) for release history,
-the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
+the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Icod.Terminal-Development-Roadmap.md)
 for current work, and the [compatibility policy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
 for support guarantees.
 
@@ -65,7 +65,7 @@ See [`docs/Architecture.md`](docs/Architecture.md) for the permanent architectur
 Install the stable release:
 
 ```text
-dotnet add package Icod.Terminal --version 1.29.1
+dotnet add package Icod.Terminal --version 1.29.2
 ```
 
 The partial animation-frame API requires `Icod.Terminal 1.23.0` or later. The geometry and planning APIs described below require `Icod.Terminal 1.24.0` or later.
@@ -400,11 +400,18 @@ Unicode to UTF-8 for the common decoder. Cancellation finishes the outstanding
 native read before its owned handle is closed. Sessions opened with explicit
 byte services retain their existing borrowed-transport behavior.
 
+For system-backed Windows console output, the session enables virtual-terminal
+processing and UTF-8 byte decoding while it is active, then restores the exact
+prior output code page. `ConfigureOutput = false` and explicitly supplied output
+services remain caller-owned configuration boundaries.
+
 Applications that bind Ctrl+C or Ctrl+Z as commands should request
 `TerminalInputMode.Raw`. Raw mode disables POSIX signal handling and Windows
 processed input so both arrive through `ReadEventAsync()` as Character keys with
-the Control modifier. `CBreak` deliberately retains host signal/processed-input
-handling for applications that want conventional interrupt and suspend behavior.
+the Control modifier. On Windows, Raw and CBreak also enable mouse input and
+suppress Quick Edit while the session is active. `CBreak` deliberately retains
+host signal/processed-input handling for applications that want conventional
+interrupt and suspend behavior. Disposal restores the exact captured mode.
 
 `Icod.Terminal` is a managed library but intentionally uses native platform facilities where terminal modes or console behavior require them. Protocol and feature availability still depends on the terminal endpoint attached to the process; operating-system identity or terminal brand is not treated as sufficient support proof.
 
@@ -443,7 +450,7 @@ Recommended documentation entry points:
 - [`docs/releases/1.24.0.md`](docs/releases/1.24.0.md) — raster geometry, planning, focused evidence, and tile-atlas qualification notes;
 - [`docs/Raster-Tile-Atlas-Measurement-1.24.md`](docs/Raster-Tile-Atlas-Measurement-1.24.md) — package-only 1/4/16/64-region witness and measurement limits;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
-- [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
+- [`docs/Icod.Terminal-1.21.0-Development-Roadmap.md`](docs/Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
 - [`samples/Icod.Terminal.RichInput.Sample/README.md`](samples/Icod.Terminal.RichInput.Sample/README.md) — modern keyboard phases, fallback, and editor-state walkthrough;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
@@ -462,7 +469,7 @@ Recommended documentation entry points:
 - [`docs/Public-API-Baseline-1.23.md`](docs/Public-API-Baseline-1.23.md) — additive partial-frame and rich-input completion API fingerprint;
 - [`docs/Public-API-Baseline-1.24.md`](docs/Public-API-Baseline-1.24.md) — historical geometry, planning, and focused-evidence fingerprint;
 - [`docs/Public-API-Baseline-1.27.md`](docs/Public-API-Baseline-1.27.md) — current frozen API and additive environment-awareness fingerprint;
-- [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
+- [`docs/Icod.Terminal-Development-Roadmap.md`](docs/Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
 
