@@ -28,7 +28,7 @@ using Xunit;
 /// </summary>
 public sealed class StableReleaseIdentityTests {
 	[Fact]
-	public void MainDistributionPinsOneTwentyNinePatchOneStableIdentity() {
+	public void MainDistributionPinsOneTwentyNinePatchTwoStableIdentity() {
 		string root = FindRepositoryRoot();
 		XDocument properties = XDocument.Load(
 			Path.Combine( root, "Directory.Build.props" )
@@ -51,45 +51,47 @@ public sealed class StableReleaseIdentityTests {
 			Path.Combine( root, "CHANGELOG.md" )
 		);
 		string releaseNotes = File.ReadAllText(
-			Path.Combine( root, "docs", "releases", "1.29.1.md" )
+			Path.Combine( root, "docs", "releases", "1.29.2.md" )
 		);
 
-		Assert.Equal( "1.29.1", versionPrefix );
+		Assert.Equal( "1.29.2", versionPrefix );
 		Assert.True(
 			null == versionSuffix
 			|| String.IsNullOrWhiteSpace( versionSuffix.Value )
 		);
 		Assert.Contains(
-			"EXPECTED_VERSION: 1.29.1",
+			"EXPECTED_VERSION: 1.29.2",
 			workflow,
 			StringComparison.Ordinal
 		);
 		Assert.Contains(
-			"Stable release: **1.29.1**.",
+			"Stable release: **1.29.2**.",
 			readme,
 			StringComparison.Ordinal
 		);
 		Assert.Contains(
-			"dotnet add package Icod.Terminal --version 1.29.1",
+			"dotnet add package Icod.Terminal --version 1.29.2",
 			readme,
 			StringComparison.Ordinal
 		);
 		Assert.Contains(
-			"https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.1.md",
+			"https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.2.md",
 			readme,
 			StringComparison.Ordinal
 		);
 		Assert.Contains(
-			"## 1.29.1",
+			"## 1.29.2",
 			changelog,
 			StringComparison.Ordinal
 		);
 		Assert.True(
 			File.Exists(
-				Path.Combine( root, "docs", "releases", "1.29.1.md" )
+				Path.Combine( root, "docs", "releases", "1.29.2.md" )
 			)
 		);
 		foreach ( string requiredReleaseNoteText in new[] {
+			"UTF-8",
+			"mouse",
 			"net8.0",
 			"net9.0",
 			"net10.0",
