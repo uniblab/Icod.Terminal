@@ -2,6 +2,22 @@
 
 Notable changes to `Icod.Terminal` are recorded here for consumers who need a concise release history. Detailed design evidence remains in the versioned roadmaps, tranche records, and public-API baseline documents.
 
+## 1.29.2
+
+- Configure system-backed Windows console output for UTF-8 while a session owns
+  it, preventing UTF-8 box-drawing bytes from being decoded as multiple OEM
+  characters and breaking terminal-cell geometry.
+- Restore the exact prior Windows console output code page during disposal,
+  failed setup, lifecycle release and lifecycle re-entry.
+- Make Windows Raw and CBreak modes enable virtual-terminal and mouse input,
+  enable extended mode flags, and suppress Quick Edit while active.
+- Preserve canonical-mode policy, unrelated console-mode flags, raw Ctrl+C and
+  Ctrl+Z handling, and exact captured-mode restoration.
+- Add cross-target unit coverage and an isolated native Windows console smoke
+  for UTF-8 box drawing, mouse-mode ownership, control keys and restoration.
+- Preserve the public API, .NET 8/9/10 targets and production dependencies.
+  See [1.29.2 release notes](docs/releases/1.29.2.md).
+
 ## 1.29.1
 
 - Decode legacy Escape-prefixed Alt letters as a single modified key, including

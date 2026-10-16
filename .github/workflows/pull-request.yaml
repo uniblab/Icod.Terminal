@@ -39,7 +39,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: ./packaging/VerifyLicenseHeaders.ps1
-      - name: Verify native Windows console input and cancellation
+      - name: Verify native Windows console I/O and restoration
         if: runner.os == 'Windows'
         timeout-minutes: 3
         shell: pwsh
