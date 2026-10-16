@@ -16,7 +16,7 @@
 
 **Tech stack:** C# 13; .NET 8/9/10; managed Windows/Linux/macOS; PowerShell 5.1-compatible packaging scripts and cmd/sh launchers. No Python or native companion component.
 
-**Design authorities:** [Architecture](docs/Architecture.md), [compatibility policy](docs/Compatibility-and-Versioning.md), [security and privacy](docs/Security-and-Privacy.md), and the scope/contract requirements below. T2700 must record an approved detailed design and implementation plan before introducing public API.
+**Design authorities:** [Architecture](Architecture.md), [compatibility policy](Compatibility-and-Versioning.md), [security and privacy](Security-and-Privacy.md), and the scope/contract requirements below. T2700 must record an approved detailed design and implementation plan before introducing public API.
 
 ## Scope and alternatives
 
@@ -276,7 +276,7 @@ Dependencies remain Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0. Historical 1.26 
 
 ## Partial live checkpoint — 2026-10-06
 
-Reviewed source-launcher reports for `a2bd1553765dee585607ea63de2ac6440f343fec`, `1.27.0-alpha.1`, Windows Terminal `1.24.11911.0`, Windows `10.0.26200.9457`, no separately recorded transport, and scenario revision 1. `query.appearance` is Inconclusive; `environment.appearance-reporting` and `environment.in-band-resize` are Unavailable after explicit mode state 0 or 4. The [evidence record](docs/compatibility/evidence/1.27.0/README.md) preserves the original JSON and the separate CI package identity; the [matrix](docs/compatibility/1.27.0.md) is regenerated from those reports.
+Reviewed source-launcher reports for `a2bd1553765dee585607ea63de2ac6440f343fec`, `1.27.0-alpha.1`, Windows Terminal `1.24.11911.0`, Windows `10.0.26200.9457`, no separately recorded transport, and scenario revision 1. `query.appearance` is Inconclusive; `environment.appearance-reporting` and `environment.in-band-resize` are Unavailable after explicit mode state 0 or 4. The [evidence record](compatibility/evidence/1.27.0/README.md) preserves the original JSON and the separate CI package identity; the [matrix](compatibility/1.27.0.md) is regenerated from those reports.
 
 The submitted all-NotRun matrix predates report acceptance and is superseded by the generated matrix. No positive appearance or resize witness is present. The unavailable report's fallback note is not an input/geometry observation: `input.text-key/v1` and `lifecycle.resize-suspend/v1` must still be exercised in this environment. Tasks 9–10 remain incomplete and the package remains alpha.1.
 

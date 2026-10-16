@@ -8,14 +8,14 @@
 - **Latest historical patch line:** `1.24.1` — Persistent Kitty resource-identity verification.
 - **Development status:** Stable `1.29.0` release preparation; reviewed qualification is tracked in the versioned roadmap.
 - **Active development target:** `1.29.0` — Bounded Clipboard Transfers.
-- **Selected scope:** Preserve the 65,536-byte default while allowing explicit larger read/write budgets, with coordinated codec/framing limits, bounded correlated response accumulation and truthful outcomes. See the [1.29 development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md) and [design](docs/Clipboard-Transfer-Design-1.29.md).
+- **Selected scope:** Preserve the 65,536-byte default while allowing explicit larger read/write budgets, with coordinated codec/framing limits, bounded correlated response accumulation and truthful outcomes. See the [1.29 development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md) and [design](Clipboard-Transfer-Design-1.29.md).
 - **Stable compatibility floor:** `1.0.0`
 
 ## Purpose
 
 This file is the concise entry point for current `Icod.Terminal` development and long-range planning. Detailed design evidence remains in versioned roadmaps, release notes, public-API baselines, accepted CI checkpoints, and approved design/implementation documents.
 
-The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](docs/history/Icod.Terminal-Initial-Development-Roadmap.md).
+The original pre-1.0 roadmap is preserved at [`docs/history/Icod.Terminal-Initial-Development-Roadmap.md`](history/Icod.Terminal-Initial-Development-Roadmap.md).
 
 ## Latest accepted checkpoint
 
@@ -24,7 +24,7 @@ Stable `1.28.0` is present on main at
 [GitHub release](https://github.com/uniblab/Icod.Terminal/releases/tag/v1.28.0)
 was published 2026-10-09. The
 [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md) and
-[release notes](docs/releases/1.28.0.md) preserve the exact graphics and downstream
+[release notes](releases/1.28.0.md) preserve the exact graphics and downstream
 qualification limits. This status does not expand their terminal coverage.
 
 On 2026-10-10 the maintainer selected clipboard enhancement before the next
@@ -41,7 +41,7 @@ maintainer action.
 
 The entries below preserve earlier source/qualification milestones; their then-pending publication wording is historical, not the current release status.
 
-Stable `Icod.Terminal 1.25.0` source was merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`. The stable source preserves the documented graphics hold and does not claim successful Kitty persistent-ATLAS qualification. Stable publication remains a separate maintainer action; the [T2508 closure record](docs/T2508-1.25-Stable-Source-Closure.md) records the exact limits.
+Stable `Icod.Terminal 1.25.0` source was merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`. The stable source preserves the documented graphics hold and does not claim successful Kitty persistent-ATLAS qualification. Stable publication remains a separate maintainer action; the [T2508 closure record](T2508-1.25-Stable-Source-Closure.md) records the exact limits.
 
 `Icod.Terminal 1.25.0-alpha.5` was merged through [PR #77](https://github.com/uniblab/Icod.Terminal/pull/77) and published. It includes bounded payload-transfer deadlines plus the earlier Unix byte-input, DA1, cursor and Sixel corrections. The downstream Kitty 0.32.2 retest still lacks an animation-upload ACK; the longer deadline bounds the wait without fixing that defect. The maintainer has put this graphics track on hold. This checkpoint does not promote 1.25 to stable or qualify persistent ATLAS from ordinary FRAME fallback.
 
@@ -136,11 +136,11 @@ The unchanged 1.18–1.19 public API fingerprint is:
 48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d
 ```
 
-Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md).
+Permanent ownership authority: [`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md).
 
-1.17 release notes: [`docs/releases/1.17.0.md`](docs/releases/1.17.0.md).
+1.17 release notes: [`docs/releases/1.17.0.md`](releases/1.17.0.md).
 
-1.17 versioned evidence: [`Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md).
+1.17 versioned evidence: [`docs/Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md).
 
 ## 1.16 stable release — Persistent Raster Animation and Frame Lifecycle
 
@@ -233,12 +233,12 @@ Frame composition remains a strong candidate for a later focused release after t
 
 ## Authorities
 
-- [`Icod.Terminal-1.16.0-Development-Roadmap.md`](Icod.Terminal-1.16.0-Development-Roadmap.md)
-- [`docs/superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md`](docs/superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md)
-- [`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
-- [`docs/Architecture.md`](docs/Architecture.md)
-- [`docs/Security-and-Privacy.md`](docs/Security-and-Privacy.md)
-- [`docs/Compatibility-and-Versioning.md`](docs/Compatibility-and-Versioning.md)
+- [`docs/Icod.Terminal-1.16.0-Development-Roadmap.md`](Icod.Terminal-1.16.0-Development-Roadmap.md)
+- [`docs/superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md`](superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md)
+- [`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
+- [`docs/Architecture.md`](Architecture.md)
+- [`docs/Security-and-Privacy.md`](Security-and-Privacy.md)
+- [`docs/Compatibility-and-Versioning.md`](Compatibility-and-Versioning.md)
 
 ## 1.17 stable line — Terminal-owned Screen Output Contracts
 
@@ -265,9 +265,9 @@ T179  stable 1.17 release closure
 
 Authorities:
 
-- [`Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md)
-- [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
-- [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
+- [`docs/Icod.Terminal-1.17.0-Development-Roadmap.md`](Icod.Terminal-1.17.0-Development-Roadmap.md)
+- [`docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md`](superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
+- [`docs/superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md`](superpowers/plans/2026-09-17-1.17.0-terminal-screen-output.md)
 
 ## 1.18 stable line — Unknown-rendition Baseline Recovery
 
@@ -300,9 +300,9 @@ T185  release-candidate qualification and stable 1.18.0 closure
 
 Authorities:
 
-- [`Icod.Terminal-1.18.0-Development-Roadmap.md`](Icod.Terminal-1.18.0-Development-Roadmap.md)
-- [`docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md`](docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
-- [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
+- [`docs/Icod.Terminal-1.18.0-Development-Roadmap.md`](Icod.Terminal-1.18.0-Development-Roadmap.md)
+- [`docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md`](superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
+- [`docs/superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md`](superpowers/plans/2026-09-18-1.18.0-rendition-baseline.md)
 - [`Icod.DCurses 2.0 PR #32`](https://github.com/uniblab/Icod.DCurses/pull/32)
 
 ## 1.19 released line — Downstream Screen-output Hardening and Planner Expansion
@@ -337,7 +337,7 @@ T199  stable 1.19.0 release closure and evidence record
 
 T190-T199 are complete and 1.19.0 is released. The final pre-merge head passed all nine CI jobs, including 2,402 unit tests and 15 integration tests per framework on each supported PR platform. The planner admits home-plus-relative and same-row carriage-return-plus-relative routes without public API additions; malformed optional routes cannot displace valid alternatives. Cursor-visibility composition is deferred to preserve presentation-lease ownership. The executed package harness covers the Terminal-only renderer, the screen-output sample, and published DCurses 2.2.0 while retaining the separate 1.6.0 compatibility witness. The release also includes the expanded samples, Ken Arnold attribution, and TermInfo/Inspection 1.16.0 dependency refresh.
 
-Authority: [`Icod.Terminal-1.19.0-Development-Roadmap.md`](Icod.Terminal-1.19.0-Development-Roadmap.md).
+Authority: [`docs/Icod.Terminal-1.19.0-Development-Roadmap.md`](Icod.Terminal-1.19.0-Development-Roadmap.md).
 
 ## 1.20 released line — Profile and Capability Decisions
 
@@ -373,7 +373,7 @@ T200-T209 are complete; PR #65 has been merged and 1.20.0 published. The stable 
 Authorities:
 
 - [1.20 development roadmap](Icod.Terminal-1.20.0-Development-Roadmap.md)
-- [1.20 profile/capability design](docs/superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md)
+- [1.20 profile/capability design](superpowers/specs/2026-09-27-1.20.0-profile-capability-design.md)
 
 ## 1.21 development line — Rich Input and Cursor Visibility
 
@@ -420,7 +420,7 @@ T2200–T2210 cover the protocol/API review, TermInfo 1.17.0 dependency qualific
 
 The selected scope is **Option 2 + Option 9 + Option 10**. Option 2 adds a bounded caller-supplied update to an existing known animation frame. Option 9 completes the remaining protocol-neutral rich-input and keyboard contract. Option 10 supplies samples, downstream package witnesses, documentation, measurement, and release qualification.
 
-The approved [1.23 design](docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md) and [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) govern implementation in [PR #68](https://github.com/uniblab/Icod.Terminal/pull/68).
+The approved [1.23 design](superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md) and [1.23 development roadmap](Icod.Terminal-1.23.0-Development-Roadmap.md) govern implementation in [PR #68](https://github.com/uniblab/Icod.Terminal/pull/68).
 
 The governing rule is:
 
@@ -438,7 +438,7 @@ The governing rule is:
 
 The 1.24 closure did not justify a bounded frame-edit execution release. The distinct 1.25 screen raster transaction scope is documented below. Frame-edit batching remains a separate measurement-gated candidate. No batch API, Indexed8 partial-update promise, remote atomicity, rollback, or hidden replay is precommitted.
 
-The [1.24 design](docs/superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](docs/superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) record the published release from [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
+The [1.24 design](superpowers/specs/2026-10-02-1.24.0-raster-geometry-planning-design.md), [implementation plan](superpowers/plans/2026-10-02-1.24.0-raster-geometry-planning.md), and [1.24 development roadmap](Icod.Terminal-1.24.0-Development-Roadmap.md) record the published release from [PR #69](https://github.com/uniblab/Icod.Terminal/pull/69).
 
 The implementation sequence is:
 
@@ -464,7 +464,7 @@ The governing rule is:
 
 > Terminal owns raster backend evidence, protocol-private encoding, bounded transaction preflight, serialized output, and commitment uncertainty. DCurses owns raster-surface placement, source-image provision, clipping, overlay policy, damage, and refresh. Applications own assets and viewport content.
 
-The [1.25 design](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Merged PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) introduced the alpha API, tests, sample, package verifier and release documentation. Follow-up PRs #73–#77 are merged; alpha.5 is published. Further graphics development and Kitty live qualification are now on hold. Stable source qualification completed in merged PR #78 with those limits retained; publication remains a separate maintainer action.
+The [1.25 design](superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md), [implementation plan](superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md), and [1.25 development roadmap](Icod.Terminal-1.25.0-Development-Roadmap.md) define the review gates. [Merged PR #71](https://github.com/uniblab/Icod.Terminal/pull/71) introduced the alpha API, tests, sample, package verifier and release documentation. Follow-up PRs #73–#77 are merged; alpha.5 is published. Further graphics development and Kitty live qualification are now on hold. Stable source qualification completed in merged PR #78 with those limits retained; publication remains a separate maintainer action.
 
 ```text
 T2500  published baseline, placement assumptions, and API-regret gate
@@ -517,7 +517,7 @@ T2609  reviewed live-terminal qualification
 T2610  cross-platform qualification and stable release closure
 ```
 
-The [1.26 design](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md), [implementation plan](docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md), and [versioned development roadmap](Icod.Terminal-1.26.0-Development-Roadmap.md) define the full evidence model, scenario groups, privacy rules, failure semantics, and release gates. The published 1.26 feature adds no production runtime API and preserves the graphics-development hold. Remaining live-terminal coverage is a continuing qualification backlog, not an unimplemented runtime feature.
+The [1.26 design](superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md), [implementation plan](superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md), and [versioned development roadmap](Icod.Terminal-1.26.0-Development-Roadmap.md) define the full evidence model, scenario groups, privacy rules, failure semantics, and release gates. The published 1.26 feature adds no production runtime API and preserves the graphics-development hold. Remaining live-terminal coverage is a continuing qualification backlog, not an unimplemented runtime feature.
 
 ## 1.27 merged line — Live Terminal Environment Awareness
 
@@ -579,7 +579,7 @@ T2709  focused live-terminal acceptance
 T2710  stable release closure and exact evidence
 ```
 
-The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) records completed scope, exact source/artifact/workflow identities, live versions, known limits, and review decisions. The approved [T2700 detailed design](docs/superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) governs the additive public signatures and runtime semantics. Implementation remained inline without subagents; final review is an author self-review.
+The [1.27 development roadmap](Icod.Terminal-1.27.0-Development-Roadmap.md) records completed scope, exact source/artifact/workflow identities, live versions, known limits, and review decisions. The approved [T2700 detailed design](superpowers/specs/2026-10-05-terminal-appearance-resize-awareness-design.md) governs the additive public signatures and runtime semantics. Implementation remained inline without subagents; final review is an author self-review.
 
 Stable acceptance now includes positive Kitty 0.49.2 evidence for both selected features and same-environment Windows Terminal/WSL evidence that unavailable reporting preserves native input and lifecycle. Ten-emulator completion is not implied. Curated notes, version metadata, packed README and required package-policy links passed together before separate maintainer promotion.
 
@@ -665,7 +665,7 @@ unsupported functionality. No OSC 52 capacity negotiation is invented.
 | T2908 | Maintainer-reviewed release closure |
 
 See the [development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md)
-and [design](docs/Clipboard-Transfer-Design-1.29.md).
+and [design](Clipboard-Transfer-Design-1.29.md).
 MIME-aware OSC 5522 (earlier option 4) remains deferred; this decision enhances
 the existing OSC 52 path. No TermInfo or production dependency change is planned.
 No changes to DCurses/Widgets or the shared workflow-template repository are part
@@ -677,7 +677,7 @@ of this milestone. Execution remains inline, without subagents.
 1.28 transaction-conformance and downstream-ATLAS scope. Frame-edit batching,
 Indexed8 regional parity, gapless frames, placement expansion, image codecs,
 hidden replay and other graphics expansion remain deferred. No Kitty 0.49.2 wire
-workaround is authorized. See the [hold and reopening record](docs/Graphics-Development-Hold.md).
+workaround is authorized. See the [hold and reopening record](Graphics-Development-Hold.md).
 
 The deferred bounded frame-edit execution candidate may combine prevalidated region edits and final frame selection, and may add Indexed8 regional-transfer parity, only when a real DCurses workload demonstrates a material benefit. It must not claim remote atomicity or rollback.
 

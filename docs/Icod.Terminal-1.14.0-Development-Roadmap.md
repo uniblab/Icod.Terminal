@@ -18,15 +18,15 @@ The governing rule is:
 
 Design authority:
 
-[`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md)
+[`docs/superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md`](superpowers/specs/2026-09-13-1.14.0-persistent-raster-lifecycle-observability-design.md)
 
 Implementation plan:
 
-[`docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md`](docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md)
+[`docs/superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md`](superpowers/plans/2026-09-13-1.14.0-persistent-raster-lifecycle-observability.md)
 
 Permanent ownership authority:
 
-[`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+[`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
 
 ## Why this release follows 1.13
 

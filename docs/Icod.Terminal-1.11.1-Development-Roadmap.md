@@ -41,11 +41,11 @@ Version `1.11.1` exists to prove that boundary end-to-end through an executable 
 
 The implementation plan is:
 
-[`docs/superpowers/plans/2026-09-12-1.11.1-terminfo-persistent-raster-integration.md`](docs/superpowers/plans/2026-09-12-1.11.1-terminfo-persistent-raster-integration.md)
+[`docs/superpowers/plans/2026-09-12-1.11.1-terminfo-persistent-raster-integration.md`](superpowers/plans/2026-09-12-1.11.1-terminfo-persistent-raster-integration.md)
 
 The runtime ownership authority remains:
 
-[`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+[`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
 
 The TermInfo semantic authority is:
 
@@ -55,7 +55,7 @@ https://github.com/uniblab/Icod.TermInfo/blob/main/docs/1.11.0-PERSISTENT-RASTER
 
 The release-closure record is:
 
-[`docs/T1111-E-1.11.1-Release-Closure.md`](docs/T1111-E-1.11.1-Release-Closure.md)
+[`docs/T1111-E-1.11.1-Release-Closure.md`](T1111-E-1.11.1-Release-Closure.md)
 
 ## Release objectives
 

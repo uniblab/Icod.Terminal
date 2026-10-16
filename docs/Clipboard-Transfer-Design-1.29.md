@@ -231,4 +231,4 @@ query or overwrite the user's clipboard during sample startup or session open.
 - [XTerm control sequences, OSC 52](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
 - [Architecture](Architecture.md)
 - [Security and privacy](Security-and-Privacy.md)
-- [Development roadmap](../Icod.Terminal-1.29.0-Development-Roadmap.md)
+- [Development roadmap](Icod.Terminal-1.29.0-Development-Roadmap.md)

@@ -109,7 +109,7 @@ The qualification covers the existing three-OS PR matrix. A fresh six-runner x64
 
 T190 baseline: planning head `8d47c06a3a4260c0b0ad8c9ac7c1b5923fccd99c` passed the full PR workflow [36288163471](https://github.com/uniblab/Icod.Terminal/actions/runs/36288163471). Local Linux baseline execution passed 2,383 unit tests and 15 integration tests on each of net8.0, net9.0, and net10.0; a three-framework baseline package was built. Local multi-node MSBuild is restricted by the execution environment, so local commands use single-process builds; CI retains authority for cross-platform and package gates. The unchanged 1.18 API fingerprint is `48975f2c42f6c544e9c574a9b3d79f7e2b7b3ecb10ab1a5a0b7067749e38e65d`.
 
-The [T190 design record](docs/superpowers/specs/2026-09-26-1.19.0-screen-output-hardening-design.md) admits the two cursor routes and defers cursor visibility to preserve presentation-lease ownership. The decoupled consumer version is pinned to DCurses 2.2.0, whose source declares Terminal 1.18.0 as its sole production dependency; DCurses 1.6.0 remains a separate compatibility gate. A separate synthetic test harness supplies the legacy TermInfo-bearing provider setup while the controlled renderer consumer retains its source/reference boundary checks.
+The [T190 design record](superpowers/specs/2026-09-26-1.19.0-screen-output-hardening-design.md) admits the two cursor routes and defers cursor visibility to preserve presentation-lease ownership. The decoupled consumer version is pinned to DCurses 2.2.0, whose source declares Terminal 1.18.0 as its sole production dependency; DCurses 1.6.0 remains a separate compatibility gate. A separate synthetic test harness supplies the legacy TermInfo-bearing provider setup while the controlled renderer consumer retains its source/reference boundary checks.
 
 The existing `tools/dcurses-screen-contracts-acceptance/Source/Program.cs` exercises value contracts at entry, but its `FutureDcursesRenderer.RefreshAsync(...)` method is only compile-bound. Executing a representative refresh is therefore a concrete Option 1 deliverable. Its baseline handling also needs to demonstrate that a missing rendition baseline cannot establish known physical state.
 
@@ -287,9 +287,9 @@ No Terminal-owned cells/windows/layout/damage engine; no automatic replay or ret
 ## Authorities
 
 - [Main roadmap](Icod.Terminal-Development-Roadmap.md)
-- [1.17 screen-output design](docs/superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
-- [1.18 rendition-baseline design](docs/superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
-- [Architecture](docs/Architecture.md)
-- [Compatibility and versioning](docs/Compatibility-and-Versioning.md)
-- [Security and privacy](docs/Security-and-Privacy.md)
-- [Build and packaging workflow](packaging/README.md)
+- [1.17 screen-output design](superpowers/specs/2026-09-17-1.17.0-terminal-screen-output-design.md)
+- [1.18 rendition-baseline design](superpowers/specs/2026-09-18-1.18.0-rendition-baseline-design.md)
+- [Architecture](Architecture.md)
+- [Compatibility and versioning](Compatibility-and-Versioning.md)
+- [Security and privacy](Security-and-Privacy.md)
+- [Build and packaging workflow](../packaging/README.md)

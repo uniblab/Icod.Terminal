@@ -389,7 +389,7 @@ refactor the input path without inventing cancellation, correlation, timeout, or
 probe policy during implementation.
 
 **T21 completion record:**
-[`docs/T21-0.3-Foundation-and-Contract-Reset.md`](docs/T21-0.3-Foundation-and-Contract-Reset.md).
+[`docs/T21-0.3-Foundation-and-Contract-Reset.md`](T21-0.3-Foundation-and-Contract-Reset.md).
 
 ---
 
@@ -428,7 +428,7 @@ Unclaimed input remains on the established application event path, and the
 session lifecycle path remains unchanged.
 
 **T22 completion record:**
-[`docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md`](docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md).
+[`docs/T22-Response-Framing-and-Single-Reader-Demultiplexing.md`](T22-Response-Framing-and-Single-Reader-Demultiplexing.md).
 
 ---
 
@@ -472,7 +472,7 @@ response to be returned as ordinary application input or attributed to a later
 ambiguity-sensitive query while the bounded ownership contract remains active.
 
 **T23 completion record:**
-[`docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md`](docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md).
+[`docs/T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md`](T23-Query-Transactions-Deadlines-and-Late-Response-Ownership.md).
 
 ---
 
@@ -513,7 +513,7 @@ consumer justifies a stable typed contract.
 **Gate T24: complete.** Common CSI queries work through normal async/await while
 preserving the 0.2 input stream and the T23 cancellation/late-response contract.
 
-**T24 completion record:** [`docs/T24-CSI-Query-Family.md`](docs/T24-CSI-Query-Family.md).
+**T24 completion record:** [`docs/T24-CSI-Query-Family.md`](T24-CSI-Query-Family.md).
 
 ---
 
@@ -552,7 +552,7 @@ terminal control data through a nominal DECRQSS operation.
 router is not CSI-specific and that DCS framing remains bounded under malformed
 or hostile input.
 
-**T25 completion record:** [`docs/T25-DECRQSS.md`](docs/T25-DECRQSS.md).
+**T25 completion record:** [`docs/T25-DECRQSS.md`](T25-DECRQSS.md).
 
 ---
 
@@ -599,7 +599,7 @@ additional public complexity.
 observations without mutating or replacing the session's `Icod.TermInfo`
 description.
 
-**T26 completion record:** [`docs/T26-XTGETTCAP.md`](docs/T26-XTGETTCAP.md).
+**T26 completion record:** [`docs/T26-XTGETTCAP.md`](T26-XTGETTCAP.md).
 
 ---
 
@@ -640,7 +640,7 @@ Acceptance evidence completed before T28B:
 consumer both preserve the one-reader and ownership boundaries.
 
 **T27 acceptance record:**
-[`docs/T27-Query-Integration-and-Probe-Acceptance.md`](docs/T27-Query-Integration-and-Probe-Acceptance.md).
+[`docs/T27-Query-Integration-and-Probe-Acceptance.md`](T27-Query-Integration-and-Probe-Acceptance.md).
 
 ---
 
@@ -659,7 +659,7 @@ Completed work:
 
 - reviews every public type and member added by 0.3 and finds no breaking
   correction required before stable release;
-- publishes [`docs/Public-API-Baseline-0.3.md`](docs/Public-API-Baseline-0.3.md);
+- publishes [`docs/Public-API-Baseline-0.3.md`](Public-API-Baseline-0.3.md);
 - documents caller cancellation, caller-visible timeout, bounded late-response
   ownership, the one-reader invariant, explicit probing, supported query
   families, and resource bounds;
@@ -688,7 +688,7 @@ Acceptance evidence:
 release closure may proceed.
 
 **T28A completion record:**
-[`docs/T28A-0.3-Release-Candidate-Gate.md`](docs/T28A-0.3-Release-Candidate-Gate.md).
+[`docs/T28A-0.3-Release-Candidate-Gate.md`](T28A-0.3-Release-Candidate-Gate.md).
 
 ## 14.2 T28B — Stable Release Closure
 
@@ -722,7 +722,7 @@ while bounded ownership remains active, CSI and DCS query families are
 supported, and the package passes the complete three-host package-only gate.
 
 **T28B completion record:**
-[`docs/T28B-0.3.0-Release-Closure.md`](docs/T28B-0.3.0-Release-Closure.md).
+[`docs/T28B-0.3.0-Release-Closure.md`](T28B-0.3.0-Release-Closure.md).
 
 ---
 

@@ -15,7 +15,7 @@ the next Terminal milestone before DCurses/Widgets editor work, and explicitly
 confirmed that 64 KiB is the correct default with larger buffers opt-in.
 
 **Status:** Implemented and qualified for stable `1.29.0` in PR #87.
-See [qualification](docs/Clipboard-Transfer-Qualification-1.29.md) for automated
+See [qualification](Clipboard-Transfer-Qualification-1.29.md) for automated
 results, measured allocation and outstanding live/release gates. Merge, tagging and
 publication remain maintainer actions.
 
@@ -27,7 +27,7 @@ input reader, query transaction manager, serialized output and lifecycle ownersh
 **Tech Stack:** C# 13; net8.0/net9.0/net10.0; managed code; existing
 Icod.TermInfo 1.17.0 and Icod.Timing 1.0.0 dependencies; cmd/sh/PowerShell 5.1.
 
-**Spec:** [Bounded Clipboard Transfers design](docs/Clipboard-Transfer-Design-1.29.md).
+**Spec:** [Bounded Clipboard Transfers design](Clipboard-Transfer-Design-1.29.md).
 
 ## Global constraints
 

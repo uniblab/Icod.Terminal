@@ -6,9 +6,9 @@
 
 **Release theme:** Terminal Compatibility Qualification.
 
-**Design authority:** [`docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md`](docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md)
+**Design authority:** [`docs/superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md`](superpowers/specs/2026-10-04-1.26.0-terminal-compatibility-qualification-design.md)
 
-**Implementation authority:** [`docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md`](docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md)
+**Implementation authority:** [`docs/superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md`](superpowers/plans/2026-10-04-1.26.0-terminal-compatibility-qualification.md)
 
 **Baseline:** Stable `1.25.0` source merged through [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) at `7896879a31e8672683bbc6b7c4cf5f99fafc789a`; publication remains a separate maintainer action. PR head `2e4ed1875b44ab56947e07508278bc7f3b22e165` passed all nine jobs in [run 37229976172](https://github.com/uniblab/Icod.Terminal/actions/runs/37229976172): 2,584 unit tests and 15 TermInfo integration tests per framework on each operating system, plus the four package shards and validated artifact. The frozen API fingerprint is `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146`; package and symbol hashes were `0ec6df2f2d3b7f1d2d3476d8899590bd4b9716b80722a1eef038c6da94f4db2f` and `42c6c65ea101833406cf039037db647b118059223b2b48cdc9661f315bb587a8`. Production dependencies are `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`.
 

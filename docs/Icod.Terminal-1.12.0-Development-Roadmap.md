@@ -19,15 +19,15 @@ Before the new public surface landed, T121 completed the approved table-driven c
 
 Design authority:
 
-[`docs/superpowers/specs/2026-09-12-1.12.0-advanced-raster-placement-design.md`](docs/superpowers/specs/2026-09-12-1.12.0-advanced-raster-placement-design.md)
+[`docs/superpowers/specs/2026-09-12-1.12.0-advanced-raster-placement-design.md`](superpowers/specs/2026-09-12-1.12.0-advanced-raster-placement-design.md)
 
 Implementation plan:
 
-[`docs/superpowers/plans/2026-09-12-1.12.0-advanced-raster-placement.md`](docs/superpowers/plans/2026-09-12-1.12.0-advanced-raster-placement.md)
+[`docs/superpowers/plans/2026-09-12-1.12.0-advanced-raster-placement.md`](superpowers/plans/2026-09-12-1.12.0-advanced-raster-placement.md)
 
 Permanent persistent-ownership authority:
 
-[`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+[`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
 
 ## Frozen public surface
 

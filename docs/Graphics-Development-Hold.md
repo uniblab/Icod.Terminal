@@ -106,7 +106,7 @@ is:
 - qualify each persistent ATLAS claim only through recorded downstream live evidence at the claimed scope;
 - retain controlled FRAME/TEXT fallback for unqualified implementations.
 
-The [1.28 development roadmap](../Icod.Terminal-1.28.0-Development-Roadmap.md)
+The [1.28 development roadmap](Icod.Terminal-1.28.0-Development-Roadmap.md)
 defines T2800–T2810. T2800 must pin the action-by-action response matrix, freeze
 any additive public confirmation model and produce a reviewed implementation plan
 before runtime code changes.

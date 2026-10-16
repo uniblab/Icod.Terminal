@@ -6,9 +6,9 @@
 
 **Release theme:** Ordered Screen Raster Transactions.
 
-**Design authority:** [`docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md`](docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md)
+**Design authority:** [`docs/superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md`](superpowers/specs/2026-10-03-1.25.0-screen-raster-transactions-design.md)
 
-**Implementation authority:** [`docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md`](docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md)
+**Implementation authority:** [`docs/superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md`](superpowers/plans/2026-10-03-1.25.0-screen-raster-transactions.md)
 
 **Baseline:** Published `Icod.Terminal 1.24.1`, merged through [PR #70](https://github.com/uniblab/Icod.Terminal/pull/70) at `b6830ce4d7f6c97ffd9bf5e8fcbcf822febf59ea`. Production dependencies are `Icod.TermInfo 1.17.0` and `Icod.Timing 1.0.0`.
 
@@ -20,7 +20,7 @@ The maintainer directs that this graphics track be put on hold because Kitty
 support cannot currently be properly tested and qualified. Preserve the published
 alpha.5 implementation and existing public contracts. Do not add a Kitty identifier
 workaround, animation-control change, backend retry, probe expansion or further
-graphics feature. The [hold record](docs/Graphics-Development-Hold.md) preserves
+graphics feature. The [hold record](Graphics-Development-Hold.md) preserves
 confirmed evidence, limits, and conditions for a separately approved reopening.
 
 This decision supersedes the live-test follow-ups below that ask for additional
@@ -278,8 +278,8 @@ No Sixel persistent resource, Unicode placeholder, frame copy/update/select, spa
 | T2504–T2506 alpha qualification | [run 37127949385](https://github.com/uniblab/Icod.Terminal/actions/runs/37127949385) | Package candidate passed; full matrix in progress; API fingerprint `886a617d961af7eed37feaed026d83bbf06ec508ba248a4ca492baaf7e528146` |
 | Alpha.5 transfer-deadline regression | [run 37216285886](https://github.com/uniblab/Icod.Terminal/actions/runs/37216285886) | Matching large root/frame fixture fails at the intended two-second pending assertion under the fixed one-second deadline |
 | Alpha.5 transfer-deadline fix | [run 37216475686](https://github.com/uniblab/Icod.Terminal/actions/runs/37216475686) | Windows/Linux/macOS runtime, all package shards and validated package artifact pass |
-| Graphics hold, 2026-10-04 | Maintainer decision; [hold record](docs/Graphics-Development-Hold.md) | Alpha.5 published; missing Kitty animation-upload ACK unresolved; further graphics development/live qualification deferred |
-| Stable source preparation | [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) / [closure record](docs/T2508-1.25-Stable-Source-Closure.md) | Stable metadata and consumer release notes; exact stable-version matrix required; no runtime change or Kitty workaround |
+| Graphics hold, 2026-10-04 | Maintainer decision; [hold record](Graphics-Development-Hold.md) | Alpha.5 published; missing Kitty animation-upload ACK unresolved; further graphics development/live qualification deferred |
+| Stable source preparation | [PR #78](https://github.com/uniblab/Icod.Terminal/pull/78) / [closure record](T2508-1.25-Stable-Source-Closure.md) | Stable metadata and consumer release notes; exact stable-version matrix required; no runtime change or Kitty workaround |
 
 ## Stable release preparation — 2026-10-04
 
@@ -289,7 +289,7 @@ limits, without reopening graphics development. This decision supersedes any
 older requirement to obtain persistent Kitty ATLAS live acceptance before stable
 preparation; it does not count that acceptance as passed.
 
-The [closure record](docs/T2508-1.25-Stable-Source-Closure.md) defines the scoped
+The [closure record](T2508-1.25-Stable-Source-Closure.md) defines the scoped
 release boundary and exact-head gates. Runtime, package/API/XML, fresh consumer
 and dependency checks must all pass at the stable-version source in PR #78.
 Merge, mainline Release validation, tag and publication remain separate maintainer

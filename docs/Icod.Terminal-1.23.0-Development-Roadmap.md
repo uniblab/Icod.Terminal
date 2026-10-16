@@ -6,7 +6,7 @@
 
 **Selected scope:** Option 2 + Option 9 + Option 10.
 
-**Design authority:** [`docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md`](docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md)
+**Design authority:** [`docs/superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md`](superpowers/specs/2026-10-02-1.23.0-partial-frame-rich-input-design.md)
 
 **Compatibility:** Preserve the stable 1.0.0 floor, existing public enum values, one authoritative input reader, opaque raster identities, and the .NET 8/9/10 target matrix. Production dependencies remain narrow; no PTY, image-codec, or Inspection dependency enters the production graph.
 

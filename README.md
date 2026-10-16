@@ -13,7 +13,7 @@ Stable release: **1.29.2**. The stable **1.0.0 compatibility floor** remains unc
 
 See the [1.29.2 release notes](https://github.com/uniblab/Icod.Terminal/blob/main/docs/releases/1.29.2.md),
 [changelog](https://github.com/uniblab/Icod.Terminal/blob/main/CHANGELOG.md) for release history,
-the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/Icod.Terminal-Development-Roadmap.md)
+the [development roadmap](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Icod.Terminal-Development-Roadmap.md)
 for current work, and the [compatibility policy](https://github.com/uniblab/Icod.Terminal/blob/main/docs/Compatibility-and-Versioning.md)
 for support guarantees.
 
@@ -450,7 +450,7 @@ Recommended documentation entry points:
 - [`docs/releases/1.24.0.md`](docs/releases/1.24.0.md) — raster geometry, planning, focused evidence, and tile-atlas qualification notes;
 - [`docs/Raster-Tile-Atlas-Measurement-1.24.md`](docs/Raster-Tile-Atlas-Measurement-1.24.md) — package-only 1/4/16/64-region witness and measurement limits;
 - [`docs/Screen-Output.md`](docs/Screen-Output.md) — planning, commitment, cancellation, and caller-owned recovery;
-- [`Icod.Terminal-1.21.0-Development-Roadmap.md`](Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
+- [`docs/Icod.Terminal-1.21.0-Development-Roadmap.md`](docs/Icod.Terminal-1.21.0-Development-Roadmap.md) — 1.21 input and visibility implementation plan;
 - [`samples/Icod.Terminal.ScreenOutput.Sample/README.md`](samples/Icod.Terminal.ScreenOutput.Sample/README.md) — interactive screen and recovery walkthrough;
 - [`samples/Icod.Terminal.RichInput.Sample/README.md`](samples/Icod.Terminal.RichInput.Sample/README.md) — modern keyboard phases, fallback, and editor-state walkthrough;
 - [`CHANGELOG.md`](CHANGELOG.md) — release-by-release feature history;
@@ -469,7 +469,7 @@ Recommended documentation entry points:
 - [`docs/Public-API-Baseline-1.23.md`](docs/Public-API-Baseline-1.23.md) — additive partial-frame and rich-input completion API fingerprint;
 - [`docs/Public-API-Baseline-1.24.md`](docs/Public-API-Baseline-1.24.md) — historical geometry, planning, and focused-evidence fingerprint;
 - [`docs/Public-API-Baseline-1.27.md`](docs/Public-API-Baseline-1.27.md) — current frozen API and additive environment-awareness fingerprint;
-- [`Icod.Terminal-Development-Roadmap.md`](Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
+- [`docs/Icod.Terminal-Development-Roadmap.md`](docs/Icod.Terminal-Development-Roadmap.md) — current and longer-range development direction.
 
 Release notes, public-API baselines, tranche records, implementation plans, and historical roadmaps remain in the repository as engineering evidence. They are intentionally not repeated in this README.
 

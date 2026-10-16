@@ -64,7 +64,7 @@ C100 changes no public runtime API.
 
 C101 froze a deliberately reduced, dependency-neutral public planning vocabulary in:
 
-[`docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`](docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md)
+[`docs/C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md`](C101-Semantic-Capability-Vocabulary-and-API-Regret-Gate.md)
 
 The initial public capability set is:
 
@@ -129,7 +129,7 @@ ee705250d19d51df92645e5020f188646dd2dbf38483278e6e57ce6fbbc1e9fb
 
 The final 1.10 baseline is maintained in:
 
-- [`docs/Public-API-Baseline-1.10.md`](docs/Public-API-Baseline-1.10.md)
+- [`docs/Public-API-Baseline-1.10.md`](Public-API-Baseline-1.10.md)
 - `docs/Public-API-Baseline-1.10.sha256`
 
 ## Public capability-planning direction
@@ -194,7 +194,7 @@ C109  1.10.0 release closure                                      complete
 
 C105–C108 are accepted as recorded in:
 
-[`docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md`](docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md)
+[`docs/C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md`](C105-C108-Capability-Lifecycle-Samples-Hardening-and-API-Freeze.md)
 
 The accepted feature head was:
 

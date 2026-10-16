@@ -30,11 +30,11 @@ The governing rule is:
 
 Design authority:
 
-[`docs/superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md`](docs/superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md)
+[`docs/superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md`](superpowers/specs/2026-09-15-1.16.0-persistent-raster-animation-frame-lifecycle-design.md)
 
 Permanent persistent-raster ownership authority:
 
-[`docs/Persistent-Raster-Ownership.md`](docs/Persistent-Raster-Ownership.md)
+[`docs/Persistent-Raster-Ownership.md`](Persistent-Raster-Ownership.md)
 
 ## Why animation follows 1.15
 
